@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="{{ shop.default_locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ shop.name }}</title>
+  <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+</head>
+<body>
+  <header class="site-header">
+    <a href="{{ routes.root_url }}" class="site-logo">{{ shop.name }}</a>
+    <nav class="site-nav">
+      {% for link in linklists.main_menu.links %}
+        <a href="{{ link.url }}">{{ link.title }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  <main class="site-main">
+    {{ content_for_layout }}
+  </main>
+
+  <footer class="site-footer">
+    <p>{{ 'footer.tagline' | t }} &middot; {{ shop.name }}</p>
+  </footer>
+</body>
+</html>

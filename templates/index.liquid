@@ -1,0 +1,16 @@
+<section class="hero">
+  <h1>{{ settings.heading | default: 'Welcome to your new shop' }}</h1>
+  <p>{{ settings.subheading | default: 'This storefront was created from the Aico scaffold theme. Customize it any time.' }}</p>
+  <a class="hero-cta" href="{{ routes.products_url }}">{{ 'home.cta' | t }}</a>
+</section>
+
+<section class="features">
+  <article>
+    <h2>{{ 'home.feature_1.title' | t }}</h2>
+    <p>{{ 'home.feature_1.body' | t }}</p>
+  </article>
+  <article>
+    <h2>{{ 'home.feature_2.title' | t }}</h2>
+    <p>{{ 'home.feature_2.body' | t }}</p>
+  </article>
+</section>

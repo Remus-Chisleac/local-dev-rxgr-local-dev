@@ -1,0 +1,10 @@
+{
+  "main_menu": {
+    "title": "Main menu",
+    "links": [
+      { "title": "Home", "url": "/" },
+      { "title": "Products", "url": "/products" },
+      { "title": "Contact", "url": "/pages/contact" }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "home": {
+    "cta": "Jetzt einkaufen",
+    "feature_1": { "title": "Schneller Versand", "body": "Wir versenden innerhalb von 24 Stunden aus der Schweiz." },
+    "feature_2": { "title": "Einfache Retouren",  "body": "Gratis Retouren innerhalb von 30 Tagen, ohne Wenn und Aber." }
+  },
+  "pages": {
+    "placeholder": { "title": "Über uns", "body": "Ersetze diesen Inhalt im Editor." }
+  },
+  "footer": { "tagline": "Mit Aico Storefront betrieben" },
+  "errors": { "not_found": "Diese Seite wurde nicht gefunden.", "back_home": "Zurück zur Startseite" }
+}

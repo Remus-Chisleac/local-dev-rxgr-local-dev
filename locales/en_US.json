@@ -1,0 +1,12 @@
+{
+  "home": {
+    "cta": "Shop now",
+    "feature_1": { "title": "Fast shipping", "body": "We ship within 24 hours from Switzerland." },
+    "feature_2": { "title": "Easy returns",  "body": "Free returns within 30 days, no questions asked." }
+  },
+  "pages": {
+    "placeholder": { "title": "About us", "body": "Replace this content from the editor." }
+  },
+  "footer": { "tagline": "Powered by Aico Storefront" },
+  "errors": { "not_found": "We couldn't find that page.", "back_home": "Return home" }
+}
