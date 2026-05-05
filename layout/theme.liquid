@@ -5,23 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ shop.name }}</title>
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+  {% if template.directory == 'customers' %}
+    <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
+  {% endif %}
 </head>
-<body>
-  <header class="site-header">
-    <a href="{{ routes.root_url }}" class="site-logo">{{ shop.name }}</a>
-    <nav class="site-nav">
-      {% for link in linklists.main_menu.links %}
-        <a href="{{ link.url }}">{{ link.title }}</a>
-      {% endfor %}
-    </nav>
-  </header>
+<body class="{% if template.directory == 'customers' %}aico-template-customers{% endif %}">
+  {% if template.directory == 'customers' %}
+    <main class="aico-auth-main">
+      {{ content_for_layout }}
+    </main>
+  {% else %}
+    <header class="site-header">
+      <a href="{{ routes.root_url }}" class="site-logo">{{ shop.name }}</a>
+      <nav class="site-nav">
+        {% for link in linklists.main_menu.links %}
+          <a href="{{ link.url }}">{{ link.title }}</a>
+        {% endfor %}
+        {% if customer %}
+          <span class="site-customer">
+            {{ 'customer.header.greeting' | t }} {{ customer.first_name }}
+          </span>
+          <a href="{{ routes.account_logout_url }}" class="site-logout-link">
+            {{ 'customer.header.log_out' | t }}
+          </a>
+        {% endif %}
+      </nav>
+    </header>
 
-  <main class="site-main">
-    {{ content_for_layout }}
-  </main>
+    <main class="site-main">
+      {{ content_for_layout }}
+    </main>
 
-  <footer class="site-footer">
-    <p>{{ 'footer.tagline' | t }} &middot; {{ shop.name }}</p>
-  </footer>
+    <footer class="site-footer">
+      <p>{{ 'footer.tagline' | t }} &middot; {{ shop.name }}</p>
+    </footer>
+  {% endif %}
 </body>
 </html>
