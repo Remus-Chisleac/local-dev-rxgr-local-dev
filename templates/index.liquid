@@ -1,16 +1,73 @@
-<section class="hero">
-  <h1>{{ settings.heading | default: 'Welcome to your new shop' }}</h1>
-  <p>{{ settings.subheading | default: 'This storefront was created from the Aico scaffold theme. Customize it any time.' }}</p>
-  <a class="hero-cta" href="{{ routes.products_url }}">{{ 'home.cta' | t }}</a>
-</section>
+{% comment %}
+  Home page skeleton. The visual structure mirrors the aico-commerce
+  shop home: hero band, two category tiles, popular-products grid, and
+  a news strip. Every block is a placeholder (pulse animation) — real
+  components land in later slices. Section headings use real copy so
+  the page reads as "loading" rather than "empty".
+{% endcomment %}
 
-<section class="features">
-  <article>
-    <h2>{{ 'home.feature_1.title' | t }}</h2>
-    <p>{{ 'home.feature_1.body' | t }}</p>
-  </article>
-  <article>
-    <h2>{{ 'home.feature_2.title' | t }}</h2>
-    <p>{{ 'home.feature_2.body' | t }}</p>
-  </article>
-</section>
+<main class="aico-home" role="main" aria-busy="true" aria-live="polite">
+  <span class="aico-sr-only">{{ 'home_page.loading_status' | t }}</span>
+
+  <section class="aico-home-hero" aria-hidden="true">
+    <div class="aico-page-container aico-home-hero-inner">
+      <div class="aico-home-hero-text">
+        <div class="aico-skeleton aico-skel-pulse aico-home-hero-headline"></div>
+        <div class="aico-skeleton aico-skel-pulse aico-home-hero-sub"></div>
+        <div class="aico-skeleton aico-skel-pulse aico-home-hero-cta"></div>
+      </div>
+      <div class="aico-home-hero-figure">
+        <div class="aico-skeleton aico-skel-pulse aico-home-hero-figure-block"></div>
+      </div>
+    </div>
+    <div class="aico-home-hero-dots">
+      {% for i in (1..6) %}
+        <span class="aico-home-hero-dot"></span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="aico-page-container aico-home-categories" aria-hidden="true">
+    {% for i in (1..2) %}
+      <div class="aico-home-category-card">
+        <div class="aico-skeleton aico-skel-pulse aico-home-category-fill"></div>
+        <div class="aico-skeleton aico-skel-pulse aico-home-category-tag"></div>
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="aico-page-container aico-home-products">
+    <h2 class="aico-section-heading">{{ 'home_page.popular_models' | t }}</h2>
+    <div class="aico-home-products-grid" aria-hidden="true">
+      {% for i in (1..8) %}
+        <article class="aico-home-product-card">
+          <div class="aico-skeleton aico-skel-pulse aico-home-product-image"></div>
+          <div class="aico-home-product-meta">
+            <div class="aico-skeleton aico-skel-pulse aico-home-product-title"></div>
+            <div class="aico-skeleton aico-skel-pulse aico-home-product-subtitle"></div>
+            <div class="aico-home-product-row">
+              <div class="aico-skeleton aico-skel-pulse aico-home-product-price"></div>
+              <div class="aico-home-product-action"></div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="aico-page-container aico-home-news">
+    <h2 class="aico-section-heading">{{ 'home_page.news' | t }}</h2>
+    <div class="aico-home-news-grid" aria-hidden="true">
+      {% for i in (1..3) %}
+        <article class="aico-home-news-card">
+          <div class="aico-skeleton aico-skel-pulse aico-home-news-fill"></div>
+          <div class="aico-home-news-overlay">
+            <div class="aico-skeleton aico-skel-pulse aico-home-news-line aico-home-news-line-1"></div>
+            <div class="aico-skeleton aico-skel-pulse aico-home-news-line aico-home-news-line-2"></div>
+            <div class="aico-skeleton aico-skel-pulse aico-home-news-line aico-home-news-line-3"></div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
