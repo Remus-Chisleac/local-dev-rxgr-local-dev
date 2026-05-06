@@ -194,8 +194,11 @@
             {% endif %}
           </nav>
 
+          {%- comment -%} ── Permanent rows (pinned to bottom) ── {%- endcomment -%}
+          <div class="aico-drawer-permanent">
+
           {%- comment -%} ── Account contact ── {%- endcomment -%}
-          <details class="aico-disclosure">
+          <details class="aico-disclosure aico-drawer-contact" data-aico-contact open>
             <summary class="aico-disclosure-summary aico-drawer-row aico-drawer-row-zebra">
               <span class="aico-drawer-row-icon">
                 <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -296,6 +299,8 @@
             </span>
             <span class="aico-drawer-row-label">{{ 'nav.logout' | t }}</span>
           </a>
+
+          </div>{%- comment -%} /aico-drawer-permanent {%- endcomment -%}
         </div>
       </aside>
     </div>

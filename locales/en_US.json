@@ -33,6 +33,15 @@
     "popular_models": "Popular models",
     "news": "News"
   },
+  "products": {
+    "title": "Products",
+    "no_results": "No products available right now.",
+    "sale": "Sale",
+    "discontinued": "Discontinued",
+    "previous": "Previous",
+    "next": "Next",
+    "pagination_aria": "Products pagination"
+  },
   "customer": {
     "header": {
       "greeting": "Hi,",

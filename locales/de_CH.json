@@ -33,6 +33,15 @@
     "popular_models": "Beliebte Modelle",
     "news": "Neuigkeiten"
   },
+  "products": {
+    "title": "Produkte",
+    "no_results": "Aktuell sind keine Produkte verfügbar.",
+    "sale": "Sale",
+    "discontinued": "Auslaufend",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pagination_aria": "Produktseiten-Navigation"
+  },
   "customer": {
     "header": {
       "greeting": "Hallo,",

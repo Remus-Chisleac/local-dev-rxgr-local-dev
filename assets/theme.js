@@ -125,6 +125,27 @@
     }
   });
 
+  // Auto-collapse the contact card when the user interacts with the
+  // nav list or the brand picker. Keeps the contact visible when the
+  // drawer first opens (markup default), then steps out of the way as
+  // soon as the user reaches for actual navigation.
+  var contact = drawer.querySelector('[data-aico-contact]');
+  if (contact) {
+    var collapseContact = function () {
+      if (contact.open) {
+        contact.open = false;
+      }
+    };
+    var navRegion = drawer.querySelector('.aico-drawer-nav');
+    if (navRegion) {
+      navRegion.addEventListener('click', collapseContact, true);
+    }
+    var brandPicker = drawer.querySelector('.aico-drawer-brand-picker');
+    if (brandPicker) {
+      brandPicker.addEventListener('click', collapseContact, true);
+    }
+  }
+
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
       close();

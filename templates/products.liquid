@@ -1,0 +1,100 @@
+{% comment %}
+  Products listing — server-side render of Meilisearch results.
+  Filters / search land in step 2 (this v1 just shows the grid + page
+  links). Card markup is inlined here pending snippet-rendering
+  support (`{% render 'product-card' %}`); when that lands, extract
+  the card into snippets/product-card.liquid.
+{% endcomment %}
+
+<main class="aico-products" role="main">
+  <div class="aico-page-container aico-products-shell">
+    <h1 class="aico-sr-only">{{ 'products.title' | t }}</h1>
+
+    {% if aico_products.empty? %}
+      <p class="aico-products-empty" role="status">
+        {{ 'products.no_results' | t }}
+      </p>
+    {% else %}
+      <div class="aico-products-meta">
+        <p class="aico-products-count">
+          {{ aico_products.total_hits }} · {{ 'products.title' | t }}
+        </p>
+      </div>
+
+      <ul class="aico-products-grid">
+        {% for product in aico_products %}
+          <li class="aico-products-grid-item">
+            <article class="aico-product-card">
+              <a href="{{ product.url }}" class="aico-product-card-link" aria-label="{{ product.title }}">
+                <div class="aico-product-card-image-wrap">
+                  {% if product.featured_image %}
+                    <img class="aico-product-card-image" src="{{ product.featured_image }}" alt="" loading="{% if forloop.index0 < 8 %}eager{% else %}lazy{% endif %}" decoding="async">
+                  {% else %}
+                    <div class="aico-product-card-image-empty" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10"></path>
+                        <path d="m3 21 9-9 4 4 8-8"></path>
+                        <line x1="2" x2="22" y1="2" y2="22"></line>
+                      </svg>
+                    </div>
+                  {% endif %}
+
+                  {% if product.aico_is_on_sale? %}
+                    <span class="aico-product-card-badge aico-product-card-badge-sale">
+                      {{ 'products.sale' | t }}
+                    </span>
+                  {% endif %}
+                  {% if product.aico_is_discontinued? %}
+                    <span class="aico-product-card-badge aico-product-card-badge-discontinued">
+                      {{ 'products.discontinued' | t }}
+                    </span>
+                  {% endif %}
+                </div>
+                <div class="aico-product-card-body">
+                  {% if product.aico_price_label %}
+                    <p class="aico-product-card-price">
+                      {% if product.aico_compare_at_price_label %}
+                        <span class="aico-product-card-price-list">{{ product.aico_compare_at_price_label }}</span>
+                      {% endif %}
+                      <span class="aico-product-card-price-current">{{ product.aico_price_label }}</span>
+                      {% if product.aico_discount_percent %}
+                        <span class="aico-product-card-discount">−{{ product.aico_discount_percent }}%</span>
+                      {% endif %}
+                    </p>
+                  {% endif %}
+                  <h3 class="aico-product-card-title">{{ product.title }}</h3>
+                </div>
+              </a>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% if aico_products.pagination.pages > 1 %}
+        <nav class="aico-products-pagination" aria-label="{{ 'products.pagination_aria' | t }}">
+          {% if aico_products.pagination.previous %}
+            <a class="aico-products-pagination-step" href="{{ aico_products.pagination.previous.url }}" rel="prev">
+              {{ 'products.previous' | t }}
+            </a>
+          {% endif %}
+          {% for part in aico_products.pagination.parts %}
+            {% if part.is_link %}
+              <a class="aico-products-pagination-page" href="{{ part.url }}">{{ part.title }}</a>
+            {% else %}
+              {% if part.title == '…' %}
+                <span class="aico-products-pagination-gap" aria-hidden="true">{{ part.title }}</span>
+              {% else %}
+                <span class="aico-products-pagination-page aico-products-pagination-page-current" aria-current="page">{{ part.title }}</span>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {% if aico_products.pagination.next %}
+            <a class="aico-products-pagination-step" href="{{ aico_products.pagination.next.url }}" rel="next">
+              {{ 'products.next' | t }}
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% endif %}
+  </div>
+</main>
