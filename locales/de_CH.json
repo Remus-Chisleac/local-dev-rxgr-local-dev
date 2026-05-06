@@ -1,12 +1,69 @@
 {
-  "home": {
-    "cta": "Jetzt einkaufen",
-    "feature_1": { "title": "Schneller Versand", "body": "Wir versenden innerhalb von 24 Stunden aus der Schweiz." },
-    "feature_2": { "title": "Einfache Retouren",  "body": "Gratis Retouren innerhalb von 30 Tagen, ohne Wenn und Aber." }
-  },
   "pages": {
     "placeholder": { "title": "Über uns", "body": "Ersetze diesen Inhalt im Editor." }
   },
   "footer": { "tagline": "Mit Aico Storefront betrieben" },
-  "errors": { "not_found": "Diese Seite wurde nicht gefunden.", "back_home": "Zurück zur Startseite" }
+  "errors": { "not_found": "Diese Seite wurde nicht gefunden.", "back_home": "Zurück zur Startseite" },
+  "nav": {
+    "welcome_prefix": "Willkommen zurück,",
+    "welcome_guest": "Willkommen",
+    "search_aria": "Suchen",
+    "cart_aria": "Warenkorb öffnen",
+    "open_menu": "Menü",
+    "menu_title": "Menü",
+    "close_menu": "Menü schließen",
+    "current_brand": "Ausgewählte Marke",
+    "brand_choose": "Marke wählen",
+    "brand_select_error": "Marke konnte nicht gewechselt werden. Bitte erneut versuchen.",
+    "contact_person": "Ansprechperson",
+    "contact_person_email": "E-Mail an Kontakt",
+    "contact_person_phone": "Kontakt anrufen",
+    "contact_person_empty": "Keine Ansprechperson zugewiesen.",
+    "profile": "Profil",
+    "language": "Sprache",
+    "logout": "Abmelden",
+    "loading_menu": "Menü wird geladen…",
+    "menu_load_error": "Das Menü konnte nicht geladen werden. Standard wird angezeigt.",
+    "fallback_shop": "Shop",
+    "fallback_news": "Aktuelles",
+    "fallback_service": "Service"
+  },
+  "home_page": {
+    "loading_status": "Shop-Inhalte werden geladen…",
+    "popular_models": "Beliebte Modelle",
+    "news": "Neuigkeiten"
+  },
+  "products": {
+    "title": "Produkte",
+    "no_results": "Aktuell sind keine Produkte verfügbar.",
+    "sale": "Sale",
+    "discontinued": "Auslaufend",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pagination_aria": "Produktseiten-Navigation"
+  },
+  "customer": {
+    "header": {
+      "greeting": "Hallo,",
+      "log_out": "Abmelden"
+    },
+    "login_page": {
+      "title": "Willkommen zurück",
+      "description": "Melden Sie sich an, um zum Shop zu gelangen.",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "forgot_password": "Passwort vergessen?",
+      "sign_in": "Anmelden",
+      "submitting": "Wird angemeldet…",
+      "error": "Die eingegebene E-Mail oder das Passwort ist nicht korrekt."
+    },
+    "recover_password": {
+      "title": "Passwort zurücksetzen",
+      "subtext": "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts.",
+      "email": "E-Mail",
+      "submit": "Reset-Link senden",
+      "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
+      "cancel": "Zurück zur Anmeldung"
+    }
+  }
 }

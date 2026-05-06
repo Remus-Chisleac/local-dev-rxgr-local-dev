@@ -5,5 +5,13 @@
       { "id": "heading", "type": "text", "label": "Hero heading", "default": "Welcome to your new shop" },
       { "id": "subheading", "type": "text", "label": "Hero subheading", "default": "Customize this from the theme settings." }
     ]
+  },
+  {
+    "name": "Customer accounts",
+    "settings": [
+      { "id": "aico_auth_heading", "type": "text", "label": "Login heading", "default": "" },
+      { "id": "aico_auth_subheading", "type": "text", "label": "Login subheading", "default": "" },
+      { "id": "aico_auth_background_image", "type": "image_picker", "label": "Login background image" }
+    ]
   }
 ]

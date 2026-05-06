@@ -1,12 +1,69 @@
 {
-  "home": {
-    "cta": "Shop now",
-    "feature_1": { "title": "Fast shipping", "body": "We ship within 24 hours from Switzerland." },
-    "feature_2": { "title": "Easy returns",  "body": "Free returns within 30 days, no questions asked." }
-  },
   "pages": {
     "placeholder": { "title": "About us", "body": "Replace this content from the editor." }
   },
   "footer": { "tagline": "Powered by Aico Storefront" },
-  "errors": { "not_found": "We couldn't find that page.", "back_home": "Return home" }
+  "errors": { "not_found": "We couldn't find that page.", "back_home": "Return home" },
+  "nav": {
+    "welcome_prefix": "Welcome back,",
+    "welcome_guest": "Welcome",
+    "search_aria": "Search",
+    "cart_aria": "Open cart",
+    "open_menu": "Menu",
+    "menu_title": "Menu",
+    "close_menu": "Close menu",
+    "current_brand": "Selected brand",
+    "brand_choose": "Choose a brand",
+    "brand_select_error": "Couldn't switch brand. Please try again.",
+    "contact_person": "Contact person",
+    "contact_person_email": "Email contact",
+    "contact_person_phone": "Call contact",
+    "contact_person_empty": "No contact assigned.",
+    "profile": "Profile",
+    "language": "Language",
+    "logout": "Sign out",
+    "loading_menu": "Loading menu…",
+    "menu_load_error": "We couldn't load the menu. Showing defaults.",
+    "fallback_shop": "Shop",
+    "fallback_news": "News",
+    "fallback_service": "Service"
+  },
+  "home_page": {
+    "loading_status": "Loading shop content…",
+    "popular_models": "Popular models",
+    "news": "News"
+  },
+  "products": {
+    "title": "Products",
+    "no_results": "No products available right now.",
+    "sale": "Sale",
+    "discontinued": "Discontinued",
+    "previous": "Previous",
+    "next": "Next",
+    "pagination_aria": "Products pagination"
+  },
+  "customer": {
+    "header": {
+      "greeting": "Hi,",
+      "log_out": "Log out"
+    },
+    "login_page": {
+      "title": "Welcome back",
+      "description": "Sign in to continue to the shop.",
+      "email": "Email",
+      "password": "Password",
+      "forgot_password": "Forgot your password?",
+      "sign_in": "Sign in",
+      "submitting": "Signing in…",
+      "error": "The email or password you entered is incorrect."
+    },
+    "recover_password": {
+      "title": "Reset your password",
+      "subtext": "We'll email you a link to set a new password.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "success": "If an account exists for that email, we've sent reset instructions.",
+      "cancel": "Back to sign in"
+    }
+  }
 }

@@ -1,0 +1,54 @@
+{% comment %}
+  Shopify-shaped customer login template. Form fields and action URL
+  match the contract emitted by `{% form 'customer_login' %}` so a
+  Shopify-authored theme renders against this backend without changes.
+  Errors and re-population ride the post-redirect query string and
+  surface via the `form` global (`form.errors`, `form.posted_successfully?`).
+{% endcomment %}
+
+<div class="aico-auth-shell" style="background-image: var(--aico-auth-bg-image);">
+  <div class="aico-auth-overlay" aria-hidden="true"></div>
+
+  <div class="aico-auth-card-wrap">
+    <div class="aico-auth-locale-switcher">
+      <a href="?locale=en">EN</a>
+      <span aria-hidden="true">·</span>
+      <a href="?locale=de_CH">DE</a>
+    </div>
+
+    <div class="aico-auth-card">
+      <h1 class="aico-auth-title">{{ 'customer.login_page.title' | t }}</h1>
+      <p class="aico-auth-subtitle">{{ 'customer.login_page.description' | t }}</p>
+
+      {% if form.errors and form.form_type == 'customer_login' %}
+        <p class="aico-auth-error" role="alert">
+          {{ 'customer.login_page.error' | t }}
+        </p>
+      {% endif %}
+
+      <form action="{{ routes.account_login_url }}" method="post" class="aico-auth-form">
+        <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+        <input type="hidden" name="return_url" value="{{ request.query.return_url }}">
+
+        <label class="aico-auth-field">
+          <span class="aico-auth-field-label">{{ 'customer.login_page.email' | t }}</span>
+          <input type="email" name="customer[email]" autocomplete="username" required>
+        </label>
+
+        <label class="aico-auth-field">
+          <span class="aico-auth-field-label aico-auth-field-row">
+            <span>{{ 'customer.login_page.password' | t }}</span>
+            <a href="{{ routes.account_recover_url }}" class="aico-auth-secondary-link">
+              {{ 'customer.login_page.forgot_password' | t }}
+            </a>
+          </span>
+          <input type="password" name="customer[password]" autocomplete="current-password" required>
+        </label>
+
+        <button type="submit" class="aico-auth-button">
+          {{ 'customer.login_page.sign_in' | t }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
