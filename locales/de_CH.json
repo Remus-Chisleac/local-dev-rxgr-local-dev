@@ -1,9 +1,17 @@
 {
   "pages": {
-    "placeholder": { "title": "Über uns", "body": "Ersetze diesen Inhalt im Editor." }
+    "placeholder": {
+      "title": "Über uns",
+      "body": "Ersetze diesen Inhalt im Editor."
+    }
   },
-  "footer": { "tagline": "Mit Aico Storefront betrieben" },
-  "errors": { "not_found": "Diese Seite wurde nicht gefunden.", "back_home": "Zurück zur Startseite" },
+  "footer": {
+    "tagline": "Mit Aico Storefront betrieben"
+  },
+  "errors": {
+    "not_found": "Diese Seite wurde nicht gefunden.",
+    "back_home": "Zurück zur Startseite"
+  },
   "nav": {
     "welcome_prefix": "Willkommen zurück,",
     "welcome_guest": "Willkommen",
@@ -45,14 +53,61 @@
   },
   "products": {
     "title": "Produkte",
-    "no_results": "Aktuell sind keine Produkte verfügbar.",
+    "no_results": "Keine Produkte entsprechen Ihrer Auswahl.",
     "sale": "Sale",
     "discontinued": "Auslaufend",
+    "search_label": "Produkte suchen",
+    "search_placeholder": "Produkte suchen…",
+    "sort_label": "Sortieren nach",
+    "sort_newest": "Neuste",
+    "sort_oldest": "Älteste",
+    "sort_name_asc": "Name A–Z",
+    "sort_name_desc": "Name Z–A",
+    "filters_title": "Filter",
+    "filters_close": "Filter schliessen",
+    "all_categories": "Alle Produkte",
+    "facet_subcategory": "Kategorie",
+    "facet_color": "Farbe",
+    "facet_upperMaterial": "Obermaterial",
+    "facet_soleTechnology": "Sohlentechnologie",
+    "facet_fitting": "Passform",
+    "facet_productionStatus": "Status",
+    "facet_sizes": "Grösse",
+    "facet_sale": "Nur Sale",
+    "clear_all": "Alle löschen",
+    "loading": "Weitere Produkte werden geladen…",
+    "end_of_results": "Sie haben das Ende erreicht.",
+    "result_count_singular": "{count} Produkt",
+    "result_count_plural": "{count} Produkte",
     "previous": "Zurück",
     "next": "Weiter",
     "pagination_aria": "Produktseiten-Navigation",
     "product": {
       "add_to_cart": "In den Warenkorb"
+    }
+  },
+  "customer": {
+    "header": {
+      "greeting": "Hallo,",
+      "log_out": "Abmelden"
+    },
+    "login_page": {
+      "title": "Willkommen zurück",
+      "description": "Melden Sie sich an, um zum Shop zu gelangen.",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "forgot_password": "Passwort vergessen?",
+      "sign_in": "Anmelden",
+      "submitting": "Wird angemeldet…",
+      "error": "Die eingegebene E-Mail oder das Passwort ist nicht korrekt."
+    },
+    "recover_password": {
+      "title": "Passwort zurücksetzen",
+      "subtext": "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts.",
+      "email": "E-Mail",
+      "submit": "Reset-Link senden",
+      "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
+      "cancel": "Zurück zur Anmeldung"
     }
   },
   "product": {
@@ -95,30 +150,6 @@
       "not_implemented": "Warenkorb-Funktion ist noch nicht verbunden.",
       "select_quantity": "Bitte mindestens eine Grösse auswählen.",
       "error": "Konnte nicht zum Warenkorb hinzugefügt werden."
-    }
-  },
-  "customer": {
-    "header": {
-      "greeting": "Hallo,",
-      "log_out": "Abmelden"
-    },
-    "login_page": {
-      "title": "Willkommen zurück",
-      "description": "Melden Sie sich an, um zum Shop zu gelangen.",
-      "email": "E-Mail",
-      "password": "Passwort",
-      "forgot_password": "Passwort vergessen?",
-      "sign_in": "Anmelden",
-      "submitting": "Wird angemeldet…",
-      "error": "Die eingegebene E-Mail oder das Passwort ist nicht korrekt."
-    },
-    "recover_password": {
-      "title": "Passwort zurücksetzen",
-      "subtext": "Wir senden Ihnen einen Link zum Festlegen eines neuen Passworts.",
-      "email": "E-Mail",
-      "submit": "Reset-Link senden",
-      "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
-      "cancel": "Zurück zur Anmeldung"
     }
   },
   "aico_preorder": {

@@ -28,8 +28,11 @@
 * { box-sizing: border-box; }
 
 /* Always reserve space for the vertical scrollbar so opening/closing
-   the drawer (which body-scroll-locks) doesn't reflow the page. */
+   the drawer (which body-scroll-locks) doesn't reflow the page. The
+   auth shell opts out — its bg image must fill edge-to-edge with no
+   reserved gutter, and the page never opens the drawer. */
 html { scrollbar-gutter: stable; }
+html:has(body.aico-template-customers) { scrollbar-gutter: auto; }
 
 body {
   margin: 0;
@@ -372,18 +375,23 @@ body {
 
 .aico-template-customers { background: #f5f5f4; }
 
+/* Pin the auth main to the viewport with no padding — the shell is
+   what owns the bg image and the gutter around the card. Stacking
+   both `padding` and `min-height: 100svh` here used to push the
+   shell past the viewport (border-box: shell's 100svh inside main's
+   100svh − 3rem padding overflowed → scrollbar) and leave a 1.5rem
+   strip of body color framing the bg ("wired margin"). */
 .aico-auth-main {
   display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100svh;
-  padding: 1.5rem;
+  min-height: 100dvh;
 }
 
 .aico-auth-shell {
   position: relative;
   width: 100%;
   min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -705,7 +713,15 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-muted-strong);
 }
 .aico-drawer-row-chevron { color: var(--aico-muted-fg); flex-shrink: 0; }
-.aico-drawer-row-indent  { padding-left: 2.5rem; }
+/* Depth-aware indent. The nav row sets `--aico-nav-depth` inline (1 for
+   first-level children, 2 for grandchildren, …). Falls back to depth 1
+   when the variable isn't set so callers that just slap on the class
+   keep the old visual. */
+.aico-drawer-row-indent { padding-left: calc(1rem + var(--aico-nav-depth, 1) * 1.25rem); }
+/* Nested disclosures (deeper than first-level) drop the left rule —
+   the parent group already shows the relationship. */
+.aico-drawer-nav-group-nested > .aico-disclosure-summary { padding-right: 1rem; }
+.aico-drawer-nav-group-nested .aico-drawer-nav-children { border-left: 0; padding-left: 0; margin-left: 0; }
 
 .aico-drawer-row-locale  { gap: 0.75rem; flex-wrap: wrap; }
 
@@ -871,6 +887,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   transition: opacity 0.5s ease-out;
 }
 .aico-product-card:hover .aico-product-card-image { opacity: 0.92; }
+/* Fade-in for images that don't paint immediately. JS adds
+   `.aico-img-pending` while the file is in flight and removes it on
+   load — the 0.5s opacity transition above carries the fade. Cached
+   images skip the class entirely so there's no FOUC. */
+.aico-product-card-image.aico-img-pending { opacity: 0; }
 .aico-product-card-image-empty {
   width: 100%;
   height: 100%;
@@ -948,49 +969,373 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 @media (min-width: 640px) { .aico-product-card-title { font-size: 0.9375rem; } }
 
-.aico-products-pagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  margin-top: 1.5rem;
-  padding: 1rem 0;
+/* ---------------------------------------------------------------- */
+/* Products listing — top filter bar + mega-panel                   */
+/* ---------------------------------------------------------------- */
+
+/* Filter bar (rounded card; sticky top of the listing) ------------ */
+
+.aico-filterbar {
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1rem;
 }
-.aico-products-pagination-step,
-.aico-products-pagination-page {
+
+.aico-filterbar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+@media (min-width: 1024px) {
+  .aico-filterbar-row { flex-direction: row; align-items: center; gap: 1rem; padding: 0.75rem 1.25rem; }
+}
+
+.aico-filterbar-heading {
+  margin: 0;
+  flex-shrink: 0;
+  color: #ea580c;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+@media (min-width: 640px) { .aico-filterbar-heading { font-size: 0.875rem; } }
+
+.aico-filterbar-search {
+  position: relative;
+  flex: 1 1 16rem;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.aico-filterbar-search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--aico-muted-fg);
+  pointer-events: none;
+}
+.aico-filterbar-search-input {
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 0.875rem 0 2.5rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-muted);
+  color: var(--aico-fg);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.aico-filterbar-search-input::-webkit-search-cancel-button { cursor: pointer; }
+.aico-filterbar-search-input:focus-visible {
+  background: var(--aico-bg);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.aico-filterbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+@media (min-width: 640px) { .aico-filterbar-actions { gap: 0.5rem; } }
+
+.aico-filterbar-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
+  gap: 0.375rem;
   height: 2.25rem;
-  padding: 0 0.625rem;
-  border: 1px solid var(--aico-border);
-  background: var(--aico-bg);
+  padding: 0 0.5rem;
+  border: 0;
+  background: transparent;
   color: var(--aico-fg);
-  border-radius: 0.5rem;
-  text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: color 0.15s;
 }
-.aico-products-pagination-step:hover,
-.aico-products-pagination-page:hover { background: var(--aico-muted); }
-.aico-products-pagination-page-current {
-  background: var(--color-accent);
-  color: #ffffff;
-  border-color: var(--color-accent);
-  cursor: default;
+.aico-filterbar-toggle:hover { background: var(--aico-muted); }
+.aico-filterbar-toggle-active { color: #ea580c; }
+.aico-filterbar-chevron {
+  color: var(--aico-muted-fg);
+  transition: transform 0.25s ease-out;
 }
-.aico-products-pagination-page-current:hover { background: var(--color-accent); filter: brightness(0.95); }
-.aico-products-pagination-gap {
+.aico-filterbar-toggle-open .aico-filterbar-chevron { transform: rotate(180deg); }
+
+.aico-filterbar-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 1.5rem;
-  height: 2.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 9999px;
+  background: var(--aico-muted);
   color: var(--aico-muted-fg);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.aico-filterbar-badge-active {
+  background: rgba(234, 88, 12, 0.15);
+  color: #c2410c;
 }
 
+.aico-filterbar-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.aico-filterbar-sort-icon {
+  position: absolute;
+  left: 0.5rem;
+  color: var(--aico-muted-fg);
+  pointer-events: none;
+}
+.aico-filterbar-sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  height: 2.25rem;
+  padding: 0 0.625rem 0 1.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--aico-fg);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  outline: none;
+}
+.aico-filterbar-sort-select:hover { background: var(--aico-muted); }
+.aico-filterbar-sort-select:focus-visible { box-shadow: 0 0 0 2px var(--color-accent); }
+
+/* Mega-panel ------------------------------------------------------ */
+
+.aico-filterbar-panel {
+  border-top: 1px solid var(--aico-border);
+  max-height: min(75vh, 52rem);
+  overflow-y: auto;
+}
+.aico-filterbar-panel[hidden] { display: none; }
+
+.aico-filterbar-panel-inner {
+  padding: 1.25rem 1rem 1.5rem;
+}
+@media (min-width: 640px) { .aico-filterbar-panel-inner { padding: 1.25rem 1.5rem 1.75rem; } }
+
+.aico-filterbar-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.aico-filterbar-sale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--aico-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.aico-filterbar-sale-input {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
+  accent-color: #ea580c;
+  cursor: pointer;
+}
+
+.aico-filterbar-clear {
+  border: 0;
+  background: transparent;
+  color: var(--aico-muted-fg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+.aico-filterbar-clear:hover { color: var(--aico-fg); background: var(--aico-muted); }
+
+/* Multi-column facets grid (subcategory / color / materials …) ---- */
+
+.aico-filterbar-columns {
+  display: grid;
+  gap: 1.5rem 1.5rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) { .aico-filterbar-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .aico-filterbar-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .aico-filterbar-columns { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .aico-filterbar-columns { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+.aico-filtercol { min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-filtercol[hidden] { display: none; }
+.aico-filtercol-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+
+.aico-filtercol-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.aico-filtercol-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--aico-fg);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+.aico-filtercol-item:hover { color: #ea580c; }
+.aico-filtercol-item-active {
+  color: #ea580c;
+  font-weight: 600;
+}
+.aico-filtercol-item-label {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+.aico-filtercol-item-count {
+  flex: 0 0 auto;
+  color: var(--aico-muted-fg);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+
+/* Color swatch grid (inside a column) ----------------------------- */
+
+.aico-filtercol-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 1024px) { .aico-filtercol-swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.aico-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.125rem;
+  border: 0;
+  background: transparent;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.aico-swatch:hover { opacity: 0.85; }
+.aico-swatch-active {
+  outline: 2px solid #ea580c;
+  outline-offset: 2px;
+}
+.aico-swatch-dot {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Sizes section (full-width chip row at the bottom) --------------- */
+
+.aico-filterbar-sizes {
+  margin-top: 2rem;
+  border-top: 1px solid var(--aico-border);
+  padding-top: 1.25rem;
+}
+.aico-filterbar-sizes[hidden] { display: none; }
+.aico-filterbar-sizes-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.aico-size-chip {
+  height: 2.25rem;
+  min-width: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-bg);
+  color: var(--aico-fg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.aico-size-chip:hover { border-color: rgba(234, 88, 12, 0.6); }
+.aico-size-chip-active {
+  border-color: #ea580c;
+  background: rgba(234, 88, 12, 0.08);
+  color: #c2410c;
+}
+
+/* Main grid + infinite scroll states ------------------------------ */
+
+.aico-products-meta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+.aico-products-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+.aico-products-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 2px solid var(--aico-muted-strong);
+  border-top-color: var(--color-accent);
+  animation: aico-spin 0.7s linear infinite;
+  display: block;
+}
+@keyframes aico-spin {
+  to { transform: rotate(360deg); }
+}
+
+.aico-products-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+  color: var(--aico-muted-fg);
+  font-size: 0.8125rem;
+}
+
+.aico-products-sentinel { height: 1px; width: 100%; }
 /* ───── Home ───── */
 /* Home page brand grid + footer link strip. Renders the full shop
    brand list (`aico_shop_brands`) — accessible tiles are full-saturation
