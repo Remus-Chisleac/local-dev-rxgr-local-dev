@@ -80,15 +80,61 @@
         <h2 id="aico-drawer-title" class="aico-sr-only">{{ 'nav.menu_title' | t }}</h2>
 
         <div class="aico-drawer-head">
-          <a href="{{ routes.root_url }}" class="aico-header-brand">
-            <span class="aico-header-brand-text">
-              {%- if customer.aico_selected_brand -%}
-                {{ customer.aico_selected_brand.label }}
-              {%- else -%}
-                {{ shop.name }}
-              {%- endif -%}
-            </span>
-          </a>
+          <div class="aico-drawer-head-main">
+            {% if aico_brands.size > 0 %}
+              <div class="aico-drawer-brand-picker aico-drawer-brand-picker--in-head">
+                <details class="aico-disclosure">
+                  <summary class="aico-disclosure-summary aico-drawer-brand-summary">
+                    <span class="aico-drawer-brand-label">
+                      {%- if customer.aico_selected_brand -%}
+                        {{ customer.aico_selected_brand.label }}
+                      {%- else -%}
+                        {{ 'nav.brand_choose' | t }}
+                      {%- endif -%}
+                    </span>
+                    <svg class="aico-icon aico-disclosure-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                  </summary>
+                  <ul class="aico-drawer-brand-list">
+                    {% for brand in aico_brands %}
+                      <li>
+                        <form method="post" action="{{ routes.aico_account_select_brand_url }}" class="aico-drawer-brand-row-form">
+                          <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+                          <input type="hidden" name="brand_id" value="{{ brand.id }}">
+                          <button type="submit" class="aico-drawer-row aico-drawer-brand-list-row">
+                            {% if brand.image_url %}
+                              <img src="{{ brand.image_url }}" alt="" class="aico-drawer-brand-thumb">
+                            {% else %}
+                              <span class="aico-drawer-brand-thumb aico-drawer-brand-thumb-empty" aria-hidden="true"></span>
+                            {% endif %}
+                            <span class="aico-drawer-row-label">{{ brand.label }}</span>
+                          </button>
+                        </form>
+                      </li>
+                    {% endfor %}
+                    <li>
+                      <a href="{{ routes.root_url }}" class="aico-drawer-row aico-drawer-brand-list-row aico-drawer-brand-overview-link">
+                        <span class="aico-drawer-row-icon">
+                          <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+                            <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+                            <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+                            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+                          </svg>
+                        </span>
+                        <span class="aico-drawer-row-label">{{ 'nav.brands_overview' | t }}</span>
+                      </a>
+                    </li>
+                  </ul>
+                </details>
+              </div>
+            {% else %}
+              <a href="{{ routes.root_url }}" class="aico-header-brand aico-drawer-head-brand-link" aria-label="{{ shop.name }}">
+                <span class="aico-header-brand-text">{{ shop.name }}</span>
+              </a>
+            {% endif %}
+          </div>
           <button type="button" class="aico-icon-button" data-aico-drawer-close aria-label="{{ 'nav.close_menu' | t }}">
             <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 6 6 18"></path>
@@ -98,45 +144,6 @@
         </div>
 
         <div class="aico-drawer-body">
-          {%- comment -%} ── Brand picker ── {%- endcomment -%}
-          {% if aico_brands.size > 0 %}
-            <p class="aico-drawer-eyebrow">{{ 'nav.current_brand' | t }}</p>
-            <div class="aico-drawer-brand-picker">
-              <details class="aico-disclosure">
-                <summary class="aico-disclosure-summary aico-drawer-brand-summary">
-                  <span class="aico-drawer-brand-label">
-                    {%- if customer.aico_selected_brand -%}
-                      {{ customer.aico_selected_brand.label }}
-                    {%- else -%}
-                      {{ 'nav.brand_choose' | t }}
-                    {%- endif -%}
-                  </span>
-                  <svg class="aico-icon aico-disclosure-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6"></path>
-                  </svg>
-                </summary>
-                <ul class="aico-drawer-brand-list">
-                  {% for brand in aico_brands %}
-                    <li>
-                      <form method="post" action="{{ routes.aico_account_select_brand_url }}" class="aico-drawer-brand-row-form">
-                        <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
-                        <input type="hidden" name="brand_id" value="{{ brand.id }}">
-                        <button type="submit" class="aico-drawer-row aico-drawer-row-zebra">
-                          {% if brand.image_url %}
-                            <img src="{{ brand.image_url }}" alt="" class="aico-drawer-brand-thumb">
-                          {% else %}
-                            <span class="aico-drawer-brand-thumb aico-drawer-brand-thumb-empty" aria-hidden="true"></span>
-                          {% endif %}
-                          <span class="aico-drawer-row-label">{{ brand.label }}</span>
-                        </button>
-                      </form>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </details>
-            </div>
-          {% endif %}
-
           {%- comment -%} ── Main nav ── {%- endcomment -%}
           <nav class="aico-drawer-nav" aria-label="{{ 'nav.menu_title' | t }}">
             {% if aico_shop_navigation.size > 0 %}
@@ -245,49 +252,47 @@
             </div>
           </details>
 
-          {%- comment -%} ── Profile (placeholder, links to /account) ── {%- endcomment -%}
-          <a href="{{ routes.account_url }}" class="aico-drawer-row aico-drawer-row-zebra">
-            <span class="aico-drawer-row-icon">
-              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </span>
-            <span class="aico-drawer-row-label">{{ 'nav.profile' | t }}</span>
-            <svg class="aico-icon aico-drawer-row-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="m9 18 6-6-6-6"></path>
-            </svg>
-          </a>
+          {%- comment -%} ── Profile + FAQ ── {%- endcomment -%}
+          <div class="aico-drawer-perm-split">
+            <a href="{{ routes.account_url }}" class="aico-drawer-perm-split-btn">
+              <span class="aico-drawer-row-icon">
+                <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <span class="aico-drawer-perm-split-label">{{ 'nav.profile' | t }}</span>
+            </a>
+            <a href="{{ routes.aico_faq_url }}" class="aico-drawer-perm-split-btn">
+              <span class="aico-drawer-row-icon">
+                <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <path d="M12 17h.01"></path>
+                </svg>
+              </span>
+              <span class="aico-drawer-perm-split-label">{{ 'nav.faq' | t }}</span>
+            </a>
+          </div>
 
-          {%- comment -%} ── Language pill ── {%- endcomment -%}
-          <div class="aico-drawer-row aico-drawer-row-zebra aico-drawer-row-locale">
-            <span class="aico-drawer-row-icon">
-              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 2a14.5 14.5 0 0 0 0 20"></path>
-                <path d="M12 2a14.5 14.5 0 0 1 0 20"></path>
-                <path d="M2 12h20"></path>
-              </svg>
-            </span>
-            <span class="aico-drawer-row-label">{{ 'nav.language' | t }}</span>
-            <span class="aico-locale-pill" role="group" aria-label="{{ 'nav.language' | t }}">
+          {%- comment -%} ── Logout + language (no label row) ── {%- endcomment -%}
+          <div class="aico-drawer-perm-footer">
+            <a href="{{ routes.account_logout_url }}" class="aico-drawer-perm-footer-logout">
+              <span class="aico-drawer-row-icon">
+                <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" x2="9" y1="12" y2="12"></line>
+                </svg>
+              </span>
+              <span>{{ 'nav.logout' | t }}</span>
+            </a>
+            <span class="aico-locale-pill aico-locale-pill--footer" role="group" aria-label="{{ 'nav.language' | t }}">
               {%- assign current_locale = request.locale | default: shop.default_locale -%}
               <a href="{{ 'en' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'en' %}aico-locale-pill-active{% endif %}" lang="en">EN</a>
               <a href="{{ 'de_CH' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'de_CH' %}aico-locale-pill-active{% endif %}" lang="de-CH">DE</a>
             </span>
           </div>
-
-          {%- comment -%} ── Logout ── {%- endcomment -%}
-          <a href="{{ routes.account_logout_url }}" class="aico-drawer-row aico-drawer-row-zebra aico-drawer-row-danger">
-            <span class="aico-drawer-row-icon">
-              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" x2="9" y1="12" y2="12"></line>
-              </svg>
-            </span>
-            <span class="aico-drawer-row-label">{{ 'nav.logout' | t }}</span>
-          </a>
 
           </div>{%- comment -%} /aico-drawer-permanent {%- endcomment -%}
         </div>

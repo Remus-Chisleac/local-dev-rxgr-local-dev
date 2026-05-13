@@ -582,6 +582,16 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex-shrink: 0;
 }
 
+.aico-drawer-head-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Shop title when brand picker isn't shown (no brands). */
+.aico-drawer-head-brand-link { max-width: 100%; }
+
 .aico-drawer-body {
   display: flex;
   flex-direction: column;
@@ -591,8 +601,58 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   scrollbar-gutter: stable;
 }
 
-/* Permanent rows pinned to the bottom: contact card + profile +
-   language pill + logout. Wrapped in `.aico-drawer-permanent` whose
+/* Brand picker in drawer header (replaces standalone brand title). */
+.aico-drawer-brand-picker--in-head {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.aico-drawer-brand-picker--in-head .aico-drawer-brand-summary {
+  margin-top: 0;
+}
+
+.aico-drawer-brand-picker--in-head .aico-drawer-brand-list {
+  left: 0;
+  right: 0;
+}
+
+.aico-drawer-brand-overview-link {
+  text-decoration: none;
+  color: var(--aico-fg);
+  font-weight: 500;
+}
+
+.aico-drawer-brand-overview-link:hover {
+  filter: brightness(0.97);
+}
+
+/* Dropdown rows — compact spacing, no scrolling; list grows with content. */
+.aico-drawer-brand-list-row {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  gap: 0.5rem;
+  min-height: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0;
+}
+
+.aico-drawer-brand-list-row .aico-drawer-brand-thumb {
+  width: 2rem;
+  height: 2rem;
+}
+
+.aico-drawer-brand-list > li:nth-child(odd) .aico-drawer-brand-list-row {
+  background: rgba(244, 244, 245, 0.55);
+}
+
+.aico-drawer-brand-list > li:nth-child(even) .aico-drawer-brand-list-row {
+  background: rgba(244, 244, 245, 0.3);
+}
+
+/* Permanent rows pinned to the bottom: contact card + profile/FAQ split +
+   logout with locale. Wrapped in `.aico-drawer-permanent` whose
    `margin-top: auto` pushes it below the dynamic nav scroll area. */
 .aico-drawer-permanent {
   margin-top: auto;
@@ -656,9 +716,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0.5rem;
   background: var(--aico-bg);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
-  overflow: hidden;
-  max-height: min(60vh, 22rem);
-  overflow-y: auto;
+  overflow: visible;
 }
 .aico-drawer-brand-row-form { margin: 0; padding: 0; }
 
@@ -758,6 +816,79 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: var(--aico-fg);
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   pointer-events: none;
+}
+
+.aico-locale-pill--footer {
+  flex-shrink: 0;
+  margin-left: 0;
+}
+
+/* Profile / FAQ split (two tap targets one row). */
+.aico-drawer-perm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-top: 1px solid var(--aico-border);
+  background: rgba(244, 244, 245, 0.5);
+}
+
+.aico-drawer-perm-split-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.875rem 0.625rem;
+  text-align: center;
+  text-decoration: none;
+  color: var(--aico-fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.aico-drawer-perm-split-btn:hover {
+  filter: brightness(0.97);
+}
+
+.aico-drawer-perm-split-btn:first-child {
+  border-right: 1px solid var(--aico-border);
+}
+
+.aico-drawer-perm-split-label {
+  line-height: 1.2;
+}
+
+/* Logout + locale on one row (no “Sprache” label). */
+.aico-drawer-perm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--aico-border);
+  background: rgba(244, 244, 245, 0.35);
+}
+
+.aico-drawer-perm-footer-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  color: #b91c1c;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.aico-drawer-perm-footer-logout:hover {
+  filter: brightness(0.98);
 }
 
 /* Account contact card (inside the contact disclosure). */
