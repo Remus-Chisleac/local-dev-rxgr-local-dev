@@ -1,0 +1,31 @@
+{% comment %}
+  product-price snippet — selling price, strikethrough compare-at,
+  discount badge, optional RRP line.
+
+  TODO follow-up: drop the inlined block in `templates/product.liquid`
+  once `{% render %}` resolves snippets.
+{% endcomment %}
+
+<div class="aico-pdp-price-block">
+  {% if product.aico_price_label %}
+    <p class="aico-pdp-price">
+      {% if product.aico_compare_at_price_label %}
+        <span class="aico-pdp-price-list">{{ product.aico_compare_at_price_label }}</span>
+      {% endif %}
+      <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
+      {% if product.aico_discount_percent %}
+        <span class="aico-pdp-discount">−{{ product.aico_discount_percent }}%</span>
+      {% endif %}
+    </p>
+    {% if product.aico_retail_price_label %}
+      <p class="aico-pdp-rrp">
+        <span class="aico-pdp-rrp-label">{{ 'product.rrp' | t }}</span>
+        <span class="aico-pdp-rrp-value">{{ product.aico_retail_price_label }}</span>
+      </p>
+    {% endif %}
+  {% else %}
+    <p class="aico-pdp-price aico-pdp-price-on-request">
+      {{ 'product.price_on_request' | t }}
+    </p>
+  {% endif %}
+</div>

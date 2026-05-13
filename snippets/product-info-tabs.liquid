@@ -1,0 +1,45 @@
+{% comment %}
+  product-info-tabs snippet — description + spec table + downloads.
+  Inlined by `templates/product.liquid`.
+{% endcomment %}
+
+<section class="aico-pdp-info-tabs" aria-label="{{ 'product.info_tabs_aria' | t }}">
+  {% if product.description %}
+    <article class="aico-pdp-info-block">
+      <h2 class="aico-pdp-section-heading">{{ 'product.about_product' | t }}</h2>
+      <div class="aico-pdp-info-prose">{{ product.description }}</div>
+    </article>
+  {% endif %}
+
+  {% if product.aico_specs.size > 0 %}
+    <article class="aico-pdp-info-block">
+      <h2 class="aico-pdp-section-heading">{{ 'product.specs' | t }}</h2>
+      <dl class="aico-pdp-specs">
+        {% for row in product.aico_specs %}
+          <div class="aico-pdp-specs-row">
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </article>
+  {% endif %}
+
+  {% if product.aico_files.size > 0 %}
+    <article class="aico-pdp-info-block">
+      <h2 class="aico-pdp-section-heading">{{ 'product.downloads' | t }}</h2>
+      <ul class="aico-pdp-files">
+        {% for file in product.aico_files %}
+          <li>
+            <a href="{{ file.url }}" target="_blank" rel="noopener noreferrer">
+              {{ file.name }}
+              {% if file.size_label %}
+                <span class="aico-pdp-files-size">{{ file.size_label }}</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </article>
+  {% endif %}
+</section>

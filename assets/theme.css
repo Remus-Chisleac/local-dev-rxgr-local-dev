@@ -1170,3 +1170,495 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 @media (min-width: 640px) {
   .aico-home-footer-link { font-size: 0.875rem; }
 }
+/* ───── PDP ───── */
+
+.aico-pdp-shell {
+  padding-top: 1.25rem;
+  padding-bottom: 4rem;
+}
+@media (min-width: 768px) { .aico-pdp-shell { padding-top: 1.75rem; padding-bottom: 5rem; } }
+
+.aico-pdp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--aico-border);
+  border-radius: 9999px;
+  color: var(--aico-muted-fg);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.aico-pdp-back:hover { background: var(--aico-muted); color: var(--aico-fg); border-color: var(--aico-muted-strong); }
+
+.aico-pdp-hero {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .aico-pdp-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+}
+
+/* ── Gallery ── */
+.aico-pdp-gallery { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.aico-pdp-gallery-frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  background: var(--aico-bg);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.aico-pdp-gallery-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.aico-pdp-gallery-slide-active { opacity: 1; pointer-events: auto; }
+.aico-pdp-gallery-slide img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.aico-pdp-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--aico-border);
+  border-radius: 9999px;
+  color: var(--aico-fg);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.aico-pdp-gallery-nav:hover { background: var(--aico-bg); }
+.aico-pdp-gallery-nav-prev { left: 0.5rem; }
+.aico-pdp-gallery-nav-next { right: 0.5rem; }
+.aico-pdp-gallery-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.aico-pdp-gallery-thumb {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 2px solid transparent;
+  background: var(--aico-bg);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.aico-pdp-gallery-thumb img {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+}
+.aico-pdp-gallery-thumb:hover { opacity: 1; }
+.aico-pdp-gallery-thumb-active {
+  border-color: var(--color-accent);
+  opacity: 1;
+}
+.aico-pdp-gallery-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  background: var(--aico-muted);
+  color: var(--aico-muted-fg);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.75rem;
+}
+
+/* ── Info column ── */
+.aico-pdp-info { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.aico-pdp-header { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-pdp-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.aico-pdp-title {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--aico-fg);
+}
+@media (min-width: 768px) { .aico-pdp-title { font-size: 1.875rem; } }
+.aico-pdp-header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+.aico-pdp-sku {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-pdp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-muted);
+  color: var(--aico-muted-fg);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.aico-pdp-brand { margin: 0; font-size: 0.875rem; color: var(--aico-muted-fg); }
+.aico-pdp-brand a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+.aico-pdp-brand a:hover { color: var(--aico-fg); border-color: var(--aico-border); }
+
+.aico-pdp-small-description {
+  margin: 0;
+  color: var(--aico-muted-fg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* ── Price block ── */
+.aico-pdp-price-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.aico-pdp-price {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.aico-pdp-price-current {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+.aico-pdp-price-list {
+  color: var(--aico-muted-fg);
+  text-decoration: line-through;
+  font-weight: 500;
+  font-size: 1rem;
+}
+.aico-pdp-discount {
+  background: rgba(185, 28, 28, 0.15);
+  color: #b91c1c;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.aico-pdp-rrp {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-pdp-rrp-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.aico-pdp-rrp-value { font-variant-numeric: tabular-nums; }
+.aico-pdp-price-on-request {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--aico-muted-fg);
+}
+
+/* ── Buy panel ── */
+.aico-pdp-buy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--aico-border);
+}
+
+.aico-pdp-option-group { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-pdp-option-legend {
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+}
+.aico-pdp-option-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.aico-pdp-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-bg);
+  color: var(--aico-muted-fg);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+.aico-pdp-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.aico-pdp-chip:hover { border-color: var(--color-accent); }
+.aico-pdp-chip:has(input:checked) {
+  border-color: var(--color-accent);
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--aico-fg);
+}
+
+.aico-pdp-option-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.aico-pdp-select,
+.aico-pdp-qty-input {
+  height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.5rem;
+  background: var(--aico-bg);
+  font-size: 0.875rem;
+  color: var(--aico-fg);
+  max-width: 12rem;
+}
+
+/* ── Size matrix ── */
+.aico-pdp-size-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.aico-pdp-size-matrix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.aico-pdp-section-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+.aico-pdp-size-region {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--aico-muted-fg);
+}
+.aico-pdp-size-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: 0.5rem;
+}
+.aico-pdp-size-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.75rem;
+  background: var(--aico-bg);
+  cursor: text;
+}
+.aico-pdp-size-cell-label {
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+  font-variant-numeric: tabular-nums;
+}
+.aico-pdp-size-cell-input {
+  width: 100%;
+  height: 2rem;
+  padding: 0 0.375rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-bg);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--aico-fg);
+}
+.aico-pdp-size-cell-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+.aico-pdp-size-cell-stock {
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--aico-muted-fg);
+  font-variant-numeric: tabular-nums;
+}
+.aico-pdp-size-cell-out {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.aico-pdp-size-cell-out .aico-pdp-size-cell-input { background: var(--aico-muted); }
+
+.aico-pdp-size-total {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--aico-muted-fg);
+}
+.aico-pdp-size-total strong {
+  margin-left: 0.25rem;
+  color: var(--aico-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Buy actions ── */
+.aico-pdp-buy-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+}
+.aico-pdp-buy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 3rem;
+  padding: 0 1rem;
+  background: var(--color-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.aico-pdp-buy-button:hover:not([disabled]) { filter: brightness(0.95); }
+.aico-pdp-buy-button[disabled] { opacity: 0.6; cursor: not-allowed; }
+.aico-pdp-buy-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--aico-muted-fg); }
+.aico-pdp-buy-hint-danger { color: #b91c1c; }
+.aico-pdp-buy-hint-info { color: var(--aico-fg); }
+
+/* ── Stock indicator dot ── */
+.aico-pdp-stock-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-pdp-stock-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--aico-muted-strong);
+}
+.aico-pdp-stock-dot-ok { background: #16a34a; }
+.aico-pdp-stock-dot-low { background: #eab308; }
+.aico-pdp-stock-dot-out { background: #b91c1c; }
+
+/* ── Info tabs ── */
+.aico-pdp-info-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--aico-border);
+}
+.aico-pdp-info-block { display: flex; flex-direction: column; gap: 0.625rem; }
+.aico-pdp-info-prose {
+  color: var(--aico-fg);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.aico-pdp-info-prose p { margin: 0 0 0.75rem; }
+.aico-pdp-info-prose p:last-child { margin-bottom: 0; }
+
+.aico-pdp-specs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+  margin: 0;
+}
+@media (min-width: 640px) { .aico-pdp-specs { grid-template-columns: 12rem 1fr; gap: 0.25rem 1rem; } }
+.aico-pdp-specs-row { display: contents; }
+.aico-pdp-specs dt {
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.aico-pdp-specs dd { margin: 0; font-size: 0.9375rem; color: var(--aico-fg); }
+
+.aico-pdp-files {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.aico-pdp-files a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.aico-pdp-files a:hover { text-decoration: underline; }
+.aico-pdp-files-size { font-size: 0.75rem; color: var(--aico-muted-fg); }
+
+/* ── Related strip ── */
+.aico-pdp-related {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--aico-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.aico-pdp-related-grid {
+  /* Tighter than the main listing grid; 4 cards max. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 768px) { .aico-pdp-related-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

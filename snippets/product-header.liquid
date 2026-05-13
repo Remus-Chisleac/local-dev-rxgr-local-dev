@@ -1,0 +1,26 @@
+{% comment %}
+  product-header snippet — title + SKU + production-status pill.
+  Mirrors aico-commerce's `ProductDetailHeader`. Today inlined by
+  `templates/product.liquid` because the renderer's filesystem is
+  BlankFileSystem. Keep the two in sync until snippet rendering lands.
+{% endcomment %}
+
+<header class="aico-pdp-header">
+  <div class="aico-pdp-header-row">
+    <h1 class="aico-pdp-title">{{ product.title }}</h1>
+    <div class="aico-pdp-header-meta">
+      {% if product.sku %}
+        <span class="aico-pdp-sku" aria-label="{{ 'product.sku_aria' | t }}">{{ product.sku }}</span>
+      {% endif %}
+      {% if product.aico_production_status_label %}
+        <span class="aico-pdp-status-pill">{{ product.aico_production_status_label }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if product.aico_brand %}
+    <p class="aico-pdp-brand">
+      <a href="{{ product.aico_brand.url }}">{{ product.aico_brand.label }}</a>
+    </p>
+  {% endif %}
+</header>

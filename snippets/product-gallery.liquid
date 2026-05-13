@@ -1,0 +1,44 @@
+{% comment %}
+  product-gallery snippet — main image + thumb strip + prev/next.
+  Per Shopify convention, a snippet receives its arguments through the
+  `product` variable already in scope at the call site (`{% render
+  'product-gallery', product: product %}`).
+
+  Today this file is not yet picked up by the renderer (the active
+  Liquid environment uses `BlankFileSystem`, so `{% render %}` is a
+  no-op). The PDP template inlines the same markup until the
+  snippet-resolving filesystem lands. Keep both in sync.
+
+  TODO follow-up: when snippet rendering ships, delete the inlined
+  block in `templates/product.liquid` and replace it with
+  `{% render 'product-gallery', product: product %}`.
+{% endcomment %}
+
+<section class="aico-pdp-gallery" data-aico-pdp-gallery aria-label="{{ 'product.gallery.aria' | t }}">
+  {% if product.images.size > 0 %}
+    <div class="aico-pdp-gallery-frame">
+      {% for image in product.images %}
+        <figure class="aico-pdp-gallery-slide{% if forloop.first %} aico-pdp-gallery-slide-active{% endif %}" data-aico-gallery-slide data-aico-gallery-index="{{ forloop.index0 }}">
+          <img src="{{ image }}" alt="{{ product.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async">
+        </figure>
+      {% endfor %}
+
+      {% if product.images.size > 1 %}
+        <button type="button" class="aico-pdp-gallery-nav aico-pdp-gallery-nav-prev" data-aico-gallery-prev aria-label="{{ 'product.gallery.previous' | t }}">‹</button>
+        <button type="button" class="aico-pdp-gallery-nav aico-pdp-gallery-nav-next" data-aico-gallery-next aria-label="{{ 'product.gallery.next' | t }}">›</button>
+      {% endif %}
+    </div>
+
+    {% if product.images.size > 1 %}
+      <div class="aico-pdp-gallery-thumbs" role="tablist">
+        {% for image in product.images %}
+          <button type="button" class="aico-pdp-gallery-thumb{% if forloop.first %} aico-pdp-gallery-thumb-active{% endif %}" data-aico-gallery-thumb data-aico-gallery-index="{{ forloop.index0 }}" aria-label="{{ 'product.gallery.thumb_aria' | t }}">
+            <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="aico-pdp-gallery-empty" role="img" aria-label="{{ 'product.gallery.no_image' | t }}"></div>
+  {% endif %}
+</section>

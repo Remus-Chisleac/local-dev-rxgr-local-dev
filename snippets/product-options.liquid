@@ -1,0 +1,36 @@
+{% comment %}
+  product-options snippet — non-size option chips (matrix mode) or
+  legacy dropdowns. Picked by the parent buy-panel based on
+  `product.aico_has_size_matrix?`. Inlined by `templates/product.liquid`
+  for now (see `product.liquid` header comment).
+{% endcomment %}
+
+{% if product.aico_has_size_matrix? %}
+  {% for option in product.options %}
+    {% if option.name != product.aico_size_option_name %}
+      <fieldset class="aico-pdp-option-group" data-aico-option="{{ option.name | escape }}">
+        <legend class="aico-pdp-option-legend">{{ option.name }}</legend>
+        <div class="aico-pdp-option-chips">
+          {% for value in option.values %}
+            <label class="aico-pdp-chip">
+              <input type="radio" name="options[{{ option.name | escape }}]" value="{{ value | escape }}" {% if forloop.first %}checked{% endif %} data-aico-option-input>
+              <span class="aico-pdp-chip-label">{{ value }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    {% endif %}
+  {% endfor %}
+{% else %}
+  {% for option in product.options %}
+    <label class="aico-pdp-option-row">
+      <span class="aico-pdp-option-legend">{{ option.name }}</span>
+      <select name="options[{{ option.name | escape }}]" data-aico-option-input class="aico-pdp-select">
+        <option value="">{{ 'product.choose' | t }}</option>
+        {% for value in option.values %}
+          <option value="{{ value | escape }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  {% endfor %}
+{% endif %}

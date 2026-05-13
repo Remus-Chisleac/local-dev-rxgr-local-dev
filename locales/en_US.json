@@ -50,7 +50,52 @@
     "discontinued": "Discontinued",
     "previous": "Previous",
     "next": "Next",
-    "pagination_aria": "Products pagination"
+    "pagination_aria": "Products pagination",
+    "product": {
+      "add_to_cart": "Add to cart"
+    }
+  },
+  "product": {
+    "back_to_products": "Back to products",
+    "sku_aria": "SKU",
+    "rrp": "RRP",
+    "price_on_request": "Price on request",
+    "quantity": "Quantity",
+    "choose": "Choose…",
+    "add_to_cart": "Add to cart",
+    "restricted": "Restricted",
+    "shipping_blocked_hint": "Shipping is blocked for your account — you cannot add items to the cart.",
+    "info_tabs_aria": "Product information",
+    "about_product": "About this product",
+    "specs": "Specifications",
+    "downloads": "Downloads",
+    "you_may_also_like": "You may also like",
+    "stock": {
+      "in_stock": "In stock",
+      "low": "Low stock",
+      "out": "Out of stock"
+    },
+    "gallery": {
+      "aria": "Product images",
+      "previous": "Previous image",
+      "next": "Next image",
+      "thumb_aria": "Show this image",
+      "no_image": "No image available"
+    },
+    "size_matrix": {
+      "aria": "Size matrix",
+      "qty_aria": "Quantity for this size",
+      "total": "Total"
+    },
+    "size_region": {
+      "eu": "EU"
+    },
+    "aico_pdp_message": {
+      "items_saved": "Items saved to cart.",
+      "not_implemented": "Add-to-cart is not connected yet.",
+      "select_quantity": "Select at least one size first.",
+      "error": "Could not add to cart."
+    }
   },
   "customer": {
     "header": {
