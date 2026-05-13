@@ -1795,6 +1795,17 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   max-width: 26rem;
 }
 
+.aico-brand-unknown-banner {
+  margin: 0.875rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  max-width: 26rem;
+}
+
 .aico-brand-hero-side {
   justify-self: end;
   width: min(100%, 14rem);

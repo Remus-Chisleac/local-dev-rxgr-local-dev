@@ -3,7 +3,9 @@
 
   Real catalog content (carousel CMS, campaigns, facets) arrives in follow-up slices.
   This template ships deterministic skeleton shapes so merchants can preview layout
-  and every known shop-brand handle resolves without a 404.
+  Themes built before `brand.liquid` was added still render: the PHP renderer
+  falls back to the module scaffold copy. Unknown PIM slugs synthesize a labelled
+  placeholder drop so the layout is always visible.
 {% endcomment %}
 
 <main class="aico-brand-page" role="main" aria-label="{{ 'brand_page.aria_main' | t }}">
@@ -19,7 +21,10 @@
         <h1 id="aico-brand-hero-heading" class="aico-brand-hero-heading">{{ aico_brand.label }}</h1>
         <p class="aico-brand-hero-sub">{{ 'brand_page.hero_sub_skeleton' | t }}</p>
 
-        {% if aico_brand.aico_is_accessible? %}
+        {% if aico_brand.aico_placeholder? %}
+          <span class="aico-brand-hero-cta aico-brand-hero-cta-disabled">{{ 'brand_page.hero_cta' | t }}</span>
+          <p class="aico-brand-unknown-banner" role="status">{{ 'brand_page.unknown_brand_notice' | t }}</p>
+        {% elsif aico_brand.aico_is_accessible? %}
           <a href="{{ routes.products_url }}" class="aico-brand-hero-cta">{{ 'brand_page.hero_cta' | t }}</a>
         {% else %}
           <span class="aico-brand-hero-cta aico-brand-hero-cta-disabled">{{ 'brand_page.hero_cta' | t }}</span>

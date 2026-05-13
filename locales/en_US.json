@@ -15,6 +15,7 @@
   "brand_page": {
     "aria_main": "Brand storefront",
     "restricted_notice": "Your account does not include this brand. Pick another brand from the overview or contact your sales contact.",
+    "unknown_brand_notice": "Layout preview — this slug is not linked to any brand on your shop yet. Align the URL with the brand’s PIM url handle or rebuild the theme so it includes templates/brand.liquid.",
     "hero_sub_skeleton": "Subtitle",
     "hero_cta": "View products",
     "hero_carousel_aria": "Hero carousel",

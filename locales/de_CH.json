@@ -15,6 +15,7 @@
   "brand_page": {
     "aria_main": "Marken-Shop",
     "restricted_notice": "Sie haben keinen Zugriff auf diese Marke. Wählen Sie eine andere Marke in der Übersicht oder wenden Sie sich an Ihren Ansprechpartner.",
+    "unknown_brand_notice": "Layout-Vorschau — dieser Slug ist noch keiner Marke Ihres Shops zugeordnet. Passen Sie die URL an den PIM-URL-Handle an oder binden Sie templates/brand.liquid in Ihr Theme ein.",
     "hero_sub_skeleton": "Untertitel",
     "hero_cta": "Überprüfen",
     "hero_carousel_aria": "Hero-Karussell",
