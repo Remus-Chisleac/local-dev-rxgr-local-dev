@@ -144,6 +144,7 @@
         </div>
 
         <div class="aico-drawer-body">
+          <div class="aico-drawer-body-scroll">
           {%- comment -%} ── Main nav ── {%- endcomment -%}
           <nav class="aico-drawer-nav" aria-label="{{ 'nav.menu_title' | t }}">
             {% if aico_shop_navigation.size > 0 %}
@@ -189,8 +190,9 @@
               </a>
             {% endif %}
           </nav>
+          </div>
 
-          {%- comment -%} ── Permanent rows (pinned to bottom) ── {%- endcomment -%}
+          {%- comment -%} ── Permanent rows (pinned below scroll; always visible) ── {%- endcomment -%}
           <div class="aico-drawer-permanent">
 
           {%- comment -%} ── Account contact ── {%- endcomment -%}

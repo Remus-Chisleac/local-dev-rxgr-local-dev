@@ -72,26 +72,58 @@
 
   // -------- Size region tabs --------------------------------------------
   //
-  // The visible label inside each size cell is the canonical EU value
-  // server-rendered out of the PIM size facet. The size-region tab swap
-  // is visual-only today — when the conversion endpoint lands, the
-  // controller will read `data-aico-size-cell-label-<region>` off each
-  // cell and replace the label without touching the variant binding.
+  // Each matrix cell carries `data-aico-label-{eu|uk|us|mm}` from
+  // `ProductSizeRegionLabelService` — API `sizeCharts` when present,
+  // otherwise Core shoe JSON (`core.*_shoes_size_chart`), matching
+  // aico-commerce `getEffectiveSizeCharts` / `getSizeDisplayValueByRegion`.
 
   (function setupSizeRegionTabs() {
+    var matrix = document.querySelector('[data-aico-size-matrix]');
     var tabs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-region]'));
-    if (tabs.length === 0) {
+    if (tabs.length === 0 || matrix == null) {
       return;
     }
+
+    var regionToAttr = {
+      EU: 'data-aico-label-eu',
+      UK: 'data-aico-label-uk',
+      US: 'data-aico-label-us',
+      MM: 'data-aico-label-mm'
+    };
+
+    function applyRegion(region) {
+      var attr = regionToAttr[region];
+      if (!attr) {
+        return;
+      }
+      Array.prototype.forEach.call(matrix.querySelectorAll('[data-aico-size-label]'), function (span) {
+        var next = span.getAttribute(attr);
+        if (next != null && next !== '') {
+          span.textContent = next;
+        }
+      });
+    }
+
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
+        var region = tab.getAttribute('data-region');
+        if (!region) {
+          return;
+        }
         tabs.forEach(function (other) {
           var on = other === tab;
           other.classList.toggle('aico-pdp-size-region-tab-active', on);
           other.setAttribute('aria-selected', on ? 'true' : 'false');
         });
+        applyRegion(region);
       });
     });
+
+    var initial = tabs.filter(function (node) {
+      return node.classList.contains('aico-pdp-size-region-tab-active');
+    })[0];
+    var startRegion = initial && initial.getAttribute('data-region') ? initial.getAttribute('data-region') : 'EU';
+    applyRegion(startRegion);
   })();
 
   // -------- Option chips / legacy variant resolution ---------------------

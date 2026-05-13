@@ -191,15 +191,7 @@
             <section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
               <div class="aico-pdp-size-matrix-head">
                 <h2 class="aico-pdp-section-heading">{{ product.aico_size_option_name }}</h2>
-                {%- comment -%}
-                  Size-region tabs. The visible-label swap is JS-only —
-                  conversion tables aren't yet wired so the cells still
-                  show the canonical EU value. When the conversion
-                  endpoint lands, the JS controller reads
-                  `data-aico-size-cell-label-<region>` off each cell and
-                  swaps the visible label without touching the variant
-                  binding.
-                {%- endcomment -%}
+                {%- comment -%} Size tabs — labels per cell resolved via `ProductSizeRegionLabelService` (API `sizeCharts` or Core shoe JSON); `product-detail.js` swaps `[data-aico-size-label]`. {%- endcomment -%}
                 <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-size-region-tabs>
                   {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
                   {% for region in size_regions %}
@@ -209,8 +201,20 @@
                       class="aico-pdp-size-region-tab{% if forloop.first %} aico-pdp-size-region-tab-active{% endif %}"
                       aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
                       data-aico-size-region
-                      data-region="{{ region }}">
-                      {{ region }}
+                      data-region="{{ region }}"
+                    >
+                      {% case region %}
+                        {% when 'EU' %}
+                          {{ 'product.size_region.tab_eu' | t }}
+                        {% when 'UK' %}
+                          {{ 'product.size_region.tab_uk' | t }}
+                        {% when 'US' %}
+                          {{ 'product.size_region.tab_us' | t }}
+                        {% when 'MM' %}
+                          {{ 'product.size_region.tab_mm' | t }}
+                        {% else %}
+                          {{ region }}
+                      {% endcase %}
                     </button>
                   {% endfor %}
                 </div>
@@ -223,7 +227,14 @@
                       class="aico-pdp-size-cell{% if variant.available? and variant.aico_stock_amount > 0 %} aico-pdp-size-cell-in-stock{% elsif variant.available? %} aico-pdp-size-cell-available{% else %} aico-pdp-size-cell-out{% endif %}"
                       data-aico-size-cell
                     >
-                      <span class="aico-pdp-size-cell-label">{{ variant.aico_size_value }}</span>
+                      <span
+                        class="aico-pdp-size-cell-label"
+                        data-aico-size-label
+                        data-aico-label-eu="{{ variant.aico_size_label_eu | default: variant.aico_size_value | escape }}"
+                        data-aico-label-uk="{{ variant.aico_size_label_uk | default: variant.aico_size_value | escape }}"
+                        data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
+                        data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
+                      >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
                       <input
                         type="number"
                         class="aico-pdp-size-cell-input"

@@ -597,6 +597,14 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
+}
+
+/* Scrolls only the nav list; keeps footer / permanent block out of the
+   gutter so `scrollbar-gutter` does not indent the contact + actions. */
+.aico-drawer-body-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -651,11 +659,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: rgba(244, 244, 245, 0.3);
 }
 
-/* Permanent rows pinned to the bottom: contact card + profile/FAQ split +
-   logout with locale. Wrapped in `.aico-drawer-permanent` whose
-   `margin-top: auto` pushes it below the dynamic nav scroll area. */
+/* Permanent rows below the nav scroll: contact + profile/FAQ + logout. */
 .aico-drawer-permanent {
-  margin-top: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   border-top: 1px solid var(--aico-border);

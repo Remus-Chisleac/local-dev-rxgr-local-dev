@@ -146,6 +146,45 @@
     }
   }
 
+  // Accordion behaviour for drawer nav `<details>`: at each nesting level only
+  // one `.aico-drawer-nav-group` stays open among siblings; closing a branch
+  // collapses all nested open groups underneath it. (Brand picker + contact
+  // disclosure are not `.aico-drawer-nav-group` and stay native.)
+  var drawerNav = drawer.querySelector('.aico-drawer-nav');
+  if (drawerNav) {
+    var navGroupSel = '.aico-drawer-nav-group';
+
+    drawerNav.addEventListener('toggle', function (event) {
+      var details = event.target;
+      if (!(details instanceof HTMLDetailsElement)) {
+        return;
+      }
+      if (!details.matches(navGroupSel)) {
+        return;
+      }
+
+      if (!details.open) {
+        details.querySelectorAll('.aico-drawer-nav-children ' + navGroupSel).forEach(function (nested) {
+          nested.open = false;
+        });
+        return;
+      }
+
+      var parent = details.parentElement;
+      if (!parent) {
+        return;
+      }
+      var sibling = parent.firstElementChild;
+      while (sibling) {
+        var next = sibling.nextElementSibling;
+        if (sibling !== details && sibling instanceof HTMLDetailsElement && sibling.matches(navGroupSel)) {
+          sibling.open = false;
+        }
+        sibling = next;
+      }
+    });
+  }
+
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
       close();

@@ -146,7 +146,11 @@
     },
     "size_region": {
       "eu": "EU",
-      "aria": "Size region"
+      "aria": "Size region",
+      "tab_eu": "EU",
+      "tab_uk": "UK",
+      "tab_us": "US",
+      "tab_mm": "MM (KR)"
     },
     "more_colors": "More colors",
     "reviews": {
