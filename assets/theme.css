@@ -2,7 +2,7 @@
   --color-bg: #fafafa;
   --color-text: #1a1a1a;
   --color-accent: #2563eb;
-  --max-width: 80rem;
+  --max-width: 81.25rem; /* 1300px */
 
   /* Tokens used by the storefront chrome and skeletons. Names mirror
      shadcn semantic tokens (background/foreground/muted/border/etc.)
@@ -389,36 +389,17 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
   background: var(--aico-muted);
   border-top: 1px solid var(--aico-border);
   color: var(--aico-muted-fg);
-}
-.aico-footer-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-block: 1.5rem;
   font-size: 0.875rem;
 }
-@media (min-width: 768px) {
-  .aico-footer-inner {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    padding-block: 2rem;
-  }
-}
-
-.aico-footer-meta { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
-.aico-footer-shop-name { margin: 0; font-weight: 600; color: var(--aico-fg); }
-.aico-footer-tagline { margin: 0; }
-
-.aico-footer-nav { min-width: 0; }
+.aico-footer-nav { padding-block: 1.25rem; }
 .aico-footer-link-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
 }
 .aico-footer-link {
   color: inherit;
@@ -430,9 +411,6 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
   outline-offset: 2px;
   border-radius: 2px;
 }
-
-.aico-footer-copy { margin: 0; }
-@media (min-width: 768px) { .aico-footer-copy { text-align: right; } }
 
 /* ---------------------------------------------------------------- */
 /* Auth shell (login + recover password)                            */
