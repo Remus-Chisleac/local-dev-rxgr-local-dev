@@ -6,5 +6,16 @@
       { "title": "Products", "url": "/products" },
       { "title": "Contact", "url": "/pages/contact" }
     ]
+  },
+  "footer": {
+    "title": "Footer",
+    "_comment": "TODO: real URLs land once /pages CMS exposes these. Placeholder hrefs render visually but resolve to /pages/* slugs that may 404 until content lands.",
+    "links": [
+      { "title_key": "home_page.footer.shipping_costs", "url": "/pages/versandkosten" },
+      { "title_key": "home_page.footer.terms", "url": "/pages/agb" },
+      { "title_key": "home_page.footer.contact", "url": "/pages/kontakt" },
+      { "title_key": "home_page.footer.privacy", "url": "/pages/datenschutz" },
+      { "title_key": "home_page.footer.imprint", "url": "/pages/impressum" }
+    ]
   }
 }

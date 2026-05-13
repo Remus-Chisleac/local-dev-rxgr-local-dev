@@ -990,3 +990,183 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   height: 2.25rem;
   color: var(--aico-muted-fg);
 }
+
+/* ───── Home ───── */
+/* Home page brand grid + footer link strip. Renders the full shop
+   brand list (`aico_shop_brands`) — accessible tiles are full-saturation
+   links, inaccessible tiles are desaturated divs (no link wrap) with a
+   not-allowed cursor. Mirrors the b2b-shop `BrandCardSection` UX. */
+
+.aico-home-brands-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: rgba(244, 244, 245, 0.4);
+}
+
+.aico-home-brand-section {
+  padding: 2rem 1rem 2.5rem;
+}
+@media (min-width: 640px) {
+  .aico-home-brand-section { padding: 2.5rem 1.25rem 3rem; }
+}
+
+.aico-home-brand-heading {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--aico-fg);
+}
+@media (min-width: 768px) {
+  .aico-home-brand-heading { font-size: 1.5rem; margin-bottom: 2rem; }
+}
+
+.aico-home-brand-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .aico-home-brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+}
+@media (min-width: 1024px) {
+  .aico-home-brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+}
+
+.aico-home-brand-grid-item { min-width: 0; }
+
+.aico-home-brand-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease-out, transform 0.2s ease-out;
+}
+.aico-home-brand-card-accessible {
+  cursor: pointer;
+}
+.aico-home-brand-card-accessible:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.aico-home-brand-card-accessible:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.aico-home-brand-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  filter: grayscale(1);
+  /* Belt-and-braces: pointer-events: none on the image area only,
+     keeps the tile readable by screen readers via the title attribute
+     while suppressing accidental drag/select. */
+}
+.aico-home-brand-card-disabled .aico-home-brand-card-image {
+  pointer-events: none;
+}
+
+.aico-home-brand-card-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: var(--aico-muted);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 768px) {
+  .aico-home-brand-card-image-wrap { aspect-ratio: 5 / 6; }
+}
+
+.aico-home-brand-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.aico-home-brand-card-image-empty {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,0,0,0.04), rgba(0,0,0,0.08));
+}
+
+.aico-home-brand-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1rem;
+  background: var(--aico-bg);
+  border-top: 1px solid var(--aico-border);
+  min-height: 3rem;
+}
+.aico-home-brand-card-label {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+  letter-spacing: -0.005em;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.aico-home-brand-empty {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.75rem;
+  color: var(--aico-muted-fg);
+}
+
+/* Footer link strip — sits under the brand grid, centered, comfortable
+   spacing. Matches the mockup's inline-link variant rather than the
+   drawer's heavier footer. */
+.aico-home-footer {
+  margin-top: auto;
+  padding: 1.5rem 1rem 2rem;
+  background: var(--aico-bg);
+  border-top: 1px solid var(--aico-border);
+}
+.aico-home-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.aico-home-footer-link {
+  color: var(--aico-muted-fg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.aico-home-footer-link:hover {
+  color: var(--aico-fg);
+  text-decoration: underline;
+}
+@media (min-width: 640px) {
+  .aico-home-footer-link { font-size: 0.875rem; }
+}

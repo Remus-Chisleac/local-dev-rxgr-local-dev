@@ -31,7 +31,17 @@
   "home_page": {
     "loading_status": "Loading shop content…",
     "popular_models": "Popular models",
-    "news": "News"
+    "news": "News",
+    "choose_brand": "Choose your brand",
+    "no_brands": "No brands are available for this shop yet.",
+    "brand_inaccessible": "You don't have access to this brand.",
+    "footer": {
+      "shipping_costs": "Shipping costs",
+      "terms": "Terms & conditions",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "imprint": "Imprint"
+    }
   },
   "products": {
     "title": "Products",
