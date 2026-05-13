@@ -6,7 +6,8 @@
     }
   },
   "footer": {
-    "tagline": "Powered by Aico Storefront"
+    "tagline": "Powered by Aico Storefront",
+    "menu_aria": "Footer menu"
   },
   "errors": {
     "not_found": "We couldn't find that page.",

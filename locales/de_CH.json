@@ -6,7 +6,8 @@
     }
   },
   "footer": {
-    "tagline": "Mit Aico Storefront betrieben"
+    "tagline": "Mit Aico Storefront betrieben",
+    "menu_aria": "Fusszeile-Menü"
   },
   "errors": {
     "not_found": "Diese Seite wurde nicht gefunden.",

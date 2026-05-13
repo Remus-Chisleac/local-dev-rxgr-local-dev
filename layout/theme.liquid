@@ -73,6 +73,41 @@
       {{ content_for_layout }}
     </div>
 
+    <footer class="aico-footer" role="contentinfo">
+      <div class="aico-page-container aico-footer-inner">
+        <div class="aico-footer-meta">
+          <p class="aico-footer-shop-name">
+            {%- if customer.aico_selected_brand -%}
+              {{ customer.aico_selected_brand.label }}
+            {%- else -%}
+              {{ shop.name }}
+            {%- endif -%}
+          </p>
+          <p class="aico-footer-tagline">{{ 'footer.tagline' | t }}</p>
+        </div>
+
+        {% if linklists.footer.links.size > 0 %}
+          <nav class="aico-footer-nav" aria-label="{{ 'footer.menu_aria' | t }}">
+            <ul class="aico-footer-link-list">
+              {% for link in linklists.footer.links %}
+                <li>
+                  <a href="{{ link.url }}" class="aico-footer-link">
+                    {%- if link.title_key -%}
+                      {{ link.title_key | t }}
+                    {%- else -%}
+                      {{ link.title }}
+                    {%- endif -%}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        {% endif %}
+
+        <p class="aico-footer-copy">© {{ 'now' | date: '%Y' }} {{ shop.name }}</p>
+      </div>
+    </footer>
+
     {% comment %} Right-side drawer. Hidden by default; theme.js toggles it. {% endcomment %}
     <div id="aico-drawer" class="aico-drawer" data-aico-drawer hidden>
       <div class="aico-drawer-backdrop" data-aico-drawer-close></div>

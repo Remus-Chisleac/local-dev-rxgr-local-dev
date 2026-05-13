@@ -42,6 +42,18 @@ body {
   line-height: 1.5;
 }
 
+/* Non-auth pages: stack chrome → content → footer in a column so the
+   footer sticks to the bottom of short pages instead of floating up
+   into the middle of the viewport. Auth pages keep their own full-bleed
+   shell (see .aico-template-customers / .aico-auth-main below). */
+body:not(.aico-template-customers) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
+
 .aico-sr-only {
   position: absolute;
   width: 1px;
@@ -206,14 +218,14 @@ body {
   grid-template-columns: 1fr;
   align-items: center;
   gap: 2rem;
-  padding: 2rem 0;
+  padding-block: 2rem;
   min-height: min(52vh, 26rem);
 }
 @media (min-width: 768px) {
   .aico-home-hero-inner {
     grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
-    padding: 3rem 0;
+    padding-block: 3rem;
     min-height: 18rem;
   }
 }
@@ -252,14 +264,13 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  padding: 1rem 0;
+  padding-block: 1rem;
 }
-@media (min-width: 768px) {
-  .aico-home-categories {
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    padding: 1.5rem 0;
-  }
+@media (min-width: 640px) {
+  .aico-home-categories { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+}
+@media (min-width: 1024px) {
+  .aico-home-categories { grid-template-columns: repeat(3, 1fr); padding-block: 1.5rem; }
 }
 .aico-home-category-card {
   position: relative;
@@ -283,9 +294,9 @@ body {
 
 .aico-home-products {
   border-top: 1px solid var(--aico-border);
-  padding: 2.5rem 0;
+  padding-block: 2.5rem;
 }
-@media (min-width: 640px) { .aico-home-products { padding: 3rem 0; } }
+@media (min-width: 640px) { .aico-home-products { padding-block: 3rem; } }
 .aico-home-products-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -368,6 +379,60 @@ body {
 .aico-home-news-line-2 { margin-top: 0.5rem; max-width: 85%; background: rgba(0,0,0,0.06); }
 .aico-home-news-line-3 { margin-top: 0.375rem; max-width: 60%; background: rgba(0,0,0,0.05); display: none; }
 @media (min-width: 640px) { .aico-home-news-line-3 { display: block; } }
+
+/* ---------------------------------------------------------------- */
+/* Site footer (shared layout, non-auth pages)                       */
+/* ---------------------------------------------------------------- */
+
+.aico-footer {
+  margin-top: auto;
+  background: var(--aico-muted);
+  border-top: 1px solid var(--aico-border);
+  color: var(--aico-muted-fg);
+}
+.aico-footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-block: 1.5rem;
+  font-size: 0.875rem;
+}
+@media (min-width: 768px) {
+  .aico-footer-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-block: 2rem;
+  }
+}
+
+.aico-footer-meta { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.aico-footer-shop-name { margin: 0; font-weight: 600; color: var(--aico-fg); }
+.aico-footer-tagline { margin: 0; }
+
+.aico-footer-nav { min-width: 0; }
+.aico-footer-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.aico-footer-link {
+  color: inherit;
+  text-decoration: none;
+}
+.aico-footer-link:hover { text-decoration: underline; }
+.aico-footer-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.aico-footer-copy { margin: 0; }
+@media (min-width: 768px) { .aico-footer-copy { text-align: right; } }
 
 /* ---------------------------------------------------------------- */
 /* Auth shell (login + recover password)                            */
