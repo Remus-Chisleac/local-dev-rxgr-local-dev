@@ -27,12 +27,22 @@
 
 * { box-sizing: border-box; }
 
-/* Always reserve space for the vertical scrollbar so opening/closing
-   the drawer (which body-scroll-locks) doesn't reflow the page. The
-   auth shell opts out — its bg image must fill edge-to-edge with no
-   reserved gutter, and the page never opens the drawer. */
-html { scrollbar-gutter: stable; }
-html:has(body.aico-template-customers) { scrollbar-gutter: auto; }
+/* Reserve gutter and show a persistent vertical scrollbar *track* on the
+ * viewport (`overflow-y: scroll`) so opening the drawer scroll-lock doesn't
+ * reflow the layout. Auth opts out (`overflow-y: auto`, `scrollbar-gutter:
+ * auto`) so the login shell stays edge‑to‑edge without a painted track when
+ * content fits.
+ * Drawer scroll-lock clears this via `html/body.aico-no-scroll { overflow:hidden }`.
+ * macOS overlay scrollbars still follow system “Show scroll bars” preference. */
+html {
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
+}
+
+html:has(body.aico-template-customers) {
+  scrollbar-gutter: auto;
+  overflow-y: auto;
+}
 
 body {
   margin: 0;
