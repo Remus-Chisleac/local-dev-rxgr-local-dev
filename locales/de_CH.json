@@ -120,5 +120,39 @@
       "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
       "cancel": "Zurück zur Anmeldung"
     }
+  },
+  "aico_preorder": {
+    "session": {
+      "title_fallback": "PreOrder",
+      "no_active": "Aktuell ist kein PreOrder-Fenster aktiv. Bitte später erneut versuchen.",
+      "deadline_label": "Pre Order Deadline",
+      "deadline_units": {
+        "days": "Tage",
+        "hours": "Std",
+        "minutes": "Min",
+        "seconds": "Sek"
+      }
+    },
+    "filters": {
+      "b2b_label": "B2B auswählen",
+      "b2b_placeholder": "Platzhalter",
+      "size_region_label": "Grössentyp",
+      "billing_label": "Rechnungsadresse",
+      "billing_placeholder": "Rechnungsadresse wählen",
+      "delivery_label": "Lieferadresse",
+      "delivery_placeholder": "Lieferadresse wählen",
+      "view_grid": "Rasteransicht",
+      "view_list": "Listenansicht"
+    },
+    "step2": {
+      "section_aria": "PreOrder-Artikel",
+      "category_placeholder": "Artikel erscheinen hier",
+      "coming_soon": "Artikel erscheinen hier, sobald eine Adresse ausgewählt ist."
+    },
+    "step3": {
+      "section_aria": "PreOrder-Zusammenfassung"
+    },
+    "cart_button_aria": "PreOrder-Warenkorb öffnen",
+    "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
   }
 }
