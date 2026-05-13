@@ -1,16 +1,62 @@
 {% comment %}
   product-size-matrix snippet — one column per size with a per-size
-  numeric quantity input. The "Total" line at the bottom is summed by
-  `assets/product-detail.js`. Inlined by `templates/product.liquid`.
-
-  Size-region tabs are hard-coded to EU for this slice. TODO follow-up:
-  port aico-commerce's size-region picker (EU / UK / US / Millimeters).
+  numeric quantity input. Inlined in `templates/product.liquid` until
+  `{% render %}` resolves snippet files; kept in sync manually.
 {% endcomment %}
+
+{%- assign size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
 
 <section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
   <div class="aico-pdp-size-matrix-head">
-    <h2 class="aico-pdp-section-heading">{{ product.aico_size_option_name }}</h2>
-    <span class="aico-pdp-size-region">{{ 'product.size_region.eu' | t }}</span>
+    <div class="aico-pdp-size-matrix-toolbar" role="presentation">
+      <div class="aico-pdp-size-matrix-head-tabs-wrap">
+        <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-size-region-tabs>
+          {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
+          {% for region in size_regions %}
+            <button
+              type="button"
+              role="tab"
+              class="aico-pdp-size-region-tab{% if forloop.first %} aico-pdp-size-region-tab-active{% endif %}"
+              aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+              data-aico-size-region
+              data-region="{{ region }}"
+            >
+              {% case region %}
+                {% when 'EU' %}
+                  {{ 'product.size_region.tab_eu' | t }}
+                {% when 'UK' %}
+                  {{ 'product.size_region.tab_uk' | t }}
+                {% when 'US' %}
+                  {{ 'product.size_region.tab_us' | t }}
+                {% when 'MM' %}
+                  {{ 'product.size_region.tab_mm' | t }}
+                {% else %}
+                  {{ region }}
+              {% endcase %}
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="aico-pdp-size-guide">
+        {% if size_guide_url != blank %}
+          <span class="aico-pdp-size-guide-wrap">
+            <a
+              href="{{ size_guide_url }}"
+              class="aico-pdp-size-guide-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >{{ 'product.size_guide.link' | t }}</a>
+            <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.tooltip' | t }}</span>
+          </span>
+        {% else %}
+          <span class="aico-pdp-size-guide-wrap">
+            <span tabindex="0" class="aico-pdp-size-guide-link aico-pdp-size-guide-link--disabled" aria-disabled="true">{{ 'product.size_guide.soon' | t }}</span>
+            <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.soon_tooltip' | t }}</span>
+          </span>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
   <div class="aico-pdp-size-grid">
@@ -20,7 +66,14 @@
           class="aico-pdp-size-cell{% if variant.available? and variant.aico_stock_amount > 0 %} aico-pdp-size-cell-in-stock{% elsif variant.available? %} aico-pdp-size-cell-available{% else %} aico-pdp-size-cell-out{% endif %}"
           data-aico-size-cell
         >
-          <span class="aico-pdp-size-cell-label">{{ variant.aico_size_value }}</span>
+          <span
+            class="aico-pdp-size-cell-label"
+            data-aico-size-label
+            data-aico-label-eu="{{ variant.aico_size_label_eu | default: variant.aico_size_value | escape }}"
+            data-aico-label-uk="{{ variant.aico_size_label_uk | default: variant.aico_size_value | escape }}"
+            data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
+            data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
+          >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
           <input
             type="number"
             class="aico-pdp-size-cell-input"

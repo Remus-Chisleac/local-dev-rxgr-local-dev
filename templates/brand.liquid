@@ -75,19 +75,4 @@
     </ul>
   </section>
 
-  {% if linklists.footer.links.size > 0 %}
-    <footer class="aico-page-container aico-brand-footer" role="contentinfo">
-      <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
-        {% for link in linklists.footer.links %}
-          <a href="{{ link.url }}" class="aico-home-footer-link">
-            {%- if link.title_key -%}
-              {{ link.title_key | t }}
-            {%- else -%}
-              {{ link.title }}
-            {%- endif -%}
-          </a>
-        {% endfor %}
-      </nav>
-    </footer>
-  {% endif %}
 </main>

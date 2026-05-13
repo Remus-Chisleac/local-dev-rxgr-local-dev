@@ -165,6 +165,12 @@
       "tab_us": "US",
       "tab_mm": "Millimeter (KR)"
     },
+    "size_guide": {
+      "link": "Grössentabelle",
+      "tooltip": "Internationale Grössentabelle — öffnet in neuem Tab.",
+      "soon": "Grössentabelle (Link folgt)",
+      "soon_tooltip": "Die Grössentabelle ist hier noch nicht verlinkt."
+    },
     "more_colors": "Mehr Farben",
     "reviews": {
       "title": "Kundenbewertungen",

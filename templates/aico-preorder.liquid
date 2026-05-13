@@ -37,8 +37,7 @@
 {%- assign mock_title = settings.aico_preorder_mock_title | default: 'PreOrder Ramadan 2027' -%}
 {%- assign hero_title = preorder_session.title -%}
 {%- if hero_title == blank -%}{%- assign hero_title = mock_title -%}{%- endif -%}
-{%- assign hero_image = preorder_session.hero_image_url -%}
-{%- assign hero_bg_asset = settings.aico_preorder_hero_bg_asset | default: 'preorder-hero-bg.png' -%}
+{%- assign preorder_banner_asset = settings.aico_preorder_hero_bg_asset | default: 'preorder.png' -%}
 {%- assign preorder_b2b_count = aico_preorder.b2b_choices | size -%}
 
 {%- assign mock_weeks = settings.aico_preorder_mock_weeks | default: 5 -%}
@@ -58,24 +57,20 @@
       data-aico-preorder-mock-minutes="{{ mock_minutes }}"
       data-aico-preorder-mock-seconds="{{ mock_seconds }}">
 
-  {%- comment -%} ── Hero band ── {%- endcomment -%}
-  <section class="aico-preorder-hero" style="--aico-preorder-hero-bg: url('{{ hero_bg_asset | asset_url }}');" aria-labelledby="aico-preorder-hero-title">
-    <div class="aico-preorder-hero-overlay" aria-hidden="true"></div>
+  {%- comment -%} ── Hero band: banner asset + session title text + countdown (no full-width bg image). {%- endcomment -%}
+  <section class="aico-preorder-hero" aria-labelledby="aico-preorder-hero-title">
     <div class="aico-page-container aico-preorder-hero-inner">
-      <div class="aico-preorder-hero-text">
+      <div class="aico-preorder-hero-left">
+        <img
+          class="aico-preorder-banner-img"
+          src="{{ preorder_banner_asset | asset_url }}"
+          alt=""
+          loading="eager"
+          decoding="async">
         <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title">{{ hero_title }}</h1>
       </div>
 
       <div class="aico-preorder-hero-side">
-        {% if hero_image %}
-          <div class="aico-preorder-hero-product">
-            <img class="aico-preorder-hero-image"
-                 src="{{ hero_image }}"
-                 alt=""
-                 loading="eager"
-                 decoding="async">
-          </div>
-        {% endif %}
 
         <div class="aico-preorder-countdown" data-aico-preorder-countdown role="group"
              aria-label="{{ 'aico_preorder.session.deadline_label' | t }}">

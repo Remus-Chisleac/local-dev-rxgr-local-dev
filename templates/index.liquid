@@ -9,10 +9,7 @@
   Disabled tiles are sorted to the bottom by `ShopAllBrandsLoader`
   (mirrors b2b-shop's `transformHomePage` `orderBy(isAccessible, desc)`).
 
-  Footer link strip pulls from `linklists.footer` (see config/menus.json);
-  labels are resolved via the per-link `title_key` so a single locale
-  file owns the copy. Falls back to the link's literal `title` when no
-  key is set.
+  Site-wide footer renders from `layout/theme.liquid` (linklists.footer).
 
   TODO: hero band / "Beliebte Modelle" / news strip — punted to a later
   slice. The pre-existing `home_page.popular_models` / `home_page.news`
@@ -81,19 +78,4 @@
     {% endif %}
   </section>
 
-  {% if linklists.footer.links.size > 0 %}
-    <footer class="aico-home-footer" role="contentinfo">
-      <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
-        {% for link in linklists.footer.links %}
-          <a href="{{ link.url }}" class="aico-home-footer-link">
-            {%- if link.title_key -%}
-              {{ link.title_key | t }}
-            {%- else -%}
-              {{ link.title }}
-            {%- endif -%}
-          </a>
-        {% endfor %}
-      </nav>
-    </footer>
-  {% endif %}
 </main>

@@ -3,7 +3,14 @@
     "name": "Branding",
     "settings": [
       { "id": "heading", "type": "text", "label": "Hero heading", "default": "Welcome to your new shop" },
-      { "id": "subheading", "type": "text", "label": "Hero subheading", "default": "Customize this from the theme settings." }
+      { "id": "subheading", "type": "text", "label": "Hero subheading", "default": "Customize this from the theme settings." },
+      {
+        "id": "aico_pdp_size_guide_url",
+        "type": "text",
+        "label": "Size chart URL (opens in new tab)",
+        "default": "",
+        "info": "Optional link for “Size chart” on the product page matrix row. Hover shows a short hint (matches aico-commerce)."
+      }
     ]
   },
   {
@@ -21,9 +28,9 @@
       {
         "id": "aico_preorder_hero_bg_asset",
         "type": "text",
-        "label": "Preorder hero background (theme asset filename)",
-        "default": "preorder-hero-bg.png",
-        "info": "File placed in the theme assets folder (e.g. preorder-hero-bg.png). Served via the asset_url filter."
+        "label": "Preorder banner image (theme asset filename)",
+        "default": "preorder.png",
+        "info": "Single decorative image beside the preorder title — not a full-bleed background. Place the file in theme assets (e.g. preorder.png)."
       },
       { "id": "aico_preorder_mock_title", "type": "text", "label": "Mock preorder title", "default": "PreOrder Ramadan 2027" },
       { "id": "aico_preorder_mock_weeks", "type": "number", "label": "Mock countdown — weeks", "default": 5 },

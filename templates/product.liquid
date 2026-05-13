@@ -190,11 +190,12 @@
             {%- comment -%} ──── product-size-matrix (inline) ──── {%- endcomment -%}
             <section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
               <div class="aico-pdp-size-matrix-head">
-                <h2 class="aico-pdp-section-heading">{{ product.aico_size_option_name }}</h2>
-                {%- comment -%} Size tabs — labels per cell resolved via `ProductSizeRegionLabelService` (API `sizeCharts` or Core shoe JSON); `product-detail.js` swaps `[data-aico-size-label]`. {%- endcomment -%}
-                <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-size-region-tabs>
-                  {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
-                  {% for region in size_regions %}
+                <div class="aico-pdp-size-matrix-toolbar" role="presentation">
+                  <div class="aico-pdp-size-matrix-head-tabs-wrap">
+                    {%- assign size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+                    <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-size-region-tabs>
+                      {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
+                      {% for region in size_regions %}
                     <button
                       type="button"
                       role="tab"
@@ -217,6 +218,27 @@
                       {% endcase %}
                     </button>
                   {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="aico-pdp-size-guide">
+                    {% if size_guide_url != blank %}
+                      <span class="aico-pdp-size-guide-wrap">
+                        <a
+                          href="{{ size_guide_url }}"
+                          class="aico-pdp-size-guide-link"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >{{ 'product.size_guide.link' | t }}</a>
+                        <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.tooltip' | t }}</span>
+                      </span>
+                    {% else %}
+                      <span class="aico-pdp-size-guide-wrap">
+                        <span tabindex="0" class="aico-pdp-size-guide-link aico-pdp-size-guide-link--disabled" aria-disabled="true">{{ 'product.size_guide.soon' | t }}</span>
+                        <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.soon_tooltip' | t }}</span>
+                      </span>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
 

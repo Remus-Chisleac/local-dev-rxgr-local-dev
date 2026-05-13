@@ -165,6 +165,12 @@
       "tab_us": "US",
       "tab_mm": "MM (KR)"
     },
+    "size_guide": {
+      "link": "Size guide",
+      "tooltip": "International size chart — opens in a new tab.",
+      "soon": "Size guide (link TBD)",
+      "soon_tooltip": "Size guide link is not available yet."
+    },
     "more_colors": "More colors",
     "reviews": {
       "title": "Customer reviews",

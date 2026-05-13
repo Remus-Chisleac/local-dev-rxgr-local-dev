@@ -42,6 +42,26 @@ body {
   line-height: 1.5;
 }
 
+/* Shop shell — sticky viewport footer without a gap beneath the footer on
+   short pages (flex column consumes remaining height below the header). */
+body:not(.aico-template-customers) {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body:not(.aico-template-customers) > .aico-chrome-sticky {
+  flex-shrink: 0;
+}
+
+body:not(.aico-template-customers) > .aico-shell-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .aico-sr-only {
   position: absolute;
   width: 1px;
@@ -163,7 +183,32 @@ body {
 
 .aico-icon { display: block; }
 
-.aico-shell-body { display: flex; flex-direction: column; min-height: 0; }
+.aico-shell-grow {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Stretch the template root (main / section / article) so slack space sits
+ * above the site footer rather than painting as empty body background. */
+.aico-shell-grow > :first-child {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.aico-shell-body > .aico-site-footer {
+  flex-shrink: 0;
+}
+
+/* Drawer lives inside .aico-shell-body for DOM ergonomics but is fixed —
+   collapsing its flex footprint keeps the viewport footer flush with no gap. */
+.aico-shell-body > .aico-drawer {
+  flex: 0 0 0;
+  height: 0;
+  overflow: visible;
+}
 
 /* ---------------------------------------------------------------- */
 /* Skeleton primitives                                              */
@@ -373,25 +418,32 @@ body {
 /* Auth shell (login + recover password)                            */
 /* ---------------------------------------------------------------- */
 
-.aico-template-customers { background: #f5f5f4; }
-
-/* Pin the auth main to the viewport with no padding — the shell is
-   what owns the bg image and the gutter around the card. Stacking
-   both `padding` and `min-height: 100svh` here used to push the
-   shell past the viewport (border-box: shell's 100svh inside main's
-   100svh − 3rem padding overflowed → scrollbar) and leave a 1.5rem
-   strip of body color framing the bg ("wired margin"). */
-.aico-auth-main {
-  display: flex;
-  min-height: 100svh;
+body.aico-template-customers {
+  background: #f5f5f4;
+  min-height: 100vh;
   min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.aico-template-customers > .aico-site-footer {
+  flex-shrink: 0;
+}
+
+/* Auth main fills space above the site footer when the viewport is tall;
+ * the shell still owns bg image + card gutter (see .aico-auth-shell). */
+.aico-auth-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .aico-auth-shell {
   position: relative;
   width: 100%;
-  min-height: 100svh;
-  min-height: 100dvh;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -953,7 +1005,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 /* Products listing                                                 */
 /* ---------------------------------------------------------------- */
 
-.aico-products { background: rgba(244, 244, 245, 0.4); padding: 1.5rem 0 3rem; min-height: 100svh; }
+.aico-products { background: rgba(244, 244, 245, 0.4); padding: 1.5rem 0 3rem; }
 @media (min-width: 640px) { .aico-products { padding: 2rem 0 3.5rem; } }
 
 .aico-products-shell { display: flex; flex-direction: column; gap: 1rem; }
@@ -1619,15 +1671,22 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: var(--aico-muted-fg);
 }
 
-/* Footer link strip — sits under the brand grid, centered, comfortable
-   spacing. Matches the mockup's inline-link variant rather than the
-   drawer's heavier footer. */
-.aico-home-footer {
-  margin-top: auto;
-  padding: 1.5rem 1rem 2rem;
+/* Site footer — rendered from `layout/theme.liquid`; link row reuses classes
+ * below for backwards compatibility with earlier home-only markup. */
+.aico-site-footer {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
   background: var(--aico-bg);
   border-top: 1px solid var(--aico-border);
 }
+.aico-site-footer-fallback {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--aico-muted-fg);
+}
+
 .aico-home-footer-links {
   display: flex;
   flex-wrap: wrap;
@@ -2052,17 +2111,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin-top: 0.5rem;
 }
 
-.aico-brand-footer {
-  margin-top: auto;
-  padding-top: 1.5rem;
-  padding-bottom: 2rem;
-  background: var(--aico-bg);
-  border-top: 1px solid var(--aico-border);
-}
-.aico-brand-footer .aico-home-footer-links {
-  justify-content: center;
-}
-
 /* ───── PDP ───── */
 
 .aico-pdp-shell {
@@ -2225,29 +2273,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--aico-border);
-  background-color: #e8eaef;
-  background-image: linear-gradient(
-      110deg,
-      rgba(249, 250, 251, 0.94) 0%,
-      rgba(249, 250, 251, 0.72) 40%,
-      rgba(249, 250, 251, 0.25) 100%
-    ),
-    var(--aico-preorder-hero-bg, none);
-  background-repeat: no-repeat, no-repeat;
-  background-size: cover, cover;
-  background-position: center, center center;
-}
-
-.aico-preorder-hero-overlay {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    rgba(249, 250, 251, 0.85) 0%,
-    rgba(249, 250, 251, 0.35) 50%,
-    rgba(249, 250, 251, 0.08) 100%
-  );
+  background-color: #f9fafb;
 }
 
 .aico-preorder-hero-inner {
@@ -2266,8 +2292,28 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   }
 }
 
-.aico-preorder-hero-text {
+.aico-preorder-hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
   min-width: 0;
+}
+@media (min-width: 768px) {
+  .aico-preorder-hero-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
+  }
+}
+
+.aico-preorder-banner-img {
+  display: block;
+  max-height: 5.5rem;
+  width: auto;
+  max-width: min(100%, 18rem);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .aico-preorder-hero-title {
@@ -2277,7 +2323,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   letter-spacing: -0.02em;
   line-height: 1.15;
   color: #0f172a;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .aico-preorder-hero-side {
@@ -2289,21 +2334,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   min-width: 0;
 }
 
-.aico-preorder-hero-product {
-  flex-shrink: 0;
-}
-
-.aico-preorder-hero-image {
-  display: block;
-  max-width: 17rem;
-  max-height: 7.5rem;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 18px rgba(15, 23, 42, 0.12));
-}
-
-@media (max-width: 767px) {
   .aico-preorder-hero-side {
     justify-content: flex-start;
     width: 100%;
@@ -2527,32 +2557,98 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-size-matrix-head {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 0.75rem;
 }
-@media (min-width: 640px) {
-  .aico-pdp-size-matrix-head {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem 1rem;
-  }
+.aico-pdp-size-matrix-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
 }
-.aico-pdp-size-matrix-head .aico-pdp-section-heading {
-  flex: 0 1 auto;
-  min-width: 0;
+.aico-pdp-size-matrix-head-tabs-wrap {
+  flex: 1 1 auto;
+  min-width: min(100%, 10rem);
+  max-width: 100%;
 }
-.aico-pdp-size-matrix-head .aico-pdp-size-region-tabs {
+.aico-pdp-size-matrix-toolbar .aico-pdp-size-region-tabs {
+  margin-left: 0;
   flex: 0 1 auto;
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
 }
-@media (min-width: 640px) {
-  .aico-pdp-size-matrix-head .aico-pdp-size-region-tabs {
-    margin-left: auto;
+@media (max-width: 639px) {
+  .aico-pdp-size-matrix-toolbar .aico-pdp-size-region-tabs {
+    width: 100%;
+  }
+}
+.aico-pdp-size-guide-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+.aico-pdp-size-guide-link {
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  color: var(--color-accent);
+}
+.aico-pdp-size-guide-link:hover,
+.aico-pdp-size-guide-link:focus-visible {
+  text-decoration: underline;
+}
+.aico-pdp-size-guide-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+.aico-pdp-size-guide-link--disabled {
+  cursor: default;
+  text-decoration: underline;
+  opacity: 0.88;
+}
+.aico-pdp-size-guide-pop {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  right: 0;
+  width: max-content;
+  max-width: min(18rem, 88vw);
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--aico-fg);
+  background: var(--aico-bg);
+  border: 1px solid var(--aico-border);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+  z-index: 35;
+}
+.aico-pdp-size-guide-wrap:hover .aico-pdp-size-guide-pop,
+.aico-pdp-size-guide-wrap:focus-within .aico-pdp-size-guide-pop {
+  display: block;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .aico-pdp-size-guide-pop {
+    animation: aicoFadeInTool 120ms ease-out;
+  }
+}
+@keyframes aicoFadeInTool {
+  from {
+    opacity: 0;
+    transform: translateY(0.125rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 .aico-pdp-section-heading {

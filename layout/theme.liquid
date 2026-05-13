@@ -14,6 +14,23 @@
     <main class="aico-auth-main">
       {{ content_for_layout }}
     </main>
+    <footer class="aico-page-container aico-site-footer" role="contentinfo">
+      {% if linklists.footer.links.size > 0 %}
+        <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
+          {% for link in linklists.footer.links %}
+            <a href="{{ link.url }}" class="aico-home-footer-link">
+              {%- if link.title_key -%}
+                {{ link.title_key | t }}
+              {%- else -%}
+                {{ link.title }}
+              {%- endif -%}
+            </a>
+          {% endfor %}
+        </nav>
+      {% else %}
+        <p class="aico-site-footer-fallback">{{ 'footer.tagline' | t }}</p>
+      {% endif %}
+    </footer>
   {% else %}
     <div class="aico-chrome-sticky">
       <div class="aico-welcome-bar">
@@ -70,11 +87,29 @@
     </div>
 
     <div class="aico-shell-body">
-      {{ content_for_layout }}
-    </div>
+      <div class="aico-shell-grow">
+        {{ content_for_layout }}
+      </div>
+      <footer class="aico-page-container aico-site-footer" role="contentinfo">
+        {% if linklists.footer.links.size > 0 %}
+          <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
+            {% for link in linklists.footer.links %}
+              <a href="{{ link.url }}" class="aico-home-footer-link">
+                {%- if link.title_key -%}
+                  {{ link.title_key | t }}
+                {%- else -%}
+                  {{ link.title }}
+                {%- endif -%}
+              </a>
+            {% endfor %}
+          </nav>
+        {% else %}
+          <p class="aico-site-footer-fallback">{{ 'footer.tagline' | t }}</p>
+        {% endif %}
+      </footer>
 
-    {% comment %} Right-side drawer. Hidden by default; theme.js toggles it. {% endcomment %}
-    <div id="aico-drawer" class="aico-drawer" data-aico-drawer hidden>
+      {% comment %} Right-side drawer. Hidden by default; theme.js toggles it. {% endcomment %}
+      <div id="aico-drawer" class="aico-drawer" data-aico-drawer hidden>
       <div class="aico-drawer-backdrop" data-aico-drawer-close></div>
       <aside class="aico-drawer-sheet" role="dialog" aria-modal="true" aria-labelledby="aico-drawer-title" tabindex="-1">
         <h2 id="aico-drawer-title" class="aico-sr-only">{{ 'nav.menu_title' | t }}</h2>
@@ -299,6 +334,7 @@
           </div>{%- comment -%} /aico-drawer-permanent {%- endcomment -%}
         </div>
       </aside>
+    </div>
     </div>
 
     <script src="{{ 'theme.js' | asset_url }}" defer></script>
