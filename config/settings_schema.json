@@ -18,6 +18,13 @@
     "name": "Preorder (mock)",
     "info": "Demo values rendered when no live PreorderSession is bound to the page. Real sessions always override these.",
     "settings": [
+      {
+        "id": "aico_preorder_hero_bg_asset",
+        "type": "text",
+        "label": "Preorder hero background (theme asset filename)",
+        "default": "preorder-hero-bg.png",
+        "info": "File placed in the theme assets folder (e.g. preorder-hero-bg.png). Served via the asset_url filter."
+      },
       { "id": "aico_preorder_mock_title", "type": "text", "label": "Mock preorder title", "default": "PreOrder Ramadan 2027" },
       { "id": "aico_preorder_mock_weeks", "type": "number", "label": "Mock countdown — weeks", "default": 5 },
       { "id": "aico_preorder_mock_days", "type": "number", "label": "Mock countdown — days", "default": 16 },

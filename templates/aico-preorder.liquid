@@ -3,7 +3,7 @@
 
   Layout intentionally trimmed back to the "above-the-fold" hero only
   (image / title / countdown) plus a compact filter row underneath
-  (search placeholder + billing + delivery + view toggle). The legacy
+  (search · size region · billing · delivery · view toggle). The legacy
   items grid, checkout summary, and floating-cart sections are
   intentionally removed for this iteration — they land back when the
   preorder cart endpoint ships.
@@ -28,7 +28,7 @@
     drop wins; otherwise the mock theme-setting defaults render.
 
   Filter row contract for follow-ups:
-    All four cells live on one flex row. The view-toggle is intentionally
+    All cells live on one flex row. The view-toggle is intentionally
     `flex: 0 0 auto` (the last element does not grow) — it will drive
     the grid/list product display when the items grid lands again.
 {% endcomment %}
@@ -38,6 +38,8 @@
 {%- assign hero_title = preorder_session.title -%}
 {%- if hero_title == blank -%}{%- assign hero_title = mock_title -%}{%- endif -%}
 {%- assign hero_image = preorder_session.hero_image_url -%}
+{%- assign hero_bg_asset = settings.aico_preorder_hero_bg_asset | default: 'preorder-hero-bg.png' -%}
+{%- assign preorder_b2b_count = aico_preorder.b2b_choices | size -%}
 
 {%- assign mock_weeks = settings.aico_preorder_mock_weeks | default: 5 -%}
 {%- assign mock_days = settings.aico_preorder_mock_days | default: 16 -%}
@@ -57,40 +59,44 @@
       data-aico-preorder-mock-seconds="{{ mock_seconds }}">
 
   {%- comment -%} ── Hero band ── {%- endcomment -%}
-  <section class="aico-preorder-hero" aria-labelledby="aico-preorder-hero-title">
+  <section class="aico-preorder-hero" style="--aico-preorder-hero-bg: url('{{ hero_bg_asset | asset_url }}');" aria-labelledby="aico-preorder-hero-title">
+    <div class="aico-preorder-hero-overlay" aria-hidden="true"></div>
     <div class="aico-page-container aico-preorder-hero-inner">
       <div class="aico-preorder-hero-text">
         <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title">{{ hero_title }}</h1>
       </div>
 
-      <div class="aico-preorder-hero-media">
+      <div class="aico-preorder-hero-side">
         {% if hero_image %}
-          <img class="aico-preorder-hero-image"
-               src="{{ hero_image }}"
-               alt=""
-               loading="eager"
-               decoding="async">
-        {% else %}
-          <div class="aico-preorder-hero-image-empty" aria-hidden="true"></div>
+          <div class="aico-preorder-hero-product">
+            <img class="aico-preorder-hero-image"
+                 src="{{ hero_image }}"
+                 alt=""
+                 loading="eager"
+                 decoding="async">
+          </div>
         {% endif %}
 
         <div class="aico-preorder-countdown" data-aico-preorder-countdown role="group"
              aria-label="{{ 'aico_preorder.session.deadline_label' | t }}">
-          <span class="aico-preorder-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</span>
-          <div class="aico-preorder-countdown-grid">
-            <div class="aico-preorder-countdown-cell">
+          <p class="aico-preorder-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</p>
+          <div class="aico-preorder-countdown-bar" role="presentation">
+            <div class="aico-preorder-countdown-segment">
               <span class="aico-preorder-countdown-value" data-aico-countdown-days>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.days' | t }}</span>
             </div>
-            <div class="aico-preorder-countdown-cell">
+            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder-countdown-segment">
               <span class="aico-preorder-countdown-value" data-aico-countdown-hours>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.hours' | t }}</span>
             </div>
-            <div class="aico-preorder-countdown-cell">
+            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder-countdown-segment">
               <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.minutes' | t }}</span>
             </div>
-            <div class="aico-preorder-countdown-cell">
+            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder-countdown-segment">
               <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.seconds' | t }}</span>
             </div>
@@ -100,7 +106,7 @@
     </div>
   </section>
 
-  {%- comment -%} ── Compact filter row (search · billing · delivery · view toggle) ── {%- endcomment -%}
+  {%- comment -%} ── Compact filter row ── {%- endcomment -%}
   <section class="aico-preorder-filters-wrap" aria-labelledby="aico-preorder-filters-title">
     <div class="aico-page-container">
       <h2 id="aico-preorder-filters-title" class="aico-sr-only">{{ 'aico_preorder.filters.section_aria' | t }}</h2>
@@ -112,9 +118,50 @@
             autocomplete="off">
         <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
 
-        {%- comment -%} ── Search (placeholder; non-functional until the items grid returns) ── {%- endcomment -%}
+        {%- comment -%} B2B (only when backend emits multiple choices) {%- endcomment -%}
+        {% if preorder_b2b_count > 0 %}
+          <div class="aico-preorder-field aico-preorder-field-b2b" data-aico-field="b2b">
+            <span id="aico-preorder-b2b-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</span>
+            <div class="aico-preorder-field-control aico-preorder-field-control-select">
+              <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+                <select name="b2b_id" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
+                        data-aico-preorder-select="b2b_id">
+                  <option value="">{{ 'aico_preorder.filters.b2b_placeholder' | t }}</option>
+                  {% for choice in aico_preorder.b2b_choices %}
+                    <option value="{{ choice.id }}"{% if aico_preorder.selected_b2b_id == choice.id %} selected{% endif %}>
+                      {{ choice.label }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <button type="button"
+                        id="aico-preorder-b2b-trigger"
+                        class="aico-preorder-custom-select-trigger"
+                        data-aico-custom-select-trigger
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                      aria-labelledby="aico-preorder-b2b-label">
+                  <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                  <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                  <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        {%- comment -%} Search (placeholder until the items grid returns) {%- endcomment -%}
         <label class="aico-preorder-field aico-preorder-field-search" data-aico-field="search">
-          <span class="aico-sr-only">{{ 'aico_preorder.filters.search_label' | t }}</span>
+          <span class="aico-preorder-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
           <span class="aico-preorder-field-control">
             <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
@@ -129,53 +176,122 @@
           </span>
         </label>
 
-        {%- comment -%} ── Billing address ── {%- endcomment -%}
-        <label class="aico-preorder-field" data-aico-field="billing_address">
-          <span class="aico-sr-only">{{ 'aico_preorder.filters.billing_label' | t }}</span>
-          <span class="aico-preorder-field-control">
+        {%- assign size_selected = aico_preorder.size_region | default: 'EU' | upcase -%}
+        <div class="aico-preorder-field aico-preorder-field-size" data-aico-field="size_region">
+          <span id="aico-preorder-size-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.size_region_label' | t }}</span>
+          <div class="aico-preorder-field-control aico-preorder-field-control-select">
+            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+              <select name="size_region" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
+                      data-aico-preorder-select="size_region">
+                <option value="EU" {% if size_selected == 'EU' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_eu' | t }}</option>
+                <option value="UK" {% if size_selected == 'UK' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_uk' | t }}</option>
+                <option value="US" {% if size_selected == 'US' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_us' | t }}</option>
+                <option value="KR" {% if size_selected == 'KR' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_mm' | t }}</option>
+              </select>
+              <button type="button"
+                      id="aico-preorder-size-trigger"
+                      class="aico-preorder-custom-select-trigger"
+                      data-aico-custom-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-labelledby="aico-preorder-size-label">
+                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="aico-preorder-field" data-aico-field="billing_address">
+          <span id="aico-preorder-billing-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.billing_label' | t }}</span>
+          <div class="aico-preorder-field-control aico-preorder-field-control-select">
             <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M19 14V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8"></path>
               <path d="M3 14h18"></path>
               <path d="M5 14v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
             </svg>
-            <select name="billing_address_id" data-aico-preorder-select="billing_address_id"
-                    {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
-              <option value="">{{ 'aico_preorder.filters.billing_placeholder' | t }}</option>
-              {% for address in aico_preorder.billing_addresses %}
-                <option value="{{ address.id }}"{% if aico_preorder.selected_billing_address_id == address.id %} selected{% endif %}>
-                  {{ address.label }}
-                </option>
-              {% endfor %}
-            </select>
-          </span>
-        </label>
+            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+              <select name="billing_address_id"
+                      class="aico-preorder-select-native"
+                      tabindex="-1"
+                      aria-labelledby="aico-preorder-billing-label"
+                      aria-hidden="true"
+                      data-aico-preorder-select="billing_address_id"
+                      {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
+                <option value="">{{ 'aico_preorder.filters.billing_placeholder' | t }}</option>
+                {% for address in aico_preorder.billing_addresses %}
+                  <option value="{{ address.id }}"{% if aico_preorder.selected_billing_address_id == address.id %} selected{% endif %}>
+                    {{ address.label }}
+                  </option>
+                {% endfor %}
+              </select>
+              <button type="button"
+                      id="aico-preorder-billing-trigger"
+                      class="aico-preorder-custom-select-trigger"
+                      data-aico-custom-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-labelledby="aico-preorder-billing-label"
+                      {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
+                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {%- comment -%} ── Delivery address ── {%- endcomment -%}
-        <label class="aico-preorder-field" data-aico-field="delivery_address">
-          <span class="aico-sr-only">{{ 'aico_preorder.filters.delivery_label' | t }}</span>
-          <span class="aico-preorder-field-control">
+        <div class="aico-preorder-field" data-aico-field="delivery_address">
+          <span id="aico-preorder-delivery-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.delivery_label' | t }}</span>
+          <div class="aico-preorder-field-control aico-preorder-field-control-select">
             <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <select name="delivery_address_id" data-aico-preorder-select="delivery_address_id"
-                    {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
-              <option value="">{{ 'aico_preorder.filters.delivery_placeholder' | t }}</option>
-              {% for address in aico_preorder.delivery_addresses %}
-                <option value="{{ address.id }}"{% if aico_preorder.selected_delivery_address_id == address.id %} selected{% endif %}>
-                  {{ address.label }}
-                </option>
-              {% endfor %}
-            </select>
-          </span>
-        </label>
+            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+              <select name="delivery_address_id"
+                      class="aico-preorder-select-native"
+                      tabindex="-1"
+                      aria-labelledby="aico-preorder-delivery-label"
+                      aria-hidden="true"
+                      data-aico-preorder-select="delivery_address_id"
+                      {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
+                <option value="">{{ 'aico_preorder.filters.delivery_placeholder' | t }}</option>
+                {% for address in aico_preorder.delivery_addresses %}
+                  <option value="{{ address.id }}"{% if aico_preorder.selected_delivery_address_id == address.id %} selected{% endif %}>
+                    {{ address.label }}
+                  </option>
+                {% endfor %}
+              </select>
+              <button type="button"
+                      id="aico-preorder-delivery-trigger"
+                      class="aico-preorder-custom-select-trigger"
+                      data-aico-custom-select-trigger
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-labelledby="aico-preorder-delivery-label"
+                      {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
+                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {%- comment -%}
-          View toggle. Last element on the row by design — sized to its
-          content (`flex: 0 0 auto`) so the other fields take all the
-          remaining space. Controls whether the eventual items grid
-          renders as a grid or a list.
-        {%- endcomment -%}
         <div class="aico-preorder-view-toggle" role="group" aria-label="{{ 'aico_preorder.filters.view_grid' | t }}">
           <button type="button" class="aico-preorder-view-button aico-preorder-view-button-active"
                   data-aico-preorder-view="grid" aria-pressed="true" aria-label="{{ 'aico_preorder.filters.view_grid' | t }}">
@@ -202,184 +318,5 @@
     </div>
   </section>
 
-  {%- comment -%}
-    Inline client glue. Lives inline (not in an asset) so the countdown
-    begins immediately without an extra round trip. Vanilla IIFE pattern
-    matching `assets/theme.js`.
-  {%- endcomment -%}
-  <script>
-    (function () {
-      'use strict';
-
-      var root = document.querySelector('[data-aico-preorder]');
-      if (!root) return;
-
-      // ── Deadline resolution ─────────────────────────────────────
-      //
-      // If the real preorder session ships a `deadline_at` value, use
-      // it verbatim. Otherwise compose a mock deadline from the theme
-      // settings — once per session, persisted in sessionStorage so a
-      // refresh during the demo doesn't reset the timer.
-
-      function intAttr(name) {
-        var raw = parseInt(root.getAttribute(name) || '0', 10);
-        return isFinite(raw) ? raw : 0;
-      }
-
-      var serverDeadline = root.getAttribute('data-aico-preorder-deadline');
-      var deadlineMs;
-
-      if (serverDeadline) {
-        deadlineMs = Date.parse(serverDeadline);
-      } else {
-        var sessionKey = 'aico_preorder_mock_deadline';
-        var stored = NaN;
-        try {
-          var raw = sessionStorage.getItem(sessionKey);
-          stored = raw ? parseInt(raw, 10) : NaN;
-        } catch (_) { /* sessionStorage unavailable */ }
-
-        if (!isFinite(stored) || stored <= Date.now()) {
-          var offsetMs =
-            intAttr('data-aico-preorder-mock-weeks') * 7 * 86400000 +
-            intAttr('data-aico-preorder-mock-days') * 86400000 +
-            intAttr('data-aico-preorder-mock-hours') * 3600000 +
-            intAttr('data-aico-preorder-mock-minutes') * 60000 +
-            intAttr('data-aico-preorder-mock-seconds') * 1000;
-          deadlineMs = Date.now() + offsetMs;
-          try { sessionStorage.setItem(sessionKey, String(deadlineMs)); } catch (_) {}
-        } else {
-          deadlineMs = stored;
-        }
-      }
-
-      var slots = {
-        days: root.querySelector('[data-aico-countdown-days]'),
-        hours: root.querySelector('[data-aico-countdown-hours]'),
-        minutes: root.querySelector('[data-aico-countdown-minutes]'),
-        seconds: root.querySelector('[data-aico-countdown-seconds]')
-      };
-      function pad(n) { return n < 10 ? '0' + n : '' + n; }
-      function tick() {
-        if (!slots.days) return;
-        if (!isFinite(deadlineMs)) {
-          slots.days.textContent = '--';
-          slots.hours.textContent = '--';
-          slots.minutes.textContent = '--';
-          slots.seconds.textContent = '--';
-          return;
-        }
-        var remaining = Math.max(0, deadlineMs - Date.now());
-        var totalSeconds = Math.floor(remaining / 1000);
-        var days = Math.floor(totalSeconds / 86400);
-        var hours = Math.floor((totalSeconds % 86400) / 3600);
-        var minutes = Math.floor((totalSeconds % 3600) / 60);
-        var seconds = totalSeconds % 60;
-        slots.days.textContent = pad(days);
-        slots.hours.textContent = pad(hours);
-        slots.minutes.textContent = pad(minutes);
-        slots.seconds.textContent = pad(seconds);
-      }
-      tick();
-      if (isFinite(deadlineMs)) {
-        setInterval(tick, 1000);
-      }
-
-      // ── Filter persistence (billing / delivery) ─────────────────
-      var userId = root.getAttribute('data-aico-preorder-user-id') || 'anon';
-      var contextUrl = root.getAttribute('data-aico-preorder-context-url');
-      var storageKey = 'aico_preorder_context:' + userId;
-
-      function readStored() {
-        try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); }
-        catch (_) { return {}; }
-      }
-      function writeStored(patch) {
-        try {
-          var current = readStored();
-          Object.keys(patch).forEach(function (key) {
-            if (patch[key] === null || patch[key] === '') {
-              delete current[key];
-            } else {
-              current[key] = patch[key];
-            }
-          });
-          localStorage.setItem(storageKey, JSON.stringify(current));
-        } catch (_) {}
-      }
-      function applyStored() {
-        var stored = readStored();
-        Object.keys(stored).forEach(function (key) {
-          var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
-          if (select && stored[key] !== null && stored[key] !== undefined) {
-            var match = Array.prototype.some.call(select.options, function (opt) {
-              return String(opt.value) === String(stored[key]);
-            });
-            if (match) { select.value = String(stored[key]); }
-          }
-        });
-      }
-      applyStored();
-
-      var form = root.querySelector('[data-aico-preorder-filters]');
-      var token = form ? form.querySelector('input[name="_token"]') : null;
-      function persist(payload) {
-        writeStored(payload);
-        if (!contextUrl || !token || !token.value) return;
-        var body = new FormData();
-        body.append('_token', token.value);
-        Object.keys(payload).forEach(function (key) {
-          if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
-            body.append(key, payload[key]);
-          }
-        });
-        try {
-          fetch(contextUrl, {
-            method: 'POST',
-            body: body,
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-          }).catch(function () { /* fire-and-forget */ });
-        } catch (_) {}
-      }
-
-      var selects = root.querySelectorAll('[data-aico-preorder-select]');
-      selects.forEach(function (select) {
-        select.addEventListener('change', function () {
-          var key = select.getAttribute('data-aico-preorder-select');
-          if (!key) return;
-          var patch = {};
-          patch[key] = select.value;
-          persist(patch);
-        });
-      });
-
-      if (form) {
-        form.addEventListener('submit', function (event) { event.preventDefault(); });
-      }
-
-      // ── View toggle (visual only, persisted per user) ───────────
-      var viewKey = 'aico_preorder_view:' + userId;
-      var viewButtons = root.querySelectorAll('[data-aico-preorder-view]');
-      function applyView(value) {
-        viewButtons.forEach(function (button) {
-          var active = button.getAttribute('data-aico-preorder-view') === value;
-          button.classList.toggle('aico-preorder-view-button-active', active);
-          button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-        root.setAttribute('data-aico-preorder-view-mode', value);
-      }
-      var initialView = 'grid';
-      try { initialView = localStorage.getItem(viewKey) || 'grid'; } catch (_) {}
-      applyView(initialView);
-      viewButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-          var next = button.getAttribute('data-aico-preorder-view');
-          if (!next) return;
-          try { localStorage.setItem(viewKey, next); } catch (_) {}
-          applyView(next);
-        });
-      });
-    })();
-  </script>
+  <script src="{{ 'preorder-page.js' | asset_url }}" defer></script>
 </main>
