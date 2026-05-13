@@ -65,5 +65,39 @@
       "success": "If an account exists for that email, we've sent reset instructions.",
       "cancel": "Back to sign in"
     }
+  },
+  "aico_preorder": {
+    "session": {
+      "title_fallback": "PreOrder",
+      "no_active": "There is no active preorder window right now. Please check back later.",
+      "deadline_label": "Pre Order Deadline",
+      "deadline_units": {
+        "days": "Days",
+        "hours": "Hrs",
+        "minutes": "Min",
+        "seconds": "Sec"
+      }
+    },
+    "filters": {
+      "b2b_label": "Select B2B",
+      "b2b_placeholder": "Placeholder",
+      "size_region_label": "Size type",
+      "billing_label": "Billing address",
+      "billing_placeholder": "Select billing address",
+      "delivery_label": "Delivery address",
+      "delivery_placeholder": "Select delivery address",
+      "view_grid": "Grid view",
+      "view_list": "List view"
+    },
+    "step2": {
+      "section_aria": "Preorder items",
+      "category_placeholder": "Items will appear here",
+      "coming_soon": "Items will appear here once an address is selected."
+    },
+    "step3": {
+      "section_aria": "Preorder summary"
+    },
+    "cart_button_aria": "Open preorder cart",
+    "address_change_warning": "Changing the address will reset your preorder cart."
   }
 }
