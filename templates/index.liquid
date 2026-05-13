@@ -6,6 +6,11 @@
   greyed-out and non-clickable so the user knows which brands exist but
   aren't on their plan.
 
+  Tile layout: top region uses `brand.image_url` (banner or lifestyle
+  fallback); footer strip uses `brand.logo_url` when the PIM has both a
+  `banner` and a translation `image` (logo art). Otherwise the footer
+  falls back to the brand label.
+
   Disabled tiles are sorted to the bottom by `ShopAllBrandsLoader`
   (mirrors b2b-shop's `transformHomePage` `orderBy(isAccessible, desc)`).
 
@@ -30,20 +35,31 @@
                 class="aico-home-brand-card aico-home-brand-card-accessible"
                 aria-label="{{ brand.label }}"
               >
-                <div class="aico-home-brand-card-image-wrap">
+                <div class="aico-home-brand-card-photo-wrap">
                   {% if brand.image_url %}
                     <img
                       src="{{ brand.image_url }}"
                       alt=""
-                      class="aico-home-brand-card-image"
+                      class="aico-home-brand-card-photo"
                       loading="lazy"
+                      decoding="async"
                     >
                   {% else %}
-                    <div class="aico-home-brand-card-image-empty" aria-hidden="true"></div>
+                    <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
                   {% endif %}
                 </div>
                 <div class="aico-home-brand-card-footer">
-                  <span class="aico-home-brand-card-label">{{ brand.label }}</span>
+                  {% if brand.logo_url %}
+                    <img
+                      src="{{ brand.logo_url }}"
+                      alt="{{ brand.label }}"
+                      class="aico-home-brand-card-logo"
+                      loading="lazy"
+                      decoding="async"
+                    >
+                  {% else %}
+                    <span class="aico-home-brand-card-label">{{ brand.label }}</span>
+                  {% endif %}
                 </div>
               </a>
             {% else %}
@@ -52,20 +68,31 @@
                 aria-disabled="true"
                 title="{{ 'home_page.brand_inaccessible' | t }}"
               >
-                <div class="aico-home-brand-card-image-wrap">
+                <div class="aico-home-brand-card-photo-wrap">
                   {% if brand.image_url %}
                     <img
                       src="{{ brand.image_url }}"
                       alt=""
-                      class="aico-home-brand-card-image"
+                      class="aico-home-brand-card-photo"
                       loading="lazy"
+                      decoding="async"
                     >
                   {% else %}
-                    <div class="aico-home-brand-card-image-empty" aria-hidden="true"></div>
+                    <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
                   {% endif %}
                 </div>
                 <div class="aico-home-brand-card-footer">
-                  <span class="aico-home-brand-card-label">{{ brand.label }}</span>
+                  {% if brand.logo_url %}
+                    <img
+                      src="{{ brand.logo_url }}"
+                      alt="{{ brand.label }}"
+                      class="aico-home-brand-card-logo"
+                      loading="lazy"
+                      decoding="async"
+                    >
+                  {% else %}
+                    <span class="aico-home-brand-card-label">{{ brand.label }}</span>
+                  {% endif %}
                   <span class="aico-sr-only">{{ 'home_page.brand_inaccessible' | t }}</span>
                 </div>
               </div>

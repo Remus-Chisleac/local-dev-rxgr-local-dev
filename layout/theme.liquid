@@ -14,23 +14,6 @@
     <main class="aico-auth-main">
       {{ content_for_layout }}
     </main>
-    <footer class="aico-page-container aico-site-footer" role="contentinfo">
-      {% if linklists.footer.links.size > 0 %}
-        <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
-          {% for link in linklists.footer.links %}
-            <a href="{{ link.url }}" class="aico-home-footer-link">
-              {%- if link.title_key -%}
-                {{ link.title_key | t }}
-              {%- else -%}
-                {{ link.title }}
-              {%- endif -%}
-            </a>
-          {% endfor %}
-        </nav>
-      {% else %}
-        <p class="aico-site-footer-fallback">{{ 'footer.tagline' | t }}</p>
-      {% endif %}
-    </footer>
   {% else %}
     <div class="aico-chrome-sticky">
       <div class="aico-welcome-bar">
@@ -90,22 +73,24 @@
       <div class="aico-shell-grow">
         {{ content_for_layout }}
       </div>
-      <footer class="aico-page-container aico-site-footer" role="contentinfo">
-        {% if linklists.footer.links.size > 0 %}
-          <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
-            {% for link in linklists.footer.links %}
-              <a href="{{ link.url }}" class="aico-home-footer-link">
-                {%- if link.title_key -%}
-                  {{ link.title_key | t }}
-                {%- else -%}
-                  {{ link.title }}
-                {%- endif -%}
-              </a>
-            {% endfor %}
-          </nav>
-        {% else %}
-          <p class="aico-site-footer-fallback">{{ 'footer.tagline' | t }}</p>
-        {% endif %}
+      <footer class="aico-site-footer" role="contentinfo">
+        <div class="aico-site-footer-inner">
+          {% if linklists.footer.links.size > 0 %}
+            <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
+              {% for link in linklists.footer.links %}
+                <a href="{{ link.url }}" class="aico-home-footer-link">
+                  {%- if link.title_key -%}
+                    {{ link.title_key | t }}
+                  {%- else -%}
+                    {{ link.title }}
+                  {%- endif -%}
+                </a>
+              {% endfor %}
+            </nav>
+          {% else %}
+            <p class="aico-site-footer-fallback">{{ 'footer.tagline' | t }}</p>
+          {% endif %}
+        </div>
       </footer>
 
       {% comment %} Right-side drawer. Hidden by default; theme.js toggles it. {% endcomment %}
