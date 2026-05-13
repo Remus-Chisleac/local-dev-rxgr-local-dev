@@ -1,0 +1,39 @@
+{% comment %}
+  product-buy-panel snippet — wraps options + qty + add-to-cart. Posts
+  to `routes.cart_add_url` (Shopify-canonical `/cart/add`). For matrix
+  mode it emits `items[][id]` + `items[][quantity]` pairs; for legacy
+  mode it emits `id` + `quantity`. Inlined by `templates/product.liquid`.
+{% endcomment %}
+
+<form
+  class="aico-pdp-buy"
+  method="post"
+  action="{{ routes.cart_add_url }}"
+  data-aico-pdp-buy
+  data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
+>
+  <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+  <input type="hidden" name="product_id" value="{{ product.id }}">
+
+  {% comment %}
+    The matrix vs. legacy branch lives in `product-options.liquid` and
+    `product-size-matrix.liquid` — keep them composed together at the
+    template level until {% render %} resolves snippets.
+  {% endcomment %}
+
+  <div class="aico-pdp-buy-actions">
+    <button type="submit" class="aico-pdp-buy-button" data-aico-buy-button {% if product.aico_shipping_blocked? %}disabled{% endif %}>
+      <span>
+        {% if product.aico_shipping_blocked? %}
+          {{ 'product.restricted' | t }}
+        {% else %}
+          {{ 'product.add_to_cart' | t }}
+        {% endif %}
+      </span>
+    </button>
+  </div>
+
+  {% if product.aico_shipping_blocked? %}
+    <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger">{{ 'product.shipping_blocked_hint' | t }}</p>
+  {% endif %}
+</form>

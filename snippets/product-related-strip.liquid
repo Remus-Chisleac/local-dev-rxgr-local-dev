@@ -1,0 +1,32 @@
+{% comment %}
+  product-related-strip snippet — reuses the listing card markup so a
+  "You may also like" row looks identical to `templates/products.liquid`.
+  Inlined by `templates/product.liquid` until {% render %} resolves
+  snippets. Hides itself when `product.aico_related_products` is empty.
+{% endcomment %}
+
+{% if product.aico_related_products.size > 0 %}
+  <section class="aico-pdp-related" aria-label="{{ 'product.you_may_also_like' | t }}">
+    <h2 class="aico-pdp-section-heading">{{ 'product.you_may_also_like' | t }}</h2>
+    <ul class="aico-products-grid aico-pdp-related-grid">
+      {% for related in product.aico_related_products %}
+        <li class="aico-products-grid-item">
+          <article class="aico-product-card">
+            <a href="{{ related.url }}" class="aico-product-card-link" aria-label="{{ related.title }}">
+              <div class="aico-product-card-image-wrap">
+                {% if related.featured_image %}
+                  <img class="aico-product-card-image" src="{{ related.featured_image }}" alt="" loading="lazy" decoding="async">
+                {% else %}
+                  <div class="aico-product-card-image-empty" aria-hidden="true"></div>
+                {% endif %}
+              </div>
+              <div class="aico-product-card-body">
+                <h3 class="aico-product-card-title">{{ related.title }}</h3>
+              </div>
+            </a>
+          </article>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}

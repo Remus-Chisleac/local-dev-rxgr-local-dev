@@ -1,0 +1,402 @@
+{% comment %}
+  Product detail page — Shopify-canonical `templates/product.liquid`
+  (singular). Server-side render of the `product` drop hydrated by
+  `Modules\Storefront\Services\ProductDetailLoader`.
+
+  The renderer currently uses `Keepsuit\Liquid\FileSystems\BlankFileSystem`,
+  so `{% render 'snippet' %}` does NOT resolve to files on disk. Until a
+  proper filesystem-backed loader lands, the section markup that would
+  normally live in `snippets/product-*.liquid` is inlined below in a
+  one-section-per-block layout. The snippet boundaries are kept as
+  comments so a follow-up can lift each block into its own file
+  verbatim.
+
+  Naming follows Shopify's contract: `product.id`, `product.title`,
+  `product.featured_image`, `product.price`, `product.compare_at_price`,
+  `product.available?`, `product.variants`, `product.options`. Anything
+  B2B-specific is `product.aico_*` so a Shopify-authored theme drops in
+  cleanly.
+
+  TODO follow-ups (see PDP plan §2 "Defer"):
+    - 360° rotator (build a static gallery only for now).
+    - Restock-reminder button (stub).
+    - Reviews section.
+    - "More colors" cross-product grid (the related strip lives here;
+      the per-product color grid lands later).
+    - Warehouse-level stock breakdown UI (we expose the indicator only).
+    - Wishlist / save-for-later.
+{% endcomment %}
+
+<main class="aico-pdp" role="main">
+  <div class="aico-page-container aico-pdp-shell">
+
+    <a href="{{ routes.products_url }}" class="aico-pdp-back">
+      <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m15 18-6-6 6-6"></path>
+      </svg>
+      <span>{{ 'product.back_to_products' | t }}</span>
+    </a>
+
+    <div class="aico-pdp-hero">
+
+      {%- comment -%} ──── product-gallery (inline) ──── {%- endcomment -%}
+      <section class="aico-pdp-gallery" data-aico-pdp-gallery aria-label="{{ 'product.gallery.aria' | t }}">
+        {% if product.images.size > 0 %}
+          <div class="aico-pdp-gallery-frame">
+            {% for image in product.images %}
+              <figure class="aico-pdp-gallery-slide{% if forloop.first %} aico-pdp-gallery-slide-active{% endif %}" data-aico-gallery-slide data-aico-gallery-index="{{ forloop.index0 }}">
+                <img
+                  src="{{ image }}"
+                  alt="{{ product.title }}"
+                  loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                  decoding="async"
+                >
+              </figure>
+            {% endfor %}
+
+            {% if product.images.size > 1 %}
+              <button type="button" class="aico-pdp-gallery-nav aico-pdp-gallery-nav-prev" data-aico-gallery-prev aria-label="{{ 'product.gallery.previous' | t }}">
+                <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"></path>
+                </svg>
+              </button>
+              <button type="button" class="aico-pdp-gallery-nav aico-pdp-gallery-nav-next" data-aico-gallery-next aria-label="{{ 'product.gallery.next' | t }}">
+                <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            {% endif %}
+          </div>
+
+          {% if product.images.size > 1 %}
+            <div class="aico-pdp-gallery-thumbs" role="tablist">
+              {% for image in product.images %}
+                <button
+                  type="button"
+                  class="aico-pdp-gallery-thumb{% if forloop.first %} aico-pdp-gallery-thumb-active{% endif %}"
+                  data-aico-gallery-thumb
+                  data-aico-gallery-index="{{ forloop.index0 }}"
+                  aria-label="{{ 'product.gallery.thumb_aria' | t }}"
+                >
+                  <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+                </button>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% comment %} TODO: 360° rotator goes after the thumbs — defer per plan §2. {% endcomment %}
+        {% else %}
+          <div class="aico-pdp-gallery-empty" role="img" aria-label="{{ 'product.gallery.no_image' | t }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10"></path>
+              <path d="m3 21 9-9 4 4 8-8"></path>
+              <line x1="2" x2="22" y1="2" y2="22"></line>
+            </svg>
+          </div>
+        {% endif %}
+      </section>
+
+      <div class="aico-pdp-info">
+
+        {%- comment -%} ──── product-header (inline) ──── {%- endcomment -%}
+        <header class="aico-pdp-header">
+          <div class="aico-pdp-header-row">
+            <h1 class="aico-pdp-title">{{ product.title }}</h1>
+            <div class="aico-pdp-header-meta">
+              {% if product.sku %}
+                <span class="aico-pdp-sku" aria-label="{{ 'product.sku_aria' | t }}">{{ product.sku }}</span>
+              {% endif %}
+              {% if product.aico_production_status_label %}
+                <span class="aico-pdp-status-pill">{{ product.aico_production_status_label }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if product.aico_brand %}
+            <p class="aico-pdp-brand">
+              <a href="{{ product.aico_brand.url }}">{{ product.aico_brand.label }}</a>
+            </p>
+          {% endif %}
+
+          {%- comment -%} ──── product-price (inline) ──── {%- endcomment -%}
+          <div class="aico-pdp-price-block">
+            {% if product.aico_price_label %}
+              <p class="aico-pdp-price">
+                {% if product.aico_compare_at_price_label %}
+                  <span class="aico-pdp-price-list">{{ product.aico_compare_at_price_label }}</span>
+                {% endif %}
+                <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
+                {% if product.aico_discount_percent %}
+                  <span class="aico-pdp-discount">−{{ product.aico_discount_percent }}%</span>
+                {% endif %}
+              </p>
+              {% if product.aico_retail_price_label %}
+                <p class="aico-pdp-rrp">
+                  <span class="aico-pdp-rrp-label">{{ 'product.rrp' | t }}</span>
+                  <span class="aico-pdp-rrp-value">{{ product.aico_retail_price_label }}</span>
+                </p>
+              {% endif %}
+            {% else %}
+              <p class="aico-pdp-price aico-pdp-price-on-request">
+                {{ 'product.price_on_request' | t }}
+              </p>
+            {% endif %}
+          </div>
+
+          {% if product.aico_small_description %}
+            <p class="aico-pdp-small-description">{{ product.aico_small_description }}</p>
+          {% endif %}
+        </header>
+
+        {%- comment -%} ──── product-buy-panel (inline) ──── {%- endcomment -%}
+        <form
+          class="aico-pdp-buy"
+          method="post"
+          action="{{ routes.cart_add_url }}"
+          data-aico-pdp-buy
+          data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
+        >
+          <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+
+          {%- comment -%} ──── product-options (radio chips for non-size options) ──── {%- endcomment -%}
+          {% if product.aico_has_size_matrix? %}
+            {%- comment -%}
+              Matrix mode: render every non-size option as a radio chip group.
+              The size option becomes the column header of the matrix below.
+            {%- endcomment -%}
+            {% for option in product.options %}
+              {% if option.name != product.aico_size_option_name %}
+                <fieldset class="aico-pdp-option-group" data-aico-option="{{ option.name | escape }}">
+                  <legend class="aico-pdp-option-legend">{{ option.name }}</legend>
+                  <div class="aico-pdp-option-chips">
+                    {% for value in option.values %}
+                      <label class="aico-pdp-chip">
+                        <input
+                          type="radio"
+                          name="options[{{ option.name | escape }}]"
+                          value="{{ value | escape }}"
+                          {% if forloop.first %}checked{% endif %}
+                          data-aico-option-input
+                        >
+                        <span class="aico-pdp-chip-label">{{ value }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                </fieldset>
+              {% endif %}
+            {% endfor %}
+
+            {%- comment -%} ──── product-size-matrix (inline) ──── {%- endcomment -%}
+            <section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
+              <div class="aico-pdp-size-matrix-head">
+                <h2 class="aico-pdp-section-heading">{{ product.aico_size_option_name }}</h2>
+                {% comment %}
+                  Size-region tabs are hard-coded to EU for this slice.
+                  TODO follow-up: hook into `aico-commerce`'s
+                  size-region picker (EU / UK / US / Millimeters) plus
+                  the legacy b2b size-conversion endpoint.
+                {% endcomment %}
+                <span class="aico-pdp-size-region">{{ 'product.size_region.eu' | t }}</span>
+              </div>
+
+              <div class="aico-pdp-size-grid">
+                {% for variant in product.variants %}
+                  {% if variant.aico_size_value %}
+                    <label class="aico-pdp-size-cell{% unless variant.available? %} aico-pdp-size-cell-out{% endunless %}" data-aico-size-cell>
+                      <span class="aico-pdp-size-cell-label">{{ variant.aico_size_value }}</span>
+                      <input
+                        type="number"
+                        class="aico-pdp-size-cell-input"
+                        name="items[{{ variant.id }}][quantity]"
+                        min="0"
+                        max="{{ variant.aico_stock_amount }}"
+                        step="1"
+                        value="0"
+                        inputmode="numeric"
+                        data-aico-size-qty
+                        data-aico-variant-id="{{ variant.id }}"
+                        data-aico-variant-stock="{{ variant.aico_stock_amount }}"
+                        aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
+                        {% unless variant.available? %}disabled{% endunless %}
+                      >
+                      <span class="aico-pdp-size-cell-stock" aria-hidden="true">
+                        {% if variant.aico_stock_amount > 0 %}
+                          {{ variant.aico_stock_amount }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </span>
+                      <input type="hidden" name="items[{{ variant.id }}][id]" value="{{ variant.id }}">
+                    </label>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <p class="aico-pdp-size-total" data-aico-size-total>
+                {{ 'product.size_matrix.total' | t }}
+                <strong data-aico-size-total-value>0</strong>
+              </p>
+            </section>
+          {% else %}
+            {%- comment -%}
+              Legacy mode: dropdown per option + a single quantity stepper.
+              The variant id is resolved client-side from the selected options.
+            {%- endcomment -%}
+            {% for option in product.options %}
+              <label class="aico-pdp-option-row">
+                <span class="aico-pdp-option-legend">{{ option.name }}</span>
+                <select name="options[{{ option.name | escape }}]" data-aico-option-input class="aico-pdp-select">
+                  <option value="">{{ 'product.choose' | t }}</option>
+                  {% for value in option.values %}
+                    <option value="{{ value | escape }}">{{ value }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            {% endfor %}
+
+            <label class="aico-pdp-option-row">
+              <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
+              <input
+                type="number"
+                class="aico-pdp-qty-input"
+                name="quantity"
+                min="1"
+                step="1"
+                value="1"
+                inputmode="numeric"
+                data-aico-qty-input
+              >
+            </label>
+
+            {% comment %}
+              Hidden field for the resolved variant id. The vanilla JS
+              fills this in when the user picks options; the server can
+              also resolve it from the option map as a fallback.
+            {% endcomment %}
+            <input type="hidden" name="id" value="" data-aico-variant-id-input>
+          {% endif %}
+
+          <div class="aico-pdp-buy-actions">
+            <button
+              type="submit"
+              class="aico-pdp-buy-button"
+              data-aico-buy-button
+              {% if product.aico_shipping_blocked? %}disabled{% endif %}
+            >
+              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                <path d="M3 6h18"></path>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              <span>
+                {% if product.aico_shipping_blocked? %}
+                  {{ 'product.restricted' | t }}
+                {% else %}
+                  {{ 'product.add_to_cart' | t }}
+                {% endif %}
+              </span>
+            </button>
+
+            {% comment %} TODO: Restock-reminder button (stub) — defer per plan §2. {% endcomment %}
+          </div>
+
+          {% if product.aico_shipping_blocked? %}
+            <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger">{{ 'product.shipping_blocked_hint' | t }}</p>
+          {% endif %}
+
+          <p class="aico-pdp-stock-indicator" data-aico-stock-indicator data-aico-stock="{{ product.aico_stock_indicator }}">
+            {% if product.aico_stock_indicator == 'in_stock' %}
+              <span class="aico-pdp-stock-dot aico-pdp-stock-dot-ok"></span>
+              {{ 'product.stock.in_stock' | t }}
+            {% elsif product.aico_stock_indicator == 'low' %}
+              <span class="aico-pdp-stock-dot aico-pdp-stock-dot-low"></span>
+              {{ 'product.stock.low' | t }}
+            {% else %}
+              <span class="aico-pdp-stock-dot aico-pdp-stock-dot-out"></span>
+              {{ 'product.stock.out' | t }}
+            {% endif %}
+          </p>
+        </form>
+      </div>
+    </div>
+
+    {%- comment -%} ──── product-info-tabs (inline) ──── {%- endcomment -%}
+    <section class="aico-pdp-info-tabs" aria-label="{{ 'product.info_tabs_aria' | t }}">
+      {% if product.description %}
+        <article class="aico-pdp-info-block">
+          <h2 class="aico-pdp-section-heading">{{ 'product.about_product' | t }}</h2>
+          <div class="aico-pdp-info-prose">{{ product.description }}</div>
+        </article>
+      {% endif %}
+
+      {% if product.aico_specs.size > 0 %}
+        <article class="aico-pdp-info-block">
+          <h2 class="aico-pdp-section-heading">{{ 'product.specs' | t }}</h2>
+          <dl class="aico-pdp-specs">
+            {% for row in product.aico_specs %}
+              <div class="aico-pdp-specs-row">
+                <dt>{{ row.label }}</dt>
+                <dd>{{ row.value }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+        </article>
+      {% endif %}
+
+      {% if product.aico_files.size > 0 %}
+        <article class="aico-pdp-info-block">
+          <h2 class="aico-pdp-section-heading">{{ 'product.downloads' | t }}</h2>
+          <ul class="aico-pdp-files">
+            {% for file in product.aico_files %}
+              <li>
+                <a href="{{ file.url }}" target="_blank" rel="noopener noreferrer">
+                  {{ file.name }}
+                  {% if file.size_label %}
+                    <span class="aico-pdp-files-size">{{ file.size_label }}</span>
+                  {% endif %}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </article>
+      {% endif %}
+    </section>
+
+    {%- comment -%} ──── product-related-strip (inline) ──── {%- endcomment -%}
+    {% if product.aico_related_products.size > 0 %}
+      <section class="aico-pdp-related" aria-label="{{ 'product.you_may_also_like' | t }}">
+        <h2 class="aico-pdp-section-heading">{{ 'product.you_may_also_like' | t }}</h2>
+        <ul class="aico-products-grid aico-pdp-related-grid">
+          {% for related in product.aico_related_products %}
+            <li class="aico-products-grid-item">
+              <article class="aico-product-card">
+                <a href="{{ related.url }}" class="aico-product-card-link" aria-label="{{ related.title }}">
+                  <div class="aico-product-card-image-wrap">
+                    {% if related.featured_image %}
+                      <img class="aico-product-card-image" src="{{ related.featured_image }}" alt="" loading="lazy" decoding="async">
+                    {% else %}
+                      <div class="aico-product-card-image-empty" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10"></path>
+                          <path d="m3 21 9-9 4 4 8-8"></path>
+                        </svg>
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="aico-product-card-body">
+                    <h3 class="aico-product-card-title">{{ related.title }}</h3>
+                  </div>
+                </a>
+              </article>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% comment %} TODO: Reviews placeholder + "more colors" cross-product grid — defer per plan §2. {% endcomment %}
+  </div>
+
+  <script src="{{ 'product-detail.js' | asset_url }}" defer></script>
+</main>

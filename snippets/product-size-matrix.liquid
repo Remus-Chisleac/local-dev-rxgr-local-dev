@@ -1,0 +1,49 @@
+{% comment %}
+  product-size-matrix snippet — one column per size with a per-size
+  numeric quantity input. The "Total" line at the bottom is summed by
+  `assets/product-detail.js`. Inlined by `templates/product.liquid`.
+
+  Size-region tabs are hard-coded to EU for this slice. TODO follow-up:
+  port aico-commerce's size-region picker (EU / UK / US / Millimeters).
+{% endcomment %}
+
+<section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
+  <div class="aico-pdp-size-matrix-head">
+    <h2 class="aico-pdp-section-heading">{{ product.aico_size_option_name }}</h2>
+    <span class="aico-pdp-size-region">{{ 'product.size_region.eu' | t }}</span>
+  </div>
+
+  <div class="aico-pdp-size-grid">
+    {% for variant in product.variants %}
+      {% if variant.aico_size_value %}
+        <label class="aico-pdp-size-cell{% unless variant.available? %} aico-pdp-size-cell-out{% endunless %}" data-aico-size-cell>
+          <span class="aico-pdp-size-cell-label">{{ variant.aico_size_value }}</span>
+          <input
+            type="number"
+            class="aico-pdp-size-cell-input"
+            name="items[{{ variant.id }}][quantity]"
+            min="0"
+            max="{{ variant.aico_stock_amount }}"
+            step="1"
+            value="0"
+            inputmode="numeric"
+            data-aico-size-qty
+            data-aico-variant-id="{{ variant.id }}"
+            data-aico-variant-stock="{{ variant.aico_stock_amount }}"
+            aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
+            {% unless variant.available? %}disabled{% endunless %}
+          >
+          <span class="aico-pdp-size-cell-stock" aria-hidden="true">
+            {% if variant.aico_stock_amount > 0 %}{{ variant.aico_stock_amount }}{% else %}—{% endif %}
+          </span>
+          <input type="hidden" name="items[{{ variant.id }}][id]" value="{{ variant.id }}">
+        </label>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <p class="aico-pdp-size-total" data-aico-size-total>
+    {{ 'product.size_matrix.total' | t }}
+    <strong data-aico-size-total-value>0</strong>
+  </p>
+</section>

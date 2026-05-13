@@ -40,7 +40,52 @@
     "discontinued": "Auslaufend",
     "previous": "Zurück",
     "next": "Weiter",
-    "pagination_aria": "Produktseiten-Navigation"
+    "pagination_aria": "Produktseiten-Navigation",
+    "product": {
+      "add_to_cart": "In den Warenkorb"
+    }
+  },
+  "product": {
+    "back_to_products": "Zurück zur Übersicht",
+    "sku_aria": "Artikelnummer",
+    "rrp": "UVP",
+    "price_on_request": "Preis auf Anfrage",
+    "quantity": "Menge",
+    "choose": "Auswählen…",
+    "add_to_cart": "In den Warenkorb",
+    "restricted": "Eingeschränkt",
+    "shipping_blocked_hint": "Versand ist für Ihr Konto gesperrt — Sie können keine Artikel in den Warenkorb legen.",
+    "info_tabs_aria": "Produktinformationen",
+    "about_product": "Über dieses Produkt",
+    "specs": "Spezifikationen",
+    "downloads": "Downloads",
+    "you_may_also_like": "Das könnte Ihnen auch gefallen",
+    "stock": {
+      "in_stock": "An Lager",
+      "low": "Geringer Bestand",
+      "out": "Nicht an Lager"
+    },
+    "gallery": {
+      "aria": "Produktbilder",
+      "previous": "Vorheriges Bild",
+      "next": "Nächstes Bild",
+      "thumb_aria": "Dieses Bild anzeigen",
+      "no_image": "Kein Bild verfügbar"
+    },
+    "size_matrix": {
+      "aria": "Grössenraster",
+      "qty_aria": "Menge für diese Grösse",
+      "total": "Gesamt"
+    },
+    "size_region": {
+      "eu": "EU"
+    },
+    "aico_pdp_message": {
+      "items_saved": "Artikel zum Warenkorb hinzugefügt.",
+      "not_implemented": "Warenkorb-Funktion ist noch nicht verbunden.",
+      "select_quantity": "Bitte mindestens eine Grösse auswählen.",
+      "error": "Konnte nicht zum Warenkorb hinzugefügt werden."
+    }
   },
   "customer": {
     "header": {
