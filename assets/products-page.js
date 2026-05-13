@@ -624,6 +624,7 @@
     li.setAttribute('data-aico-product-id', id);
 
     var urlHandle = (typeof hit.urlHandle === 'string' && hit.urlHandle.trim()) ? hit.urlHandle.trim() : id;
+    var productUrlPrefix = typeof config.productUrlPrefix === 'string' && config.productUrlPrefix ? config.productUrlPrefix : '/products/';
     var title = pickName(hit, config.locale) || id;
     var image = pickImage(hit, config.locale);
     var pricing = extractPricing(hit, config.debtor);
@@ -637,7 +638,7 @@
     article.className = 'aico-product-card';
 
     var link = document.createElement('a');
-    link.href = '/products/' + encodeURIComponent(urlHandle);
+    link.href = productUrlPrefix + encodeURIComponent(urlHandle);
     link.className = 'aico-product-card-link';
     link.setAttribute('aria-label', title);
 
