@@ -70,6 +70,30 @@
     });
   })();
 
+  // -------- Size region tabs --------------------------------------------
+  //
+  // The visible label inside each size cell is the canonical EU value
+  // server-rendered out of the PIM size facet. The size-region tab swap
+  // is visual-only today — when the conversion endpoint lands, the
+  // controller will read `data-aico-size-cell-label-<region>` off each
+  // cell and replace the label without touching the variant binding.
+
+  (function setupSizeRegionTabs() {
+    var tabs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-region]'));
+    if (tabs.length === 0) {
+      return;
+    }
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (other) {
+          var on = other === tab;
+          other.classList.toggle('aico-pdp-size-region-tab-active', on);
+          other.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      });
+    });
+  })();
+
   // -------- Option chips / legacy variant resolution ---------------------
 
   function readSelectedOptions() {

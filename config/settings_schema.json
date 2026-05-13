@@ -13,5 +13,17 @@
       { "id": "aico_auth_subheading", "type": "text", "label": "Login subheading", "default": "" },
       { "id": "aico_auth_background_image", "type": "image_picker", "label": "Login background image" }
     ]
+  },
+  {
+    "name": "Preorder (mock)",
+    "info": "Demo values rendered when no live PreorderSession is bound to the page. Real sessions always override these.",
+    "settings": [
+      { "id": "aico_preorder_mock_title", "type": "text", "label": "Mock preorder title", "default": "PreOrder Ramadan 2027" },
+      { "id": "aico_preorder_mock_weeks", "type": "number", "label": "Mock countdown — weeks", "default": 5 },
+      { "id": "aico_preorder_mock_days", "type": "number", "label": "Mock countdown — days", "default": 16 },
+      { "id": "aico_preorder_mock_hours", "type": "number", "label": "Mock countdown — hours", "default": 0 },
+      { "id": "aico_preorder_mock_minutes", "type": "number", "label": "Mock countdown — minutes", "default": 10 },
+      { "id": "aico_preorder_mock_seconds", "type": "number", "label": "Mock countdown — seconds", "default": 11 }
+    ]
   }
 ]

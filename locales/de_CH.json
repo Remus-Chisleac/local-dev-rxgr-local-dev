@@ -6,8 +6,7 @@
     }
   },
   "footer": {
-    "tagline": "Mit Aico Storefront betrieben",
-    "menu_aria": "Fusszeile-Menü"
+    "tagline": "Mit Aico Storefront betrieben"
   },
   "errors": {
     "not_found": "Diese Seite wurde nicht gefunden.",
@@ -144,7 +143,25 @@
       "total": "Gesamt"
     },
     "size_region": {
-      "eu": "EU"
+      "eu": "EU",
+      "aria": "Grössen-Region"
+    },
+    "more_colors": "Mehr Farben",
+    "reviews": {
+      "title": "Kundenbewertungen",
+      "demo_note": "Demo-Daten – Bewertungen werden später aus einer separaten App geladen.",
+      "based_on": "Basierend auf {count} Bewertungen",
+      "write_review": "Bewertung schreiben",
+      "write_disabled_hint": "Bewertungen sind noch nicht mit einer API verbunden.",
+      "customers_say": "Was Kunden sagen",
+      "ai_generated": "Generiert von KI auf Basis von Kundenbewertungen (illustrativ)",
+      "ai_summary": "Kunden erwähnen oft den {title} wegen seines atmungsaktiven Komforts, der reaktionsfreudigen Active-Sohle und der Silhouette, die auch lange Tage übersteht. Diese Zusammenfassung ist illustrativ, bis der Bewertungsdienst live ist.",
+      "sample_title": "Cooler, moderner Schuh mit dem gewohnten Komfort",
+      "sample_body": "Ich habe Probleme mit den Knien und Kybun-Schuhe passen mir sehr gut – dieses Modell fühlt sich leicht und stützend für den Alltag an.",
+      "reviewed_product": "Bewertetes Produkt: {title}",
+      "sample_reply_title": "Danke für Ihre Bewertung",
+      "sample_reply_body": "Vielen Dank für die freundlichen Worte – wir freuen uns, dass der Schuh gut zu Ihnen passt.",
+      "sample_reply_team": "kybun Joya Team"
     },
     "aico_pdp_message": {
       "items_saved": "Artikel zum Warenkorb hinzugefügt.",
@@ -166,6 +183,9 @@
       }
     },
     "filters": {
+      "section_aria": "PreOrder-Filter",
+      "search_label": "Produkte suchen",
+      "search_placeholder": "Suchen…",
       "b2b_label": "B2B auswählen",
       "b2b_placeholder": "Platzhalter",
       "size_region_label": "Grössentyp",

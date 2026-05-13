@@ -16,7 +16,10 @@
   <div class="aico-pdp-size-grid">
     {% for variant in product.variants %}
       {% if variant.aico_size_value %}
-        <label class="aico-pdp-size-cell{% unless variant.available? %} aico-pdp-size-cell-out{% endunless %}" data-aico-size-cell>
+        <label
+          class="aico-pdp-size-cell{% if variant.available? and variant.aico_stock_amount > 0 %} aico-pdp-size-cell-in-stock{% elsif variant.available? %} aico-pdp-size-cell-available{% else %} aico-pdp-size-cell-out{% endif %}"
+          data-aico-size-cell
+        >
           <span class="aico-pdp-size-cell-label">{{ variant.aico_size_value }}</span>
           <input
             type="number"
@@ -33,7 +36,7 @@
             aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
             {% unless variant.available? %}disabled{% endunless %}
           >
-          <span class="aico-pdp-size-cell-stock" aria-hidden="true">
+          <span class="aico-pdp-size-cell-stock aico-sr-only">
             {% if variant.aico_stock_amount > 0 %}{{ variant.aico_stock_amount }}{% else %}—{% endif %}
           </span>
           <input type="hidden" name="items[{{ variant.id }}][id]" value="{{ variant.id }}">

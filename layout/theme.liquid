@@ -73,26 +73,6 @@
       {{ content_for_layout }}
     </div>
 
-    {% if linklists.footer.links.size > 0 %}
-      <footer class="aico-footer" role="contentinfo">
-        <nav class="aico-footer-nav aico-page-container" aria-label="{{ 'footer.menu_aria' | t }}">
-          <ul class="aico-footer-link-list">
-            {% for link in linklists.footer.links %}
-              <li>
-                <a href="{{ link.url }}" class="aico-footer-link">
-                  {%- if link.title_key -%}
-                    {{ link.title_key | t }}
-                  {%- else -%}
-                    {{ link.title }}
-                  {%- endif -%}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </nav>
-      </footer>
-    {% endif %}
-
     {% comment %} Right-side drawer. Hidden by default; theme.js toggles it. {% endcomment %}
     <div id="aico-drawer" class="aico-drawer" data-aico-drawer hidden>
       <div class="aico-drawer-backdrop" data-aico-drawer-close></div>

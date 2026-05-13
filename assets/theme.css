@@ -2,7 +2,7 @@
   --color-bg: #fafafa;
   --color-text: #1a1a1a;
   --color-accent: #2563eb;
-  --max-width: 81.25rem; /* 1300px */
+  --max-width: 80rem;
 
   /* Tokens used by the storefront chrome and skeletons. Names mirror
      shadcn semantic tokens (background/foreground/muted/border/etc.)
@@ -41,18 +41,6 @@ body {
   color: var(--color-text);
   line-height: 1.5;
 }
-
-/* Non-auth pages: stack chrome → content → footer in a column so the
-   footer sticks to the bottom of short pages instead of floating up
-   into the middle of the viewport. Auth pages keep their own full-bleed
-   shell (see .aico-template-customers / .aico-auth-main below). */
-body:not(.aico-template-customers) {
-  display: flex;
-  flex-direction: column;
-  min-height: 100svh;
-  min-height: 100dvh;
-}
-body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
 
 .aico-sr-only {
   position: absolute;
@@ -218,14 +206,14 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
   grid-template-columns: 1fr;
   align-items: center;
   gap: 2rem;
-  padding-block: 2rem;
+  padding: 2rem 0;
   min-height: min(52vh, 26rem);
 }
 @media (min-width: 768px) {
   .aico-home-hero-inner {
     grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
-    padding-block: 3rem;
+    padding: 3rem 0;
     min-height: 18rem;
   }
 }
@@ -264,13 +252,14 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  padding-block: 1rem;
+  padding: 1rem 0;
 }
-@media (min-width: 640px) {
-  .aico-home-categories { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-}
-@media (min-width: 1024px) {
-  .aico-home-categories { grid-template-columns: repeat(3, 1fr); padding-block: 1.5rem; }
+@media (min-width: 768px) {
+  .aico-home-categories {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    padding: 1.5rem 0;
+  }
 }
 .aico-home-category-card {
   position: relative;
@@ -294,9 +283,9 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
 
 .aico-home-products {
   border-top: 1px solid var(--aico-border);
-  padding-block: 2.5rem;
+  padding: 2.5rem 0;
 }
-@media (min-width: 640px) { .aico-home-products { padding-block: 3rem; } }
+@media (min-width: 640px) { .aico-home-products { padding: 3rem 0; } }
 .aico-home-products-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -379,38 +368,6 @@ body:not(.aico-template-customers) .aico-shell-body { flex: 1 1 auto; }
 .aico-home-news-line-2 { margin-top: 0.5rem; max-width: 85%; background: rgba(0,0,0,0.06); }
 .aico-home-news-line-3 { margin-top: 0.375rem; max-width: 60%; background: rgba(0,0,0,0.05); display: none; }
 @media (min-width: 640px) { .aico-home-news-line-3 { display: block; } }
-
-/* ---------------------------------------------------------------- */
-/* Site footer (shared layout, non-auth pages)                       */
-/* ---------------------------------------------------------------- */
-
-.aico-footer {
-  margin-top: auto;
-  background: var(--aico-muted);
-  border-top: 1px solid var(--aico-border);
-  color: var(--aico-muted-fg);
-  font-size: 0.875rem;
-}
-.aico-footer-nav { padding-block: 1.25rem; }
-.aico-footer-link-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem 1.5rem;
-}
-.aico-footer-link {
-  color: inherit;
-  text-decoration: none;
-}
-.aico-footer-link:hover { text-decoration: underline; }
-.aico-footer-link:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
 
 /* ---------------------------------------------------------------- */
 /* Auth shell (login + recover password)                            */
@@ -1668,7 +1625,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-pdp-gallery-thumb:hover { opacity: 1; }
 .aico-pdp-gallery-thumb-active {
-  border-color: var(--color-accent);
+  border-color: var(--aico-fg);
   opacity: 1;
 }
 .aico-pdp-gallery-empty {
@@ -1703,6 +1660,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 @media (min-width: 768px) { .aico-pdp-title { font-size: 1.875rem; } }
 .aico-pdp-header-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  justify-content: flex-end;
+}
+
 /* ───── Preorder (step 1: addresses + filters) ───── */
 .aico-preorder {
   position: relative;
@@ -1901,13 +1865,38 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-size-matrix {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.875rem;
 }
 .aico-pdp-size-matrix-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .aico-pdp-size-matrix-head {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+}
+.aico-pdp-size-matrix-head .aico-pdp-section-heading {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.aico-pdp-size-matrix-head .aico-pdp-size-region-tabs {
+  flex: 0 1 auto;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 640px) {
+  .aico-pdp-size-matrix-head .aico-pdp-size-region-tabs {
+    margin-left: auto;
+  }
 }
 .aico-pdp-section-heading {
   margin: 0;
@@ -1923,58 +1912,110 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-pdp-size-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
+@media (min-width: 480px) {
+  .aico-pdp-size-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .aico-pdp-size-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
 .aico-pdp-size-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.25rem;
-  padding: 0.5rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 0 0.375rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.5rem 0.625rem;
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.625rem;
   background: var(--aico-bg);
-  cursor: text;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.aico-pdp-size-cell:hover:not(.aico-pdp-size-cell-out) {
+  border-color: var(--aico-muted-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.aico-pdp-size-cell:focus-within:not(.aico-pdp-size-cell-out) {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+/* In-stock strip (reference PDP: green bar along bottom of tile). */
+.aico-pdp-size-cell-in-stock::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: #22c55e;
+  border-radius: 0 0 0.5rem 0.5rem;
 }
 .aico-pdp-size-cell-label {
+  grid-column: 1;
   text-align: center;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--aico-fg);
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 .aico-pdp-size-cell-input {
-  width: 100%;
-  height: 2rem;
-  padding: 0 0.375rem;
+  grid-column: 2;
+  width: 2.25rem;
+  min-width: 2.25rem;
+  height: 1.875rem;
+  padding: 0 0.25rem;
   border: 1px solid var(--aico-border);
-  background: var(--aico-bg);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  background: var(--aico-muted);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--aico-fg);
+  appearance: textfield;
+}
+.aico-pdp-size-cell-input::-webkit-outer-spin-button,
+.aico-pdp-size-cell-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .aico-pdp-size-cell-input:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+  background: var(--aico-bg);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
-.aico-pdp-size-cell-stock {
-  text-align: center;
-  font-size: 0.6875rem;
-  color: var(--aico-muted-fg);
-  font-variant-numeric: tabular-nums;
+.aico-pdp-size-cell-available:not(.aico-pdp-size-cell-in-stock)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--aico-muted-strong);
+  border-radius: 0 0 0.5rem 0.5rem;
 }
 .aico-pdp-size-cell-out {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(0.35);
 }
-.aico-pdp-size-cell-out .aico-pdp-size-cell-input { background: var(--aico-muted); }
+.aico-pdp-size-cell-out .aico-pdp-size-cell-input {
+  background: var(--aico-muted);
+  color: var(--aico-muted-fg);
+}
 
 .aico-pdp-size-total {
-  margin: 0.25rem 0 0;
+  margin: 0.125rem 0 0;
   font-size: 0.875rem;
   color: var(--aico-muted-fg);
 }
@@ -1990,7 +2031,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
-  max-width: 28rem;
 }
 .aico-pdp-buy-button {
   display: inline-flex;
@@ -1998,19 +2038,28 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  height: 3rem;
-  padding: 0 1rem;
-  background: var(--color-accent);
-  color: #ffffff;
-  border: none;
-  border-radius: 9999px;
+  min-height: 3rem;
+  padding: 0.75rem 1.125rem;
+  background: var(--aico-fg);
+  color: var(--aico-bg);
+  border: 1px solid var(--aico-fg);
+  border-radius: 0.75rem;
   font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.aico-pdp-buy-button:hover:not([disabled]) { filter: brightness(0.95); }
+.aico-pdp-buy-button:hover:not([disabled]) {
+  background: #2d2d2d;
+  border-color: #2d2d2d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.aico-pdp-buy-button:active:not([disabled]) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
 .aico-pdp-buy-button[disabled] { opacity: 0.6; cursor: not-allowed; }
 .aico-pdp-buy-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--aico-muted-fg); }
 .aico-pdp-buy-hint-danger { color: #b91c1c; }
@@ -2055,20 +2104,51 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-info-prose p:last-child { margin-bottom: 0; }
 
 .aico-pdp-specs {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
+  display: flex;
+  flex-direction: column;
   margin: 0;
+  padding: 0;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.625rem;
+  overflow: hidden;
+  background: var(--aico-bg);
 }
-@media (min-width: 640px) { .aico-pdp-specs { grid-template-columns: 12rem 1fr; gap: 0.25rem 1rem; } }
-.aico-pdp-specs-row { display: contents; }
+.aico-pdp-specs-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 0.75rem 1.25rem;
+  align-items: baseline;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--aico-border);
+}
+.aico-pdp-specs-row:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 479px) {
+  .aico-pdp-specs-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
 .aico-pdp-specs dt {
+  margin: 0;
   font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--aico-muted-fg);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
-.aico-pdp-specs dd { margin: 0; font-size: 0.9375rem; color: var(--aico-fg); }
+.aico-pdp-specs dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--aico-fg);
+  font-weight: 500;
+  text-align: right;
+}
+@media (max-width: 479px) {
+  .aico-pdp-specs dd {
+    text-align: left;
+  }
+}
 
 .aico-pdp-files {
   list-style: none;
@@ -2103,7 +2183,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 768px) { .aico-pdp-related-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-}
+
 .aico-preorder-countdown-eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -2161,29 +2241,33 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.875rem;
 }
 .aico-preorder-filters {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  align-items: end;
+  align-items: center;
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
   border-radius: 0.625rem;
   padding: 0.875rem;
-}
-@media (min-width: 900px) {
-  .aico-preorder-filters {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-  }
 }
 .aico-preorder-filters-disabled {
   opacity: 0.6;
   pointer-events: none;
 }
 .aico-preorder-field {
+  /* All input cells share remaining row space equally. The view toggle
+     overrides this with `flex: 0 0 auto` so it stays content-sized. */
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 0;
+  min-width: 12rem;
+}
+.aico-preorder-field-search {
+  /* The search input is the row's lead element; gets a wider min width
+     so the placeholder text stays legible at every viewport. */
+  flex: 2 1 0;
+  min-width: 14rem;
 }
 .aico-preorder-field-label {
   font-size: 0.75rem;
@@ -2228,6 +2312,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 
 .aico-preorder-view-toggle {
+  /* Last element on the filter row — sized to its content, never grows.
+     Drives grid/list rendering once the items grid lands back. */
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 0;
@@ -2235,8 +2322,19 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 999px;
   padding: 0.125rem;
   background: var(--color-accent);
-  align-self: end;
+  align-self: center;
 }
+.aico-preorder-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 0.4rem 0.25rem;
+  outline: none;
+}
+.aico-preorder-search-input::placeholder { color: var(--aico-muted-fg); }
 .aico-preorder-view-button {
   display: inline-flex;
   align-items: center;
@@ -2330,4 +2428,180 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ---------------------------------------------------------------- */
+/*  PDP — size region tabs                                           */
+/* ---------------------------------------------------------------- */
+.aico-pdp-size-region-tabs {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  background: var(--aico-muted, #f4f4f5);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.625rem;
+}
+.aico-pdp-size-region-tab {
+  flex: 0 0 auto;
+  padding: 0.4375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  background: transparent;
+  color: var(--aico-muted-fg, #6b7280);
+  border-radius: 0.4375rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.aico-pdp-size-region-tab:hover { color: var(--aico-fg, #1a1a1a); }
+.aico-pdp-size-region-tab-active {
+  background: var(--aico-bg, #fff); color: var(--aico-fg, #1a1a1a);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* ---------------------------------------------------------------- */
+/*  PDP — More colors                                                */
+/* ---------------------------------------------------------------- */
+.aico-pdp-colors {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  padding-top: 2rem; border-top: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-pdp-color-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem;
+}
+@media (min-width: 480px) { .aico-pdp-color-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .aico-pdp-color-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+.aico-pdp-color-tile {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1 / 1; padding: 0.375rem;
+  background: var(--aico-card, #fff); border: 2px solid transparent;
+  border-radius: 0.625rem; overflow: hidden;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+.aico-pdp-color-tile:hover { border-color: var(--aico-border, #e5e7eb); transform: translateY(-1px); }
+.aico-pdp-color-tile img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.aico-pdp-color-tile-active {
+  border-color: var(--aico-fg, #1a1a1a);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+/* ---------------------------------------------------------------- */
+/*  PDP — Reviews (mock)                                             */
+/* ---------------------------------------------------------------- */
+.aico-pdp-reviews {
+  padding-top: 2.5rem; border-top: 1px solid var(--aico-border, #e5e7eb);
+  display: flex; flex-direction: column; gap: 2rem;
+}
+.aico-pdp-reviews-header { display: flex; flex-direction: column; gap: 0.25rem; }
+.aico-pdp-reviews-demo-note { color: var(--aico-muted-fg, #6b7280); font-size: 0.75rem; margin: 0; }
+
+.aico-pdp-reviews-summary {
+  display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start;
+}
+@media (min-width: 900px) {
+  .aico-pdp-reviews-summary {
+    grid-template-columns: auto minmax(0, 1fr) auto; gap: 2rem;
+  }
+}
+.aico-pdp-reviews-score { display: flex; align-items: center; gap: 0.875rem; }
+.aico-pdp-reviews-score-value {
+  font-size: 3rem; font-weight: 700; margin: 0; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.aico-pdp-reviews-score-stars { display: inline-flex; gap: 1px; color: #f59e0b; }
+.aico-pdp-reviews-score-stars svg { width: 1.125rem; height: 1.125rem; }
+.aico-pdp-reviews-score-caption {
+  color: var(--aico-muted-fg, #6b7280); font-size: 0.875rem; margin: 0.25rem 0 0;
+}
+
+.aico-pdp-reviews-histogram {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  max-width: 28rem; width: 100%;
+}
+.aico-pdp-reviews-histogram-row { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem; }
+.aico-pdp-reviews-histogram-label {
+  color: var(--aico-muted-fg, #6b7280); width: 3rem; font-variant-numeric: tabular-nums;
+}
+.aico-pdp-reviews-histogram-bar {
+  flex: 1 1 0; height: 0.5rem;
+  background: rgba(0,0,0,0.08); border-radius: 9999px; overflow: hidden;
+}
+.aico-pdp-reviews-histogram-fill {
+  display: block; height: 100%;
+  background: var(--aico-fg, #1a1a1a); border-radius: 9999px;
+  transition: width 250ms ease;
+}
+.aico-pdp-reviews-histogram-count {
+  color: var(--aico-muted-fg, #6b7280); width: 2rem; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.aico-pdp-reviews-write {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  height: 3rem; padding: 0 1.5rem;
+  background: var(--aico-fg, #1a1a1a); color: var(--aico-bg, #fff);
+  border: none; border-radius: 9999px;
+  font-size: 0.9375rem; font-weight: 600;
+  cursor: not-allowed; opacity: 0.85;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.aico-pdp-reviews-ai {
+  background: rgba(244, 244, 245, 0.5);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.75rem; padding: 1.25rem 1.5rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.aico-pdp-reviews-ai h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.aico-pdp-reviews-ai-label {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  color: var(--aico-fg, #1a1a1a); font-size: 0.75rem; font-weight: 600; margin: 0;
+}
+.aico-pdp-reviews-ai-body {
+  margin: 0; font-size: 0.9375rem;
+  color: var(--aico-fg, #1a1a1a); line-height: 1.55;
+}
+
+.aico-pdp-reviews-sample {
+  border-top: 1px solid var(--aico-border, #e5e7eb); padding-top: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.aico-pdp-reviews-sample-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 1rem; flex-wrap: wrap;
+}
+.aico-pdp-reviews-sample-stars { display: inline-flex; gap: 1px; color: #f59e0b; margin-bottom: 0.375rem; }
+.aico-pdp-reviews-sample-stars svg { width: 1rem; height: 1rem; }
+.aico-pdp-reviews-sample-title { margin: 0; font-size: 0.9375rem; font-weight: 600; }
+.aico-pdp-reviews-sample-date {
+  color: var(--aico-muted-fg, #6b7280); font-size: 0.8125rem; font-variant-numeric: tabular-nums;
+}
+.aico-pdp-reviews-sample-body {
+  color: var(--aico-muted-fg, #6b7280); font-size: 0.875rem; line-height: 1.6; margin: 0;
+}
+.aico-pdp-reviews-sample-product {
+  color: var(--aico-muted-fg, #6b7280); font-size: 0.75rem; margin: 0;
+}
+.aico-pdp-reviews-sample-reply {
+  display: flex; gap: 0.75rem;
+  background: rgba(244, 244, 245, 0.7);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.75rem; padding: 1rem;
+}
+.aico-pdp-reviews-sample-reply-avatar {
+  width: 2.25rem; height: 2.25rem; border-radius: 9999px;
+  background: var(--aico-fg, #1a1a1a); color: var(--aico-bg, #fff);
+  font-weight: 700; font-size: 0.8125rem;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.aico-pdp-reviews-sample-reply-title { margin: 0 0 0.25rem; font-size: 0.875rem; font-weight: 600; }
+.aico-pdp-reviews-sample-reply-body {
+  margin: 0 0 0.25rem; font-size: 0.875rem; line-height: 1.55;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-pdp-reviews-sample-reply-team {
+  margin: 0; font-size: 0.75rem; color: var(--aico-muted-fg, #6b7280); font-weight: 500;
 }

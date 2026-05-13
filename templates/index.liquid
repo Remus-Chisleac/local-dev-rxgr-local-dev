@@ -26,35 +26,6 @@
     {% if aico_shop_brands.size > 0 %}
       <ul class="aico-home-brand-grid" role="list">
         {% for brand in aico_shop_brands %}
-          {%- comment -%}
-            Map brand → bundled theme asset by normalized label. The
-            DB-side `banner` image (exposed as `brand.image_url`) is
-            stale legacy artwork; the theme ships clean replacements
-            under `assets/brand-*.jpg`. Falls back to `brand.image_url`
-            when no mapping exists (e.g. B-Grade, Fremdprodukte), then
-            to an empty placeholder.
-          {%- endcomment -%}
-          {%- assign brand_key = brand.label | downcase | strip | replace: ' ', '-' -%}
-          {%- assign brand_theme_asset = '' -%}
-          {%- case brand_key -%}
-            {%- when 'kybun' -%}{%- assign brand_theme_asset = 'brand-kybun.jpg' -%}
-            {%- when 'joya' -%}{%- assign brand_theme_asset = 'brand-joya.jpg' -%}
-            {%- when 'kybunjoya' -%}{%- assign brand_theme_asset = 'brand-kybunjoya.jpg' -%}
-            {%- when 'kybun-joya' -%}{%- assign brand_theme_asset = 'brand-kybunjoya.jpg' -%}
-            {%- when 'kandahar' -%}{%- assign brand_theme_asset = 'brand-kandahar.jpg' -%}
-            {%- when 'kybun-arabic-styles' -%}{%- assign brand_theme_asset = 'brand-arabic-style.jpg' -%}
-            {%- when 'arabic-style' -%}{%- assign brand_theme_asset = 'brand-arabic-style.jpg' -%}
-            {%- when 'arabic-styles' -%}{%- assign brand_theme_asset = 'brand-arabic-style.jpg' -%}
-            {%- when 'special-edition' -%}{%- assign brand_theme_asset = 'brand-special-edition.jpg' -%}
-          {%- endcase -%}
-          {%- if brand_theme_asset != '' -%}
-            {%- assign brand_card_image = brand_theme_asset | asset_url -%}
-          {%- elsif brand.image_url -%}
-            {%- assign brand_card_image = brand.image_url -%}
-          {%- else -%}
-            {%- assign brand_card_image = '' -%}
-          {%- endif -%}
-
           <li class="aico-home-brand-grid-item">
             {% if brand.aico_is_accessible? %}
               <a
@@ -63,9 +34,9 @@
                 aria-label="{{ brand.label }}"
               >
                 <div class="aico-home-brand-card-image-wrap">
-                  {% if brand_card_image != '' %}
+                  {% if brand.image_url %}
                     <img
-                      src="{{ brand_card_image }}"
+                      src="{{ brand.image_url }}"
                       alt=""
                       class="aico-home-brand-card-image"
                       loading="lazy"
@@ -85,9 +56,9 @@
                 title="{{ 'home_page.brand_inaccessible' | t }}"
               >
                 <div class="aico-home-brand-card-image-wrap">
-                  {% if brand_card_image != '' %}
+                  {% if brand.image_url %}
                     <img
-                      src="{{ brand_card_image }}"
+                      src="{{ brand.image_url }}"
                       alt=""
                       class="aico-home-brand-card-image"
                       loading="lazy"
@@ -109,4 +80,20 @@
       <p class="aico-home-brand-empty">{{ 'home_page.no_brands' | t }}</p>
     {% endif %}
   </section>
+
+  {% if linklists.footer.links.size > 0 %}
+    <footer class="aico-home-footer" role="contentinfo">
+      <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
+        {% for link in linklists.footer.links %}
+          <a href="{{ link.url }}" class="aico-home-footer-link">
+            {%- if link.title_key -%}
+              {{ link.title_key | t }}
+            {%- else -%}
+              {{ link.title }}
+            {%- endif -%}
+          </a>
+        {% endfor %}
+      </nav>
+    </footer>
+  {% endif %}
 </main>
