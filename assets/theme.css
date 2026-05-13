@@ -82,25 +82,23 @@ body:not(.aico-template-customers) > .aico-shell-body {
 @media (min-width: 640px) { .aico-page-container { padding: 0 1.25rem; } }
 
 /* ---------------------------------------------------------------- */
-/* Top chrome: welcome bar + sticky header (full-width dark strip)   */
+/* Top chrome: black welcome strip + light sticky header row         */
 /* ---------------------------------------------------------------- */
 
 .aico-chrome-sticky {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: #0a0a0a;
-  color: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  background: var(--aico-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .aico-welcome-bar {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.82);
+  background: #0a0a0a;
+  color: rgba(255, 255, 255, 0.88);
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .aico-welcome-text {
   margin: 0;
   text-align: center;
@@ -109,7 +107,8 @@ body:not(.aico-template-customers) > .aico-shell-body {
 }
 
 .aico-header {
-  background: transparent;
+  background: var(--aico-bg);
+  border-bottom: 1px solid var(--aico-border);
 }
 .aico-header-row {
   display: flex;
@@ -128,12 +127,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-.aico-chrome-sticky .aico-header-brand {
-  color: #ffffff;
-}
-.aico-header-brand:hover { opacity: 0.85; }
-.aico-chrome-sticky .aico-header-brand:hover { opacity: 0.82; }
-
+.aico-header-brand:hover { opacity: 0.8; }
 .aico-header-brand-text {
   min-width: 0;
   overflow: hidden;
@@ -165,22 +159,10 @@ body:not(.aico-template-customers) > .aico-shell-body {
 .aico-icon-button:hover,
 .aico-menu-button:hover { background: var(--aico-muted); }
 
-.aico-chrome-sticky .aico-icon-button {
-  color: rgba(255, 255, 255, 0.92);
-}
-.aico-chrome-sticky .aico-icon-button:hover,
-.aico-chrome-sticky .aico-menu-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
 .aico-icon-button:focus-visible,
 .aico-menu-button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
-}
-.aico-chrome-sticky .aico-icon-button:focus-visible,
-.aico-chrome-sticky .aico-menu-button:focus-visible {
-  outline-color: rgba(255, 255, 255, 0.7);
 }
 
 .aico-menu-button {
@@ -195,9 +177,6 @@ body:not(.aico-template-customers) > .aico-shell-body {
   font: inherit;
   color: var(--aico-fg);
   cursor: pointer;
-}
-.aico-chrome-sticky .aico-menu-button {
-  color: rgba(255, 255, 255, 0.92);
 }
 .aico-menu-button-label { display: none; }
 @media (min-width: 640px) {
