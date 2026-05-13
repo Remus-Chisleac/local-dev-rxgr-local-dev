@@ -12,6 +12,18 @@
     "not_found": "We couldn't find that page.",
     "back_home": "Return home"
   },
+  "brand_page": {
+    "aria_main": "Brand storefront",
+    "restricted_notice": "Your account does not include this brand. Pick another brand from the overview or contact your sales contact.",
+    "hero_sub_skeleton": "Subtitle",
+    "hero_cta": "View products",
+    "hero_carousel_aria": "Hero carousel",
+    "categories_aria": "Shop by category",
+    "category_women": "Women",
+    "category_men": "Men",
+    "products_heading": "Our most popular models",
+    "badge_new": "NEW"
+  },
   "nav": {
     "welcome_prefix": "Welcome back,",
     "welcome_guest": "Welcome",

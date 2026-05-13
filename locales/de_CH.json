@@ -12,6 +12,18 @@
     "not_found": "Diese Seite wurde nicht gefunden.",
     "back_home": "Zurück zur Startseite"
   },
+  "brand_page": {
+    "aria_main": "Marken-Shop",
+    "restricted_notice": "Sie haben keinen Zugriff auf diese Marke. Wählen Sie eine andere Marke in der Übersicht oder wenden Sie sich an Ihren Ansprechpartner.",
+    "hero_sub_skeleton": "Untertitel",
+    "hero_cta": "Überprüfen",
+    "hero_carousel_aria": "Hero-Karussell",
+    "categories_aria": "Kategorien",
+    "category_women": "Frauen",
+    "category_men": "Männer",
+    "products_heading": "Unsere beliebtesten Modelle",
+    "badge_new": "NEU"
+  },
   "nav": {
     "welcome_prefix": "Willkommen zurück,",
     "welcome_guest": "Willkommen",

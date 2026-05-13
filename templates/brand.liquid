@@ -1,0 +1,75 @@
+{% comment %}
+  Brand landing page (Shopify-nonstandard `/brand/<handle>` contract — AICO storefront).
+
+  Real catalog content (carousel CMS, campaigns, facets) arrives in follow-up slices.
+  This template ships deterministic skeleton shapes so merchants can preview layout
+  and every known shop-brand handle resolves without a 404.
+{% endcomment %}
+
+<main class="aico-brand-page" role="main" aria-label="{{ 'brand_page.aria_main' | t }}">
+  <section class="aico-brand-hero" aria-labelledby="aico-brand-hero-heading">
+    {% if aico_brand.image_url %}
+      <img class="aico-brand-hero-photo" src="{{ aico_brand.image_url }}" alt="" loading="eager">
+    {% else %}
+      <div class="aico-brand-hero-bg-skeleton" aria-hidden="true"></div>
+    {% endif %}
+    <div class="aico-brand-hero-scrim"></div>
+    <div class="aico-page-container aico-brand-hero-inner">
+      <div class="aico-brand-hero-copy">
+        <h1 id="aico-brand-hero-heading" class="aico-brand-hero-heading">{{ aico_brand.label }}</h1>
+        <p class="aico-brand-hero-sub">{{ 'brand_page.hero_sub_skeleton' | t }}</p>
+
+        {% if aico_brand.aico_is_accessible? %}
+          <a href="{{ routes.products_url }}" class="aico-brand-hero-cta">{{ 'brand_page.hero_cta' | t }}</a>
+        {% else %}
+          <span class="aico-brand-hero-cta aico-brand-hero-cta-disabled">{{ 'brand_page.hero_cta' | t }}</span>
+          <p class="aico-brand-restricted-banner" role="status">{{ 'brand_page.restricted_notice' | t }}</p>
+        {% endif %}
+      </div>
+
+      <div class="aico-brand-hero-side" aria-hidden="true">
+        <div class="aico-brand-hero-logo-slot skeleton-block"></div>
+      </div>
+    </div>
+
+    <nav class="aico-brand-carousel-dots" aria-label="{{ 'brand_page.hero_carousel_aria' | t }}" role="navigation">
+      {% for iteration in (1..6) %}
+        <span class="aico-brand-carousel-dot{% if forloop.first %} aico-brand-carousel-dot-active{% endif %}"></span>
+      {% endfor %}
+    </nav>
+  </section>
+
+  <section class="aico-page-container aico-brand-category-row" aria-label="{{ 'brand_page.categories_aria' | t }}">
+    <div class="aico-brand-category-tiles">
+      <div class="aico-brand-category-tile aico-brand-category-tile-women">
+        <span class="aico-brand-category-label">{{ 'brand_page.category_women' | t }}</span>
+      </div>
+      <div class="aico-brand-category-tile aico-brand-category-tile-men">
+        <span class="aico-brand-category-label">{{ 'brand_page.category_men' | t }}</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="aico-page-container aico-brand-products-skeleton" aria-labelledby="aico-brand-products-heading">
+    <h2 id="aico-brand-products-heading" class="aico-brand-products-heading">{{ 'brand_page.products_heading' | t }}</h2>
+    <ul class="aico-brand-product-grid" role="list">
+      {% for iteration in (1..4) %}
+        <li class="aico-brand-product-card">
+          <div class="aico-brand-product-card-top">
+            <span class="aico-brand-product-badge skeleton-pill" aria-hidden="true">{{ 'brand_page.badge_new' | t }}</span>
+            <div class="aico-brand-product-stars skeleton-stars" aria-hidden="true"></div>
+          </div>
+          <div class="aico-brand-product-image skeleton-block" aria-hidden="true"></div>
+          <div class="aico-brand-product-meta">
+            <span class="skeleton-line skeleton-line-title" aria-hidden="true"></span>
+            <span class="skeleton-line skeleton-line-small" aria-hidden="true"></span>
+            <div class="aico-brand-product-price-row">
+              <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
+              <span class="aico-brand-product-cart-fab skeleton-fab" aria-hidden="true"></span>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</main>
