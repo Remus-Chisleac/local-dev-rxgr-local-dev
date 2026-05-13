@@ -1662,11 +1662,23 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-bg);
 }
 
+/* Main brand blocks share a 1300px cap (centered); header chrome stays full width. */
+.aico-brand-page .aico-page-container {
+  max-width: 1300px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .aico-brand-hero {
   position: relative;
   min-height: clamp(16rem, 42vw, 22rem);
   overflow: hidden;
   border-bottom: 1px solid var(--aico-border);
+  max-width: 1300px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .aico-brand-hero-photo {
@@ -1744,6 +1756,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   max-width: 22rem;
 }
 
+.aico-brand-hero-copy > .aico-brand-unknown-banner:first-of-type,
+.aico-brand-hero-copy > .aico-brand-restricted-banner:first-of-type {
+  margin-top: 0;
+}
+
 .aico-brand-product-card .skeleton-line {
   background: rgba(161, 161, 170, 0.38);
 }
@@ -1754,34 +1771,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
     rgba(255, 255, 255, 0.55) 50%,
     transparent 100%
   );
-}
-
-.aico-brand-hero-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.625rem;
-  border: 0;
-  background: linear-gradient(180deg, #ff7900 0%, #f97316 100%);
-  color: #ffffff;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  text-decoration: none;
-  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.38);
-  transition: filter 0.15s ease, transform 0.15s ease;
-}
-
-.aico-brand-hero-cta:hover {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-}
-
-.aico-brand-hero-cta-disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  pointer-events: none;
 }
 
 .aico-brand-restricted-banner {
@@ -1921,14 +1910,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: rgba(251, 191, 36, 0.55);
 }
 
-.skeleton-fab {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 9999px;
-  background: linear-gradient(180deg, #ff7900 0%, #f97316 100%);
-  opacity: 0.45;
-}
-
 .aico-brand-category-row {
   padding-top: 2rem;
   padding-bottom: 1.5rem;
@@ -2066,9 +2047,20 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-brand-product-price-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+.aico-brand-footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+  background: var(--aico-bg);
+  border-top: 1px solid var(--aico-border);
+}
+.aico-brand-footer .aico-home-footer-links {
+  justify-content: center;
 }
 
 /* ───── PDP ───── */

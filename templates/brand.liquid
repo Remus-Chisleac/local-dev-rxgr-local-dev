@@ -22,13 +22,11 @@
         <p class="aico-brand-hero-sub">{{ 'brand_page.hero_sub_skeleton' | t }}</p>
 
         {% if aico_brand.aico_placeholder? %}
-          <span class="aico-brand-hero-cta aico-brand-hero-cta-disabled">{{ 'brand_page.hero_cta' | t }}</span>
           <p class="aico-brand-unknown-banner" role="status">{{ 'brand_page.unknown_brand_notice' | t }}</p>
-        {% elsif aico_brand.aico_is_accessible? %}
-          <a href="{{ routes.products_url }}" class="aico-brand-hero-cta">{{ 'brand_page.hero_cta' | t }}</a>
         {% else %}
-          <span class="aico-brand-hero-cta aico-brand-hero-cta-disabled">{{ 'brand_page.hero_cta' | t }}</span>
+          {% unless aico_brand.aico_is_accessible? %}
           <p class="aico-brand-restricted-banner" role="status">{{ 'brand_page.restricted_notice' | t }}</p>
+          {% endunless %}
         {% endif %}
       </div>
 
@@ -70,11 +68,26 @@
             <span class="skeleton-line skeleton-line-small" aria-hidden="true"></span>
             <div class="aico-brand-product-price-row">
               <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
-              <span class="aico-brand-product-cart-fab skeleton-fab" aria-hidden="true"></span>
             </div>
           </div>
         </li>
       {% endfor %}
     </ul>
   </section>
+
+  {% if linklists.footer.links.size > 0 %}
+    <footer class="aico-page-container aico-brand-footer" role="contentinfo">
+      <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
+        {% for link in linklists.footer.links %}
+          <a href="{{ link.url }}" class="aico-home-footer-link">
+            {%- if link.title_key -%}
+              {{ link.title_key | t }}
+            {%- else -%}
+              {{ link.title }}
+            {%- endif -%}
+          </a>
+        {% endfor %}
+      </nav>
+    </footer>
+  {% endif %}
 </main>
