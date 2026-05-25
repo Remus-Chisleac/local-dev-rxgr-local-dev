@@ -1,0 +1,66 @@
+{% comment %}
+  Order-confirmation page. Render-only — reads order details off the
+  URL query string (the submit response and Pusher event both
+  redirect here with the relevant fields). Mirrors b2b-shop's
+  thank-you page: order number, total, message about the
+  confirmation email, return-to-shop CTA.
+{% endcomment %}
+
+<main class="aico-checkout-thank-you">
+  <div class="aico-page-container">
+    <div class="aico-checkout-thank-you-card">
+      <div class="aico-checkout-thank-you-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5"/>
+        </svg>
+      </div>
+      <h1 class="aico-checkout-thank-you-title">{{ 'checkout.thank_you.title' | t }}</h1>
+
+      {% if request.query.order_number %}
+        <p class="aico-checkout-thank-you-order">
+          {{ 'checkout.thank_you.order_number' | t }}:
+          <strong>{{ request.query.order_number }}</strong>
+        </p>
+      {% endif %}
+
+      <dl class="aico-checkout-thank-you-totals">
+        {% if request.query.subtotal %}
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
+            <dd>{{ request.query.subtotal | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+        {% if request.query.shipping %}
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.shipping' | t }}</dt>
+            <dd>{{ request.query.shipping | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+        {% if request.query.vat %}
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.vat' | t }}</dt>
+            <dd>{{ request.query.vat | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+        {% if request.query.cc_fee %}
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
+            <dd>{{ request.query.cc_fee | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+        {% if request.query.total %}
+          <div class="aico-checkout-summary-row aico-checkout-summary-row-grand">
+            <dt>{{ 'checkout.summary.total' | t }}</dt>
+            <dd>{{ request.query.total | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+      </dl>
+
+      <p class="aico-checkout-thank-you-email">{{ 'checkout.thank_you.email_confirmation' | t }}</p>
+
+      <a href="{{ routes.products_url }}" class="aico-button aico-button-primary">
+        {{ 'checkout.thank_you.continue' | t }}
+      </a>
+    </div>
+  </div>
+</main>

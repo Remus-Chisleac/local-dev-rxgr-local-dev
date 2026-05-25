@@ -154,10 +154,12 @@
           method="post"
           action="{{ routes.cart_add_url }}"
           data-aico-pdp-buy
+          data-aico-cart-add
           data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
         >
           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
           <input type="hidden" name="product_id" value="{{ product.id }}">
+          <input type="hidden" name="return_url" value="{{ request.path }}">
 
           {%- comment -%} ──── product-options (radio chips for non-size options) ──── {%- endcomment -%}
           {% if product.aico_has_size_matrix? %}

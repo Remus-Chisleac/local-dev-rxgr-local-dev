@@ -7,6 +7,59 @@
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
   {% if template.directory == 'customers' %}
     <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
+  {% else %}
+    {% comment %}
+      Bootstrap globals consumed by assets/cart.js + checkout.js. Keep
+      this block tiny — only what the scripts need to format money,
+      hit the right endpoints, and seed the initial Alpine store.
+    {% endcomment %}
+    <script>
+      window.__AICO_CSRF__ = {{ aico_csrf_token | json }};
+      window.__AICO_SHOP__ = {
+        currency: {{ cart.currency_code | default: 'CHF' | json }},
+        locale: {{ request.locale | default: shop.default_locale | json }}
+      };
+      window.__AICO_ROUTES__ = {
+        cart: {
+          url: {{ routes.cart_url | json }},
+          addUrl: {{ routes.cart_add_url | json }},
+          changeUrl: {{ routes.cart_change_url | json }},
+          clearUrl: {{ routes.cart_clear_url | json }},
+          discountUrl: {{ routes.aico_cart_discount_url | json }},
+          jsonUrl: {{ routes.aico_cart_json_url | json }},
+          addJsonUrl: {{ routes.aico_cart_add_json_url | json }},
+          changeJsonUrl: {{ routes.aico_cart_change_json_url | json }}
+        },
+        checkout: {
+          url: {{ routes.checkout_url | json }},
+          processingUrl: {{ routes.aico_checkout_processing_url | json }},
+          thankYouUrl: {{ routes.aico_checkout_thank_you_url | json }},
+          paymentStatusUrl: {{ routes.aico_checkout_payment_status_url | json }}
+        }
+      };
+      window.__AICO_T__ = {
+        cart: {
+          added: {{ 'cart.added' | t | json }},
+          add_error: {{ 'cart.add_error' | t | json }},
+          updated: {{ 'cart.updated' | t | json }},
+          update_error: {{ 'cart.update_error' | t | json }},
+          removed: {{ 'cart.removed' | t | json }},
+          item_count_one: {{ 'cart.item_count_one' | t | json }},
+          item_count_other: {{ 'cart.item_count_other' | t | json }}
+        }
+      };
+    </script>
+    {% if cart %}
+      {%- comment -%}
+        SSR'd cart snapshot read by assets/cart.js on init so the header
+        badge / mini-cart show the right contents on first paint without
+        a follow-up /cart.js fetch. The `| json` filter walks the drop
+        with reflection — sufficient for cart + line-item shapes.
+      {%- endcomment -%}
+      <script id="aico-cart-data" type="application/json">{{ cart | json }}</script>
+    {% endif %}
+    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    <script src="{{ 'cart.js' | asset_url }}" defer></script>
   {% endif %}
 </head>
 <body class="{% if template.directory == 'customers' %}aico-template-customers{% endif %}">
@@ -48,13 +101,23 @@
               </svg>
             </button>
 
-            <a href="{{ routes.cart_url }}" class="aico-icon-button" aria-label="{{ 'nav.cart_aria' | t }}">
+            <button type="button"
+                    class="aico-icon-button aico-cart-button"
+                    aria-label="{{ 'nav.cart_aria' | t }}"
+                    x-data
+                    @click="$store.cart.openDrawer()">
               <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
                 <path d="M3 6h18"></path>
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
-            </a>
+              <span class="aico-cart-badge"
+                    x-show="$store.cart.itemCount() > 0"
+                    x-text="$store.cart.itemCount()"
+                    x-cloak
+                    aria-hidden="true"></span>
+              <span class="aico-sr-only" x-text="$store.cart.itemCountLabel()"></span>
+            </button>
 
             <button type="button" class="aico-menu-button" data-aico-menu-trigger aria-controls="aico-drawer" aria-expanded="false" aria-label="{{ 'nav.open_menu' | t }}">
               <span class="aico-menu-button-label">{{ 'nav.open_menu' | t }}</span>
@@ -320,6 +383,93 @@
         </div>
       </aside>
     </div>
+    </div>
+
+    {%- comment -%} ─── Mini-cart drawer (Alpine-driven) ─── {%- endcomment -%}
+    <div class="aico-mini-cart"
+         x-data
+         x-show="$store.cart.drawer"
+         x-cloak
+         @keydown.escape.window="$store.cart.closeDrawer()"
+         aria-modal="true"
+         role="dialog"
+         aria-labelledby="aico-mini-cart-title">
+      <div class="aico-mini-cart-backdrop" @click="$store.cart.closeDrawer()"></div>
+      <aside class="aico-mini-cart-sheet" x-transition.opacity tabindex="-1">
+        <header class="aico-mini-cart-head">
+          <h2 id="aico-mini-cart-title" class="aico-mini-cart-title">{{ 'cart.title' | t }}</h2>
+          <button type="button"
+                  class="aico-icon-button"
+                  @click="$store.cart.closeDrawer()"
+                  aria-label="{{ 'nav.close_menu' | t }}">
+            <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </header>
+
+        <div class="aico-mini-cart-body">
+          <template x-if="!$store.cart.data || $store.cart.data.empty">
+            <div class="aico-mini-cart-empty">
+              <p>{{ 'cart.empty.heading' | t }}</p>
+              <a href="{{ routes.products_url }}" class="aico-button aico-button-outline">
+                {{ 'cart.empty.cta' | t }}
+              </a>
+            </div>
+          </template>
+
+          <template x-if="$store.cart.data && !$store.cart.data.empty">
+            <ul class="aico-mini-cart-list">
+              <template x-for="line in $store.cart.data.items" :key="line.id">
+                <li class="aico-mini-cart-line">
+                  <a class="aico-mini-cart-line-image" :href="line.url || '#'">
+                    <template x-if="line.image"><img :src="line.image" :alt="line.title" loading="lazy"></template>
+                    <template x-if="!line.image"><span class="aico-mini-cart-line-image-empty" aria-hidden="true"></span></template>
+                  </a>
+                  <div class="aico-mini-cart-line-info">
+                    <a class="aico-mini-cart-line-title" :href="line.url || '#'" x-text="line.title"></a>
+                    <p class="aico-mini-cart-line-meta" x-show="line.aico_variant_label" x-text="line.aico_variant_label"></p>
+                    <p class="aico-mini-cart-line-qty">
+                      <span x-text="line.quantity"></span> ×
+                      <span x-text="$store.cart.formatMoney(line.price)"></span>
+                    </p>
+                  </div>
+                  <button type="button"
+                          class="aico-mini-cart-line-remove"
+                          @click="$store.cart.update(line.id, 0)"
+                          aria-label="{{ 'cart.line.remove' | t }}">×</button>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </div>
+
+        <footer class="aico-mini-cart-foot" x-show="$store.cart.data && !$store.cart.data.empty" x-cloak>
+          <div class="aico-mini-cart-subtotal">
+            <span>{{ 'cart.summary.subtotal' | t }}</span>
+            <strong x-text="$store.cart.formatMoney($store.cart.data && $store.cart.data.total_price)"></strong>
+          </div>
+          <a href="{{ routes.cart_url }}" class="aico-button aico-button-outline">{{ 'cart.view_cart' | t }}</a>
+          <a href="{{ routes.checkout_url }}"
+             class="aico-button aico-button-primary"
+             :class="{ 'aico-is-disabled': !$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %}) }"
+             @click.prevent="if (!$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %})) return; window.location = $el.getAttribute('href');">
+            {{ 'cart.checkout_cta' | t }}
+          </a>
+        </footer>
+      </aside>
+    </div>
+
+    {%- comment -%} ─── Toast container (cart feedback) ─── {%- endcomment -%}
+    <div class="aico-toast-wrap" x-data aria-live="polite" aria-atomic="true">
+      <template x-if="$store.cart.toast">
+        <div class="aico-toast"
+             :class="'aico-toast-' + $store.cart.toast.kind"
+             x-transition.opacity>
+          <span x-text="$store.cart.toast.text"></span>
+        </div>
+      </template>
     </div>
 
     <script src="{{ 'theme.js' | asset_url }}" defer></script>

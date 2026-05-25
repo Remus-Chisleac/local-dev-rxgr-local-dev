@@ -1,0 +1,284 @@
+{% comment %}
+  Single-page checkout. Matches b2b-shop's layout: address radios +
+  payment radios + discount + terms on the left, sticky order summary
+  on the right, single "Place order" button at the bottom.
+
+  Live recalculation (VAT after delivery-address pick, CC fee after
+  payment-method pick) is driven by assets/checkout.js — it re-fetches
+  /cart.js?delivery_address_id=<id> when either input changes and
+  refreshes the summary.
+
+  All guardrails from b2b-shop are wired in here:
+    - Empty cart → redirect-back alert (handled in checkout.js init).
+    - Invalid quantity / invalid price → alert + place-order disabled.
+    - Credit-limit > cart total → non-CC payment options disabled,
+      auto-select first CC option (mirrors b2b-shop Payment.js:22-26).
+    - Shipping-block → entire form disabled.
+    - Terms checkbox required.
+{% endcomment %}
+
+<main class="aico-checkout-page"
+      x-data="aicoCheckout({
+        initialBillingAddressId: {{ checkout.selected_billing_address_id | default: 0 | json }},
+        initialDeliveryAddressId: {{ checkout.selected_shipping_address_id | default: 0 | json }},
+        initialPaymentMethodId: {{ checkout.selected_payment_method_id | default: 0 | json }},
+        creditLimit: {{ customer.aico_debtor.credit_limit | default: 0 | json }},
+        shippingBlocked: {{ customer.aico_shipping_block | json }},
+        paymentMethods: [
+          {% for pm in customer.aico_payment_methods %}
+            { id: {{ pm.id | json }}, name: {{ pm.name | json }}, is_credit_card: {{ pm.aico_is_credit_card | json }}, fee_percentage: {{ pm.aico_fee_percentage | json }} }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      })"
+      x-init="init()">
+  <div class="aico-page-container">
+    <header class="aico-checkout-header">
+      <h1 class="aico-checkout-title">{{ 'checkout.title' | t }}</h1>
+    </header>
+
+    {%- comment -%} ──────── Alerts ──────── {%- endcomment -%}
+    {% if customer.aico_shipping_block %}
+      <div class="aico-alert aico-alert-error" role="alert">
+        {{ 'cart.alerts.shipping_blocked' | t }}
+      </div>
+    {% endif %}
+
+    <template x-if="cart && cart.aico_has_invalid_quantity">
+      <div class="aico-alert aico-alert-error" role="alert">
+        {{ 'cart.alerts.invalid_quantity' | t }}
+        <a href="{{ routes.cart_url }}">{{ 'cart.title' | t }}</a>
+      </div>
+    </template>
+    <template x-if="cart && cart.aico_has_invalid_price">
+      <div class="aico-alert aico-alert-warning" role="alert">
+        {{ 'cart.alerts.invalid_price' | t }}
+        <a href="{{ routes.cart_url }}">{{ 'cart.title' | t }}</a>
+      </div>
+    </template>
+    <template x-if="creditLimitExceeded && !creditCardOptionAvailable">
+      <div class="aico-alert aico-alert-error" role="alert">
+        {{ 'checkout.errors.credit_limit' | t }}
+      </div>
+    </template>
+
+    <div class="aico-checkout-grid">
+      {%- comment -%} ──────── Form column ──────── {%- endcomment -%}
+      <form class="aico-checkout-form"
+            x-ref="form"
+            @submit.prevent="submit()">
+
+        {%- comment -%} ─── Billing address ─── {%- endcomment -%}
+        <fieldset class="aico-checkout-section"
+                  :disabled="shippingBlocked || submitting">
+          <legend class="aico-checkout-section-title">{{ 'checkout.billing_address' | t }}</legend>
+
+          {% if checkout.billing_addresses.size == 0 %}
+            <p class="aico-checkout-empty-list">{{ 'checkout.no_addresses' | t }}</p>
+            <a href="{{ routes.account_addresses_url }}" class="aico-button aico-button-outline">
+              {{ 'checkout.manage_addresses' | t }}
+            </a>
+          {% else %}
+            <ul class="aico-checkout-radio-list">
+              {% for address in checkout.billing_addresses %}
+                <li>
+                  <label class="aico-checkout-radio">
+                    <input type="radio"
+                           name="billing_address_id"
+                           value="{{ address.id }}"
+                           x-model.number="billingAddressId"
+                           {% if forloop.first %}checked{% endif %}>
+                    <span class="aico-checkout-radio-body">
+                      <span class="aico-checkout-radio-title">{{ address.name }}{% if address.company %} — {{ address.company }}{% endif %}</span>
+                      <span class="aico-checkout-radio-meta">
+                        {{ address.address1 }}{% if address.address2 %}, {{ address.address2 }}{% endif %}<br>
+                        {{ address.zip }} {{ address.city }}, {{ address.country }}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </fieldset>
+
+        {%- comment -%} ─── Delivery address ─── {%- endcomment -%}
+        <fieldset class="aico-checkout-section"
+                  :disabled="shippingBlocked || submitting">
+          <legend class="aico-checkout-section-title">{{ 'checkout.delivery_address' | t }}</legend>
+
+          {% if checkout.shipping_addresses.size == 0 %}
+            <p class="aico-checkout-empty-list">{{ 'checkout.no_addresses' | t }}</p>
+          {% else %}
+            <ul class="aico-checkout-radio-list">
+              {% for address in checkout.shipping_addresses %}
+                <li>
+                  <label class="aico-checkout-radio">
+                    <input type="radio"
+                           name="delivery_address_id"
+                           value="{{ address.id }}"
+                           x-model.number="deliveryAddressId"
+                           @change="onDeliveryAddressChange()"
+                           {% if forloop.first %}checked{% endif %}>
+                    <span class="aico-checkout-radio-body">
+                      <span class="aico-checkout-radio-title">{{ address.name }}{% if address.company %} — {{ address.company }}{% endif %}</span>
+                      <span class="aico-checkout-radio-meta">
+                        {{ address.address1 }}{% if address.address2 %}, {{ address.address2 }}{% endif %}<br>
+                        {{ address.zip }} {{ address.city }}, {{ address.country }}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </fieldset>
+
+        {%- comment -%} ─── Payment method ─── {%- endcomment -%}
+        <fieldset class="aico-checkout-section"
+                  :disabled="shippingBlocked || submitting">
+          <legend class="aico-checkout-section-title">{{ 'checkout.payment_method' | t }}</legend>
+
+          {% if customer.aico_payment_methods.size == 0 %}
+            <p class="aico-checkout-empty-list">{{ 'checkout.no_payment_methods' | t }}</p>
+          {% else %}
+            <ul class="aico-checkout-radio-list">
+              {% for pm in customer.aico_payment_methods %}
+                <li>
+                  <label class="aico-checkout-radio">
+                    <input type="radio"
+                           name="payment_method_id"
+                           value="{{ pm.id }}"
+                           x-model.number="paymentMethodId"
+                           @change="onPaymentMethodChange()"
+                           :disabled="!isPaymentMethodAvailable({{ pm.id }})">
+                    <span class="aico-checkout-radio-body">
+                      <span class="aico-checkout-radio-title">
+                        {{ pm.name }}
+                        {% if pm.aico_is_credit_card %}<span class="aico-checkout-cc-badge">CC</span>{% endif %}
+                      </span>
+                      {% if pm.aico_is_credit_card %}
+                        <span class="aico-checkout-radio-meta">{{ 'checkout.cc_fee_info' | t }} ({{ pm.aico_fee_percentage }}%)</span>
+                      {% endif %}
+                    </span>
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+            <template x-if="selectedPaymentMethod && selectedPaymentMethod.is_credit_card">
+              <p class="aico-checkout-cc-disclaimer">{{ 'checkout.cc_disclaimer' | t }}</p>
+            </template>
+          {% endif %}
+        </fieldset>
+
+        {%- comment -%} ─── Discount code ─── {%- endcomment -%}
+        <fieldset class="aico-checkout-section"
+                  :disabled="shippingBlocked || submitting">
+          <legend class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</legend>
+          <form action="{{ routes.aico_cart_discount_url }}" method="post" class="aico-checkout-discount-form">
+            <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+            <input type="hidden" name="return_url" value="{{ routes.checkout_url }}">
+            <input type="text"
+                   name="discount_code"
+                   class="aico-checkout-discount-input"
+                   placeholder="{{ 'checkout.discount.placeholder' | t }}"
+                   value="{% if cart.aico_discount_code %}{{ cart.aico_discount_code }}{% endif %}">
+            <button type="submit" class="aico-button aico-button-outline">
+              {{ 'checkout.discount.apply' | t }}
+            </button>
+          </form>
+          {% if form.errors and form.form_type == 'cart_discount' %}
+            <p class="aico-checkout-discount-error">{{ 'checkout.discount.invalid' | t }}</p>
+          {% endif %}
+          {% if form.posted_successfully? and form.form_type == 'cart_discount' %}
+            <p class="aico-checkout-discount-success">{{ 'checkout.discount.applied' | t }}</p>
+          {% endif %}
+        </fieldset>
+
+        {%- comment -%} ─── Terms & conditions ─── {%- endcomment -%}
+        <fieldset class="aico-checkout-section aico-checkout-section-terms"
+                  :disabled="shippingBlocked || submitting">
+          <label class="aico-checkout-terms-label">
+            <input type="checkbox"
+                   x-model="termsAccepted"
+                   required>
+            <span>
+              {%- assign terms_url = 'checkout.terms.url' | t -%}
+              {%- assign terms_link_text = 'checkout.terms.link_text' | t -%}
+              {%- comment -%}
+                The locale-keyed `checkout.terms.label` has a `{link}`
+                placeholder. We resolve it inline because keepsuit/liquid
+                does not give us first-class HTML interpolation in t().
+              {%- endcomment -%}
+              {{ 'checkout.terms.label' | t | replace: '{link}', '<a href="' | append: terms_url | append: '" target="_blank" rel="noopener noreferrer">' | append: terms_link_text | append: '</a>' }}
+            </span>
+          </label>
+          <template x-if="termsError">
+            <p class="aico-checkout-terms-error">{{ 'checkout.terms.required' | t }}</p>
+          </template>
+        </fieldset>
+
+        {%- comment -%} ─── Place order ─── {%- endcomment -%}
+        <div class="aico-checkout-submit-row">
+          <button type="submit"
+                  class="aico-button aico-button-primary aico-checkout-submit"
+                  :disabled="!canSubmit()">
+            <span x-show="!submitting" x-cloak>{{ 'checkout.place_order' | t }}</span>
+            <span x-show="submitting" x-cloak>{{ 'checkout.processing' | t }}</span>
+          </button>
+        </div>
+        <template x-if="submitError">
+          <p class="aico-alert aico-alert-error" role="alert" x-text="submitError"></p>
+        </template>
+      </form>
+
+      {%- comment -%} ──────── Order summary sidebar ──────── {%- endcomment -%}
+      <aside class="aico-checkout-summary" aria-label="{{ 'checkout.summary.title' | t }}">
+        <h2 class="aico-checkout-summary-title">{{ 'checkout.summary.title' | t }}</h2>
+
+        <ul class="aico-checkout-summary-items" x-show="cart && !cart.empty" x-cloak>
+          <template x-for="line in (cart && cart.items) || []" :key="line.id">
+            <li class="aico-checkout-summary-item">
+              <span class="aico-checkout-summary-item-qty" x-text="line.quantity + '×'"></span>
+              <span class="aico-checkout-summary-item-title" x-text="line.title"></span>
+              <span class="aico-checkout-summary-item-price" x-text="formatMoney(line.line_price)"></span>
+            </li>
+          </template>
+        </ul>
+
+        <dl class="aico-checkout-summary-rows">
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
+            <dd x-text="formatMoney(cart && cart.total_price)"></dd>
+          </div>
+          <template x-if="cart && cart.aico_discount_value > 0">
+            <div class="aico-checkout-summary-row aico-cart-summary-row-discount">
+              <dt>{{ 'checkout.summary.discount' | t }}</dt>
+              <dd>−<span x-text="formatMoney(cart.aico_discount_value)"></span></dd>
+            </div>
+          </template>
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.shipping' | t }}</dt>
+            <dd x-text="shippingDisplay()"></dd>
+          </div>
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.vat' | t }}</dt>
+            <dd x-text="vatDisplay()"></dd>
+          </div>
+          <template x-if="creditCardFee > 0">
+            <div class="aico-checkout-summary-row">
+              <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
+              <dd x-text="formatMoney(creditCardFee)"></dd>
+            </div>
+          </template>
+        </dl>
+
+        <div class="aico-checkout-summary-total">
+          <span class="aico-checkout-summary-total-label">{{ 'checkout.summary.total' | t }}</span>
+          <span class="aico-checkout-summary-total-value" x-text="formatMoney(totalDisplay())"></span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<script src="{{ 'checkout.js' | asset_url }}" defer></script>

@@ -195,6 +195,103 @@
       "error": "Could not add to cart."
     }
   },
+  "cart": {
+    "title": "Shopping cart",
+    "items_aria": "Cart items",
+    "item_count_one": "1 item",
+    "item_count_other": "{count} items",
+    "view_cart": "View cart",
+    "clear": "Clear cart",
+    "checkout_cta": "Proceed to checkout",
+    "continue_shopping": "Continue shopping",
+    "added": "Item added to cart.",
+    "updated": "Cart updated.",
+    "removed": "Item removed.",
+    "add_error": "Could not add to cart.",
+    "update_error": "Could not update the cart.",
+    "empty": {
+      "heading": "Your cart is empty",
+      "body": "Continue shopping to add items.",
+      "cta": "Browse products"
+    },
+    "line": {
+      "remove": "Remove",
+      "quantity_aria": "Quantity",
+      "qty_increment": "Increase quantity",
+      "qty_decrement": "Decrease quantity",
+      "sku_aria": "SKU",
+      "low_stock": "Low stock"
+    },
+    "summary": {
+      "title": "Order summary",
+      "aria": "Order summary",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "shipping": "Shipping",
+      "shipping_at_checkout": "Calculated at checkout",
+      "total": "Total",
+      "credit_limit": "Available credit"
+    },
+    "alerts": {
+      "shipping_blocked": "Shipping is currently blocked for your account. You cannot place an order — please contact your sales representative.",
+      "invalid_quantity": "Some items in your cart are no longer fully in stock. Adjust the quantities below to proceed.",
+      "invalid_price": "Some prices have changed since you added the items. Please review before checking out.",
+      "credit_limit_exceeded": "Your cart total exceeds your available credit. Non-credit-card payments are unavailable at checkout."
+    }
+  },
+  "checkout": {
+    "title": "Checkout",
+    "login_required": "Please sign in to continue.",
+    "billing_address": "Billing address",
+    "delivery_address": "Delivery address",
+    "manage_addresses": "Manage saved addresses",
+    "no_addresses": "You don't have any saved addresses for this account. Add one from your profile to continue.",
+    "payment_method": "Payment method",
+    "no_payment_methods": "No payment methods are available for your account. Please contact your sales representative.",
+    "cc_fee_info": "A processing fee applies to credit-card payments.",
+    "cc_disclaimer": "When you click \"Place order\", you'll be redirected to our payment provider to complete the credit-card payment. Please do not reload or close this page.",
+    "discount": {
+      "label": "Discount code",
+      "placeholder": "Enter code",
+      "apply": "Apply",
+      "applied": "Discount applied.",
+      "invalid": "That discount code is not valid."
+    },
+    "terms": {
+      "label": "I have read the {link}",
+      "link_text": "terms and conditions",
+      "url": "https://example.com/terms-and-conditions-en.pdf",
+      "required": "You must accept the terms and conditions to place the order."
+    },
+    "summary": {
+      "title": "Order summary",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "shipping": "Shipping",
+      "vat": "VAT",
+      "cc_fee": "Credit-card fee",
+      "total": "Total"
+    },
+    "place_order": "Place order",
+    "processing": "Processing…",
+    "errors": {
+      "credit_limit": "Your cart exceeds your credit limit. Choose a credit-card payment method, or reduce your cart total.",
+      "cart_modified": "Your cart has changed. Please review your items before continuing.",
+      "submit_failed": "We couldn't submit your order. Please try again or contact your sales representative.",
+      "missing_fields": "Choose a billing address, delivery address, and payment method to continue."
+    },
+    "processing_page": {
+      "title": "Finalising your order",
+      "body": "We're confirming the payment with our processor. Please don't close this page — you'll be redirected automatically when it's done.",
+      "fallback": "Taking longer than expected? Check your inbox for an order-confirmation email or contact your sales representative."
+    },
+    "thank_you": {
+      "title": "Thank you for your order",
+      "order_number": "Order number",
+      "email_confirmation": "An order confirmation has been sent to you by email.",
+      "continue": "Continue shopping"
+    }
+  },
   "aico_preorder": {
     "session": {
       "title_fallback": "PreOrder",

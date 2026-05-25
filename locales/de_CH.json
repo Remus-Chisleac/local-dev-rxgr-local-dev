@@ -195,6 +195,103 @@
       "error": "Konnte nicht zum Warenkorb hinzugefügt werden."
     }
   },
+  "cart": {
+    "title": "Warenkorb",
+    "items_aria": "Warenkorb-Artikel",
+    "item_count_one": "1 Artikel",
+    "item_count_other": "{count} Artikel",
+    "view_cart": "Warenkorb ansehen",
+    "clear": "Warenkorb leeren",
+    "checkout_cta": "Zur Kasse",
+    "continue_shopping": "Weiter einkaufen",
+    "added": "Artikel zum Warenkorb hinzugefügt.",
+    "updated": "Warenkorb aktualisiert.",
+    "removed": "Artikel entfernt.",
+    "add_error": "Hinzufügen zum Warenkorb nicht möglich.",
+    "update_error": "Warenkorb konnte nicht aktualisiert werden.",
+    "empty": {
+      "heading": "Ihr Warenkorb ist leer",
+      "body": "Setzen Sie Ihren Einkauf fort, um Artikel hinzuzufügen.",
+      "cta": "Produkte ansehen"
+    },
+    "line": {
+      "remove": "Entfernen",
+      "quantity_aria": "Menge",
+      "qty_increment": "Menge erhöhen",
+      "qty_decrement": "Menge verringern",
+      "sku_aria": "Artikelnummer",
+      "low_stock": "Wenig Bestand"
+    },
+    "summary": {
+      "title": "Bestellübersicht",
+      "aria": "Bestellübersicht",
+      "subtotal": "Zwischensumme",
+      "discount": "Rabatt",
+      "shipping": "Versand",
+      "shipping_at_checkout": "Wird an der Kasse berechnet",
+      "total": "Gesamt",
+      "credit_limit": "Verfügbares Kreditlimit"
+    },
+    "alerts": {
+      "shipping_blocked": "Der Versand ist für Ihr Konto derzeit gesperrt. Sie können keine Bestellung aufgeben — bitte wenden Sie sich an Ihren Aussendienst.",
+      "invalid_quantity": "Einige Artikel in Ihrem Warenkorb sind nicht mehr in der gewünschten Menge verfügbar. Bitte passen Sie die Mengen an, um fortzufahren.",
+      "invalid_price": "Einige Preise haben sich geändert, seit Sie die Artikel hinzugefügt haben. Bitte überprüfen Sie diese vor dem Bezahlen.",
+      "credit_limit_exceeded": "Der Gesamtbetrag Ihres Warenkorbs übersteigt Ihren verfügbaren Kredit. Zahlungen ohne Kreditkarte sind an der Kasse nicht verfügbar."
+    }
+  },
+  "checkout": {
+    "title": "Kasse",
+    "login_required": "Bitte melden Sie sich an, um fortzufahren.",
+    "billing_address": "Rechnungsadresse",
+    "delivery_address": "Lieferadresse",
+    "manage_addresses": "Gespeicherte Adressen verwalten",
+    "no_addresses": "Für dieses Konto sind keine gespeicherten Adressen vorhanden. Bitte fügen Sie eine über Ihr Profil hinzu, um fortzufahren.",
+    "payment_method": "Zahlungsart",
+    "no_payment_methods": "Für Ihr Konto sind keine Zahlungsarten verfügbar. Bitte wenden Sie sich an Ihren Aussendienst.",
+    "cc_fee_info": "Bei Kreditkartenzahlungen fällt eine Bearbeitungsgebühr an.",
+    "cc_disclaimer": "Wenn Sie auf \"Bestellung abschicken\" klicken, werden Sie zu unserem Zahlungsanbieter weitergeleitet, um die Kreditkartenzahlung abzuschliessen. Bitte laden Sie diese Seite nicht neu und schliessen Sie sie nicht.",
+    "discount": {
+      "label": "Rabattcode",
+      "placeholder": "Code eingeben",
+      "apply": "Anwenden",
+      "applied": "Rabatt angewendet.",
+      "invalid": "Dieser Rabattcode ist ungültig."
+    },
+    "terms": {
+      "label": "Ich habe die {link} gelesen",
+      "link_text": "Allgemeinen Geschäftsbedingungen",
+      "url": "https://example.com/agb-de.pdf",
+      "required": "Sie müssen die AGB akzeptieren, um die Bestellung abzuschicken."
+    },
+    "summary": {
+      "title": "Bestellübersicht",
+      "subtotal": "Zwischensumme",
+      "discount": "Rabatt",
+      "shipping": "Versand",
+      "vat": "MwSt.",
+      "cc_fee": "Kreditkartengebühr",
+      "total": "Gesamt"
+    },
+    "place_order": "Bestellung abschicken",
+    "processing": "Wird verarbeitet…",
+    "errors": {
+      "credit_limit": "Ihr Warenkorb überschreitet Ihr Kreditlimit. Wählen Sie eine Kreditkartenzahlung oder reduzieren Sie den Betrag.",
+      "cart_modified": "Ihr Warenkorb hat sich geändert. Bitte überprüfen Sie die Artikel, bevor Sie fortfahren.",
+      "submit_failed": "Wir konnten Ihre Bestellung nicht übermitteln. Bitte versuchen Sie es erneut oder kontaktieren Sie Ihren Aussendienst.",
+      "missing_fields": "Wählen Sie eine Rechnungs- und Lieferadresse sowie eine Zahlungsart, um fortzufahren."
+    },
+    "processing_page": {
+      "title": "Bestellung wird abgeschlossen",
+      "body": "Wir bestätigen die Zahlung mit unserem Anbieter. Bitte schliessen Sie diese Seite nicht — Sie werden automatisch weitergeleitet, sobald der Vorgang abgeschlossen ist.",
+      "fallback": "Es dauert länger als erwartet? Prüfen Sie Ihren Posteingang auf eine Bestätigungs-E-Mail oder kontaktieren Sie Ihren Aussendienst."
+    },
+    "thank_you": {
+      "title": "Vielen Dank für Ihre Bestellung",
+      "order_number": "Bestellnummer",
+      "email_confirmation": "Eine Bestellbestätigung wurde Ihnen per E-Mail zugesendet.",
+      "continue": "Weiter einkaufen"
+    }
+  },
   "aico_preorder": {
     "session": {
       "title_fallback": "PreOrder",
