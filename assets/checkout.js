@@ -56,6 +56,16 @@
     return Number(value || 0).toFixed(2);
   }
 
+  function readInitialCart() {
+    var el = document.getElementById('aico-cart-data');
+    if (!el) return null;
+    try {
+      return JSON.parse(el.textContent || 'null') || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function buildCheckoutPage(seeds) {
     seeds = seeds || {};
     return {
@@ -68,58 +78,123 @@
       placeOrderLabel: seeds.placeOrderLabel || 'Place order',
       processingLabel: seeds.processingLabel || 'Processing…',
 
-      cart: null,
+      cart: readInitialCart(),
       shippingAmount: null,
       vatAmount: null,
-      creditCardFee: 0,
+      creditCardFlatFee: 0,
+      creditCardFeePercent: 0,
+      totalsLoaded: false,
+      totalsLoading: false,
       termsAccepted: false,
       termsError: false,
       submitting: false,
       submitError: null,
-      _pollHandle: null,
+      _refreshInFlight: null,
+      _totalsInFlight: null,
+      _deliveryRefreshTimer: null,
 
       init: function () {
         var self = this;
-        return this.refreshCart().then(function () {
-          if (self.cart && self.cart.empty) {
-            window.location.href = cartRoutes.url || '/cart';
-            return;
-          }
-          if (!self.paymentMethodId && self.paymentMethods.length > 0) {
-            self.paymentMethodId = self.paymentMethods[0].id;
-            self.onPaymentMethodChange();
-          }
-          self.applyCreditLimitGuard();
-          self._pollHandle = setInterval(function () { self.refreshCart(); }, 1000);
-        });
+        if (!self.paymentMethodId && self.paymentMethods.length > 0) {
+          self.paymentMethodId = self.paymentMethods[0].id;
+        }
+        self.syncCreditCardFeePercent();
+        self.applyCreditLimitGuard();
+
+        if (self.cart && self.cart.empty) {
+          window.location.href = cartRoutes.url || '/cart';
+          return Promise.resolve();
+        }
+
+        return self.refreshTotals();
+      },
+
+      syncCreditCardFeePercent: function () {
+        var method = this.selectedPaymentMethod;
+        this.creditCardFeePercent = (method && method.is_credit_card)
+          ? Number(method.fee_percentage || 0)
+          : 0;
+      },
+
+      refreshTotals: function () {
+        var self = this;
+        if (!self.cart || !self.cart.id || !self.deliveryAddressId) {
+          return Promise.resolve();
+        }
+        if (self._totalsInFlight) {
+          return self._totalsInFlight;
+        }
+
+        self.totalsLoading = true;
+        var shippingUrl = (cartRoutes.shippingJsonUrl || '/cart/shipping.js')
+          + '?delivery_address_id=' + encodeURIComponent(String(self.deliveryAddressId));
+        var vatUrl = (cartRoutes.vatJsonUrl || '/cart/vat.js')
+          + '?delivery_address_id=' + encodeURIComponent(String(self.deliveryAddressId))
+          + '&payment_method_id=' + encodeURIComponent(String(self.paymentMethodId || 0));
+
+        self._totalsInFlight = Promise.all([
+          fetch(shippingUrl, { headers: jsonHeaders(), credentials: 'same-origin' })
+            .then(function (res) { return res.ok ? res.json() : null; }),
+          fetch(vatUrl, { headers: jsonHeaders(), credentials: 'same-origin' })
+            .then(function (res) { return res.ok ? res.json() : null; }),
+        ])
+          .then(function (results) {
+            var shippingBody = results[0];
+            var vatBody = results[1];
+            if (shippingBody) {
+              self.shippingAmount = Number(shippingBody.shipping_amount || 0);
+            }
+            if (vatBody) {
+              self.vatAmount = Number(vatBody.vat || 0);
+              self.creditCardFlatFee = Number(vatBody.credit_card_flat_fee || 0);
+            }
+            self.totalsLoaded = true;
+          })
+          .catch(function () { /* keep previous totals */ })
+          .finally(function () {
+            self.totalsLoading = false;
+            self._totalsInFlight = null;
+          });
+
+        return self._totalsInFlight;
       },
 
       refreshCart: function () {
         var self = this;
+        if (self._refreshInFlight) {
+          return self._refreshInFlight;
+        }
         var url = cartRoutes.jsonUrl || '/cart.js';
         if (self.deliveryAddressId) {
           url += (url.indexOf('?') === -1 ? '?' : '&') + 'delivery_address_id=' + self.deliveryAddressId;
         }
-        return fetch(url, { headers: jsonHeaders(), credentials: 'same-origin' })
+        self._refreshInFlight = fetch(url, { headers: jsonHeaders(), credentials: 'same-origin' })
           .then(function (res) { return res.ok ? res.json() : null; })
           .then(function (body) {
             if (body) self.cart = body;
           })
-          .catch(function () { /* keep previous cart */ });
+          .catch(function () { /* keep SSR / previous cart */ })
+          .finally(function () {
+            self._refreshInFlight = null;
+          });
+        return self._refreshInFlight;
       },
 
       onDeliveryAddressChange: function () {
-        this.refreshCart();
+        var self = this;
+        if (self._deliveryRefreshTimer) {
+          clearTimeout(self._deliveryRefreshTimer);
+        }
+        self._deliveryRefreshTimer = setTimeout(function () {
+          self._deliveryRefreshTimer = null;
+          self.refreshCart();
+          self.refreshTotals();
+        }, 300);
       },
 
       onPaymentMethodChange: function () {
-        var method = this.selectedPaymentMethod;
-        if (method && method.is_credit_card) {
-          var cartTotal = (this.cart && this.cart.total_price) || 0;
-          this.creditCardFee = cartTotal * (method.fee_percentage || 0) / 100;
-        } else {
-          this.creditCardFee = 0;
-        }
+        this.syncCreditCardFeePercent();
+        this.refreshTotals();
       },
 
       applyCreditLimitGuard: function () {
@@ -156,6 +231,7 @@
       canSubmit: function () {
         if (this.shippingBlocked) return false;
         if (this.submitting) return false;
+        if (!this.totalsLoaded || this.totalsLoading) return false;
         if (!this.cart || this.cart.empty) return false;
         if (this.cart.aico_has_invalid_quantity || this.cart.aico_has_invalid_price) return false;
         if (this.cart.aico_status === 'ERROR' || this.cart.aico_status === 'SAVING_LONGER_THAN_EXPECTED') return false;
@@ -169,22 +245,28 @@
       },
 
       shippingDisplay: function () {
-        if (this.shippingAmount === null) {
+        if (!this.totalsLoaded || this.totalsLoading) {
           return translations.shipping_at_checkout || 'Calculated at checkout';
         }
-        return formatMoneyValue(this.shippingAmount);
+        return formatMoneyValue(this.shippingAmount || 0);
       },
 
       vatDisplay: function () {
-        if (this.vatAmount === null) return '—';
-        return formatMoneyValue(this.vatAmount);
+        if (!this.totalsLoaded || this.totalsLoading) return '…';
+        return formatMoneyValue(this.vatAmount || 0);
       },
 
       totalDisplay: function () {
+        if (!this.totalsLoaded) {
+          return (this.cart && this.cart.total_price) || 0;
+        }
         var subtotal = (this.cart && this.cart.total_price) || 0;
+        var discount = (this.cart && this.cart.aico_discount_value) || 0;
         var shipping = this.shippingAmount || 0;
         var vat = this.vatAmount || 0;
-        return subtotal + shipping + vat + (this.creditCardFee || 0);
+        var ccFlat = this.creditCardFlatFee || 0;
+        var total = subtotal + shipping + vat + ccFlat - discount;
+        return Math.max(0, total);
       },
 
       formatMoney: function (value) {
@@ -229,6 +311,11 @@
                 window.location = data.hosted_page_url;
                 return;
               }
+              if (data.status === 'SAVING' && data.order_id) {
+                var processing = routes.processingUrl || '/checkout/processing';
+                window.location = processing + '?order_id=' + encodeURIComponent(String(data.order_id));
+                return;
+              }
               var thankYou = routes.thankYouUrl || '/checkout/thank-you';
               var params = new URLSearchParams();
               if (data.ecommerce_order_number) params.set('order_number', data.ecommerce_order_number);
@@ -237,7 +324,7 @@
               if (subtotal) params.set('subtotal', String(subtotal));
               if (self.shippingAmount) params.set('shipping', String(self.shippingAmount));
               if (self.vatAmount) params.set('vat', String(self.vatAmount));
-              if (self.creditCardFee) params.set('cc_fee', String(self.creditCardFee));
+              if (self.creditCardFlatFee) params.set('cc_fee', String(self.creditCardFlatFee));
               var total = self.totalDisplay();
               if (total) params.set('total', String(total));
               var currency = window.__AICO_SHOP__ && window.__AICO_SHOP__.currency;

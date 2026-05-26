@@ -272,9 +272,11 @@
       "title": "Order summary",
       "subtotal": "Subtotal",
       "discount": "Discount",
+      "discount_percentage": "Discount (%)",
       "shipping": "Shipping",
       "vat": "VAT",
       "cc_fee": "Credit-card fee",
+      "cc_fee_percent": "Credit-card fee (%)",
       "total": "Total"
     },
     "place_order": "Place order",

@@ -3,10 +3,11 @@
   payment radios + discount + terms on the left, sticky order summary
   on the right, single "Place order" button at the bottom.
 
-  Live recalculation (VAT after delivery-address pick, CC fee after
-  payment-method pick) is driven by assets/checkout.js — it re-fetches
-  /cart.js?delivery_address_id=<id> when either input changes and
-  refreshes the summary.
+  Live recalculation (stock validation after delivery-address pick, CC
+  fee after payment-method pick) is driven by assets/checkout.js. The
+  order summary is SSR'd via `#aico-cart-data`; shipping + VAT are
+  fetched from `/cart/shipping.js` and `/cart/vat.js` (same backend
+  calls as b2b-shop's checkout page).
 
   All guardrails from b2b-shop are wired in here:
     - Empty cart → redirect-back alert (handled in checkout.js init).
@@ -268,26 +269,35 @@
             <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
             <dd x-text="formatMoney(cart && cart.total_price)"></dd>
           </div>
-          <template x-if="cart && cart.aico_discount_value > 0">
-            <div class="aico-checkout-summary-row aico-cart-summary-row-discount">
-              <dt>{{ 'checkout.summary.discount' | t }}</dt>
-              <dd>−<span x-text="formatMoney(cart.aico_discount_value)"></span></dd>
-            </div>
-          </template>
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.discount' | t }}</dt>
+            <dd>
+              <template x-if="cart && cart.aico_discount_value > 0">−</template>
+              <span x-text="formatMoney(cart && cart.aico_discount_value)"></span>
+            </dd>
+          </div>
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.discount_percentage' | t }}</dt>
+            <dd>
+              <span x-text="formatMoney(cart && cart.aico_discount_percentage)"></span>%
+            </dd>
+          </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.shipping' | t }}</dt>
             <dd x-text="shippingDisplay()"></dd>
           </div>
           <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
+            <dd x-text="formatMoney(creditCardFlatFee)"></dd>
+          </div>
+          <div class="aico-checkout-summary-row">
+            <dt>{{ 'checkout.summary.cc_fee_percent' | t }}</dt>
+            <dd><span x-text="formatMoney(creditCardFeePercent)"></span>%</dd>
+          </div>
+          <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.vat' | t }}</dt>
             <dd x-text="vatDisplay()"></dd>
           </div>
-          <template x-if="creditCardFee > 0">
-            <div class="aico-checkout-summary-row">
-              <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
-              <dd x-text="formatMoney(creditCardFee)"></dd>
-            </div>
-          </template>
         </dl>
 
         <div class="aico-checkout-summary-total">

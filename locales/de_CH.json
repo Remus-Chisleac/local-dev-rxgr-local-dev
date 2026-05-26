@@ -272,9 +272,11 @@
       "title": "Bestellübersicht",
       "subtotal": "Zwischensumme",
       "discount": "Rabatt",
+      "discount_percentage": "Rabatt (%)",
       "shipping": "Versand",
       "vat": "MwSt.",
       "cc_fee": "Kreditkartengebühr",
+      "cc_fee_percent": "Kreditkartengebühr (%)",
       "total": "Gesamt"
     },
     "place_order": "Bestellung abschicken",
