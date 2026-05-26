@@ -76,6 +76,7 @@
       drawer: false,
       drawerOpen: false,
       drawerMounted: false,
+      _drawerCloseTimer: null,
       toast: null,
       _toastTimer: null,
       _pendingLineUpdates: {},
@@ -217,19 +218,39 @@
       },
 
       openDrawer() {
-        if (this.drawerMounted && this.drawerOpen) {
+        if (this.drawerOpen) {
           return;
         }
-        this.drawer = true;
-        this.drawerMounted = true;
-        var root = document.querySelector('.aico-mini-cart');
-        if (root) {
-          // Force reflow so the closed frame paints before we slide in.
-          void root.offsetHeight;
+        if (this._drawerCloseTimer) {
+          clearTimeout(this._drawerCloseTimer);
+          this._drawerCloseTimer = null;
         }
-        this.drawerOpen = true;
+        this.drawer = true;
+        this.drawerOpen = false;
+        this.drawerMounted = true;
         document.documentElement.classList.add('aico-no-scroll');
         document.body.classList.add('aico-no-scroll');
+
+        // Alpine batches store writes — defer the open class until the
+        // mounted (hidden removed) + closed frame has painted, same as
+        // theme.js forcing reflow before .aico-drawer-open.
+        var self = this;
+        function applyOpenClass() {
+          var root = document.querySelector('.aico-mini-cart');
+          if (root) {
+            void root.offsetHeight;
+          }
+          self.drawerOpen = true;
+        }
+        if (typeof window.Alpine !== 'undefined' && typeof window.Alpine.nextTick === 'function') {
+          window.Alpine.nextTick(function () {
+            window.Alpine.nextTick(applyOpenClass);
+          });
+        } else {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(applyOpenClass);
+          });
+        }
       },
       closeDrawer() {
         if (!this.drawerMounted) {
@@ -240,7 +261,11 @@
         document.documentElement.classList.remove('aico-no-scroll');
         document.body.classList.remove('aico-no-scroll');
         var self = this;
-        setTimeout(function () {
+        if (this._drawerCloseTimer) {
+          clearTimeout(this._drawerCloseTimer);
+        }
+        this._drawerCloseTimer = setTimeout(function () {
+          self._drawerCloseTimer = null;
           if (!self.drawerOpen) {
             self.drawerMounted = false;
           }
