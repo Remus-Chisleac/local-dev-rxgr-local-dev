@@ -197,6 +197,7 @@
   },
   "cart": {
     "title": "Shopping cart",
+    "back": "Back",
     "items_aria": "Cart items",
     "item_count_one": "1 item",
     "item_count_other": "{count} items",
@@ -241,6 +242,7 @@
   },
   "checkout": {
     "title": "Checkout",
+    "back_to_cart": "Back to cart",
     "login_required": "Please sign in to continue.",
     "billing_address": "Billing address",
     "delivery_address": "Delivery address",

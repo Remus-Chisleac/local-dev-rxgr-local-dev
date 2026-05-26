@@ -197,6 +197,7 @@
   },
   "cart": {
     "title": "Warenkorb",
+    "back": "Zurück",
     "items_aria": "Warenkorb-Artikel",
     "item_count_one": "1 Artikel",
     "item_count_other": "{count} Artikel",
@@ -241,6 +242,7 @@
   },
   "checkout": {
     "title": "Kasse",
+    "back_to_cart": "Zurück zum Warenkorb",
     "login_required": "Bitte melden Sie sich an, um fortzufahren.",
     "billing_address": "Rechnungsadresse",
     "delivery_address": "Lieferadresse",
