@@ -17,21 +17,25 @@
     - Terms checkbox required.
 {% endcomment %}
 
+<script id="aico-checkout-seeds" type="application/json">
+{
+  "initialBillingAddressId": {{ checkout.selected_billing_address_id | default: 0 | json }},
+  "initialDeliveryAddressId": {{ checkout.selected_shipping_address_id | default: 0 | json }},
+  "initialPaymentMethodId": {{ checkout.selected_payment_method_id | default: 0 | json }},
+  "creditLimit": {% if customer.aico_debtor %}{{ customer.aico_debtor.credit_limit | default: 0 | json }}{% else %}0{% endif %},
+  "shippingBlocked": {{ customer.aico_shipping_block | json }},
+  "paymentMethods": [
+    {%- for pm in checkout.payment_methods -%}
+      {"id":{{ pm.id | json }},"name":{{ pm.name | json }},"is_credit_card":{{ pm.aico_is_credit_card | json }},"fee_percentage":{{ pm.aico_fee_percentage | json }}}{%- unless forloop.last -%},{%- endunless -%}
+    {%- endfor -%}
+  ],
+  "placeOrderLabel": {{ 'checkout.place_order' | t | json }},
+  "processingLabel": {{ 'checkout.processing' | t | json }}
+}
+</script>
+
 <main class="aico-checkout-page"
-      x-data="aicoCheckout({
-        initialBillingAddressId: {{ checkout.selected_billing_address_id | default: 0 | json }},
-        initialDeliveryAddressId: {{ checkout.selected_shipping_address_id | default: 0 | json }},
-        initialPaymentMethodId: {{ checkout.selected_payment_method_id | default: 0 | json }},
-        creditLimit: {{ customer.aico_debtor.credit_limit | default: 0 | json }},
-        shippingBlocked: {{ customer.aico_shipping_block | json }},
-        paymentMethods: [
-          {% for pm in checkout.payment_methods %}
-            { id: {{ pm.id | json }}, name: {{ pm.name | json }}, is_credit_card: {{ pm.aico_is_credit_card | json }}, fee_percentage: {{ pm.aico_fee_percentage | json }} }{% unless forloop.last %},{% endunless %}
-          {% endfor %}
-        ],
-        placeOrderLabel: {{ 'checkout.place_order' | t | json }},
-        processingLabel: {{ 'checkout.processing' | t | json }}
-      })"
+      x-data="aicoCheckoutPage"
       x-init="init()">
   <div class="aico-page-container">
     <header class="aico-checkout-header">
@@ -94,7 +98,13 @@
                            x-model.number="billingAddressId"
                            {% if forloop.first %}checked{% endif %}>
                     <span class="aico-checkout-radio-body">
-                      <span class="aico-checkout-radio-title">{{ address.name }}{% if address.company %} — {{ address.company }}{% endif %}</span>
+                      {% if address.name != blank or address.company != blank %}
+                        <span class="aico-checkout-radio-title">
+                          {%- if address.name != blank -%}{{ address.name }}{%- endif -%}
+                          {%- if address.name != blank and address.company != blank %} — {% endif -%}
+                          {%- if address.company != blank -%}{{ address.company }}{%- endif -%}
+                        </span>
+                      {% endif %}
                       <span class="aico-checkout-radio-meta">
                         {{ address.address1 }}{% if address.address2 %}, {{ address.address2 }}{% endif %}<br>
                         {{ address.zip }} {{ address.city }}, {{ address.country }}
@@ -126,7 +136,13 @@
                            @change="onDeliveryAddressChange()"
                            {% if forloop.first %}checked{% endif %}>
                     <span class="aico-checkout-radio-body">
-                      <span class="aico-checkout-radio-title">{{ address.name }}{% if address.company %} — {{ address.company }}{% endif %}</span>
+                      {% if address.name != blank or address.company != blank %}
+                        <span class="aico-checkout-radio-title">
+                          {%- if address.name != blank -%}{{ address.name }}{%- endif -%}
+                          {%- if address.name != blank and address.company != blank %} — {% endif -%}
+                          {%- if address.company != blank -%}{{ address.company }}{%- endif -%}
+                        </span>
+                      {% endif %}
                       <span class="aico-checkout-radio-meta">
                         {{ address.address1 }}{% if address.address2 %}, {{ address.address2 }}{% endif %}<br>
                         {{ address.zip }} {{ address.city }}, {{ address.country }}
