@@ -310,6 +310,27 @@
         return true;
       },
 
+      lineExceedsStock(line) {
+        if (!line) return false;
+        if (line.aico_quantity_exceeds_stock) return true;
+        var stock = line.aico_available_stock;
+        if (stock === null || stock === undefined) return false;
+        return Number(line.quantity || 0) > Number(stock);
+      },
+
+      lineQuantityError(line) {
+        if (!this.lineExceedsStock(line)) return '';
+        var stock = line.aico_available_stock;
+        if (stock === null || stock === undefined) {
+          return translations.quantity_exceeds_stock_generic || 'Reduce the quantity to continue.';
+        }
+        if (Number(stock) <= 0) {
+          return translations.out_of_stock || 'Out of stock — remove this item or set quantity to 0.';
+        }
+        var template = translations.quantity_exceeds_stock || 'Only {count} in stock — reduce the quantity.';
+        return template.replace('{count}', String(stock));
+      },
+
       formatMoney(value) {
         var amount = Number(value || 0);
         if (moneyFormatter) {

@@ -46,7 +46,10 @@
           removed: {{ 'cart.removed' | t | json }},
           item_count_one: {{ 'cart.item_count_one' | t | json }},
           item_count_other: {{ 'cart.item_count_other' | t | json }},
-          shipping_at_checkout: {{ 'cart.summary.shipping_at_checkout' | t | json }}
+          shipping_at_checkout: {{ 'cart.summary.shipping_at_checkout' | t | json }},
+          out_of_stock: {{ 'cart.line.out_of_stock' | t | json }},
+          quantity_exceeds_stock: {{ 'cart.line.quantity_exceeds_stock' | t | json }},
+          quantity_exceeds_stock_generic: {{ 'cart.line.quantity_exceeds_stock_generic' | t | json }}
         }{% if template.name == 'checkout' or template.directory == 'checkout' %},
         checkout: {
           missing_fields: {{ 'checkout.errors.missing_fields' | t | json }},

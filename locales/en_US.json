@@ -221,7 +221,10 @@
       "qty_increment": "Increase quantity",
       "qty_decrement": "Decrease quantity",
       "sku_aria": "SKU",
-      "low_stock": "Low stock"
+      "low_stock": "Low stock",
+      "out_of_stock": "Out of stock — remove this item or set quantity to 0.",
+      "quantity_exceeds_stock": "Only {count} in stock — reduce the quantity to continue.",
+      "quantity_exceeds_stock_generic": "Not enough stock for this quantity — reduce it to continue."
     },
     "summary": {
       "title": "Order summary",

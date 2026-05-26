@@ -221,7 +221,10 @@
       "qty_increment": "Menge erhöhen",
       "qty_decrement": "Menge verringern",
       "sku_aria": "Artikelnummer",
-      "low_stock": "Wenig Bestand"
+      "low_stock": "Wenig Bestand",
+      "out_of_stock": "Nicht auf Lager — entfernen Sie den Artikel oder setzen Sie die Menge auf 0.",
+      "quantity_exceeds_stock": "Nur {count} auf Lager — reduzieren Sie die Menge, um fortzufahren.",
+      "quantity_exceeds_stock_generic": "Nicht genügend Bestand für diese Menge — bitte reduzieren."
     },
     "summary": {
       "title": "Bestellübersicht",

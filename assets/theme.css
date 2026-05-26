@@ -3673,6 +3673,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-cart-line-price { grid-area: price; font-weight: 500; }
 .aico-cart-line-qty { grid-area: qty; }
 .aico-cart-line-stock-warning { margin: 0.25rem 0 0; font-size: 0.8125rem; color: #ea580c; }
+.aico-cart-line-stock-error { margin: 0.25rem 0 0; font-size: 0.8125rem; color: #b91c1c; font-weight: 500; }
 .aico-cart-line-total { grid-area: total; font-weight: 600; text-align: right; }
 .aico-cart-line-remove {
   grid-area: remove;
@@ -3929,6 +3930,8 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-summary-item-qty { color: var(--aico-muted-fg, #6b7280); font-variant-numeric: tabular-nums; }
 .aico-checkout-summary-item-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aico-checkout-summary-item-price { font-weight: 500; }
+.aico-checkout-summary-item-invalid { color: #b91c1c; }
+.aico-checkout-summary-item-invalid .aico-checkout-summary-item-title { font-weight: 600; }
 .aico-checkout-summary-rows { display: flex; flex-direction: column; gap: 0.375rem; margin: 0; }
 .aico-checkout-summary-rows .aico-checkout-summary-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9375rem; }
 .aico-checkout-summary-rows dt { color: var(--aico-muted-fg, #6b7280); margin: 0; }

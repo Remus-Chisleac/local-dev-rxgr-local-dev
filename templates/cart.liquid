@@ -77,7 +77,8 @@
         <section class="aico-cart-items" aria-label="{{ 'cart.items_aria' | t }}">
           <ul class="aico-cart-line-list">
             <template x-for="line in $store.cart.data.items" :key="line.id">
-              <li class="aico-cart-line" :class="{ 'aico-cart-line-invalid': !line.aico_is_valid }">
+              <li class="aico-cart-line"
+                  :class="{ 'aico-cart-line-invalid': !line.aico_is_valid || $store.cart.lineExceedsStock(line) }">
                 <a class="aico-cart-line-image" :href="line.url || '#'">
                   <template x-if="line.image">
                     <img :src="line.image" :alt="line.title" loading="lazy">
@@ -124,8 +125,11 @@
                             @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
                             aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
                   </div>
-                  <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0">
+                  <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0 && !$store.cart.lineExceedsStock(line)">
                     <p class="aico-cart-line-stock-warning">{{ 'cart.line.low_stock' | t }}</p>
+                  </template>
+                  <template x-if="$store.cart.lineExceedsStock(line)">
+                    <p class="aico-cart-line-stock-error" x-text="$store.cart.lineQuantityError(line)"></p>
                   </template>
                 </div>
 
