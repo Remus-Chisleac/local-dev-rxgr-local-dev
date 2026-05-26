@@ -112,11 +112,11 @@
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
               <span class="aico-cart-badge"
-                    x-show="$store.cart.itemCount() > 0"
-                    x-text="$store.cart.itemCount()"
+                    x-show="$store.cart && $store.cart.itemCount() > 0"
+                    x-text="$store.cart && $store.cart.itemCount()"
                     x-cloak
                     aria-hidden="true"></span>
-              <span class="aico-sr-only" x-text="$store.cart.itemCountLabel()"></span>
+              <span class="aico-sr-only" x-text="$store.cart && $store.cart.itemCountLabel()"></span>
             </a>
 
             <button type="button" class="aico-menu-button" data-aico-menu-trigger aria-controls="aico-drawer" aria-expanded="false" aria-label="{{ 'nav.open_menu' | t }}">
@@ -388,7 +388,7 @@
     {%- comment -%} ─── Mini-cart drawer (Alpine-driven) ─── {%- endcomment -%}
     <div class="aico-mini-cart"
          x-data
-         x-show="$store.cart.drawer"
+         x-show="$store.cart && $store.cart.drawer"
          x-cloak
          @keydown.escape.window="$store.cart.closeDrawer()"
          aria-modal="true"
@@ -463,7 +463,7 @@
 
     {%- comment -%} ─── Toast container (cart feedback) ─── {%- endcomment -%}
     <div class="aico-toast-wrap" x-data aria-live="polite" aria-atomic="true">
-      <template x-if="$store.cart.toast">
+      <template x-if="$store.cart && $store.cart.toast">
         <div class="aico-toast"
              :class="'aico-toast-' + $store.cart.toast.kind"
              x-transition.opacity>
