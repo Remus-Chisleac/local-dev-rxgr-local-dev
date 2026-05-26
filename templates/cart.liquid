@@ -15,7 +15,7 @@
     - empty-cart state
 {% endcomment %}
 
-<main class="aico-cart-page" x-data id="aico-cart-page">
+<main class="aico-cart-page" x-data x-init="$store.cart.refresh()" id="aico-cart-page">
   <div class="aico-page-container">
     <header class="aico-cart-header">
       <h1 class="aico-cart-title">{{ 'cart.title' | t }}</h1>
@@ -189,7 +189,7 @@
              class="aico-button aico-button-primary aico-cart-checkout-cta"
              :class="{ 'aico-is-disabled': !$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %}) }"
              :aria-disabled="!$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %})"
-             @click.prevent="if (!$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %})) return; window.location = $el.getAttribute('href');">
+             @click.prevent="$store.cart.goCheckout($el.getAttribute('href'), {% if customer.aico_shipping_block %}true{% else %}false{% endif %})">
             {{ 'cart.checkout_cta' | t }}
           </a>
           <a href="{{ routes.products_url }}" class="aico-cart-continue-shopping">

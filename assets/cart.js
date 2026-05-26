@@ -121,12 +121,29 @@
         }, this._lineUpdateDelay);
       },
 
-      flushLineUpdates() {
+      hasPendingLineUpdates() {
+        return Object.keys(this._pendingLineUpdates).length > 0;
+      },
+
+      async flushPendingLineUpdates() {
         var self = this;
-        Object.keys(this._pendingLineUpdates).forEach(function (lineId) {
+        var pending = Object.keys(this._pendingLineUpdates).map(function (lineId) {
           clearTimeout(self._pendingLineUpdates[lineId]);
           delete self._pendingLineUpdates[lineId];
+          var line = self.data && self.data.items
+            ? self.data.items.find(function (item) { return String(item.id) === String(lineId); })
+            : null;
+          return line ? self.update(lineId, line.quantity) : Promise.resolve();
         });
+        await Promise.all(pending);
+      },
+
+      async goCheckout(href, shippingBlocked) {
+        if (this.hasPendingLineUpdates()) {
+          await this.flushPendingLineUpdates();
+        }
+        if (!this.canCheckout(shippingBlocked)) return;
+        window.location.href = href;
       },
 
       async refresh() {
@@ -225,13 +242,18 @@
       },
 
       // Match b2b-shop's checkout-button gate: cart non-empty, no
-      // invalid qty/price, status saved, no shipping block.
+      // invalid qty/price, status saved, no shipping block. Credit
+      // limit is enforced on /checkout (payment method), not here.
       canCheckout(shippingBlocked) {
         var c = this.data;
         if (!c || c.empty) return false;
         if (c.aico_has_invalid_quantity || c.aico_has_invalid_price) return false;
-        if (c.aico_status && c.aico_status !== 'SAVED') return false;
         if (shippingBlocked) return false;
+        if (c.aico_status === 'ERROR' || c.aico_status === 'SAVING_LONGER_THAN_EXPECTED') {
+          return false;
+        }
+        // Stale SAVING from a prior batch add self-heals via refresh();
+        // don't block checkout forever on the cart page snapshot.
         return true;
       },
 

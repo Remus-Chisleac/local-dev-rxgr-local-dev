@@ -463,7 +463,7 @@
           <a href="{{ routes.checkout_url }}"
              class="aico-button aico-button-primary"
              :class="{ 'aico-is-disabled': !$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %}) }"
-             @click.prevent="if (!$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %})) return; window.location = $el.getAttribute('href');">
+             @click.prevent="$store.cart.goCheckout($el.getAttribute('href'), {% if customer.aico_shipping_block %}true{% else %}false{% endif %})">
             {{ 'cart.checkout_cta' | t }}
           </a>
         </footer>
