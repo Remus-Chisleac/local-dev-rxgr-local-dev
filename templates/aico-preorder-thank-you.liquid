@@ -1,0 +1,12 @@
+{% comment %}
+  Preorder confirmation — after successful POST /preorder/submit.
+{% endcomment %}
+
+<main class="aico-preorder-thank-you aico-page-container" role="main">
+  <h1 class="aico-preorder-thank-you-title">{{ 'aico_preorder.thank_you.title' | t }}</h1>
+  <p class="aico-preorder-thank-you-message">{{ 'aico_preorder.thank_you.message' | t }}</p>
+  <p class="aico-preorder-thank-you-links">
+    <a class="aico-btn aico-btn-primary" href="{{ routes.aico_preorder_url }}">{{ 'aico_preorder.thank_you.back_to_preorder' | t }}</a>
+    <a class="aico-btn aico-btn-secondary" href="{{ routes.root_url }}">{{ 'aico_preorder.thank_you.continue_shopping' | t }}</a>
+  </p>
+</main>

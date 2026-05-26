@@ -321,6 +321,324 @@
         applyViewMode(next);
       });
     });
+
+    setupPreorderWorkflow(root, {
+      storageKey: storageKey,
+      applyViewMode: applyViewMode,
+    });
+  }
+
+  function getSelectValue(root, name) {
+    var select = root.querySelector('[data-aico-preorder-select="' + name + '"]');
+    return select && select.value ? select.value : '';
+  }
+
+  function setupPreorderWorkflow(root, opts) {
+    if (!window.AicoPreorderCatalog || !window.AicoPreorderCart) return;
+
+    var sessionData = null;
+    var selectedDates = [];
+    var catalog = null;
+    var cartCtrl = null;
+    var mainEl = root.querySelector('[data-aico-preorder-main]');
+    var gateEl = root.querySelector('[data-aico-preorder-gate]');
+    var loadingEl = root.querySelector('[data-aico-preorder-loading]');
+    var errorEl = root.querySelector('[data-aico-preorder-error]');
+    var loadMoreEl = root.querySelector('[data-aico-preorder-load-more]');
+    var catalogEl = root.querySelector('[data-aico-preorder-catalog]');
+    var dateFilterEl = root.querySelector('[data-aico-preorder-date-filter]');
+    var dateChipsEl = root.querySelector('[data-aico-preorder-date-chips]');
+    var saveBtn = root.querySelector('[data-aico-preorder-save]');
+    var submitBtn = root.querySelector('[data-aico-preorder-submit]');
+    var summaryLines = root.querySelector('[data-aico-preorder-summary-lines]');
+    var summaryTotal = root.querySelector('[data-aico-preorder-summary-total]');
+    var summaryDiscount = root.querySelector('[data-aico-preorder-summary-discount]');
+    var summaryStatus = root.querySelector('[data-aico-preorder-summary-status]');
+    var termsCheckbox = root.querySelector('[data-aico-preorder-terms]');
+    var notesEl = root.querySelector('[data-aico-preorder-notes]');
+    var hasDirty = false;
+
+    function buyerId() {
+      return getSelectValue(root, 'delivery_address_id') || null;
+    }
+    function billingId() {
+      return getSelectValue(root, 'billing_address_id') || null;
+    }
+    function sizeRegion() {
+      return getSelectValue(root, 'size_region') || 'EU';
+    }
+
+    function addressesReady() {
+      return !!billingId() && !!buyerId();
+    }
+
+    function updateMainVisibility() {
+      var ready = addressesReady();
+      if (mainEl) mainEl.hidden = !ready;
+      if (gateEl) gateEl.hidden = ready;
+      if (!ready) return;
+      if (cartCtrl) cartCtrl.fetchCart().catch(function () {});
+      if (catalog) catalog.reload();
+    }
+
+    function renderDateChips(dates) {
+      if (!dateChipsEl || !dateFilterEl) return;
+      if (!dates || !dates.length) {
+        dateFilterEl.hidden = true;
+        return;
+      }
+      dateFilterEl.hidden = false;
+      if (!selectedDates.length) selectedDates = dates.slice();
+      dateChipsEl.innerHTML = '';
+      dates.forEach(function (date) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'aico-preorder-date-chip';
+        btn.textContent = date;
+        var active = selectedDates.indexOf(date) >= 0;
+        if (active) btn.classList.add('aico-preorder-date-chip-active');
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.addEventListener('click', function () {
+          var idx = selectedDates.indexOf(date);
+          if (idx >= 0) {
+            if (selectedDates.length > 1) selectedDates.splice(idx, 1);
+          } else {
+            selectedDates.push(date);
+          }
+          renderDateChips(dates);
+          if (catalog) catalog.render();
+        });
+        dateChipsEl.appendChild(btn);
+      });
+    }
+
+    function updateSummary() {
+      if (!summaryLines || !cartCtrl || !cartCtrl.localCart) return;
+      var lines = [];
+      var total = 0;
+      cartCtrl.localCart.preorderItemLists.forEach(function (list) {
+        list.preorderItems.forEach(function (it) {
+          if (!it.quantity) return;
+          var price = it.itemPrice || 0;
+          total += price * it.quantity;
+          lines.push(
+            '<div class="aico-preorder-summary-line">' +
+              (it.productId || '') +
+              ' · ' +
+              it.quantity +
+              ' × ' +
+              (price ? price.toFixed(2) : '—') +
+              '</div>',
+          );
+        });
+      });
+      summaryLines.innerHTML = lines.join('') || '<p>—</p>';
+      if (summaryTotal) {
+        summaryTotal.textContent =
+          (root.getAttribute('data-aico-preorder-copy-total') || 'Total') + ': ' + total.toFixed(2);
+      }
+      var discounts =
+        (sessionData && sessionData.preorderDiscounts) ||
+        [];
+      var qty = 0;
+      cartCtrl.localCart.preorderItemLists.forEach(function (list) {
+        list.preorderItems.forEach(function (it) {
+          qty += it.quantity || 0;
+        });
+      });
+      var disc = cartCtrl.getDiscount(discounts, qty);
+      if (summaryDiscount && disc > 0) {
+        summaryDiscount.hidden = false;
+        summaryDiscount.textContent =
+          (root.getAttribute('data-aico-preorder-copy-discount') || 'Discount') +
+          ': ' +
+          disc +
+          '%';
+      } else if (summaryDiscount) {
+        summaryDiscount.hidden = true;
+      }
+      var termsOk = !termsCheckbox || termsCheckbox.checked;
+      if (saveBtn) saveBtn.disabled = !hasDirty || cartCtrl.saving;
+      if (submitBtn) submitBtn.disabled = !termsOk || hasDirty || cartCtrl.saving;
+    }
+
+    function fetchSession() {
+      var url = root.getAttribute('data-aico-preorder-session-url');
+      if (!url) return Promise.resolve();
+      var u = new URL(url, window.location.origin);
+      var b = buyerId();
+      if (b) u.searchParams.set('buyer_address_id', b);
+      return fetch(u.toString(), {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      })
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (json) {
+          sessionData = json.data || null;
+          renderFlyers(sessionData && sessionData.flyers);
+        })
+        .catch(function () {});
+    }
+
+    function renderFlyers(flyers) {
+      var section = root.querySelector('[data-aico-preorder-flyers]');
+      var grid = root.querySelector('[data-aico-preorder-flyers-grid]');
+      if (!section || !grid || !flyers || !flyers.length) {
+        if (section) section.hidden = true;
+        return;
+      }
+      section.hidden = false;
+      grid.innerHTML = flyers
+        .map(function (f) {
+          var title = f.name || f.webName || f.sku || '';
+          return (
+            '<div class="aico-preorder-flyer-card"><span>' +
+            title +
+            '</span></div>'
+          );
+        })
+        .join('');
+    }
+
+    catalog = new window.AicoPreorderCatalog.CatalogController({
+      root: root,
+      productsUrl: root.getAttribute('data-aico-preorder-products-url'),
+      catalogEl: catalogEl,
+      loadingEl: loadingEl,
+      errorEl: errorEl,
+      loadMoreEl: loadMoreEl,
+      getBuyerAddressId: buyerId,
+      getSelectedDates: function () {
+        return selectedDates;
+      },
+      getSizeRegion: sizeRegion,
+      getSession: function () {
+        return sessionData || {};
+      },
+      getCartState: function () {
+        return cartCtrl && cartCtrl.localCart;
+      },
+      onProductsLoaded: function (products, dates) {
+        if (window.AicoPreorderStock) {
+          window.AicoPreorderStock.setSizeStockFromProducts(products);
+        }
+        renderDateChips(dates);
+        if (sessionData && cartCtrl && cartCtrl.serverCart) {
+          var payloads = [];
+          (cartCtrl.serverCart.preorderItemLists || []).forEach(function (list) {
+            (list.preorderItems || []).forEach(function (it) {
+              payloads.push({
+                productId: it.product && it.product.id,
+                variantId: it.productVariant && it.productVariant.id,
+                quantity: it.quantity,
+                date: list.preorderDate,
+              });
+            });
+          });
+          payloads.forEach(function (p) {
+            if (p.productId && p.variantId) {
+              window.AicoPreorderStock.adjustStock(
+                p.productId,
+                p.variantId,
+                p.date,
+                p.quantity,
+              );
+            }
+          });
+        }
+      },
+      onQuantityChange: function (productId, variantId, dateLabel, qty) {
+        if (cartCtrl) {
+          cartCtrl.updateQuantity(productId, variantId, dateLabel, qty);
+          updateSummary();
+        }
+      },
+    });
+
+    cartCtrl = new window.AicoPreorderCart.CartController({
+      cartUrl: root.getAttribute('data-aico-preorder-cart-url'),
+      statusUrl: root.getAttribute('data-aico-preorder-cart-status-url'),
+      itemsUrl: root.getAttribute('data-aico-preorder-cart-items-url'),
+      submitUrl: root.getAttribute('data-aico-preorder-submit-url'),
+      getBuyerAddressId: buyerId,
+      getBillingAddressId: billingId,
+      getDeliveryAddressId: buyerId,
+      getDebtorId: function () {
+        return null;
+      },
+      getPreorderSessionId: function () {
+        return (sessionData && sessionData.id) || (cartCtrl.serverCart && cartCtrl.serverCart.preorderSessionId);
+      },
+      onCartUpdated: function () {
+        if (catalog) catalog.render();
+        updateSummary();
+      },
+      onDirtyChange: function (dirty) {
+        hasDirty = dirty;
+        updateSummary();
+      },
+    });
+
+    root.querySelectorAll('[data-aico-preorder-select]').forEach(function (select) {
+      select.addEventListener('change', function () {
+        fetchSession().then(function () {
+          updateMainVisibility();
+        });
+      });
+    });
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        summaryStatus.hidden = false;
+        summaryStatus.textContent =
+          root.getAttribute('data-aico-preorder-copy-saving') || 'Saving…';
+        cartCtrl
+          .saveCart()
+          .then(function () {
+            summaryStatus.textContent =
+              root.getAttribute('data-aico-preorder-copy-saved') || 'Saved';
+            hasDirty = false;
+            updateSummary();
+          })
+          .catch(function () {
+            summaryStatus.textContent =
+              root.getAttribute('data-aico-preorder-copy-error') || 'Error';
+          });
+      });
+    }
+
+    if (submitBtn) {
+      submitBtn.addEventListener('click', function () {
+        cartCtrl
+          .submitPreorder(notesEl ? notesEl.value : '')
+          .then(function () {
+            var thankYou = root.getAttribute('data-aico-preorder-thank-you-url');
+            if (thankYou) window.location.href = thankYou;
+          })
+          .catch(function () {
+            summaryStatus.hidden = false;
+            summaryStatus.textContent =
+              root.getAttribute('data-aico-preorder-copy-error') || 'Error';
+          });
+      });
+    }
+
+    if (termsCheckbox) {
+      termsCheckbox.addEventListener('change', updateSummary);
+    }
+
+    window.addEventListener('beforeunload', function (event) {
+      if (!hasDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+
+    fetchSession().then(function () {
+      updateMainVisibility();
+    });
+    updateMainVisibility();
   }
 
   if (document.readyState === 'loading') {

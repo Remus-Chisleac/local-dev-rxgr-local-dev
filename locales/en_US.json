@@ -329,13 +329,37 @@
       "view_grid": "Grid view",
       "view_list": "List view"
     },
-    "step2": {
-      "section_aria": "Preorder items",
-      "category_placeholder": "Items will appear here",
-      "coming_soon": "Items will appear here once an address is selected."
+    "catalog": {
+      "section_aria": "Preorder products",
+      "empty": "No products available for this preorder.",
+      "loading": "Loading products…",
+      "loading_more": "Loading more products…",
+      "error": "Could not load products. Please try again.",
+      "select_addresses": "Select billing and delivery addresses to view products.",
+      "dates_label": "Delivery dates"
     },
-    "step3": {
-      "section_aria": "Preorder summary"
+    "flyers": {
+      "section_aria": "Flyers",
+      "title": "Flyers"
+    },
+    "summary": {
+      "section_aria": "Order summary",
+      "title": "Summary",
+      "notes_label": "Notes",
+      "terms_prefix": "I accept the",
+      "terms_link": "terms and conditions",
+      "save_cart": "Save cart",
+      "saving": "Saving cart…",
+      "saved": "Cart saved",
+      "place_order": "Place preorder",
+      "total": "Total",
+      "discount": "Volume discount"
+    },
+    "thank_you": {
+      "title": "Thank you",
+      "message": "Your preorder has been submitted successfully.",
+      "back_to_preorder": "Back to preorder",
+      "continue_shopping": "Continue shopping"
     },
     "cart_button_aria": "Open preorder cart",
     "address_change_warning": "Changing the address will reset your preorder cart."

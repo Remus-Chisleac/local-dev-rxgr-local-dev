@@ -1,12 +1,5 @@
 {% comment %}
-  AICO preorder landing page — slim hero variant.
-
-  Layout intentionally trimmed back to the "above-the-fold" hero only
-  (image / title / countdown) plus a compact filter row underneath
-  (search · size region · billing · delivery · view toggle). The legacy
-  items grid, checkout summary, and floating-cart sections are
-  intentionally removed for this iteration — they land back when the
-  preorder cart endpoint ships.
+  AICO preorder landing page — b2b-shop parity (catalog, cart, submit).
 
   Mock data:
     Title and countdown defaults live in theme settings
@@ -50,6 +43,22 @@
       data-aico-preorder
       data-aico-preorder-user-id="{{ customer.id }}"
       data-aico-preorder-context-url="{{ routes.aico_account_preorder_context_url }}"
+      data-aico-preorder-session-url="{{ routes.aico_preorder_session_url }}"
+      data-aico-preorder-products-url="{{ routes.aico_preorder_products_url }}"
+      data-aico-preorder-cart-url="{{ routes.aico_preorder_cart_url }}"
+      data-aico-preorder-cart-status-url="{{ routes.aico_preorder_cart_status_url }}"
+      data-aico-preorder-cart-items-url="{{ routes.aico_preorder_cart_items_url }}"
+      data-aico-preorder-submit-url="{{ routes.aico_preorder_submit_url }}"
+      data-aico-preorder-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
+      data-aico-preorder-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
+      data-aico-preorder-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"
+      data-aico-preorder-copy-loading="{{ 'aico_preorder.catalog.loading' | t | escape }}"
+      data-aico-preorder-copy-error="{{ 'aico_preorder.catalog.error' | t | escape }}"
+      data-aico-preorder-copy-select-addresses="{{ 'aico_preorder.catalog.select_addresses' | t | escape }}"
+      data-aico-preorder-copy-total="{{ 'aico_preorder.summary.total' | t | escape }}"
+      data-aico-preorder-copy-discount="{{ 'aico_preorder.summary.discount' | t | escape }}"
+      data-aico-preorder-copy-saving="{{ 'aico_preorder.summary.saving' | t | escape }}"
+      data-aico-preorder-copy-saved="{{ 'aico_preorder.summary.saved' | t | escape }}"
       {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}
       data-aico-preorder-mock-weeks="{{ mock_weeks }}"
       data-aico-preorder-mock-days="{{ mock_days }}"
@@ -313,5 +322,53 @@
     </div>
   </section>
 
+  <section class="aico-preorder-main-wrap aico-page-container" aria-labelledby="aico-preorder-main-title" hidden data-aico-preorder-main>
+    <h2 id="aico-preorder-main-title" class="aico-sr-only">{{ 'aico_preorder.catalog.section_aria' | t }}</h2>
+
+    <p class="aico-preorder-gate-message" data-aico-preorder-gate hidden>{{ 'aico_preorder.catalog.select_addresses' | t }}</p>
+    <p class="aico-preorder-catalog-loading" data-aico-preorder-loading hidden>{{ 'aico_preorder.catalog.loading' | t }}</p>
+    <p class="aico-preorder-catalog-error" data-aico-preorder-error hidden role="alert">{{ 'aico_preorder.catalog.error' | t }}</p>
+
+    <div class="aico-preorder-date-filter" data-aico-preorder-date-filter hidden>
+      <span class="aico-preorder-field-label">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
+      <div class="aico-preorder-date-chips" data-aico-preorder-date-chips></div>
+    </div>
+
+    <div class="aico-preorder-catalog" data-aico-preorder-catalog></div>
+    <p class="aico-preorder-load-more" data-aico-preorder-load-more hidden>{{ 'aico_preorder.catalog.loading_more' | t }}</p>
+
+    <section class="aico-preorder-flyers" data-aico-preorder-flyers hidden aria-label="{{ 'aico_preorder.flyers.section_aria' | t }}">
+      <h3 class="aico-preorder-flyers-title">{{ 'aico_preorder.flyers.title' | t }}</h3>
+      <div class="aico-preorder-flyers-grid" data-aico-preorder-flyers-grid></div>
+    </section>
+
+    <aside class="aico-preorder-summary" data-aico-preorder-summary aria-label="{{ 'aico_preorder.summary.section_aria' | t }}">
+      <h3 class="aico-preorder-summary-title">{{ 'aico_preorder.summary.title' | t }}</h3>
+      <div class="aico-preorder-summary-lines" data-aico-preorder-summary-lines></div>
+      <p class="aico-preorder-summary-total" data-aico-preorder-summary-total></p>
+      <p class="aico-preorder-summary-discount" data-aico-preorder-summary-discount hidden></p>
+      <label class="aico-preorder-notes">
+        <span class="aico-preorder-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
+        <textarea name="notes" rows="2" data-aico-preorder-notes></textarea>
+      </label>
+      {% if preorder_session.terms_pdf_url != blank %}
+        <label class="aico-preorder-terms">
+          <input type="checkbox" data-aico-preorder-terms>
+          <span>{{ 'aico_preorder.summary.terms_prefix' | t }}
+            <a href="{{ preorder_session.terms_pdf_url }}" target="_blank" rel="noopener">{{ 'aico_preorder.summary.terms_link' | t }}</a>
+          </span>
+        </label>
+      {% endif %}
+      <div class="aico-preorder-summary-actions">
+        <button type="button" class="aico-btn aico-btn-secondary" data-aico-preorder-save disabled>{{ 'aico_preorder.summary.save_cart' | t }}</button>
+        <button type="button" class="aico-btn aico-btn-primary" data-aico-preorder-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
+      </div>
+      <p class="aico-preorder-summary-status" data-aico-preorder-summary-status hidden></p>
+    </aside>
+  </section>
+
+  <script src="{{ 'preorder-catalog.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder-stock.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder-cart.js' | asset_url }}" defer></script>
   <script src="{{ 'preorder-page.js' | asset_url }}" defer></script>
 </main>

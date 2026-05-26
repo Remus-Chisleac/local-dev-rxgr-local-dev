@@ -329,13 +329,37 @@
       "view_grid": "Rasteransicht",
       "view_list": "Listenansicht"
     },
-    "step2": {
-      "section_aria": "PreOrder-Artikel",
-      "category_placeholder": "Artikel erscheinen hier",
-      "coming_soon": "Artikel erscheinen hier, sobald eine Adresse ausgewählt ist."
+    "catalog": {
+      "section_aria": "PreOrder-Produkte",
+      "empty": "Keine Produkte für diese PreOrder verfügbar.",
+      "loading": "Produkte werden geladen…",
+      "loading_more": "Weitere Produkte werden geladen…",
+      "error": "Produkte konnten nicht geladen werden. Bitte erneut versuchen.",
+      "select_addresses": "Rechnungs- und Lieferadresse wählen, um Produkte anzuzeigen.",
+      "dates_label": "Liefertermine"
     },
-    "step3": {
-      "section_aria": "PreOrder-Zusammenfassung"
+    "flyers": {
+      "section_aria": "Flyer",
+      "title": "Flyer"
+    },
+    "summary": {
+      "section_aria": "Bestellübersicht",
+      "title": "Zusammenfassung",
+      "notes_label": "Bemerkungen",
+      "terms_prefix": "Ich akzeptiere die",
+      "terms_link": "AGB",
+      "save_cart": "Warenkorb speichern",
+      "saving": "Warenkorb wird gespeichert…",
+      "saved": "Warenkorb gespeichert",
+      "place_order": "PreOrder absenden",
+      "total": "Total",
+      "discount": "Mengenrabatt"
+    },
+    "thank_you": {
+      "title": "Vielen Dank",
+      "message": "Ihre PreOrder wurde erfolgreich übermittelt.",
+      "back_to_preorder": "Zurück zur PreOrder",
+      "continue_shopping": "Weiter einkaufen"
     },
     "cart_button_aria": "PreOrder-Warenkorb öffnen",
     "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
