@@ -25,7 +25,7 @@
         creditLimit: {{ customer.aico_debtor.credit_limit | default: 0 | json }},
         shippingBlocked: {{ customer.aico_shipping_block | json }},
         paymentMethods: [
-          {% for pm in customer.aico_payment_methods %}
+          {% for pm in checkout.payment_methods %}
             { id: {{ pm.id | json }}, name: {{ pm.name | json }}, is_credit_card: {{ pm.aico_is_credit_card | json }}, fee_percentage: {{ pm.aico_fee_percentage | json }} }{% unless forloop.last %},{% endunless %}
           {% endfor %}
         ]
@@ -62,10 +62,8 @@
     </template>
 
     <div class="aico-checkout-grid">
-      {%- comment -%} ──────── Form column ──────── {%- endcomment -%}
-      <form class="aico-checkout-form"
-            x-ref="form"
-            @submit.prevent="submit()">
+      {%- comment -%} ──────── Form column (no nested <form> tags) ──────── {%- endcomment -%}
+      <div class="aico-checkout-form-col">
 
         {%- comment -%} ─── Billing address ─── {%- endcomment -%}
         <fieldset class="aico-checkout-section"
@@ -138,11 +136,11 @@
                   :disabled="shippingBlocked || submitting">
           <legend class="aico-checkout-section-title">{{ 'checkout.payment_method' | t }}</legend>
 
-          {% if customer.aico_payment_methods.size == 0 %}
+          {% if checkout.payment_methods.size == 0 %}
             <p class="aico-checkout-empty-list">{{ 'checkout.no_payment_methods' | t }}</p>
           {% else %}
             <ul class="aico-checkout-radio-list">
-              {% for pm in customer.aico_payment_methods %}
+              {% for pm in checkout.payment_methods %}
                 <li>
                   <label class="aico-checkout-radio">
                     <input type="radio"
@@ -170,10 +168,9 @@
           {% endif %}
         </fieldset>
 
-        {%- comment -%} ─── Discount code ─── {%- endcomment -%}
-        <fieldset class="aico-checkout-section"
-                  :disabled="shippingBlocked || submitting">
-          <legend class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</legend>
+        {%- comment -%} ─── Discount code (standalone form — avoids invalid nested forms) ─── {%- endcomment -%}
+        <div class="aico-checkout-section">
+          <h2 class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</h2>
           <form action="{{ routes.aico_cart_discount_url }}" method="post" class="aico-checkout-discount-form">
             <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
             <input type="hidden" name="return_url" value="{{ routes.checkout_url }}">
@@ -192,7 +189,7 @@
           {% if form.posted_successfully? and form.form_type == 'cart_discount' %}
             <p class="aico-checkout-discount-success">{{ 'checkout.discount.applied' | t }}</p>
           {% endif %}
-        </fieldset>
+        </div>
 
         {%- comment -%} ─── Terms & conditions ─── {%- endcomment -%}
         <fieldset class="aico-checkout-section aico-checkout-section-terms"
@@ -204,11 +201,6 @@
             <span>
               {%- assign terms_url = 'checkout.terms.url' | t -%}
               {%- assign terms_link_text = 'checkout.terms.link_text' | t -%}
-              {%- comment -%}
-                The locale-keyed `checkout.terms.label` has a `{link}`
-                placeholder. We resolve it inline because keepsuit/liquid
-                does not give us first-class HTML interpolation in t().
-              {%- endcomment -%}
               {{ 'checkout.terms.label' | t | replace: '{link}', '<a href="' | append: terms_url | append: '" target="_blank" rel="noopener noreferrer">' | append: terms_link_text | append: '</a>' }}
             </span>
           </label>
@@ -219,9 +211,10 @@
 
         {%- comment -%} ─── Place order ─── {%- endcomment -%}
         <div class="aico-checkout-submit-row">
-          <button type="submit"
+          <button type="button"
                   class="aico-button aico-button-primary aico-checkout-submit"
-                  :disabled="!canSubmit()">
+                  :disabled="!canSubmit()"
+                  @click="submit()">
             <span x-show="!submitting" x-cloak>{{ 'checkout.place_order' | t }}</span>
             <span x-show="submitting" x-cloak>{{ 'checkout.processing' | t }}</span>
           </button>
@@ -229,7 +222,7 @@
         <template x-if="submitError">
           <p class="aico-alert aico-alert-error" role="alert" x-text="submitError"></p>
         </template>
-      </form>
+      </div>
 
       {%- comment -%} ──────── Order summary sidebar ──────── {%- endcomment -%}
       <aside class="aico-checkout-summary" aria-label="{{ 'checkout.summary.title' | t }}">
@@ -280,5 +273,3 @@
     </div>
   </div>
 </main>
-
-<script src="{{ 'checkout.js' | asset_url }}" defer></script>

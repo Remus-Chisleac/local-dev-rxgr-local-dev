@@ -3797,6 +3797,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 
 .aico-checkout-form { display: flex; flex-direction: column; gap: 1rem; }
+.aico-checkout-form-col { display: flex; flex-direction: column; gap: 1rem; min-inline-size: 0; }
 .aico-checkout-section {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);

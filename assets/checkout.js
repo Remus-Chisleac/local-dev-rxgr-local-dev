@@ -79,6 +79,14 @@
 
       async init() {
         await this.refreshCart();
+        if (this.cart && this.cart.empty) {
+          window.location.href = cartRoutes.url || '/cart';
+          return;
+        }
+        if (!this.paymentMethodId && this.paymentMethods.length > 0) {
+          this.paymentMethodId = this.paymentMethods[0].id;
+          this.onPaymentMethodChange();
+        }
         this.applyCreditLimitGuard();
         // Start the 1s poll to mirror b2b-shop. Stops on unmount via
         // page navigation (Alpine GCs the component automatically).
@@ -157,7 +165,7 @@
         if (this.submitting) return false;
         if (!this.cart || this.cart.empty) return false;
         if (this.cart.aico_has_invalid_quantity || this.cart.aico_has_invalid_price) return false;
-        if (this.cart.aico_status && this.cart.aico_status !== 'SAVED') return false;
+        if (this.cart.aico_status === 'ERROR' || this.cart.aico_status === 'SAVING_LONGER_THAN_EXPECTED') return false;
         if (!this.billingAddressId || !this.deliveryAddressId || !this.paymentMethodId) return false;
         if (!this.termsAccepted) return false;
         if (isCreditLimitEnforced() && this.creditLimitExceeded) {

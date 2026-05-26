@@ -66,8 +66,13 @@
       cart.js must execute before Alpine so its `alpine:init` listener is
       attached before Alpine.start() dispatches the event and registers the
       `$store.cart` global used by the header badge and mini-cart drawer.
+      checkout.js must also load before Alpine on checkout routes so
+      `x-data="aicoCheckout(...)"` is defined when Alpine.start() runs.
     {%- endcomment -%}
     <script src="{{ 'cart.js' | asset_url }}" defer></script>
+    {% if template.name == 'checkout' or template.directory == 'checkout' %}
+      <script src="{{ 'checkout.js' | asset_url }}" defer></script>
+    {% endif %}
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
 </head>
