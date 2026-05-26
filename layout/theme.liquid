@@ -101,11 +101,11 @@
               </svg>
             </button>
 
-            <button type="button"
-                    class="aico-icon-button aico-cart-button"
-                    aria-label="{{ 'nav.cart_aria' | t }}"
-                    x-data
-                    @click="$store.cart.openDrawer()">
+            <a href="{{ routes.cart_url }}"
+               class="aico-icon-button aico-cart-button"
+               aria-label="{{ 'nav.cart_aria' | t }}"
+               x-data
+               @click="if (window.Alpine && Alpine.store('cart')) { $event.preventDefault(); $store.cart.openDrawer(); }">
               <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
                 <path d="M3 6h18"></path>
@@ -117,7 +117,7 @@
                     x-cloak
                     aria-hidden="true"></span>
               <span class="aico-sr-only" x-text="$store.cart.itemCountLabel()"></span>
-            </button>
+            </a>
 
             <button type="button" class="aico-menu-button" data-aico-menu-trigger aria-controls="aico-drawer" aria-expanded="false" aria-label="{{ 'nav.open_menu' | t }}">
               <span class="aico-menu-button-label">{{ 'nav.open_menu' | t }}</span>

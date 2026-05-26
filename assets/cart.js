@@ -21,7 +21,7 @@
 (function () {
   'use strict';
 
-  document.addEventListener('alpine:init', function () {
+  function registerCartStore() {
     var translations = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
     var currencyCode = (window.__AICO_SHOP__ && window.__AICO_SHOP__.currency) || 'CHF';
     var locale = (window.__AICO_SHOP__ && window.__AICO_SHOP__.locale) || 'en';
@@ -191,7 +191,19 @@
       var open = Alpine.store('cart').drawer;
       if (open) Alpine.store('cart').refresh();
     });
-  });
+  }
+
+  // Belt-and-braces: register on `alpine:init` (the normal path), AND
+  // immediately if Alpine has already started by the time this script
+  // executes. Defer-script ordering should make `alpine:init` reliable,
+  // but a stray `Alpine.start()` elsewhere or a non-deferred re-injection
+  // could fire it before our listener attaches — and then the store would
+  // never exist and every `$store.cart.*` call would silently no-op.
+  if (window.Alpine && window.Alpine.store) {
+    registerCartStore();
+  } else {
+    document.addEventListener('alpine:init', registerCartStore);
+  }
 
   // Progressive enhancement: turn any <form data-aico-cart-add> into a
   // fetch-based submit that lives entirely on this page. Falls back to
