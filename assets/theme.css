@@ -3699,18 +3699,19 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   justify-content: flex-end;
   pointer-events: none;
-  visibility: hidden;
 }
-.aico-mini-cart-open {
-  pointer-events: auto;
-  visibility: visible;
-}
+.aico-mini-cart[hidden] { display: none; }
+.aico-mini-cart-open { pointer-events: auto; }
 .aico-mini-cart-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   opacity: 0;
   transition: opacity 0.2s ease-out;
+  pointer-events: none;
+}
+.aico-mini-cart-open .aico-mini-cart-backdrop {
+  opacity: 1;
   pointer-events: auto;
 }
 .aico-mini-cart-sheet {
@@ -3728,7 +3729,6 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   pointer-events: auto;
   outline: none;
 }
-.aico-mini-cart-open .aico-mini-cart-backdrop { opacity: 1; }
 .aico-mini-cart-open .aico-mini-cart-sheet { transform: translateX(0); }
 @media (prefers-reduced-motion: reduce) {
   .aico-mini-cart-backdrop, .aico-mini-cart-sheet { transition: none; }

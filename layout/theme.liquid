@@ -397,8 +397,10 @@
     {%- comment -%} ─── Mini-cart drawer (Alpine-driven) ─── {%- endcomment -%}
     <div class="aico-mini-cart"
          x-data
-         :class="{ 'aico-mini-cart-open': $store.cart && $store.cart.drawer }"
-         :aria-hidden="!($store.cart && $store.cart.drawer)"
+         hidden
+         :class="{ 'aico-mini-cart-open': $store.cart && $store.cart.drawerOpen }"
+         :hidden="!($store.cart && $store.cart.drawerMounted)"
+         :aria-hidden="!($store.cart && $store.cart.drawerOpen)"
          @keydown.escape.window="$store.cart && $store.cart.closeDrawer()"
          aria-modal="true"
          role="dialog"

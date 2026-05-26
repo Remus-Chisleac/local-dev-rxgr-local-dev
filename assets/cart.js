@@ -74,6 +74,8 @@
     Alpine.store('cart', {
       data: initial,
       drawer: false,
+      drawerOpen: false,
+      drawerMounted: false,
       toast: null,
       _toastTimer: null,
       _pendingLineUpdates: {},
@@ -215,16 +217,42 @@
       },
 
       openDrawer() {
+        if (this.drawerMounted && this.drawerOpen) {
+          return;
+        }
         this.drawer = true;
+        this.drawerMounted = true;
+        var root = document.querySelector('.aico-mini-cart');
+        if (root) {
+          // Force reflow so the closed frame paints before we slide in.
+          void root.offsetHeight;
+        }
+        this.drawerOpen = true;
         document.documentElement.classList.add('aico-no-scroll');
         document.body.classList.add('aico-no-scroll');
       },
       closeDrawer() {
+        if (!this.drawerMounted) {
+          return;
+        }
         this.drawer = false;
+        this.drawerOpen = false;
         document.documentElement.classList.remove('aico-no-scroll');
         document.body.classList.remove('aico-no-scroll');
+        var self = this;
+        setTimeout(function () {
+          if (!self.drawerOpen) {
+            self.drawerMounted = false;
+          }
+        }, 220);
       },
-      toggleDrawer() { this.drawer = !this.drawer; },
+      toggleDrawer() {
+        if (this.drawerOpen) {
+          this.closeDrawer();
+        } else {
+          this.openDrawer();
+        }
+      },
 
       flash(text, kind) {
         this.toast = { text: text, kind: kind || 'success' };
@@ -270,7 +298,7 @@
     // contents so the panel never shows stale data after another tab
     // mutated the cart.
     Alpine.effect(function () {
-      var open = Alpine.store('cart').drawer;
+      var open = Alpine.store('cart').drawerOpen;
       if (open) Alpine.store('cart').refresh();
     });
   }
