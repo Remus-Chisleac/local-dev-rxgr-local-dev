@@ -96,6 +96,8 @@ body:not(.aico-template-customers) > .aico-shell-body {
 /* ---------------------------------------------------------------- */
 
 .aico-chrome-sticky {
+  /* Welcome strip (~2.25rem) + header row (3.5rem) — sticky side panels offset below this. */
+  --aico-chrome-height: calc(2.25rem + 3.5rem);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -3673,7 +3675,10 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0.75rem;
   padding: 1.25rem;
   position: sticky;
-  top: 1rem;
+  top: calc(var(--aico-chrome-height, 5.75rem) + 1rem);
+  max-height: calc(100vh - var(--aico-chrome-height, 5.75rem) - 2rem);
+  max-height: calc(100dvh - var(--aico-chrome-height, 5.75rem) - 2rem);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
@@ -3872,6 +3877,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 
 .aico-checkout-submit-row { display: flex; }
 .aico-checkout-submit { width: 100%; padding: 0.875rem 1.25rem; font-size: 1rem; }
+.aico-checkout-submit--inactive { opacity: 0.55; cursor: not-allowed; }
 
 .aico-checkout-summary {
   background: #ffffff;
@@ -3879,7 +3885,10 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0.75rem;
   padding: 1.25rem;
   position: sticky;
-  top: 1rem;
+  top: calc(var(--aico-chrome-height, 5.75rem) + 1rem);
+  max-height: calc(100vh - var(--aico-chrome-height, 5.75rem) - 2rem);
+  max-height: calc(100dvh - var(--aico-chrome-height, 5.75rem) - 2rem);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.875rem;

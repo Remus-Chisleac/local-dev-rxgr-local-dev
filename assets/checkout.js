@@ -26,7 +26,9 @@
   var routes = (window.__AICO_ROUTES__ && window.__AICO_ROUTES__.checkout) || {};
   var cartRoutes = (window.__AICO_ROUTES__ && window.__AICO_ROUTES__.cart) || {};
   var csrfToken = window.__AICO_CSRF__ || '';
-  var translations = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
+  var cartTranslations = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
+  var checkoutTranslations = (window.__AICO_T__ && window.__AICO_T__.checkout) || {};
+  var translations = Object.assign({}, cartTranslations, checkoutTranslations);
   var pusherConfig = window.__AICO_PUSHER__ || null;
   var featureFlags = window.__AICO_FLAGS__ || {};
 
@@ -65,6 +67,8 @@
       creditLimit: seeds.creditLimit || 0,
       shippingBlocked: !!seeds.shippingBlocked,
       paymentMethods: seeds.paymentMethods || [],
+      placeOrderLabel: seeds.placeOrderLabel || 'Place order',
+      processingLabel: seeds.processingLabel || 'Processing…',
 
       // Live state (refreshed from /cart.js)
       cart: null,
@@ -197,11 +201,17 @@
       formatMoney(value) { return formatMoneyValue(value); },
 
       async submit() {
-        if (!this.termsAccepted) { this.termsError = true; return; }
-        this.termsError = false;
-        if (!this.canSubmit()) return;
-        this.submitting = true;
         this.submitError = null;
+        if (!this.termsAccepted) {
+          this.termsError = true;
+          return;
+        }
+        this.termsError = false;
+        if (!this.canSubmit()) {
+          this.submitError = this.errorMessage('missing_fields');
+          return;
+        }
+        this.submitting = true;
 
         try {
           var res = await fetch(routes.url || '/checkout', {

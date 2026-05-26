@@ -45,8 +45,15 @@
           update_error: {{ 'cart.update_error' | t | json }},
           removed: {{ 'cart.removed' | t | json }},
           item_count_one: {{ 'cart.item_count_one' | t | json }},
-          item_count_other: {{ 'cart.item_count_other' | t | json }}
-        }
+          item_count_other: {{ 'cart.item_count_other' | t | json }},
+          shipping_at_checkout: {{ 'cart.summary.shipping_at_checkout' | t | json }}
+        }{% if template.name == 'checkout' or template.directory == 'checkout' %},
+        checkout: {
+          missing_fields: {{ 'checkout.errors.missing_fields' | t | json }},
+          submit_failed: {{ 'checkout.errors.submit_failed' | t | json }},
+          cart_modified: {{ 'checkout.errors.cart_modified' | t | json }},
+          login_required: {{ 'checkout.login_required' | t | json }}
+        }{% endif %}
       };
       window.__AICO_FLAGS__ = {
         {%- comment -%} Flip to true when B2B credit-limit gating should block checkout again. {%- endcomment -%}

@@ -28,7 +28,9 @@
           {% for pm in checkout.payment_methods %}
             { id: {{ pm.id | json }}, name: {{ pm.name | json }}, is_credit_card: {{ pm.aico_is_credit_card | json }}, fee_percentage: {{ pm.aico_fee_percentage | json }} }{% unless forloop.last %},{% endunless %}
           {% endfor %}
-        ]
+        ],
+        placeOrderLabel: {{ 'checkout.place_order' | t | json }},
+        processingLabel: {{ 'checkout.processing' | t | json }}
       })"
       x-init="init()">
   <div class="aico-page-container">
@@ -213,10 +215,10 @@
         <div class="aico-checkout-submit-row">
           <button type="button"
                   class="aico-button aico-button-primary aico-checkout-submit"
-                  :disabled="!canSubmit()"
+                  :class="{ 'aico-checkout-submit--inactive': !canSubmit() && !submitting }"
+                  :aria-disabled="!canSubmit() || submitting"
                   @click="submit()">
-            <span x-show="!submitting" x-cloak>{{ 'checkout.place_order' | t }}</span>
-            <span x-show="submitting" x-cloak>{{ 'checkout.processing' | t }}</span>
+            <span x-text="submitting ? processingLabel : placeOrderLabel">{{ 'checkout.place_order' | t }}</span>
           </button>
         </div>
         <template x-if="submitError">
