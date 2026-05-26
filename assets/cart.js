@@ -193,11 +193,17 @@
     });
   }
 
-  // Register the store via the documented `alpine:init` hook. With both
-  // Alpine and this script loaded with `defer`, they execute in order
-  // before DOMContentLoaded, so this listener attaches before Alpine
-  // dispatches `alpine:init` from inside `Alpine.start()`.
-  document.addEventListener('alpine:init', registerCartStore);
+  // Register via `alpine:init`. theme.liquid loads this script before Alpine
+  // so the listener is in place when Alpine.start() runs. If Alpine already
+  // booted (wrong order / hot reload), register immediately instead.
+  var cartStoreRegistered = false;
+  function ensureCartStore() {
+    if (cartStoreRegistered || typeof window.Alpine === 'undefined') return;
+    cartStoreRegistered = true;
+    registerCartStore();
+  }
+  document.addEventListener('alpine:init', ensureCartStore);
+  ensureCartStore();
 
   // Progressive enhancement: turn any <form data-aico-cart-add> into a
   // fetch-based submit that lives entirely on this page. Falls back to

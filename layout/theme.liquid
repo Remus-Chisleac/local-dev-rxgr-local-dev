@@ -58,8 +58,13 @@
       {%- endcomment -%}
       <script id="aico-cart-data" type="application/json">{{ cart | json }}</script>
     {% endif %}
-    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    {%- comment -%}
+      cart.js must execute before Alpine so its `alpine:init` listener is
+      attached before Alpine.start() dispatches the event and registers the
+      `$store.cart` global used by the header badge and mini-cart drawer.
+    {%- endcomment -%}
     <script src="{{ 'cart.js' | asset_url }}" defer></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
 </head>
 <body class="{% if template.directory == 'customers' %}aico-template-customers{% endif %}">
