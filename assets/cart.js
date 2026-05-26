@@ -76,6 +76,58 @@
       drawer: false,
       toast: null,
       _toastTimer: null,
+      _pendingLineUpdates: {},
+      _lineUpdateDelay: 400,
+
+      _recalcTotals() {
+        if (!this.data || !Array.isArray(this.data.items)) return;
+        var count = 0;
+        var total = 0;
+        this.data.items.forEach(function (line) {
+          var qty = Number(line.quantity || 0);
+          var price = Number(line.price || 0);
+          line.line_price = price * qty;
+          count += qty;
+          total += line.line_price;
+        });
+        this.data.item_count = count;
+        this.data.total_price = total;
+        this.data.empty = count === 0;
+      },
+
+      setLineQuantity(lineId, qty) {
+        var next = Math.max(0, Number(qty || 0));
+        if (this.data && Array.isArray(this.data.items)) {
+          var line = this.data.items.find(function (item) { return item.id === lineId; });
+          if (line) {
+            line.quantity = next;
+            this._recalcTotals();
+          }
+        }
+
+        if (this._pendingLineUpdates[lineId]) {
+          clearTimeout(this._pendingLineUpdates[lineId]);
+        }
+
+        var self = this;
+        if (next === 0) {
+          delete this._pendingLineUpdates[lineId];
+          return this.update(lineId, 0);
+        }
+
+        this._pendingLineUpdates[lineId] = setTimeout(function () {
+          delete self._pendingLineUpdates[lineId];
+          self.update(lineId, next);
+        }, this._lineUpdateDelay);
+      },
+
+      flushLineUpdates() {
+        var self = this;
+        Object.keys(this._pendingLineUpdates).forEach(function (lineId) {
+          clearTimeout(self._pendingLineUpdates[lineId]);
+          delete self._pendingLineUpdates[lineId];
+        });
+      },
 
       async refresh() {
         try {
@@ -145,8 +197,16 @@
         }
       },
 
-      openDrawer() { this.drawer = true; },
-      closeDrawer() { this.drawer = false; },
+      openDrawer() {
+        this.drawer = true;
+        document.documentElement.classList.add('aico-no-scroll');
+        document.body.classList.add('aico-no-scroll');
+      },
+      closeDrawer() {
+        this.drawer = false;
+        document.documentElement.classList.remove('aico-no-scroll');
+        document.body.classList.remove('aico-no-scroll');
+      },
       toggleDrawer() { this.drawer = !this.drawer; },
 
       flash(text, kind) {

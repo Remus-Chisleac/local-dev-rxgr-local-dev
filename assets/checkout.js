@@ -28,6 +28,11 @@
   var csrfToken = window.__AICO_CSRF__ || '';
   var translations = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
   var pusherConfig = window.__AICO_PUSHER__ || null;
+  var featureFlags = window.__AICO_FLAGS__ || {};
+
+  function isCreditLimitEnforced() {
+    return featureFlags.credit_limit_enforcement === true;
+  }
 
   function jsonHeaders() {
     var headers = { 'Accept': 'application/json' };
@@ -115,7 +120,7 @@
       },
 
       applyCreditLimitGuard() {
-        if (!this.creditLimitExceeded) return;
+        if (!isCreditLimitEnforced() || !this.creditLimitExceeded) return;
         if (this.selectedPaymentMethod && this.selectedPaymentMethod.is_credit_card) return;
         // Auto-select first credit-card option, mirroring b2b-shop.
         var cc = this.paymentMethods.find(function (m) { return m.is_credit_card; });
@@ -131,7 +136,7 @@
       },
 
       get creditLimitExceeded() {
-        if (!this.cart) return false;
+        if (!isCreditLimitEnforced() || !this.cart) return false;
         return (this.cart.total_price || 0) > (this.creditLimit || 0);
       },
 
@@ -141,7 +146,7 @@
 
       isPaymentMethodAvailable(methodId) {
         if (this.shippingBlocked) return false;
-        if (!this.creditLimitExceeded) return true;
+        if (!isCreditLimitEnforced() || !this.creditLimitExceeded) return true;
         // Above credit limit: only credit-card methods stay available.
         var method = this.paymentMethods.find(function (m) { return m.id === methodId; });
         return method ? !!method.is_credit_card : false;
@@ -155,7 +160,7 @@
         if (this.cart.aico_status && this.cart.aico_status !== 'SAVED') return false;
         if (!this.billingAddressId || !this.deliveryAddressId || !this.paymentMethodId) return false;
         if (!this.termsAccepted) return false;
-        if (this.creditLimitExceeded) {
+        if (isCreditLimitEnforced() && this.creditLimitExceeded) {
           var method = this.selectedPaymentMethod;
           if (!method || !method.is_credit_card) return false;
         }

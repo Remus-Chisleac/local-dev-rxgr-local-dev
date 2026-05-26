@@ -48,6 +48,10 @@
           item_count_other: {{ 'cart.item_count_other' | t | json }}
         }
       };
+      window.__AICO_FLAGS__ = {
+        {%- comment -%} Flip to true when B2B credit-limit gating should block checkout again. {%- endcomment -%}
+        credit_limit_enforcement: false
+      };
     </script>
     {% if cart %}
       {%- comment -%}
@@ -393,14 +397,14 @@
     {%- comment -%} ─── Mini-cart drawer (Alpine-driven) ─── {%- endcomment -%}
     <div class="aico-mini-cart"
          x-data
-         x-show="$store.cart && $store.cart.drawer"
-         x-cloak
-         @keydown.escape.window="$store.cart.closeDrawer()"
+         :class="{ 'aico-mini-cart-open': $store.cart && $store.cart.drawer }"
+         :aria-hidden="!($store.cart && $store.cart.drawer)"
+         @keydown.escape.window="$store.cart && $store.cart.closeDrawer()"
          aria-modal="true"
          role="dialog"
          aria-labelledby="aico-mini-cart-title">
       <div class="aico-mini-cart-backdrop" @click="$store.cart.closeDrawer()"></div>
-      <aside class="aico-mini-cart-sheet" x-transition.opacity tabindex="-1">
+      <aside class="aico-mini-cart-sheet" tabindex="-1">
         <header class="aico-mini-cart-head">
           <h2 id="aico-mini-cart-title" class="aico-mini-cart-title">{{ 'cart.title' | t }}</h2>
           <button type="button"
@@ -442,7 +446,7 @@
                   </div>
                   <button type="button"
                           class="aico-mini-cart-line-remove"
-                          @click="$store.cart.update(line.id, 0)"
+                          @click="$store.cart.setLineQuantity(line.id, 0)"
                           aria-label="{{ 'cart.line.remove' | t }}">×</button>
                 </li>
               </template>
