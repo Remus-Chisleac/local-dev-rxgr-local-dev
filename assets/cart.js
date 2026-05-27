@@ -79,6 +79,7 @@
       _drawerCloseTimer: null,
       toast: null,
       _toastTimer: null,
+      _fixingInvalid: false,
       _pendingLineUpdates: {},
       _lineUpdateDelay: 400,
 
@@ -329,6 +330,82 @@
         }
         var template = translations.quantity_exceeds_stock || 'Only {count} in stock — reduce the quantity.';
         return template.replace('{count}', String(stock));
+      },
+
+      fixedQuantityForLine(line) {
+        if (!line) return null;
+        var qty = Number(line.quantity || 0);
+        if (qty <= 0) return null;
+
+        var next = qty;
+        var stock = line.aico_available_stock;
+        var max = line.aico_max_quantity_per_order;
+
+        if (stock !== null && stock !== undefined && qty > Number(stock)) {
+          next = Math.max(0, Number(stock));
+        }
+        if (max !== null && max !== undefined && next > Number(max)) {
+          next = Number(max);
+        }
+
+        return next === qty ? null : next;
+      },
+
+      hasFixableInvalidQuantity() {
+        if (!this.data || !this.data.aico_has_invalid_quantity) return false;
+        var self = this;
+        return (this.data.items || []).some(function (line) {
+          return self.fixedQuantityForLine(line) !== null;
+        });
+      },
+
+      async fixInvalidQuantities() {
+        if (this._fixingInvalid) return false;
+
+        if (this.hasPendingLineUpdates()) {
+          await this.flushPendingLineUpdates();
+        }
+        if (!this.hasFixableInvalidQuantity()) {
+          await this.refresh();
+          return false;
+        }
+
+        this._fixingInvalid = true;
+        var self = this;
+        var updates = [];
+        (this.data.items || []).forEach(function (line) {
+          var next = self.fixedQuantityForLine(line);
+          if (next !== null) updates.push({ id: line.id, quantity: next });
+        });
+
+        try {
+          for (var i = 0; i < updates.length; i++) {
+            var row = updates[i];
+            var res = await fetch(routes.changeJsonUrl || '/cart/change.js', {
+              method: 'POST',
+              headers: jsonHeaders(),
+              credentials: 'same-origin',
+              body: formEncoded({ id: row.id, quantity: row.quantity }),
+            });
+            if (!res.ok) throw new Error('update failed');
+            this.data = await res.json();
+          }
+          await this.refresh();
+          this.flash(
+            translations.fixed_invalid_quantity || 'Quantities adjusted to available stock.',
+            'success'
+          );
+          return true;
+        } catch (e) {
+          this.flash(
+            translations.fix_invalid_quantity_error || 'Could not adjust cart quantities.',
+            'error'
+          );
+          await this.refresh();
+          return false;
+        } finally {
+          this._fixingInvalid = false;
+        }
       },
 
       formatMoney(value) {

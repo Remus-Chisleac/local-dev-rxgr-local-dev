@@ -3563,6 +3563,19 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-alert-warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
 .aico-alert-success { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 .aico-alert a { color: inherit; text-decoration: underline; }
+.aico-alert-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+.aico-alert-with-action p { margin: 0; flex: 1 1 12rem; }
+.aico-alert-action {
+  flex: 0 0 auto;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.875rem;
+}
 
 /* Qty stepper (used in cart line + PDP quantity) */
 .aico-qty-stepper {

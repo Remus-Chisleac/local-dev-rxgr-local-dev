@@ -51,7 +51,9 @@
           shipping_at_checkout: {{ 'cart.summary.shipping_at_checkout' | t | json }},
           out_of_stock: {{ 'cart.line.out_of_stock' | t | json }},
           quantity_exceeds_stock: {{ 'cart.line.quantity_exceeds_stock' | t | json }},
-          quantity_exceeds_stock_generic: {{ 'cart.line.quantity_exceeds_stock_generic' | t | json }}
+          quantity_exceeds_stock_generic: {{ 'cart.line.quantity_exceeds_stock_generic' | t | json }},
+          fixed_invalid_quantity: {{ 'cart.fixed_invalid_quantity' | t | json }},
+          fix_invalid_quantity_error: {{ 'cart.fix_invalid_quantity_error' | t | json }}
         }{% if template.name == 'checkout' or template.directory == 'checkout' %},
         checkout: {
           missing_fields: {{ 'checkout.errors.missing_fields' | t | json }},

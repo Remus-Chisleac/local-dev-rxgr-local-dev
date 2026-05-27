@@ -35,8 +35,17 @@
     {% endif %}
 
     <template x-if="$store.cart.data && $store.cart.data.aico_has_invalid_quantity">
-      <div class="aico-alert aico-alert-error" role="alert">
-        {{ 'cart.alerts.invalid_quantity' | t }}
+      <div class="aico-alert aico-alert-error aico-alert-with-action" role="alert">
+        <p>{{ 'cart.alerts.invalid_quantity' | t }}</p>
+        <template x-if="$store.cart.hasFixableInvalidQuantity()">
+          <button type="button"
+                  class="aico-button aico-button-outline aico-alert-action"
+                  :disabled="$store.cart._fixingInvalid || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                  @click="$store.cart.fixInvalidQuantities()">
+            <span x-show="!$store.cart._fixingInvalid">{{ 'cart.fix_invalid_quantity' | t }}</span>
+            <span x-show="$store.cart._fixingInvalid" x-cloak>{{ 'cart.fix_invalid_quantity_working' | t }}</span>
+          </button>
+        </template>
       </div>
     </template>
 
