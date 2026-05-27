@@ -274,14 +274,23 @@
     return null;
   }
 
+  function formatSizeLabel(label) {
+    return String(label)
+      .replace(/ 1\/3/g, ' \u2153')
+      .replace(/ 2\/3/g, ' \u2154');
+  }
+
   function getCountryLabel(charts, optionGroupName, region, option) {
-    if (!charts || typeof charts !== 'object') return option;
-    var gender =
-      Object.keys(charts).find(function (g) {
-        return optionGroupName.indexOf(g) >= 0;
-      }) || 'Men';
-    var sizes = charts[gender] && charts[gender][region];
-    return sizes && sizes[option] ? sizes[option] : option;
+    var raw = option;
+    if (charts && typeof charts === 'object') {
+      var gender =
+        Object.keys(charts).find(function (g) {
+          return optionGroupName.indexOf(g) >= 0;
+        }) || 'Men';
+      var sizes = charts[gender] && charts[gender][region];
+      if (sizes && sizes[option]) raw = sizes[option];
+    }
+    return formatSizeLabel(raw);
   }
 
   function escapeHtml(s) {

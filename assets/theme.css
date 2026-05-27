@@ -4154,13 +4154,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: max-content;
 }
 .aico-preorder-size-box {
-  flex: 0 0 5.75rem;
-  width: 5.75rem;
+  flex: 0 0 6.75rem;
+  width: 6.75rem;
   box-sizing: border-box;
 }
 .aico-preorder-size-box--empty {
-  flex: 0 0 5.75rem;
-  width: 5.75rem;
+  flex: 0 0 6.75rem;
+  width: 6.75rem;
   min-height: 2.125rem;
   visibility: hidden;
 }
@@ -4178,14 +4178,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder-size-box__label {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 2.35rem;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.15;
   color: #2a3544;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
   pointer-events: none;
 }
 .aico-preorder-size-box__qty {
