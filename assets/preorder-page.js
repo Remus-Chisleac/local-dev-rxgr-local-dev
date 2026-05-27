@@ -382,9 +382,9 @@
     var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
     var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
-    var b2bSearchEl = root.querySelector('[data-aico-preorder-b2b-search]');
-    var b2bResultsEl = root.querySelector('[data-aico-preorder-b2b-results]');
+    var b2bFieldEl = root.querySelector('[data-aico-preorder-b2b-field]');
     var debtorFieldEl = root.querySelector('[data-aico-preorder-debtor-field]');
+    var b2bById = {};
     var addressesUrl = root.getAttribute('data-aico-preorder-addresses-url');
     var b2bsUrl = root.getAttribute('data-aico-preorder-b2bs-url');
     var contextUrl = opts.contextUrl;
@@ -587,11 +587,48 @@
       }
     }
 
+    function populateB2bSelect(rows) {
+      var select = root.querySelector('[data-aico-preorder-select="b2b_id"]');
+      if (!select) return;
+      b2bById = {};
+      var placeholder =
+        select.getAttribute('data-placeholder') || select.dataset.placeholder || '';
+      select.innerHTML = '';
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = placeholder;
+      select.appendChild(empty);
+      (rows || []).forEach(function (b2b) {
+        if (!b2b || !b2b.id) return;
+        b2bById[String(b2b.id)] = b2b;
+        var opt = document.createElement('option');
+        opt.value = String(b2b.id);
+        opt.textContent = b2b.company || '';
+        select.appendChild(opt);
+      });
+      select.disabled = !rows || !rows.length;
+      var wrapper = select.closest('[data-aico-custom-select]');
+      if (wrapper) {
+        var trigger = wrapper.querySelector('[data-aico-custom-select-trigger]');
+        if (trigger) trigger.disabled = select.disabled;
+        populateList(wrapper, select);
+        syncCustomSelect(wrapper);
+      }
+    }
+
     function selectB2b(b2b) {
+      if (!b2b) return;
       selectedB2b = b2b;
       selectedDebtor = null;
-      if (b2bSearchEl) b2bSearchEl.value = b2b.company || '';
-      if (b2bResultsEl) b2bResultsEl.hidden = true;
+      var select = root.querySelector('[data-aico-preorder-select="b2b_id"]');
+      if (select && b2b.id) {
+        select.value = String(b2b.id);
+        var wrapper = select.closest('[data-aico-custom-select]');
+        if (wrapper) {
+          populateList(wrapper, select);
+          syncCustomSelect(wrapper);
+        }
+      }
       persist(contextUrl, tokenInput, storageKey, {
         b2b_id: b2b.id,
         debtor_id: null,
@@ -604,59 +641,49 @@
       updateFlowState();
     }
 
-    function fetchB2bs(searchTerm) {
-      if (!b2bsUrl || !isManager) return Promise.resolve([]);
+    function fetchB2bs(searchTerm, pageNumber) {
+      if (!b2bsUrl || !isManager) {
+        return Promise.resolve({ data: [], meta: null });
+      }
       var url = new URL(b2bsUrl, window.location.origin);
-      url.searchParams.set('page[number]', '0');
-      url.searchParams.set('page[size]', '10');
+      url.searchParams.set('page[number]', String(pageNumber != null ? pageNumber : 0));
+      url.searchParams.set('page[size]', '50');
       if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
       return fetch(url.toString(), {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
       })
         .then(function (res) {
-          return res.json();
-        })
-        .then(function (json) {
-          return json.data || [];
+          if (res.status === 403) {
+            return { data: [], meta: null, forbidden: true };
+          }
+          if (!res.ok) {
+            return { data: [], meta: null };
+          }
+          return res.json().then(function (json) {
+            return {
+              data: json.data || [],
+              meta: json.meta || null,
+            };
+          });
         })
         .catch(function () {
-          return [];
+          return { data: [], meta: null };
         });
     }
 
-    function renderB2bResults(rows) {
-      if (!b2bResultsEl) return;
-      b2bResultsEl.innerHTML = '';
-      if (!rows.length) {
-        b2bResultsEl.hidden = true;
-        return;
-      }
-      rows.forEach(function (b2b) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'aico-preorder-b2b-result';
-        btn.textContent = b2b.company || '';
-        btn.addEventListener('click', function () {
-          selectB2b(b2b);
-        });
-        b2bResultsEl.appendChild(btn);
+    function initB2bPicker() {
+      if (!isManager || !b2bFieldEl) return;
+      fetchB2bs('', 0).then(function (result) {
+        if (result.forbidden) {
+          b2bFieldEl.hidden = true;
+          return;
+        }
+        populateB2bSelect(result.data);
       });
-      b2bResultsEl.hidden = false;
     }
 
-    if (b2bSearchEl) {
-      var b2bTimer;
-      b2bSearchEl.addEventListener('input', function () {
-        clearTimeout(b2bTimer);
-        b2bTimer = setTimeout(function () {
-          fetchB2bs(b2bSearchEl.value).then(renderB2bResults);
-        }, 300);
-      });
-      b2bSearchEl.addEventListener('focus', function () {
-        fetchB2bs(b2bSearchEl.value).then(renderB2bResults);
-      });
-    }
+    initB2bPicker();
 
     function renderDateChips(dates) {
       if (!dateChipsEl || !dateFilterEl) return;
@@ -1003,6 +1030,27 @@
     root.querySelectorAll('[data-aico-preorder-select]').forEach(function (select) {
       select.addEventListener('change', function () {
         var key = select.getAttribute('data-aico-preorder-select');
+        if (key === 'b2b_id') {
+          var b2bId = select.value;
+          if (!b2bId) {
+            selectedB2b = null;
+            selectedDebtor = null;
+            populateDebtorSelect([]);
+            repopulateAddressSelect('billing_address_id', []);
+            repopulateAddressSelect('delivery_address_id', []);
+            persist(contextUrl, tokenInput, storageKey, {
+              b2b_id: null,
+              debtor_id: null,
+              billing_address_id: null,
+              delivery_address_id: null,
+            });
+            updateFlowState();
+            return;
+          }
+          var picked = b2bById[b2bId];
+          if (picked) selectB2b(picked);
+          return;
+        }
         if (key === 'debtor_id') {
           var id = debtorId();
           var debtors = (selectedB2b && selectedB2b.debtors) || [];

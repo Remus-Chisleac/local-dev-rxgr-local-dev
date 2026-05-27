@@ -139,15 +139,26 @@
         <div class="aico-preorder-setup-filters" data-aico-preorder-setup-filters>
         {% if aico_preorder.is_manager %}
           <div class="aico-preorder-field aico-preorder-field-b2b" data-aico-preorder-b2b-field>
-            <label for="aico-preorder-b2b-search" class="aico-preorder-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</label>
-            <div class="aico-preorder-field-control aico-preorder-b2b-search-wrap">
-              <input type="search"
-                     id="aico-preorder-b2b-search"
-                     class="aico-preorder-b2b-search-input"
-                     placeholder="{{ 'aico_preorder.filters.b2b_placeholder' | t }}"
-                     autocomplete="off"
-                     data-aico-preorder-b2b-search>
-              <div class="aico-preorder-b2b-results" data-aico-preorder-b2b-results hidden role="listbox"></div>
+            <span id="aico-preorder-b2b-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</span>
+            <div class="aico-preorder-field-control aico-preorder-field-control-select">
+              <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+                <select name="b2b_id" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
+                        data-aico-preorder-select="b2b_id"
+                        data-placeholder="{{ 'aico_preorder.filters.b2b_placeholder' | t }}">
+                  <option value="">{{ 'aico_preorder.filters.b2b_placeholder' | t }}</option>
+                </select>
+                <button type="button" id="aico-preorder-b2b-trigger" class="aico-preorder-custom-select-trigger"
+                        data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
+                        aria-labelledby="aico-preorder-b2b-label" disabled>
+                  <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                  <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                  <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="aico-preorder-field" data-aico-preorder-debtor-field hidden>
