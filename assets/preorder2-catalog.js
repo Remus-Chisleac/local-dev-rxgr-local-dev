@@ -298,6 +298,32 @@
     return formatSizeLabel(raw);
   }
 
+  function estimateSizeCellWidthRem(label, layout) {
+    var formatted = formatSizeLabel(String(label));
+    var hasFrac = /[\u2153\u2154]/.test(formatted);
+    var wholeLen = formatted.replace(/[\u2153\u2154]/g, '').trim().length;
+    var rem = 2.25;
+    if (layout === 'box') {
+      rem = 1.55 + wholeLen * 0.42 + (hasFrac ? 1.05 : 0) + 2.05;
+    } else {
+      rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
+    }
+    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem));
+  }
+
+  function computeGlobalSizeCellWidthRem(products, charts, region, layout) {
+    var maxRem = 0;
+    asArray(products).forEach(function (group) {
+      var items = asArray(group && group.items);
+      collectGroupSizeValues(items).forEach(function (opt) {
+        var label = getCountryLabel(charts, group.optionGroupName, region, opt);
+        var rem = estimateSizeCellWidthRem(label, layout);
+        if (rem > maxRem) maxRem = rem;
+      });
+    });
+    return (maxRem || (layout === 'box' ? 5 : 3.5)) + 'rem';
+  }
+
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -604,6 +630,7 @@
     var isStockRelevant = !!session.isStockRelevant;
 
     if (!this.products.length && !this.loading) {
+      this.catalogEl.style.removeProperty('--aico-preorder2-cell-w');
       this.catalogEl.innerHTML =
         '<p class="aico-preorder-catalog-empty">' +
         escapeHtml(copy.empty || 'No products.') +
@@ -614,6 +641,14 @@
     var html = '<div class="aico-preorder-products-heading">' +
       escapeHtml(copy.productsHeading || 'Products') +
       '</div>';
+
+    var sizeCellW = computeGlobalSizeCellWidthRem(
+      this.products,
+      charts,
+      region,
+      'header',
+    );
+    this.catalogEl.style.setProperty('--aico-preorder2-cell-w', sizeCellW);
 
     this.products.forEach(function (group) {
       var items = self.filterItems(asArray(group && group.items));

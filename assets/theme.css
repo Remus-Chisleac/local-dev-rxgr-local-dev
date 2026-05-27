@@ -4153,15 +4153,15 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 2px 2px 4px 0;
   width: max-content;
 }
-.aico-preorder-size-box {
-  flex: 0 0 auto;
-  width: auto;
-  max-width: 5.5rem;
+.aico-preorder:not(.aico-preorder2) .aico-preorder-size-box {
+  flex: 0 0 var(--aico-preorder-cell-w, 5rem);
+  width: var(--aico-preorder-cell-w, 5rem);
+  max-width: var(--aico-preorder-cell-w, 5rem);
   box-sizing: border-box;
 }
-.aico-preorder-size-box--empty {
-  flex: 0 0 2rem;
-  width: 2rem;
+.aico-preorder:not(.aico-preorder2) .aico-preorder-size-box--empty {
+  flex: 0 0 var(--aico-preorder-cell-w, 5rem);
+  width: var(--aico-preorder-cell-w, 5rem);
   min-height: 1.875rem;
   visibility: hidden;
 }
@@ -4169,7 +4169,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   gap: 0.125rem;
-  width: max-content;
+  width: 100%;
   max-width: 100%;
   min-height: 1.875rem;
   padding: 0.15rem 0.15rem 0.15rem 0.25rem;
@@ -4758,10 +4758,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   scrollbar-width: none;
 }
 .aico-preorder2-size-head {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 2rem;
-  max-width: 5.5rem;
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
+  max-width: var(--aico-preorder2-cell-w, 4.25rem);
   padding: 0 0.15rem;
   text-align: center;
   font-size: 11px;
@@ -4775,14 +4774,14 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-weight: 600;
 }
 .aico-preorder2-qty-box {
-  flex: 0 0 auto;
-  width: auto;
-  max-width: 5.5rem;
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
+  max-width: var(--aico-preorder2-cell-w, 4.25rem);
   box-sizing: border-box;
 }
 .aico-preorder2-qty-box--empty {
-  flex: 0 0 2rem;
-  width: 2rem;
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
   min-height: 1.875rem;
   visibility: hidden;
 }
