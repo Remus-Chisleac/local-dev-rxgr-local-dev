@@ -3814,7 +3814,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-cart-size-row {
   display: grid;
-  grid-template-columns: minmax(5rem, 1fr) auto 2rem;
+  grid-template-columns: minmax(5rem, 1fr) auto;
   gap: 0.75rem 1rem;
   align-items: center;
   padding: 0.75rem 1rem 0.75rem 2.75rem;
@@ -3833,7 +3833,18 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.9375rem;
   color: var(--aico-fg, #1a1a1a);
 }
-.aico-cart-size-row-qty { min-width: 9rem; }
+.aico-cart-size-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-self: end;
+}
+.aico-cart-size-row-qty { min-width: 0; }
+.aico-cart-page--grouped .aico-cart-size-row-remove {
+  grid-area: auto;
+  flex: 0 0 auto;
+  align-self: center;
+}
 @media (max-width: 767px) {
   .aico-cart-group-toggle {
     flex-wrap: wrap;
@@ -3846,14 +3857,8 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   }
   .aico-cart-size-row {
     grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "label remove"
-      "qty qty";
     padding-left: 1rem;
   }
-  .aico-cart-size-row-label { grid-area: label; }
-  .aico-cart-size-row-qty { grid-area: qty; }
-  .aico-cart-size-row .aico-cart-line-remove { grid-area: remove; }
 }
 
 .aico-cart-clear-form { margin-top: 1rem; text-align: right; }

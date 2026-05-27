@@ -125,48 +125,50 @@
                         <span class="aico-cart-line-meta aico-cart-line-sku" x-show="line.sku" x-text="line.sku"></span>
                       </div>
 
-                      <div class="aico-cart-size-row-qty">
-                        <label class="aico-sr-only" :for="'aico-cart2-qty-' + line.id">
-                          {{ 'cart.line.quantity_aria' | t }}
-                        </label>
-                        <div class="aico-qty-stepper">
-                          <button type="button"
-                                  class="aico-qty-step"
-                                  :disabled="line.quantity <= 0 || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
-                                  @click="$store.cart.setLineQuantity(line.id, Math.max(0, line.quantity - 1))"
-                                  aria-label="{{ 'cart.line.qty_decrement' | t }}">−</button>
-                          <input :id="'aico-cart2-qty-' + line.id"
-                                 type="number"
-                                 class="aico-qty-input"
-                                 min="0"
-                                 :max="line.aico_max_quantity_per_order || line.aico_available_stock || undefined"
-                                 x-model.number="line.quantity"
-                                 @input.debounce.400ms="$store.cart.setLineQuantity(line.id, line.quantity)"
-                                 :disabled="{% if customer.aico_shipping_block %}true{% else %}false{% endif %}">
-                          <button type="button"
-                                  class="aico-qty-step"
-                                  :disabled="(line.aico_available_stock !== null && line.quantity >= line.aico_available_stock) || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
-                                  @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
-                                  aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
+                      <div class="aico-cart-size-row-actions">
+                        <div class="aico-cart-size-row-qty">
+                          <label class="aico-sr-only" :for="'aico-cart2-qty-' + line.id">
+                            {{ 'cart.line.quantity_aria' | t }}
+                          </label>
+                          <div class="aico-qty-stepper">
+                            <button type="button"
+                                    class="aico-qty-step"
+                                    :disabled="line.quantity <= 0 || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                                    @click="$store.cart.setLineQuantity(line.id, Math.max(0, line.quantity - 1))"
+                                    aria-label="{{ 'cart.line.qty_decrement' | t }}">−</button>
+                            <input :id="'aico-cart2-qty-' + line.id"
+                                   type="number"
+                                   class="aico-qty-input"
+                                   min="0"
+                                   :max="line.aico_max_quantity_per_order || line.aico_available_stock || undefined"
+                                   x-model.number="line.quantity"
+                                   @input.debounce.400ms="$store.cart.setLineQuantity(line.id, line.quantity)"
+                                   :disabled="{% if customer.aico_shipping_block %}true{% else %}false{% endif %}">
+                            <button type="button"
+                                    class="aico-qty-step"
+                                    :disabled="(line.aico_available_stock !== null && line.quantity >= line.aico_available_stock) || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                                    @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
+                                    aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
+                          </div>
+                          <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0 && !$store.cart.lineExceedsStock(line)">
+                            <p class="aico-cart-line-stock-warning">{{ 'cart.line.low_stock' | t }}</p>
+                          </template>
+                          <template x-if="$store.cart.lineExceedsStock(line)">
+                            <p class="aico-cart-line-stock-error" x-text="$store.cart.lineQuantityError(line)"></p>
+                          </template>
                         </div>
-                        <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0 && !$store.cart.lineExceedsStock(line)">
-                          <p class="aico-cart-line-stock-warning">{{ 'cart.line.low_stock' | t }}</p>
-                        </template>
-                        <template x-if="$store.cart.lineExceedsStock(line)">
-                          <p class="aico-cart-line-stock-error" x-text="$store.cart.lineQuantityError(line)"></p>
-                        </template>
-                      </div>
 
-                      <button type="button"
-                              class="aico-cart-line-remove"
-                              @click="$store.cart.setLineQuantity(line.id, 0)"
-                              aria-label="{{ 'cart.line.remove' | t }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                          <path d="M3 6h18"></path>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                      </button>
+                        <button type="button"
+                                class="aico-cart-line-remove aico-cart-size-row-remove"
+                                @click="$store.cart.setLineQuantity(line.id, 0)"
+                                aria-label="{{ 'cart.line.remove' | t }}">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </template>
                 </div>
