@@ -4154,25 +4154,24 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: max-content;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-size-box {
-  flex: 0 0 var(--aico-preorder-cell-w, 5rem);
-  width: var(--aico-preorder-cell-w, 5rem);
-  max-width: var(--aico-preorder-cell-w, 5rem);
+  flex: 0 0 var(--aico-preorder-cell-w, 3.75rem);
+  width: var(--aico-preorder-cell-w, 3.75rem);
+  max-width: var(--aico-preorder-cell-w, 3.75rem);
   box-sizing: border-box;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-size-box--empty {
-  flex: 0 0 var(--aico-preorder-cell-w, 5rem);
-  width: var(--aico-preorder-cell-w, 5rem);
+  flex: 0 0 var(--aico-preorder-cell-w, 3.75rem);
+  width: var(--aico-preorder-cell-w, 3.75rem);
   min-height: 1.875rem;
   visibility: hidden;
 }
 .aico-preorder-size-box__inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.125rem;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
   width: 100%;
-  max-width: 100%;
-  min-height: 1.875rem;
-  padding: 0.15rem 0.15rem 0.15rem 0.25rem;
+  min-height: 1.75rem;
+  padding: 0.1rem 0 0.1rem 0.2rem;
   border: 1px solid #d4d4d4;
   border-radius: 0.4375rem;
   background: #fff;
@@ -4197,10 +4196,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-size-box__qty {
   display: flex;
   align-items: stretch;
-  flex: 0 0 2rem;
-  width: 2rem;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
   min-height: 1.5rem;
-  border-radius: 0.3125rem;
+  margin-left: auto;
+  border-radius: 0.25rem;
   background: #f0f0f0;
   overflow: hidden;
 }
@@ -4224,6 +4224,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-layout {
+  display: grid;
+  grid-template-columns: 8.25rem minmax(0, 1fr);
+  column-gap: 0.35rem;
+  align-items: start;
+  padding: 0.75rem 0.75rem 0.5rem;
 }
 .aico-preorder-product-layout {
   display: flex;
@@ -4269,14 +4276,29 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   min-width: 0;
   padding-top: 0.15rem;
 }
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-matrix {
+  min-width: 0;
+}
 .aico-preorder-matrix-row {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   margin-bottom: 0.5rem;
 }
+.aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 6.75rem;
+  column-gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
 .aico-preorder-matrix-row:last-child {
   margin-bottom: 0;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .aico-preorder-matrix-date {
   flex: 0 0 4.5rem;
@@ -4357,6 +4379,14 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: #454545;
   text-align: right;
   white-space: nowrap;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-row-total {
+  grid-column: 3;
+  justify-self: end;
+  position: sticky;
+  right: 0;
+  background: #fff;
+  padding-left: 0.25rem;
 }
 .aico-preorder-product-footer {
   padding: 0.4rem 1rem;
