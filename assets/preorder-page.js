@@ -386,6 +386,7 @@
     var catalog = null;
     var cartCtrl = null;
     var isManager = root.getAttribute('data-aico-preorder-is-manager') === '1';
+    var cartEnabled = root.getAttribute('data-aico-preorder-enable-cart') === '1';
     var defaultDebtorId =
       root.getAttribute('data-aico-preorder-selected-debtor-id') || '';
     var mainEl = root.querySelector('[data-aico-preorder-main]');
@@ -472,7 +473,8 @@
 
     function updateCheckoutVisibility() {
       if (!checkoutEl) return;
-      checkoutEl.hidden = !addressesReady() || getTotalCartQty() <= 0;
+      checkoutEl.hidden =
+        !cartEnabled || !addressesReady() || getTotalCartQty() <= 0;
     }
 
     function clearCatalog() {
@@ -499,7 +501,7 @@
       } else if (catalog) {
         catalog.reload();
       }
-      if (addressesOk && cartCtrl) {
+      if (addressesOk && cartEnabled && cartCtrl) {
         cartCtrl.fetchCart().catch(function () {});
       }
     }
@@ -823,7 +825,7 @@
         return sessionData || {};
       },
       getCartState: function () {
-        return cartCtrl && cartCtrl.localCart;
+        return cartEnabled && cartCtrl ? cartCtrl.localCart : null;
       },
       onProductsLoaded: function (products, dates) {
         if (window.AicoPreorderStock) {
@@ -855,7 +857,15 @@
         }
       },
       onQuantityChange: function (productId, variantId, dateLabel, qty, product) {
-        if (cartCtrl) {
+        if (window.AicoPreorderStock) {
+          window.AicoPreorderStock.adjustStock(
+            productId,
+            variantId,
+            dateLabel,
+            qty,
+          );
+        }
+        if (cartEnabled && cartCtrl) {
           cartCtrl.updateQuantity(productId, variantId, dateLabel, qty, product);
           updateSummary();
           updateCheckoutVisibility();
@@ -873,29 +883,34 @@
       });
     }
 
-    cartCtrl = new window.AicoPreorderCart.CartController({
-      cartUrl: root.getAttribute('data-aico-preorder-cart-url'),
-      statusUrl: root.getAttribute('data-aico-preorder-cart-status-url'),
-      itemsUrl: root.getAttribute('data-aico-preorder-cart-items-url'),
-      submitUrl: root.getAttribute('data-aico-preorder-submit-url'),
-      getBuyerAddressId: buyerId,
-      getBillingAddressId: billingId,
-      getDeliveryAddressId: buyerId,
-      getDebtorId: function () {
-        return debtorId();
-      },
-      getPreorderSessionId: function () {
-        return (sessionData && sessionData.id) || (cartCtrl.serverCart && cartCtrl.serverCart.preorderSessionId);
-      },
-      onCartUpdated: function () {
-        if (catalog) catalog.render();
-        updateSummary();
-      },
-      onDirtyChange: function (dirty) {
-        hasDirty = dirty;
-        updateSummary();
-      },
-    });
+    if (cartEnabled) {
+      cartCtrl = new window.AicoPreorderCart.CartController({
+        cartUrl: root.getAttribute('data-aico-preorder-cart-url'),
+        statusUrl: root.getAttribute('data-aico-preorder-cart-status-url'),
+        itemsUrl: root.getAttribute('data-aico-preorder-cart-items-url'),
+        submitUrl: root.getAttribute('data-aico-preorder-submit-url'),
+        getBuyerAddressId: buyerId,
+        getBillingAddressId: billingId,
+        getDeliveryAddressId: buyerId,
+        getDebtorId: function () {
+          return debtorId();
+        },
+        getPreorderSessionId: function () {
+          return (
+            (sessionData && sessionData.id) ||
+            (cartCtrl.serverCart && cartCtrl.serverCart.preorderSessionId)
+          );
+        },
+        onCartUpdated: function () {
+          if (catalog) catalog.render();
+          updateSummary();
+        },
+        onDirtyChange: function (dirty) {
+          hasDirty = dirty;
+          updateSummary();
+        },
+      });
+    }
 
     root.querySelectorAll('[data-aico-preorder-select]').forEach(function (select) {
       select.addEventListener('change', function () {
@@ -916,7 +931,7 @@
       });
     });
 
-    if (saveBtn) {
+    if (cartEnabled && saveBtn) {
       saveBtn.addEventListener('click', function () {
         summaryStatus.hidden = false;
         summaryStatus.textContent =
@@ -936,7 +951,7 @@
       });
     }
 
-    if (submitBtn) {
+    if (cartEnabled && submitBtn) {
       submitBtn.addEventListener('click', function () {
         cartCtrl
           .submitPreorder(notesEl ? notesEl.value : '')

@@ -103,6 +103,15 @@
     return total;
   }
 
+  function getQuantity(productId, variantId, dateLabel) {
+    var dateKey = normalizeDateKey(dateLabel);
+    var byVariant = state.qty[productId] || {};
+    var byVid = byVariant[variantId] || {};
+    if (byVid[dateKey] != null) return byVid[dateKey];
+    if (byVid[dateLabel] != null) return byVid[dateLabel];
+    return 0;
+  }
+
   function getTotalPerProduct(productId) {
     var byDate = {};
     var byVariant = state.qty[productId] || {};
@@ -121,6 +130,7 @@
   global.AicoPreorderStock = {
     setSizeStockFromProducts: setSizeStockFromProducts,
     adjustStock: adjustStock,
+    getQuantity: getQuantity,
     getMaxQuantity: getMaxQuantity,
     getRowTotal: getRowTotal,
     getTotalPerProduct: getTotalPerProduct,

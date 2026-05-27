@@ -52,6 +52,7 @@
       data-aico-preorder-addresses-url="{{ routes.aico_preorder_addresses_url }}"
       data-aico-preorder-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
       data-aico-preorder-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
+      data-aico-preorder-enable-cart="0"
       data-aico-preorder-copy-select-debtor="{{ 'aico_preorder.catalog.select_debtor' | t | escape }}"
       data-aico-preorder-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
       data-aico-preorder-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"

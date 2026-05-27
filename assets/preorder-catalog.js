@@ -110,15 +110,77 @@
     });
   }
 
+  /** b2b-shop transformVariationOption maps variationOptionValues → values. */
+  function sizeOptionValues(option) {
+    if (!option) return [];
+    if (option.values && option.values.length) {
+      return option.values
+        .map(function (v) {
+          return typeof v === 'string' ? v : v && v.value;
+        })
+        .filter(Boolean);
+    }
+    return (option.variationOptionValues || [])
+      .map(function (v) {
+        return typeof v === 'string' ? v : v && v.value;
+      })
+      .filter(Boolean);
+  }
+
   function getSizeOption(product) {
     var opts = product.variationOptions || [];
+    var picked = null;
     for (var i = 0; i < opts.length; i++) {
       var n = (opts[i].name || '').toLowerCase();
-      if (n.indexOf('size') >= 0 || n === 'größe' || n === 'grosse') {
-        return opts[i];
+      if (
+        n.indexOf('size') >= 0 ||
+        n.indexOf('größe') >= 0 ||
+        n.indexOf('grosse') >= 0 ||
+        n.indexOf('grössen') >= 0
+      ) {
+        picked = opts[i];
+        break;
       }
     }
-    return opts[0] || { name: 'Size', values: [] };
+    if (!picked && opts.length) {
+      for (var j = 0; j < opts.length; j++) {
+        if (opts[j].isDefault || opts[j].is_default) {
+          picked = opts[j];
+          break;
+        }
+      }
+      if (!picked) picked = opts[0];
+    }
+    return {
+      name: (picked && picked.name) || 'Size',
+      values: sizeOptionValues(picked),
+    };
+  }
+
+  function collectGroupSizeValues(items) {
+    var sizeValues = [];
+    items.forEach(function (item) {
+      var so = getSizeOption(item);
+      (so.values || []).forEach(function (v) {
+        if (sizeValues.indexOf(v) < 0) sizeValues.push(v);
+      });
+      if (!so.values.length && item.productVariants) {
+        item.productVariants.forEach(function (variant) {
+          (variant.productVariantOptions || []).forEach(function (opt) {
+            if (opt.value && sizeValues.indexOf(opt.value) < 0) {
+              sizeValues.push(opt.value);
+            }
+          });
+        });
+      }
+    });
+    sizeValues.sort(function (a, b) {
+      var na = parseFloat(a);
+      var nb = parseFloat(b);
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      return String(a).localeCompare(String(b));
+    });
+    return sizeValues;
   }
 
   function getVariantForOption(product, optionValue) {
@@ -431,13 +493,7 @@
       var items = self.filterItems(group.items);
       if (!items.length) return;
 
-      var sizeValues = [];
-      items.forEach(function (item) {
-        var so = getSizeOption(item);
-        (so.values || []).forEach(function (v) {
-          if (sizeValues.indexOf(v) < 0) sizeValues.push(v);
-        });
-      });
+      var sizeValues = collectGroupSizeValues(items);
 
       html += '<section class="aico-preorder-group" data-aico-preorder-group>';
       html +=
@@ -590,6 +646,16 @@
   };
 
   CatalogController.prototype.getQuantity = function (productId, variantId, dateLabel) {
+    if (global.AicoPreorderStock && global.AicoPreorderStock.getQuantity) {
+      var cart = this.getCartState();
+      if (!cart || !cart.preorderItemLists) {
+        return global.AicoPreorderStock.getQuantity(
+          productId,
+          variantId,
+          dateLabel,
+        );
+      }
+    }
     var cart = this.getCartState();
     if (!cart || !cart.preorderItemLists) return 0;
     var list = cart.preorderItemLists.find(function (l) {
