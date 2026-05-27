@@ -623,13 +623,14 @@
 
       html += '<section class="aico-preorder-group aico-preorder2-group" data-aico-preorder-group>';
       html += '<header class="aico-preorder2-group-head">';
+      html += '<div class="aico-preorder2-group-title-bar">';
       html +=
-        '<div class="aico-preorder-group-title-bar"><h3 class="aico-preorder-group-title">' +
+        '<h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
-        '</h3></div>';
+        '</h3>';
 
       if (sizeValues.length) {
-        html += '<div class="aico-preorder2-group-size-bar">';
+        html += '<div class="aico-preorder2-group-size-row">';
         html += '<div class="aico-preorder2-matrix-aside-spacer" aria-hidden="true"></div>';
         html += '<div class="aico-preorder2-matrix-date-spacer" aria-hidden="true"></div>';
         html +=
@@ -647,7 +648,7 @@
           '</div>';
         html += '</div>';
       }
-      html += '</header>';
+      html += '</div></header>';
 
       items.forEach(function (product) {
         html += self.renderProductCard(
