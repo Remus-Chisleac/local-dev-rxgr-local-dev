@@ -39,8 +39,10 @@
 {%- assign mock_minutes = settings.aico_preorder_mock_minutes | default: 10 -%}
 {%- assign mock_seconds = settings.aico_preorder_mock_seconds | default: 11 -%}
 
-<main class="aico-preorder aico-preorder2" role="main"
-      data-aico-preorder
+<link rel="stylesheet" href="{{ 'preorder2.css' | asset_url }}">
+
+<main class="aico-preorder2" role="main"
+      data-aico-preorder2
       data-aico-preorder-user-id="{{ customer.id }}"
       data-aico-preorder-context-url="{{ routes.aico_account_preorder_context_url }}"
       data-aico-preorder-session-url="{{ routes.aico_preorder_session_url }}"
@@ -363,7 +365,7 @@
   </section>
 
   <script src="{{ 'preorder2-catalog.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-stock.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-cart.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-stock.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-cart.js' | asset_url }}" defer></script>
   <script src="{{ 'preorder2-page.js' | asset_url }}" defer></script>
 </main>
