@@ -308,11 +308,11 @@
     var wholeLen = formatted.replace(/[\u2153\u2154]/g, '').trim().length;
     var rem = 2.25;
     if (layout === 'box') {
-      rem = 1.55 + wholeLen * 0.42 + (hasFrac ? 1.05 : 0) + 2.05;
+      rem = 0.9 + wholeLen * 0.28 + (hasFrac ? 0.7 : 0) + 1.75;
     } else {
       rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
     }
-    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem));
+    return Math.min(5.25, Math.max(layout === 'box' ? 3.25 : 3.25, rem));
   }
 
   function computeGlobalSizeCellWidthRem(products, charts, region, layout) {
@@ -634,7 +634,6 @@
     var isStockRelevant = !!session.isStockRelevant;
 
     if (!this.products.length && !this.loading) {
-      this.catalogEl.style.removeProperty('--aico-preorder-cell-w');
       this.catalogEl.innerHTML =
         '<p class="aico-preorder-catalog-empty">' +
         escapeHtml(copy.empty || 'No products.') +
@@ -646,21 +645,22 @@
       escapeHtml(copy.productsHeading || 'Products') +
       '</div>';
 
-    var sizeCellW = computeGlobalSizeCellWidthRem(
-      this.products,
-      charts,
-      region,
-      'box',
-    );
-    this.catalogEl.style.setProperty('--aico-preorder-cell-w', sizeCellW);
-
     this.products.forEach(function (group) {
       var items = self.filterItems(asArray(group && group.items));
       if (!items.length) return;
 
       var sizeValues = collectGroupSizeValues(items);
+      var groupCellW = computeGlobalSizeCellWidthRem(
+        [group],
+        charts,
+        region,
+        'box',
+      );
 
-      html += '<section class="aico-preorder-group" data-aico-preorder-group>';
+      html +=
+        '<section class="aico-preorder-group" data-aico-preorder-group style="--aico-preorder-cell-w:' +
+        groupCellW +
+        '">';
       html +=
         '<header class="aico-preorder-group-title-bar"><h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
