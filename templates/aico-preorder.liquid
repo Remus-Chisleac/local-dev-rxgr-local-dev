@@ -172,8 +172,7 @@
           </div>
         {% endif %}
 
-        {%- comment -%} Search, size, view — only after billing + delivery are chosen (b2b-shop). {%- endcomment -%}
-        <div class="aico-preorder-filters-gated" data-aico-preorder-filters-gated hidden>
+        {%- comment -%} Filter row always visible (b2b-shop SortFilterControl); catalog waits for addresses. {%- endcomment -%}
         <label class="aico-preorder-field aico-preorder-field-search" data-aico-field="search">
           <span class="aico-preorder-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
           <span class="aico-preorder-field-control">
@@ -323,7 +322,6 @@
               <line x1="3" x2="3.01" y1="18" y2="18"></line>
             </svg>
           </button>
-        </div>
         </div>
       </form>
     </div>

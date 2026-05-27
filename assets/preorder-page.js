@@ -253,15 +253,9 @@
     var userId = root.getAttribute('data-aico-preorder-user-id') || 'anon';
     var contextUrl = root.getAttribute('data-aico-preorder-context-url');
     var storageKey = 'aico_preorder_context:' + userId;
-    var ADDRESS_SELECT_KEYS = {
-      billing_address_id: true,
-      delivery_address_id: true,
-    };
-
     function applyStoredSelections() {
       var stored = readStored(storageKey);
       Object.keys(stored).forEach(function (key) {
-        if (ADDRESS_SELECT_KEYS[key]) return;
         var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
         if (select && stored[key] !== null && stored[key] !== undefined) {
           var matched = Array.prototype.some.call(select.options, function (opt) {
@@ -271,10 +265,6 @@
             select.value = String(stored[key]);
           }
         }
-      });
-      ['billing_address_id', 'delivery_address_id'].forEach(function (key) {
-        var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
-        if (select) select.value = '';
       });
       refreshCustomSelectLabels(root);
     }
@@ -372,7 +362,6 @@
     var cartCtrl = null;
     var mainEl = root.querySelector('[data-aico-preorder-main]');
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
-    var gatedFilters = root.querySelector('[data-aico-preorder-filters-gated]');
     var loadingEl = root.querySelector('[data-aico-preorder-loading]');
     var errorEl = root.querySelector('[data-aico-preorder-error]');
     var loadMoreEl = root.querySelector('[data-aico-preorder-load-more]');
@@ -411,7 +400,6 @@
       var ready = addressesReady();
       if (mainEl) mainEl.hidden = !ready;
       if (promptEl) promptEl.hidden = ready;
-      if (gatedFilters) gatedFilters.hidden = !ready;
       if (!ready) {
         if (catalog) {
           catalog.products = [];
