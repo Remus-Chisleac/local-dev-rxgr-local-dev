@@ -4121,16 +4121,30 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-matrix-scroll {
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+}
+.aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll {
+  overflow-x: auto;
   scrollbar-width: thin;
+  scrollbar-color: #9d9d9d transparent;
+}
+.aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll::-webkit-scrollbar {
+  height: 5px;
+}
+.aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll::-webkit-scrollbar-thumb {
+  background: #9d9d9d;
+  border-radius: 3px;
+}
+.aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 .aico-preorder-matrix-track {
   display: flex;
   flex-wrap: nowrap;
   gap: 11px;
-  padding-left: 6px;
+  padding: 6px 0 2px 6px;
   width: max-content;
 }
 .aico-preorder-size-box {
@@ -4139,30 +4153,43 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   box-sizing: border-box;
 }
 .aico-preorder-size-box--empty {
-  min-height: 44px;
+  flex: 0 0 58px;
+  width: 58px;
+  min-height: 36px;
   visibility: hidden;
 }
+.aico-preorder-size-box__field {
+  position: relative;
+  width: 47px;
+  margin-top: 8px;
+  margin-left: 11px;
+}
 .aico-preorder-size-box__label {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.15;
-  text-align: center;
+  position: absolute;
+  top: -5px;
+  left: 5px;
+  z-index: 1;
+  width: 40px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-align: left;
   color: #272727;
-  padding: 0 2px;
-  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: none;
 }
 .aico-preorder-size-box__control {
   display: flex;
   align-items: stretch;
-  height: 28px;
+  width: 47px;
+  min-height: 28px;
   border: 1px solid #000;
   border-radius: 5px;
   background: #fff;
   overflow: hidden;
+  box-sizing: border-box;
 }
 .aico-preorder-size-box--filled .aico-preorder-size-box__control {
   border-color: transparent;
@@ -4269,9 +4296,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-size-box__spinners {
   display: flex;
   flex-direction: column;
-  flex: 0 0 13px;
-  width: 13px;
-  border-left: 1px solid #c8c8c8;
+  flex: 0 0 11px;
+  width: 11px;
+  border-left: 1px solid #bdbdbd;
 }
 .aico-preorder-size-box__step {
   flex: 1 1 50%;
@@ -4282,9 +4309,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0;
   border: 0;
   background: #fff;
-  color: #454545;
+  color: #666;
   cursor: pointer;
   line-height: 0;
+}
+.aico-preorder-size-box__step svg {
+  width: 7px;
+  height: 4px;
 }
 .aico-preorder-size-box__step:hover:not(:disabled) {
   background: #f4f4f4;
@@ -4342,12 +4373,17 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder-flyers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+@media (max-width: 640px) {
+  .aico-preorder-flyers-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .aico-preorder-flyer-card {
   background: #fff;
-  border: 1px solid #d8d8d8;
+  border: none;
   border-radius: 8px;
   padding: 0.75rem 1rem 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -4393,8 +4429,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   cursor: pointer;
 }
 .aico-preorder-flyer-range:focus-visible {
-  outline: 2px solid #66b0bb;
-  outline-offset: 2px;
+  outline: none;
 }
 .aico-preorder-flyer-range::-webkit-slider-runnable-track {
   height: 3px;

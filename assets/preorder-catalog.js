@@ -28,6 +28,7 @@
       filledClass +
       disabledClass +
       '">' +
+      '<span class="aico-preorder-size-box__field">' +
       '<span class="aico-preorder-size-box__label">' +
       escapeHtml(label) +
       '</span>' +
@@ -53,7 +54,7 @@
       ' aria-label="Decrease quantity">' +
       '<svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</button>' +
-      '</span></span></span>'
+      '</span></span></span></span>'
     );
   }
 
@@ -612,7 +613,7 @@
         escapeHtml(group.optionGroupName) +
         '</h3></header>';
 
-      items.forEach(function (product) {
+      items.forEach(function (product, productIdx) {
         html += self.renderProductCard(
           product,
           group.optionGroupName,
@@ -622,6 +623,7 @@
           charts,
           region,
           copy,
+          productIdx === items.length - 1,
         );
       });
       html += '</section>';
@@ -629,6 +631,30 @@
 
     this.catalogEl.innerHTML = html;
     this.bindQuantityInputs();
+    this.bindMatrixScrollSync();
+  };
+
+  CatalogController.prototype.bindMatrixScrollSync = function () {
+    if (!this.catalogEl) return;
+    this.catalogEl.querySelectorAll('[data-aico-preorder-group]').forEach(function (groupEl) {
+      var scrollEls = groupEl.querySelectorAll('[data-aico-preorder-matrix-scroll]');
+      if (!scrollEls.length) return;
+      var syncing = false;
+      function syncFrom(source) {
+        if (syncing) return;
+        syncing = true;
+        var left = source.scrollLeft;
+        scrollEls.forEach(function (el) {
+          if (el.scrollLeft !== left) el.scrollLeft = left;
+        });
+        syncing = false;
+      }
+      scrollEls.forEach(function (el) {
+        el.addEventListener('scroll', function () {
+          syncFrom(el);
+        });
+      });
+    });
   };
 
   CatalogController.prototype.renderProductCard = function (
@@ -640,6 +666,7 @@
     charts,
     region,
     copy,
+    isLastProductInGroup,
   ) {
     var self = this;
     var title = productTitle(product);
@@ -675,8 +702,12 @@
     html += '</div></div>';
 
     html += '<div class="aico-preorder-product-matrix">';
-    dates.forEach(function (dateLabel) {
-      html += '<div class="aico-preorder-matrix-row">';
+    dates.forEach(function (dateLabel, dateIdx) {
+      var rowClass = 'aico-preorder-matrix-row';
+      if (dateIdx === dates.length - 1 && isLastProductInGroup) {
+        rowClass += ' aico-preorder-matrix-row--scroll';
+      }
+      html += '<div class="' + rowClass + '">';
       html +=
         '<div class="aico-preorder-matrix-date">' +
         escapeHtml(dateLabel) +
