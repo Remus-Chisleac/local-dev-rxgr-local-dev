@@ -282,7 +282,7 @@
     if (!parts) return escapeHtml(formatted);
     var whole = escapeHtml(parts[1]);
     if (!parts[2]) return whole;
-    return whole + '<span class="aico-preorder-size-frac">' + parts[2] + '</span>';
+    return whole + '<span class="aico-preorder2-size-frac">' + parts[2] + '</span>';
   }
 
   function getCountryLabel(charts, optionGroupName, region, option) {
@@ -303,25 +303,39 @@
     var hasFrac = /[\u2153\u2154]/.test(formatted);
     var wholeLen = formatted.replace(/[\u2153\u2154]/g, '').trim().length;
     var rem = 2.25;
-    if (layout === 'box') {
+    if (layout === 'qty') {
+      rem = 2.25;
+    } else if (layout === 'header') {
+      rem = 0.85 + wholeLen * 0.26 + (hasFrac ? 0.65 : 0);
+    } else if (layout === 'box') {
       rem = 1.55 + wholeLen * 0.42 + (hasFrac ? 1.05 : 0) + 2.05;
     } else {
       rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
     }
-    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem));
+    if (layout === 'qty') return '2.25rem';
+    if (layout === 'header') return Math.min(4.25, Math.max(2.35, rem)) + 'rem';
+    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem)) + 'rem';
+  }
+
+  function parseRemValue(remStr) {
+    return parseFloat(String(remStr).replace('rem', '')) || 0;
   }
 
   function computeGlobalSizeCellWidthRem(products, charts, region, layout) {
+    if (layout === 'qty') return '2.25rem';
     var maxRem = 0;
     asArray(products).forEach(function (group) {
       var items = asArray(group && group.items);
       collectGroupSizeValues(items).forEach(function (opt) {
         var label = getCountryLabel(charts, group.optionGroupName, region, opt);
-        var rem = estimateSizeCellWidthRem(label, layout);
+        var rem = parseRemValue(estimateSizeCellWidthRem(label, layout));
         if (rem > maxRem) maxRem = rem;
       });
     });
-    return (maxRem || (layout === 'box' ? 5 : 3.5)) + 'rem';
+    if (!maxRem) {
+      return layout === 'header' ? '3.25rem' : layout === 'box' ? '5rem' : '3.5rem';
+    }
+    return maxRem + 'rem';
   }
 
   function escapeHtml(s) {
@@ -642,13 +656,6 @@
       escapeHtml(copy.productsHeading || 'Products') +
       '</div>';
 
-    var sizeCellW = computeGlobalSizeCellWidthRem(
-      this.products,
-      charts,
-      region,
-      'header',
-    );
-    this.catalogEl.style.setProperty('--aico-preorder2-cell-w', sizeCellW);
     this.catalogEl.style.setProperty('--aico-preorder2-aside-w', '8.25rem');
     this.catalogEl.style.setProperty('--aico-preorder2-date-w', '4.5rem');
     this.catalogEl.style.setProperty('--aico-preorder2-total-w', '6.75rem');
@@ -659,21 +666,36 @@
       if (!items.length) return;
 
       var sizeValues = collectGroupSizeValues(items);
+      var headerCellW = computeGlobalSizeCellWidthRem(
+        [group],
+        charts,
+        region,
+        'header',
+      );
+      var qtyCellW = computeGlobalSizeCellWidthRem(
+        [group],
+        charts,
+        region,
+        'qty',
+      );
 
-      html += '<section class="aico-preorder-group aico-preorder2-group" data-aico-preorder-group>';
-      html += '<header class="aico-preorder2-group-head">';
-      html += '<div class="aico-preorder2-group-title-bar">';
       html +=
-        '<h3 class="aico-preorder-group-title">' +
+        '<section class="aico-preorder2-group" data-aico-preorder2-group style="--aico-preorder2-header-cell-w:' +
+        headerCellW +
+        ';--aico-preorder2-qty-cell-w:' +
+        qtyCellW +
+        '">';
+      html += '<header class="aico-preorder2-group-head">';
+      html += '<div class="aico-preorder2-group-header-row">';
+      html +=
+        '<h3 class="aico-preorder2-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
+      html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
 
       if (sizeValues.length) {
-        html += '<div class="aico-preorder2-group-size-row">';
-        html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
-        html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
         html +=
-          '<div class="aico-preorder-matrix-scroll" data-aico-preorder-matrix-scroll data-aico-preorder-sizes-header><div class="aico-preorder-matrix-track">';
+          '<div class="aico-preorder2-matrix-scroll aico-preorder2-matrix-scroll--header" data-aico-preorder2-matrix-scroll data-aico-preorder2-sizes-header><div class="aico-preorder2-matrix-track">';
         sizeValues.forEach(function (opt) {
           html +=
             '<span class="aico-preorder2-size-head">' +
@@ -685,7 +707,6 @@
           '<div class="aico-preorder2-matrix-total-head">' +
           escapeHtml(copy.rowTotal || 'Total Input') +
           '</div>';
-        html += '</div>';
       }
       html += '</div></header>';
 
@@ -711,8 +732,8 @@
 
   CatalogController.prototype.bindMatrixScrollSync = function () {
     if (!this.catalogEl) return;
-    this.catalogEl.querySelectorAll('[data-aico-preorder-group]').forEach(function (groupEl) {
-      var scrollEls = groupEl.querySelectorAll('[data-aico-preorder-matrix-scroll]');
+    this.catalogEl.querySelectorAll('[data-aico-preorder2-group]').forEach(function (groupEl) {
+      var scrollEls = groupEl.querySelectorAll('[data-aico-preorder2-matrix-scroll]');
       if (!scrollEls.length) return;
       var syncing = false;
       function syncFrom(source, left) {
@@ -729,7 +750,7 @@
           syncFrom(el);
         });
       });
-      groupEl.querySelectorAll('[data-aico-preorder2-product-grid]').forEach(function (matrix) {
+      groupEl.querySelectorAll('[data-aico-preorder2-product-rows]').forEach(function (matrix) {
         matrix.addEventListener(
           'wheel',
           function (e) {
@@ -764,44 +785,46 @@
     var totalPcs = productTotal(product.id);
 
     var html =
-      '<article class="aico-preorder-product-card" data-aico-preorder-product-id="' +
+      '<article class="aico-preorder2-product-card" data-aico-preorder2-product-id="' +
       product.id +
       '">';
 
-    html += '<div class="aico-preorder2-product-grid" data-aico-preorder2-product-grid>';
+    html += '<div class="aico-preorder2-product-grid">';
     html += '<div class="aico-preorder2-product-aside">';
     if (img) {
       html +=
-        '<div class="aico-preorder-product-media"><img src="' +
+        '<div class="aico-preorder2-product-media"><img src="' +
         escapeHtml(img) +
         '" alt="" loading="lazy" decoding="async" width="96" height="96"></div>';
     }
-    html += '<div class="aico-preorder-product-info">';
-    html += '<h4 class="aico-preorder-product-title">' + escapeHtml(title) + '</h4>';
+    html += '<div class="aico-preorder2-product-info">';
+    html += '<h4 class="aico-preorder2-product-title">' + escapeHtml(title) + '</h4>';
     if (product.sku) {
-      html += '<p class="aico-preorder-product-sku">' + escapeHtml(product.sku) + '</p>';
+      html += '<p class="aico-preorder2-product-sku">' + escapeHtml(product.sku) + '</p>';
     }
     if (price != null && price >= 0) {
       html +=
-        '<p class="aico-preorder-product-price">' +
+        '<p class="aico-preorder2-product-price">' +
         escapeHtml(formatMoney(price, currency)) +
         '</p>';
     }
     html += '</div></div>';
+    html += '<div class="aico-preorder2-product-rows" data-aico-preorder2-product-rows>';
 
     dates.forEach(function (dateLabel, dateIdx) {
-      var scrollClass = 'aico-preorder-matrix-scroll';
+      var scrollClass = 'aico-preorder2-matrix-scroll';
       if (dateIdx === dates.length - 1) {
-        scrollClass += ' aico-preorder-matrix-row--scroll';
+        scrollClass += ' aico-preorder2-matrix-scroll--bar';
       }
+      html += '<div class="aico-preorder2-matrix-row">';
       html +=
-        '<div class="aico-preorder-matrix-date">' +
+        '<div class="aico-preorder2-matrix-date">' +
         escapeHtml(dateLabel) +
         '</div>';
       html +=
         '<div class="' +
         scrollClass +
-        '" data-aico-preorder-matrix-scroll><div class="aico-preorder-matrix-track">';
+        '" data-aico-preorder2-matrix-scroll><div class="aico-preorder2-matrix-track">';
       sizeValues.forEach(function (optVal) {
         var variant = getVariantForOption(product, optVal);
         var label = getCountryLabel(charts, optionGroupName, region, optVal);
@@ -840,16 +863,17 @@
       html += '</div></div>';
       var rowTotal = rowTotalForDate(product.id, dateLabel);
       html +=
-        '<div class="aico-preorder-matrix-row-total">' +
+        '<div class="aico-preorder2-matrix-row-total">' +
         escapeHtml(copy.rowTotal || 'Total Input') +
         ': <strong>' +
         rowTotal +
         '</strong></div>';
+      html += '</div>';
     });
-    html += '</div>';
+    html += '</div></div>';
 
     html +=
-      '<div class="aico-preorder-product-footer"><span class="aico-preorder-product-total">' +
+      '<div class="aico-preorder2-product-footer"><span class="aico-preorder2-product-total">' +
       escapeHtml(copy.productTotal || 'Total') +
       ': <strong>' +
       totalPcs +
