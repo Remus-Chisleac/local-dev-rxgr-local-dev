@@ -254,7 +254,6 @@
     var contextUrl = root.getAttribute('data-aico-preorder-context-url');
     var storageKey = 'aico_preorder_context:' + userId;
     var SKIP_STORED_KEYS = {
-      b2b_id: true,
       debtor_id: true,
       billing_address_id: true,
       delivery_address_id: true,
@@ -274,14 +273,26 @@
           }
         }
       });
-      ['billing_address_id', 'delivery_address_id', 'debtor_id'].forEach(function (key) {
+      ['billing_address_id', 'delivery_address_id'].forEach(function (key) {
         var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
         if (select) select.value = '';
       });
       refreshCustomSelectLabels(root);
     }
 
+    function applyDefaultAddresses() {
+      ['billing_address_id', 'delivery_address_id'].forEach(function (key) {
+        var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
+        if (!select || select.value || select.disabled) return;
+        if (select.options.length > 1) {
+          select.value = select.options[1].value;
+        }
+      });
+      refreshCustomSelectLabels(root);
+    }
+
     applyStoredSelections();
+    applyDefaultAddresses();
     initCustomSelect(root);
 
     var form = root.querySelector('[data-aico-preorder-filters]');
@@ -374,19 +385,15 @@
     var selectedDates = [];
     var catalog = null;
     var cartCtrl = null;
-    var selectedB2b = null;
-    var selectedDebtor = null;
     var isManager = root.getAttribute('data-aico-preorder-is-manager') === '1';
+    var defaultDebtorId =
+      root.getAttribute('data-aico-preorder-selected-debtor-id') || '';
     var mainEl = root.querySelector('[data-aico-preorder-main]');
     var checkoutEl = root.querySelector('[data-aico-preorder-checkout]');
     var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
     var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
-    var b2bFieldEl = root.querySelector('[data-aico-preorder-b2b-field]');
-    var debtorFieldEl = root.querySelector('[data-aico-preorder-debtor-field]');
-    var b2bById = {};
     var addressesUrl = root.getAttribute('data-aico-preorder-addresses-url');
-    var b2bsUrl = root.getAttribute('data-aico-preorder-b2bs-url');
     var contextUrl = opts.contextUrl;
     var tokenInput = opts.tokenInput;
     var storageKey = opts.storageKey;
@@ -421,25 +428,18 @@
     }
 
     function debtorId() {
-      if (selectedDebtor && selectedDebtor.id) return selectedDebtor.id;
-      return getSelectValue(root, 'debtor_id') || null;
+      return defaultDebtorId || null;
     }
 
-    function b2bReady() {
-      if (!isManager) return true;
-      return !!selectedB2b;
-    }
-
-    function debtorReady() {
-      if (!isManager) return true;
-      if (!selectedB2b) return false;
-      var debtors = selectedB2b.debtors || [];
-      if (debtors.length <= 1) return true;
-      return !!debtorId();
+    function shouldSkipProducts() {
+      if (isManager && (!debtorId() || !buyerId())) {
+        return true;
+      }
+      return false;
     }
 
     function addressesReady() {
-      return b2bReady() && debtorReady() && !!billingId() && !!buyerId();
+      return !!billingId() && !!buyerId();
     }
 
     function getTotalCartQty() {
@@ -466,15 +466,6 @@
       var msg =
         root.getAttribute('data-aico-preorder-copy-select-addresses') ||
         'Select billing and delivery addresses';
-      if (isManager && !selectedB2b) {
-        msg =
-          root.getAttribute('data-aico-preorder-copy-select-b2b') ||
-          'Select B2B';
-      } else if (isManager && !debtorReady()) {
-        msg =
-          root.getAttribute('data-aico-preorder-copy-select-debtor') ||
-          'Select seller';
-      }
       promptTitleEl.textContent = msg;
       promptEl.hidden = addressesReady();
     }
@@ -497,17 +488,20 @@
     }
 
     function updateFlowState() {
-      var ready = addressesReady();
+      var addressesOk = addressesReady();
+      var productsOk = !shouldSkipProducts();
       updatePrompt();
-      if (catalogToolsEl) catalogToolsEl.hidden = !ready;
-      if (mainEl) mainEl.hidden = !ready;
+      if (catalogToolsEl) catalogToolsEl.hidden = !addressesOk;
+      if (mainEl) mainEl.hidden = !addressesOk;
       updateCheckoutVisibility();
-      if (!ready) {
+      if (!productsOk) {
         clearCatalog();
-        return;
+      } else if (catalog) {
+        catalog.reload();
       }
-      if (cartCtrl) cartCtrl.fetchCart().catch(function () {});
-      if (catalog) catalog.reload();
+      if (addressesOk && cartCtrl) {
+        cartCtrl.fetchCart().catch(function () {});
+      }
     }
 
     function repopulateAddressSelect(name, rows) {
@@ -556,134 +550,6 @@
         })
         .catch(function () {});
     }
-
-    function populateDebtorSelect(debtors) {
-      var select = root.querySelector('[data-aico-preorder-select="debtor_id"]');
-      if (!select || !debtorFieldEl) return;
-      select.innerHTML = '';
-      var empty = document.createElement('option');
-      empty.value = '';
-      empty.textContent =
-        root.getAttribute('data-aico-preorder-copy-select-debtor') || 'Select seller';
-      select.appendChild(empty);
-      (debtors || []).forEach(function (d) {
-        var opt = document.createElement('option');
-        opt.value = String(d.id);
-        opt.textContent = d.name || d.company || '';
-        select.appendChild(opt);
-      });
-      debtorFieldEl.hidden = !debtors || debtors.length <= 1;
-      if (debtors && debtors.length === 1) {
-        selectedDebtor = debtors[0];
-        reloadAddresses(selectedDebtor.id);
-      } else {
-        selectedDebtor = null;
-        select.value = '';
-      }
-      var wrapper = select.closest('[data-aico-custom-select]');
-      if (wrapper) {
-        populateList(wrapper, select);
-        syncCustomSelect(wrapper);
-      }
-    }
-
-    function populateB2bSelect(rows) {
-      var select = root.querySelector('[data-aico-preorder-select="b2b_id"]');
-      if (!select) return;
-      b2bById = {};
-      var placeholder =
-        select.getAttribute('data-placeholder') || select.dataset.placeholder || '';
-      select.innerHTML = '';
-      var empty = document.createElement('option');
-      empty.value = '';
-      empty.textContent = placeholder;
-      select.appendChild(empty);
-      (rows || []).forEach(function (b2b) {
-        if (!b2b || !b2b.id) return;
-        b2bById[String(b2b.id)] = b2b;
-        var opt = document.createElement('option');
-        opt.value = String(b2b.id);
-        opt.textContent = b2b.company || '';
-        select.appendChild(opt);
-      });
-      select.disabled = !rows || !rows.length;
-      var wrapper = select.closest('[data-aico-custom-select]');
-      if (wrapper) {
-        var trigger = wrapper.querySelector('[data-aico-custom-select-trigger]');
-        if (trigger) trigger.disabled = select.disabled;
-        populateList(wrapper, select);
-        syncCustomSelect(wrapper);
-      }
-    }
-
-    function selectB2b(b2b) {
-      if (!b2b) return;
-      selectedB2b = b2b;
-      selectedDebtor = null;
-      var select = root.querySelector('[data-aico-preorder-select="b2b_id"]');
-      if (select && b2b.id) {
-        select.value = String(b2b.id);
-        var wrapper = select.closest('[data-aico-custom-select]');
-        if (wrapper) {
-          populateList(wrapper, select);
-          syncCustomSelect(wrapper);
-        }
-      }
-      persist(contextUrl, tokenInput, storageKey, {
-        b2b_id: b2b.id,
-        debtor_id: null,
-        billing_address_id: null,
-        delivery_address_id: null,
-      });
-      repopulateAddressSelect('billing_address_id', []);
-      repopulateAddressSelect('delivery_address_id', []);
-      populateDebtorSelect(b2b.debtors || []);
-      updateFlowState();
-    }
-
-    function fetchB2bs(searchTerm, pageNumber) {
-      if (!b2bsUrl || !isManager) {
-        return Promise.resolve({ data: [], meta: null });
-      }
-      var url = new URL(b2bsUrl, window.location.origin);
-      url.searchParams.set('page[number]', String(pageNumber != null ? pageNumber : 0));
-      url.searchParams.set('page[size]', '50');
-      if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
-      return fetch(url.toString(), {
-        credentials: 'same-origin',
-        headers: { Accept: 'application/json' },
-      })
-        .then(function (res) {
-          if (res.status === 403) {
-            return { data: [], meta: null, forbidden: true };
-          }
-          if (!res.ok) {
-            return { data: [], meta: null };
-          }
-          return res.json().then(function (json) {
-            return {
-              data: json.data || [],
-              meta: json.meta || null,
-            };
-          });
-        })
-        .catch(function () {
-          return { data: [], meta: null };
-        });
-    }
-
-    function initB2bPicker() {
-      if (!isManager || !b2bFieldEl) return;
-      fetchB2bs('', 0).then(function (result) {
-        if (result.forbidden) {
-          b2bFieldEl.hidden = true;
-          return;
-        }
-        populateB2bSelect(result.data);
-      });
-    }
-
-    initB2bPicker();
 
     function renderDateChips(dates) {
       if (!dateChipsEl || !dateFilterEl) return;
@@ -892,6 +758,8 @@
       var url = root.getAttribute('data-aico-preorder-session-url');
       if (!url) return Promise.resolve();
       var u = new URL(url, window.location.origin);
+      var debtor = debtorId();
+      if (debtor) u.searchParams.set('debtor_id', String(debtor));
       var b = buyerId();
       if (b) u.searchParams.set('buyer_address_id', b);
       return fetch(u.toString(), {
@@ -945,6 +813,8 @@
         };
       },
       getBuyerAddressId: buyerId,
+      getDebtorId: debtorId,
+      shouldSkipProducts: shouldSkipProducts,
       getSelectedDates: function () {
         return selectedDates;
       },
@@ -1030,48 +900,6 @@
     root.querySelectorAll('[data-aico-preorder-select]').forEach(function (select) {
       select.addEventListener('change', function () {
         var key = select.getAttribute('data-aico-preorder-select');
-        if (key === 'b2b_id') {
-          var b2bId = select.value;
-          if (!b2bId) {
-            selectedB2b = null;
-            selectedDebtor = null;
-            populateDebtorSelect([]);
-            repopulateAddressSelect('billing_address_id', []);
-            repopulateAddressSelect('delivery_address_id', []);
-            persist(contextUrl, tokenInput, storageKey, {
-              b2b_id: null,
-              debtor_id: null,
-              billing_address_id: null,
-              delivery_address_id: null,
-            });
-            updateFlowState();
-            return;
-          }
-          var picked = b2bById[b2bId];
-          if (picked) selectB2b(picked);
-          return;
-        }
-        if (key === 'debtor_id') {
-          var id = debtorId();
-          var debtors = (selectedB2b && selectedB2b.debtors) || [];
-          selectedDebtor = null;
-          for (var di = 0; di < debtors.length; di++) {
-            if (String(debtors[di].id) === String(id)) {
-              selectedDebtor = debtors[di];
-              break;
-            }
-          }
-          persist(contextUrl, tokenInput, storageKey, {
-            debtor_id: id,
-            billing_address_id: null,
-            delivery_address_id: null,
-          });
-          repopulateAddressSelect('billing_address_id', []);
-          repopulateAddressSelect('delivery_address_id', []);
-          if (selectedDebtor) reloadAddresses(selectedDebtor.id);
-          else updateFlowState();
-          return;
-        }
         if (key === 'billing_address_id' || key === 'delivery_address_id') {
           updateFlowState();
           if (addressesReady()) {
@@ -1138,6 +966,9 @@
       updateFlowState();
     });
     updateFlowState();
+    if (!shouldSkipProducts() && catalog) {
+      catalog.reload();
+    }
   }
 
   if (document.readyState === 'loading') {

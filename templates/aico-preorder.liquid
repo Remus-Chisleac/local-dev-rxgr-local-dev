@@ -49,10 +49,9 @@
       data-aico-preorder-cart-items-url="{{ routes.aico_preorder_cart_items_url }}"
       data-aico-preorder-submit-url="{{ routes.aico_preorder_submit_url }}"
       data-aico-preorder-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
-      data-aico-preorder-b2bs-url="{{ routes.aico_preorder_b2bs_url }}"
       data-aico-preorder-addresses-url="{{ routes.aico_preorder_addresses_url }}"
       data-aico-preorder-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
-      data-aico-preorder-copy-select-b2b="{{ 'aico_preorder.catalog.select_b2b' | t | escape }}"
+      data-aico-preorder-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
       data-aico-preorder-copy-select-debtor="{{ 'aico_preorder.catalog.select_debtor' | t | escape }}"
       data-aico-preorder-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
       data-aico-preorder-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"
@@ -135,55 +134,8 @@
             autocomplete="off">
         <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
 
-        {%- comment -%} Setup row: B2B (managers) → debtor → billing → delivery (b2b-shop SortFilterControl). {%- endcomment -%}
+        {%- comment -%} Setup row: billing + delivery (b2b-shop SortFilterControl, no B2B picker). {%- endcomment -%}
         <div class="aico-preorder-setup-filters" data-aico-preorder-setup-filters>
-        {% if aico_preorder.is_manager %}
-          <div class="aico-preorder-field aico-preorder-field-b2b" data-aico-preorder-b2b-field>
-            <span id="aico-preorder-b2b-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</span>
-            <div class="aico-preorder-field-control aico-preorder-field-control-select">
-              <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
-                <select name="b2b_id" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
-                        data-aico-preorder-select="b2b_id"
-                        data-placeholder="{{ 'aico_preorder.filters.b2b_placeholder' | t }}">
-                  <option value="">{{ 'aico_preorder.filters.b2b_placeholder' | t }}</option>
-                </select>
-                <button type="button" id="aico-preorder-b2b-trigger" class="aico-preorder-custom-select-trigger"
-                        data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
-                        aria-labelledby="aico-preorder-b2b-label" disabled>
-                  <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                  <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-                <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                  <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="aico-preorder-field" data-aico-preorder-debtor-field hidden>
-            <span id="aico-preorder-debtor-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.debtor_label' | t }}</span>
-            <div class="aico-preorder-field-control aico-preorder-field-control-select">
-              <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
-                <select name="debtor_id" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
-                        data-aico-preorder-select="debtor_id">
-                  <option value="">{{ 'aico_preorder.filters.debtor_placeholder' | t }}</option>
-                </select>
-                <button type="button" class="aico-preorder-custom-select-trigger" data-aico-custom-select-trigger
-                        aria-haspopup="listbox" aria-expanded="false" aria-labelledby="aico-preorder-debtor-label">
-                  <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                  <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-                <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                  <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-
         <div class="aico-preorder-field" data-aico-field="billing_address">
           <span id="aico-preorder-billing-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.billing_label' | t }}</span>
           <div class="aico-preorder-field-control aico-preorder-field-control-select">

@@ -85,8 +85,11 @@
     }
     url.searchParams.set('page[number]', String(params.pageNumber || 1));
     url.searchParams.set('page[size]', String(params.pageSize || PAGE_SIZE));
+    if (params.debtorId) {
+      url.searchParams.set('debtor_id', String(params.debtorId));
+    }
     if (params.optionGroupName) {
-      url.searchParams.set('filter[option_group_name]', params.optionGroupName);
+      url.searchParams.set('filter[optionGroupName]', params.optionGroupName);
     }
     return url.toString();
   }
@@ -211,6 +214,12 @@
     this.getBuyerAddressId = config.getBuyerAddressId || function () {
       return null;
     };
+    this.getDebtorId = config.getDebtorId || function () {
+      return null;
+    };
+    this.shouldSkipProducts = config.shouldSkipProducts || function () {
+      return false;
+    };
     this.getSelectedDates = config.getSelectedDates || function () {
       return [];
     };
@@ -245,12 +254,13 @@
 
   CatalogController.prototype.reload = function () {
     var self = this;
-    var buyerAddressId = this.getBuyerAddressId();
-    if (!buyerAddressId || !this.productsUrl) {
+    if (!this.productsUrl || this.shouldSkipProducts()) {
       this.products = [];
       this.render();
       return Promise.resolve();
     }
+    var buyerAddressId = this.getBuyerAddressId();
+    var debtorId = this.getDebtorId();
 
     this.loadGeneration += 1;
     var generation = this.loadGeneration;
@@ -265,6 +275,7 @@
       return fetchProductsJson(
         buildProductsUrl(self.productsUrl, {
           buyerAddressId: buyerAddressId,
+          debtorId: debtorId,
           pageNumber: 1,
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
@@ -312,8 +323,10 @@
     var self = this;
     if (this.loadingMore || !this.hasMore || this.loading) return Promise.resolve();
 
+    if (this.shouldSkipProducts()) return Promise.resolve();
+
     var buyerAddressId = this.getBuyerAddressId();
-    if (!buyerAddressId) return Promise.resolve();
+    var debtorId = this.getDebtorId();
 
     var groupName = null;
     for (var i = 0; i < OPTION_GROUP_ORDER.length; i++) {
@@ -338,6 +351,7 @@
     return fetchProductsJson(
       buildProductsUrl(this.productsUrl, {
         buyerAddressId: buyerAddressId,
+        debtorId: debtorId,
         pageNumber: nextPage,
         pageSize: PAGE_SIZE,
         optionGroupName: groupName,
