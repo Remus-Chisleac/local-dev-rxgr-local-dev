@@ -9,10 +9,35 @@
     qty: {},
   };
 
+  function idKey(id) {
+    return id == null ? '' : String(id);
+  }
+
   function asArray(value) {
     if (!value) return [];
     if (Array.isArray(value)) return value;
-    if (typeof value === 'object') return Object.values(value);
+    return [];
+  }
+
+  /** API may return one warehouse row or one stock row as an object, not []. */
+  function warehouseDataList(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'object' && ('warehouse' in data || 'stocks' in data)) {
+      return [data];
+    }
+    return [];
+  }
+
+  function stocksList(stocks) {
+    if (!stocks) return [];
+    if (Array.isArray(stocks)) return stocks;
+    if (
+      typeof stocks === 'object' &&
+      ('variantId' in stocks || 'variant_id' in stocks || 'productId' in stocks)
+    ) {
+      return [stocks];
+    }
     return [];
   }
 
@@ -24,33 +49,6 @@
       }
     } catch (_) {}
     return String(dateLabel);
-  }
-
-  function setSizeStockFromProducts(productGroups) {
-    var map = {};
-    asArray(productGroups).forEach(function (group) {
-      asArray(group && group.items).forEach(function (product) {
-        var productId = product.id;
-        if (!map[productId]) map[productId] = {};
-        asArray(product.preorderStockData).forEach(function (dateRow) {
-          var dateKey = normalizeDateKey(dateRow.date);
-          asArray(dateRow.data).forEach(function (dataRow) {
-            asArray(dataRow.stocks).forEach(function (stock) {
-              var variantId = stock.variantId;
-              if (!variantId) return;
-              if (!map[productId][variantId]) map[productId][variantId] = {};
-              var amount = stock.overallAvailableAmount;
-              map[productId][variantId][dateKey] =
-                amount >= 0 ? amount : 0;
-              map[productId][variantId][dateLabelFromRow(dateRow)] =
-                amount >= 0 ? amount : 0;
-            });
-          });
-        });
-      });
-    });
-    state.sizeStock = map;
-    state.qty = {};
   }
 
   function dateLabelFromRow(dateRow) {
@@ -65,65 +63,97 @@
     }
   }
 
-  function adjustStock(productId, variantId, dateLabel, quantity) {
-    var dateKey = normalizeDateKey(dateLabel);
-    if (!state.qty[productId]) state.qty[productId] = {};
-    if (!state.qty[productId][variantId]) state.qty[productId][variantId] = {};
-    state.qty[productId][variantId][dateKey] = quantity;
-    state.qty[productId][variantId][dateLabel] = quantity;
+  function qtyAt(productId, variantId, dateKey) {
+    var pid = idKey(productId);
+    var vid = idKey(variantId);
+    var byProduct = state.qty[pid];
+    if (!byProduct) return 0;
+    var byVariant = byProduct[vid];
+    if (!byVariant) return 0;
+    return byVariant[dateKey] || 0;
   }
 
-  function getMaxQuantity(productId, variantId, dateLabel, product) {
-    var stockMap = state.sizeStock[productId];
-    if (!stockMap || !stockMap[variantId]) return 9999;
+  function setSizeStockFromProducts(productGroups) {
+    var map = {};
+    asArray(productGroups).forEach(function (group) {
+      asArray(group && group.items).forEach(function (product) {
+        var productId = idKey(product.id);
+        if (!productId) return;
+        if (!map[productId]) map[productId] = {};
+        asArray(product.preorderStockData).forEach(function (dateRow) {
+          var dateKey = normalizeDateKey(dateRow.date);
+          var dateLabel = dateLabelFromRow(dateRow);
+          warehouseDataList(dateRow.data).forEach(function (dataRow) {
+            stocksList(dataRow.stocks).forEach(function (stock) {
+              var variantId = idKey(stock.variantId || stock.variant_id);
+              if (!variantId) return;
+              if (!map[productId][variantId]) map[productId][variantId] = {};
+              var amount = stock.overallAvailableAmount;
+              var capped = amount >= 0 ? amount : 0;
+              map[productId][variantId][dateKey] = capped;
+              map[productId][variantId][dateLabel] = capped;
+            });
+          });
+        });
+      });
+    });
+    state.sizeStock = map;
+    state.qty = {};
+  }
+
+  function adjustStock(productId, variantId, dateLabel, quantity) {
+    var pid = idKey(productId);
+    var vid = idKey(variantId);
+    var dateKey = normalizeDateKey(dateLabel);
+    if (!state.qty[pid]) state.qty[pid] = {};
+    if (!state.qty[pid][vid]) state.qty[pid][vid] = {};
+    state.qty[pid][vid][dateKey] = quantity;
+    state.qty[pid][vid][dateLabel] = quantity;
+  }
+
+  function getMaxQuantity(productId, variantId, dateLabel) {
+    var pid = idKey(productId);
+    var vid = idKey(variantId);
+    var stockMap = state.sizeStock[pid];
+    if (!stockMap || !stockMap[vid]) return 9999;
+    var byVariant = stockMap[vid];
     var dateKey = normalizeDateKey(dateLabel);
     var initial =
-      stockMap[variantId][dateKey] != null
-        ? stockMap[variantId][dateKey]
-        : stockMap[variantId][dateLabel];
+      byVariant[dateKey] != null ? byVariant[dateKey] : byVariant[dateLabel];
     if (initial == null) return 9999;
     var used = 0;
-    var dates = Object.keys(stockMap[variantId]);
-    dates.sort();
-    dates.forEach(function (dk) {
-      var q =
-        (state.qty[productId] &&
-          state.qty[productId][variantId] &&
-          state.qty[productId][variantId][dk]) ||
-        0;
-      if (dk <= dateKey) used += q;
-    });
-    return Math.max(0, initial - (used - (state.qty[productId][variantId][dateKey] || 0)));
+    Object.keys(byVariant)
+      .sort()
+      .forEach(function (dk) {
+        if (dk <= dateKey) used += qtyAt(pid, vid, dk);
+      });
+    return Math.max(0, initial - (used - qtyAt(pid, vid, dateKey)));
   }
 
   function getRowTotal(productId, dateLabel) {
+    var pid = idKey(productId);
     var dateKey = normalizeDateKey(dateLabel);
     var total = 0;
-    var byVariant = state.qty[productId] || {};
+    var byVariant = state.qty[pid] || {};
     Object.keys(byVariant).forEach(function (vid) {
-      var q =
-        byVariant[vid][dateKey] != null
-          ? byVariant[vid][dateKey]
-          : byVariant[vid][dateLabel];
-      total += q || 0;
+      var byVid = byVariant[vid] || {};
+      total += byVid[dateKey] != null ? byVid[dateKey] : byVid[dateLabel] || 0;
     });
     return total;
   }
 
   function getQuantity(productId, variantId, dateLabel) {
     var dateKey = normalizeDateKey(dateLabel);
-    var byVariant = state.qty[productId] || {};
-    var byVid = byVariant[variantId] || {};
-    if (byVid[dateKey] != null) return byVid[dateKey];
-    if (byVid[dateLabel] != null) return byVid[dateLabel];
-    return 0;
+    return qtyAt(idKey(productId), idKey(variantId), dateKey) ||
+      qtyAt(idKey(productId), idKey(variantId), dateLabel);
   }
 
   function getTotalPerProduct(productId) {
+    var pid = idKey(productId);
     var byDate = {};
-    var byVariant = state.qty[productId] || {};
+    var byVariant = state.qty[pid] || {};
     Object.keys(byVariant).forEach(function (vid) {
-      Object.keys(byVariant[vid]).forEach(function (dk) {
+      Object.keys(byVariant[vid] || {}).forEach(function (dk) {
         byDate[dk] = (byDate[dk] || 0) + (byVariant[vid][dk] || 0);
       });
     });

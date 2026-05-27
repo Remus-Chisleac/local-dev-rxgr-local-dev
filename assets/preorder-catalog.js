@@ -117,11 +117,10 @@
     return url.toString();
   }
 
-  function fetchProductsJson(url, signal) {
+  function fetchProductsJson(url) {
     return fetch(url, {
       credentials: 'same-origin',
       cache: 'no-store',
-      signal: signal,
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     }).then(function (res) {
       return res.text().then(function (text) {
@@ -342,7 +341,6 @@
     this.preorderDates = [];
     this.searchQuery = '';
     this.autoLoadMore = config.autoLoadMore === true;
-    this._abortController = null;
   }
 
   CatalogController.prototype.setSearchQuery = function (q) {
@@ -362,11 +360,6 @@
 
     this.loadGeneration += 1;
     var generation = this.loadGeneration;
-    if (this._abortController) {
-      this._abortController.abort();
-    }
-    this._abortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var signal = this._abortController ? this._abortController.signal : undefined;
     this.products = [];
     this.groupPagination = {};
     this.hasMore = false;
@@ -383,7 +376,6 @@
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
         }),
-        signal,
       );
     });
 
@@ -402,10 +394,6 @@
               meta: result.meta || null,
             };
           } else {
-            var reason = settled.reason;
-            if (reason && reason.name === 'AbortError') {
-              return;
-            }
             failures += 1;
             console.warn(
               'preorder catalog: group fetch failed',
@@ -416,28 +404,26 @@
           }
         });
         if (generation !== self.loadGeneration) return;
+        var anyItems = merged.some(function (g) {
+          return asArray(g && g.items).length > 0;
+        });
+        if (!anyItems) {
+          self.products = [];
+          self.showError(failures > 0);
+          return;
+        }
         self.products = merged;
         self.groupPagination = pagination;
         self.preorderDates = extractDatesFromProducts(merged);
         self.hasMore = self.autoLoadMore && OPTION_GROUP_ORDER.some(function (name) {
           return groupHasMorePages(pagination[name]);
         });
-        if (!merged.length) {
-          self.showError(failures > 0);
-          return;
-        }
         self.showError(false);
         try {
           self.onProductsLoaded(self.products, self.preorderDates);
-        } catch (hookErr) {
-          console.error('preorder catalog: onProductsLoaded', hookErr);
-          self.showError(true);
-          return;
-        }
-        try {
           self.render();
-        } catch (renderErr) {
-          console.error('preorder catalog: render', renderErr);
+        } catch (err) {
+          console.error('preorder catalog: display', err);
           self.showError(true);
           return;
         }
@@ -487,8 +473,6 @@
     var g = this.groupPagination[groupName];
     var nextPage = g.currentPage + 1;
 
-    var signal = this._abortController ? this._abortController.signal : undefined;
-
     return fetchProductsJson(
       buildProductsUrl(this.productsUrl, {
         buyerAddressId: buyerAddressId,
@@ -497,7 +481,6 @@
         pageSize: PAGE_SIZE,
         optionGroupName: groupName,
       }),
-      signal,
     )
       .then(function (result) {
         if (generation !== self.loadGeneration) return;
@@ -677,12 +660,11 @@
       dates.forEach(function (dateLabel) {
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
         var maxAttr = '';
-        if (isStockRelevant && global.AicoPreorderStock) {
+        if (isStockRelevant && global.AicoPreorderStock && global.AicoPreorderStock.getMaxQuantity) {
           var max = global.AicoPreorderStock.getMaxQuantity(
             product.id,
             variant.id,
             dateLabel,
-            product,
           );
           if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
         }
