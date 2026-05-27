@@ -4707,6 +4707,136 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/* Preorder2 — sizes in category header, qty-only matrix cells */
+.aico-preorder2-group-head {
+  background: #fff;
+}
+.aico-preorder2-group-size-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem 0.5rem;
+  border-bottom: 1px solid #e7e7e7;
+}
+.aico-preorder2-matrix-aside-spacer {
+  flex: 0 0 8.25rem;
+  width: 8.25rem;
+}
+.aico-preorder2-matrix-date-spacer {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+}
+.aico-preorder2-matrix-total-head {
+  flex: 0 0 6.75rem;
+  width: 6.75rem;
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #454545;
+}
+.aico-preorder2-group-size-bar .aico-preorder-matrix-scroll {
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.aico-preorder2-size-head {
+  flex: 0 0 5.875rem;
+  width: 5.875rem;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #2a3544;
+  box-sizing: border-box;
+}
+.aico-preorder2-size-head .aico-preorder-size-frac {
+  font-size: 12px;
+  font-weight: 600;
+}
+.aico-preorder2-qty-box {
+  flex: 0 0 5.875rem;
+  width: 5.875rem;
+  box-sizing: border-box;
+}
+.aico-preorder2-qty-box--empty {
+  flex: 0 0 5.875rem;
+  width: 5.875rem;
+  min-height: 1.875rem;
+  visibility: hidden;
+}
+.aico-preorder2-qty-box__inner {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 1.875rem;
+  border-radius: 0.4375rem;
+  background: #f0f0f0;
+  border: 1px solid #d4d4d4;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.aico-preorder2-qty-box--filled .aico-preorder2-qty-box__inner {
+  border-color: transparent;
+  box-shadow: 0 0 1px 2px #66b0bb;
+}
+.aico-preorder2-qty-box--disabled .aico-preorder2-qty-box__inner {
+  background: #e0e0e0;
+  border-color: #c8c8c8;
+}
+.aico-preorder2-qty-box__spinners {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 12px;
+  width: 12px;
+  border-left: 1px solid #d8d8d8;
+}
+.aico-preorder2-qty-box__step {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #f0f0f0;
+  color: #5a5a5a;
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-preorder2-qty-box__step svg {
+  width: 7px;
+  height: 4px;
+}
+.aico-preorder2-qty-box__step:hover:not(:disabled) {
+  background: #e4e4e4;
+}
+.aico-preorder2-qty-box__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.aico-preorder2-qty-box__step + .aico-preorder2-qty-box__step {
+  border-top: 1px solid #d8d8d8;
+}
+.aico-preorder2-qty-box__inner .aico-preorder-qty-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0 0.15rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  border: 0;
+  background: transparent;
+  -moz-appearance: textfield;
+}
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9d9d9d #e7e7e7;
+}
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
   justify-content: center;
   margin-top: 1.5rem;
 }
