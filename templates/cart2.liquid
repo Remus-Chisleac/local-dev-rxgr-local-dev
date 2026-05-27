@@ -1,0 +1,222 @@
+{% comment %}
+  Alternate cart layout (cart2) — grouped by product.
+
+  Same cart store + APIs as templates/cart.liquid, but line items that
+  share a product_id render once: image, title, and unit price at the
+  top; sizes / SKUs / qty / line totals live in a single show-data block.
+
+  Served at /cart2.
+{% endcomment %}
+
+<main class="aico-cart-page aico-cart-page--grouped"
+      x-data="aicoCartGroupedPage"
+      id="aico-cart-page">
+  <div class="aico-page-container">
+    <header class="aico-cart-header">
+      <button type="button"
+              class="aico-page-back aico-page-back--inactive"
+              aria-disabled="true">
+        <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+        <span>{{ 'cart.back' | t }}</span>
+      </button>
+      <h1 class="aico-cart-title">{{ 'cart.title' | t }}</h1>
+      <p class="aico-cart-count" x-show="$store.cart.data" x-cloak>
+        <span x-text="$store.cart.itemCountLabel()"></span>
+      </p>
+    </header>
+
+    {%- comment -%} ──────── Alerts ──────── {%- endcomment -%}
+    {% if customer.aico_shipping_block %}
+      <div class="aico-alert aico-alert-error" role="alert">
+        {{ 'cart.alerts.shipping_blocked' | t }}
+      </div>
+    {% endif %}
+
+    <template x-if="$store.cart.data && $store.cart.data.aico_has_invalid_quantity">
+      <div class="aico-alert aico-alert-error" role="alert">
+        {{ 'cart.alerts.invalid_quantity' | t }}
+      </div>
+    </template>
+
+    <template x-if="$store.cart.data && $store.cart.data.aico_has_invalid_price">
+      <div class="aico-alert aico-alert-warning" role="alert">
+        {{ 'cart.alerts.invalid_price' | t }}
+      </div>
+    </template>
+
+    {% if customer.aico_debtor %}
+      <template x-if="window.__AICO_FLAGS__ && window.__AICO_FLAGS__.credit_limit_enforcement && $store.cart.data && $store.cart.data.total_price > {{ customer.aico_debtor.credit_limit }}">
+        <div class="aico-alert aico-alert-warning" role="alert">
+          {{ 'cart.alerts.credit_limit_exceeded' | t }}
+        </div>
+      </template>
+    {% endif %}
+
+    {%- comment -%} ──────── Empty state ──────── {%- endcomment -%}
+    <template x-if="!$store.cart.data || $store.cart.data.empty">
+      <section class="aico-cart-empty">
+        <h2 class="aico-cart-empty-heading">{{ 'cart.empty.heading' | t }}</h2>
+        <p class="aico-cart-empty-body">{{ 'cart.empty.body' | t }}</p>
+        <a href="{{ routes.products_url }}" class="aico-button aico-button-primary">
+          {{ 'cart.empty.cta' | t }}
+        </a>
+      </section>
+    </template>
+
+    {%- comment -%} ──────── Grouped cart body ──────── {%- endcomment -%}
+    <template x-if="$store.cart.data && !$store.cart.data.empty">
+      <div class="aico-cart-grid">
+        <section class="aico-cart-items" aria-label="{{ 'cart.items_aria' | t }}">
+          <ul class="aico-cart-group-list">
+            <template x-for="group in groupedItems()" :key="group.key">
+              <li class="aico-cart-group"
+                  :class="{ 'aico-cart-group-invalid': groupHasInvalidLine(group) }">
+                <div class="aico-cart-group-header">
+                  <a class="aico-cart-line-image" :href="group.url || '#'">
+                    <template x-if="group.image">
+                      <img :src="group.image" :alt="group.title" loading="lazy">
+                    </template>
+                    <template x-if="!group.image">
+                      <span class="aico-cart-line-image-empty" aria-hidden="true"></span>
+                    </template>
+                  </a>
+
+                  <div class="aico-cart-group-info">
+                    <a class="aico-cart-line-title" :href="group.url || '#'" x-text="group.title"></a>
+                    <p class="aico-cart-group-unit-price">
+                      <span x-text="$store.cart.formatMoney(group.price)"></span>
+                    </p>
+                  </div>
+
+                  <div class="aico-cart-group-total">
+                    <span x-text="$store.cart.formatMoney(groupLineTotal(group))"></span>
+                  </div>
+                </div>
+
+                <div class="aico-cart-show-data" data-aico-show-data>
+                  <template x-for="line in group.lines" :key="line.id">
+                    <div class="aico-cart-size-row"
+                         :class="{ 'aico-cart-size-row-invalid': !line.aico_is_valid || $store.cart.lineExceedsStock(line) }">
+                      <div class="aico-cart-size-row-label">
+                        <span class="aico-cart-size-label" x-show="line.aico_variant_label" x-text="line.aico_variant_label"></span>
+                        <span class="aico-cart-line-meta aico-cart-line-sku" x-show="line.sku" x-text="line.sku"></span>
+                      </div>
+
+                      <div class="aico-cart-size-row-qty">
+                        <label class="aico-sr-only" :for="'aico-cart2-qty-' + line.id">
+                          {{ 'cart.line.quantity_aria' | t }}
+                        </label>
+                        <div class="aico-qty-stepper">
+                          <button type="button"
+                                  class="aico-qty-step"
+                                  :disabled="line.quantity <= 0 || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                                  @click="$store.cart.setLineQuantity(line.id, Math.max(0, line.quantity - 1))"
+                                  aria-label="{{ 'cart.line.qty_decrement' | t }}">−</button>
+                          <input :id="'aico-cart2-qty-' + line.id"
+                                 type="number"
+                                 class="aico-qty-input"
+                                 min="0"
+                                 :max="line.aico_max_quantity_per_order || line.aico_available_stock || undefined"
+                                 x-model.number="line.quantity"
+                                 @input.debounce.400ms="$store.cart.setLineQuantity(line.id, line.quantity)"
+                                 :disabled="{% if customer.aico_shipping_block %}true{% else %}false{% endif %}">
+                          <button type="button"
+                                  class="aico-qty-step"
+                                  :disabled="(line.aico_available_stock !== null && line.quantity >= line.aico_available_stock) || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                                  @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
+                                  aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
+                        </div>
+                        <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0 && !$store.cart.lineExceedsStock(line)">
+                          <p class="aico-cart-line-stock-warning">{{ 'cart.line.low_stock' | t }}</p>
+                        </template>
+                        <template x-if="$store.cart.lineExceedsStock(line)">
+                          <p class="aico-cart-line-stock-error" x-text="$store.cart.lineQuantityError(line)"></p>
+                        </template>
+                      </div>
+
+                      <div class="aico-cart-size-row-total">
+                        <span x-text="$store.cart.formatMoney(line.line_price)"></span>
+                      </div>
+
+                      <button type="button"
+                              class="aico-cart-line-remove"
+                              @click="$store.cart.setLineQuantity(line.id, 0)"
+                              aria-label="{{ 'cart.line.remove' | t }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M3 6h18"></path>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </li>
+            </template>
+          </ul>
+
+          <form action="{{ routes.cart_clear_url }}" method="post" class="aico-cart-clear-form">
+            <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+            <button type="submit"
+                    class="aico-cart-clear-button"
+                    {% if customer.aico_shipping_block %}disabled{% endif %}>
+              {{ 'cart.clear' | t }}
+            </button>
+          </form>
+        </section>
+
+        {%- comment -%} ──── Order summary sidebar ──── {%- endcomment -%}
+        <aside class="aico-cart-summary" aria-label="{{ 'cart.summary.aria' | t }}">
+          <h2 class="aico-cart-summary-title">{{ 'cart.summary.title' | t }}</h2>
+
+          <dl class="aico-cart-summary-rows">
+            <div class="aico-cart-summary-row">
+              <dt>{{ 'cart.summary.subtotal' | t }}</dt>
+              <dd x-text="$store.cart.formatMoney($store.cart.data.total_price)"></dd>
+            </div>
+            <template x-if="$store.cart.data.aico_discount_value > 0">
+              <div class="aico-cart-summary-row aico-cart-summary-row-discount">
+                <dt>
+                  {{ 'cart.summary.discount' | t }}
+                  <span x-show="$store.cart.data.aico_discount_code" x-text="' · ' + $store.cart.data.aico_discount_code"></span>
+                </dt>
+                <dd>−<span x-text="$store.cart.formatMoney($store.cart.data.aico_discount_value)"></span></dd>
+              </div>
+            </template>
+            <div class="aico-cart-summary-row aico-cart-summary-row-shipping">
+              <dt>{{ 'cart.summary.shipping' | t }}</dt>
+              <dd class="aico-cart-summary-row-muted">{{ 'cart.summary.shipping_at_checkout' | t }}</dd>
+            </div>
+          </dl>
+
+          <div class="aico-cart-summary-total">
+            <span class="aico-cart-summary-total-label">{{ 'cart.summary.total' | t }}</span>
+            <span class="aico-cart-summary-total-value" x-text="$store.cart.formatMoney($store.cart.data.total_price)"></span>
+          </div>
+
+          {% if customer.aico_debtor %}
+            <p class="aico-cart-summary-credit">
+              {{ 'cart.summary.credit_limit' | t }}:
+              <span>{{ customer.aico_debtor.credit_limit | money }}</span>
+            </p>
+          {% endif %}
+
+          <a href="{{ routes.checkout_url }}"
+             class="aico-button aico-button-primary aico-cart-checkout-cta"
+             :class="{ 'aico-is-disabled': !$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %}) }"
+             :aria-disabled="!$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %})"
+             @click.prevent="$store.cart.goCheckout($el.getAttribute('href'), {% if customer.aico_shipping_block %}true{% else %}false{% endif %})">
+            {{ 'cart.checkout_cta' | t }}
+          </a>
+          <a href="{{ routes.products_url }}" class="aico-cart-continue-shopping">
+            {{ 'cart.continue_shopping' | t }}
+          </a>
+        </aside>
+      </div>
+    </template>
+  </div>
+</main>
+
+<script src="{{ 'cart2.js' | asset_url }}" defer></script>
