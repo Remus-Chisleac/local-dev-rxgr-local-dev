@@ -322,7 +322,6 @@
   }
 
   function computeGlobalSizeCellWidthRem(products, charts, region, layout) {
-    if (layout === 'qty') return '2.25rem';
     var maxRem = 0;
     asArray(products).forEach(function (group) {
       var items = asArray(group && group.items);
@@ -336,6 +335,16 @@
       return layout === 'header' ? '3.25rem' : layout === 'box' ? '5rem' : '3.5rem';
     }
     return maxRem + 'rem';
+  }
+
+  /** One column width for header labels and qty cells so columns stay aligned. */
+  function computeGroupMatrixCellWidthRem(group, charts, region) {
+    var labelW = parseRemValue(
+      computeGlobalSizeCellWidthRem([group], charts, region, 'header'),
+    );
+    var qtyW = parseRemValue(estimateSizeCellWidthRem('', 'qty'));
+    var w = Math.max(labelW, qtyW, 2.5);
+    return Math.min(4.5, w) + 'rem';
   }
 
   function escapeHtml(s) {
@@ -666,24 +675,11 @@
       if (!items.length) return;
 
       var sizeValues = collectGroupSizeValues(items);
-      var headerCellW = computeGlobalSizeCellWidthRem(
-        [group],
-        charts,
-        region,
-        'header',
-      );
-      var qtyCellW = computeGlobalSizeCellWidthRem(
-        [group],
-        charts,
-        region,
-        'qty',
-      );
+      var cellW = computeGroupMatrixCellWidthRem(group, charts, region);
 
       html +=
-        '<section class="aico-preorder2-group" data-aico-preorder2-group style="--aico-preorder2-header-cell-w:' +
-        headerCellW +
-        ';--aico-preorder2-qty-cell-w:' +
-        qtyCellW +
+        '<section class="aico-preorder2-group" data-aico-preorder2-group style="--aico-preorder2-cell-w:' +
+        cellW +
         '">';
       html += '<header class="aico-preorder2-group-head">';
       html += '<div class="aico-preorder2-group-header-row">';
@@ -728,6 +724,20 @@
     this.catalogEl.innerHTML = html;
     this.bindQuantityInputs();
     this.bindMatrixScrollSync();
+    this.syncMatrixScrollPositions();
+  };
+
+  CatalogController.prototype.syncMatrixScrollPositions = function () {
+    if (!this.catalogEl) return;
+    this.catalogEl.querySelectorAll('[data-aico-preorder2-group]').forEach(function (groupEl) {
+      var scrollEls = groupEl.querySelectorAll('[data-aico-preorder2-matrix-scroll]');
+      if (scrollEls.length < 2) return;
+      var anchor = scrollEls[0];
+      var left = anchor.scrollLeft;
+      for (var i = 1; i < scrollEls.length; i++) {
+        scrollEls[i].scrollLeft = left;
+      }
+    });
   };
 
   CatalogController.prototype.bindMatrixScrollSync = function () {
@@ -830,7 +840,8 @@
         var label = getCountryLabel(charts, optionGroupName, region, optVal);
         if (!variant) {
           html +=
-            '<span class="aico-preorder2-qty-box aico-preorder2-qty-box--empty" aria-hidden="true"></span>';
+            '<span class="aico-preorder2-qty-box aico-preorder2-qty-box--empty" aria-hidden="true">' +
+            '<span class="aico-preorder2-qty-box__inner"></span></span>';
           return;
         }
         var qty = self.getQuantity(product.id, variant.id, dateLabel);

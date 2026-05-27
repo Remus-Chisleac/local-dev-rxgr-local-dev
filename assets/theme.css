@@ -4991,30 +4991,36 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder2 .aico-preorder2-matrix-track {
   display: flex;
   flex-wrap: nowrap;
-  gap: 4px;
-  padding: 2px 2px 4px 0;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0 0 0.15rem;
   width: max-content;
+  box-sizing: border-box;
 }
 .aico-preorder2 .aico-preorder2-size-head {
-  flex: 0 0 var(--aico-preorder2-header-cell-w, 3.25rem);
-  width: var(--aico-preorder2-header-cell-w, 3.25rem);
-  max-width: var(--aico-preorder2-header-cell-w, 3.25rem);
+  flex: 0 0 var(--aico-preorder2-cell-w, 2.75rem);
+  width: var(--aico-preorder2-cell-w, 2.75rem);
+  max-width: var(--aico-preorder2-cell-w, 2.75rem);
+  min-height: 1.875rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.15rem;
+  padding: 0 0.1rem;
   text-align: center;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
   color: #fff;
   box-sizing: border-box;
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
 }
-.aico-preorder2 .aico-preorder2-size-frac {
-  font-size: 12px;
-  font-weight: 600;
+.aico-preorder2 .aico-preorder2-size-head .aico-preorder2-size-frac {
+  font-size: 9px;
+  font-weight: 700;
   line-height: 1;
   margin-left: 1px;
+  vertical-align: middle;
 }
 .aico-preorder2 .aico-preorder2-product-card {
   margin: 0 0 0.5rem;
@@ -5094,16 +5100,23 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   white-space: nowrap;
 }
 .aico-preorder2 .aico-preorder2-qty-box {
-  flex: 0 0 var(--aico-preorder2-qty-cell-w, 2.25rem);
-  width: var(--aico-preorder2-qty-cell-w, 2.25rem);
-  max-width: var(--aico-preorder2-qty-cell-w, 2.25rem);
+  flex: 0 0 var(--aico-preorder2-cell-w, 2.75rem);
+  width: var(--aico-preorder2-cell-w, 2.75rem);
+  max-width: var(--aico-preorder2-cell-w, 2.75rem);
   box-sizing: border-box;
 }
 .aico-preorder2 .aico-preorder2-qty-box--empty {
-  flex: 0 0 var(--aico-preorder2-qty-cell-w, 2.25rem);
-  width: var(--aico-preorder2-qty-cell-w, 2.25rem);
+  flex: 0 0 var(--aico-preorder2-cell-w, 2.75rem);
+  width: var(--aico-preorder2-cell-w, 2.75rem);
+  max-width: var(--aico-preorder2-cell-w, 2.75rem);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.aico-preorder2 .aico-preorder2-qty-box--empty .aico-preorder2-qty-box__inner {
   min-height: 1.875rem;
   visibility: hidden;
+  background: transparent;
+  border-color: transparent;
 }
 .aico-preorder2 .aico-preorder2-qty-box__inner {
   display: flex;
