@@ -336,7 +336,7 @@
       "loading": "Loading products…",
       "loading_more": "Loading more products…",
       "error": "Could not load products. Please try again.",
-      "select_addresses": "Select billing and delivery addresses to view products.",
+      "select_addresses": "Select billing and delivery addresses",
       "dates_label": "Delivery dates",
       "row_total": "Total Input",
       "product_total": "Total",

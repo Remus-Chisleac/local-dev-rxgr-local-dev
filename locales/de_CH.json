@@ -336,7 +336,7 @@
       "loading": "Produkte werden geladen…",
       "loading_more": "Weitere Produkte werden geladen…",
       "error": "Produkte konnten nicht geladen werden. Bitte erneut versuchen.",
-      "select_addresses": "Rechnungs- und Lieferadresse wählen, um Produkte anzuzeigen.",
+      "select_addresses": "Rechnungs- und Lieferadresse wählen",
       "dates_label": "Liefertermine",
       "row_total": "Total Input",
       "product_total": "Gesamt",

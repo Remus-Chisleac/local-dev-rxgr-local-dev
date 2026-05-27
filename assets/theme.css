@@ -3999,7 +3999,22 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex-direction: column;
   gap: 1.5rem;
 }
-.aico-preorder-gate-message,
+.aico-preorder-prompt {
+  margin: 2rem auto 1rem;
+  text-align: center;
+}
+.aico-preorder-prompt-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #272727;
+}
+.aico-preorder-filters-gated {
+  display: contents;
+}
+.aico-preorder-filters-gated[hidden] {
+  display: none !important;
+}
 .aico-preorder-catalog-loading,
 .aico-preorder-catalog-error {
   margin: 1rem 0;

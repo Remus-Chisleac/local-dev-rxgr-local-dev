@@ -172,7 +172,8 @@
           </div>
         {% endif %}
 
-        {%- comment -%} Search (placeholder until the items grid returns) {%- endcomment -%}
+        {%- comment -%} Search, size, view — only after billing + delivery are chosen (b2b-shop). {%- endcomment -%}
+        <div class="aico-preorder-filters-gated" data-aico-preorder-filters-gated hidden>
         <label class="aico-preorder-field aico-preorder-field-search" data-aico-field="search">
           <span class="aico-preorder-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
           <span class="aico-preorder-field-control">
@@ -238,9 +239,7 @@
                       {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
                 <option value="">{{ 'aico_preorder.filters.billing_placeholder' | t }}</option>
                 {% for address in aico_preorder.billing_addresses %}
-                  <option value="{{ address.id }}"{% if aico_preorder.selected_billing_address_id == address.id %} selected{% endif %}>
-                    {{ address.label }}
-                  </option>
+                  <option value="{{ address.id }}">{{ address.label }}</option>
                 {% endfor %}
               </select>
               <button type="button"
@@ -280,9 +279,7 @@
                       {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
                 <option value="">{{ 'aico_preorder.filters.delivery_placeholder' | t }}</option>
                 {% for address in aico_preorder.delivery_addresses %}
-                  <option value="{{ address.id }}"{% if aico_preorder.selected_delivery_address_id == address.id %} selected{% endif %}>
-                    {{ address.label }}
-                  </option>
+                  <option value="{{ address.id }}">{{ address.label }}</option>
                 {% endfor %}
               </select>
               <button type="button"
@@ -327,14 +324,17 @@
             </svg>
           </button>
         </div>
+        </div>
       </form>
     </div>
   </section>
 
+  <section class="aico-preorder-prompt aico-page-container" data-aico-preorder-prompt aria-live="polite">
+    <h2 class="aico-preorder-prompt-title">{{ 'aico_preorder.catalog.select_addresses' | t }}</h2>
+  </section>
+
   <section class="aico-preorder-main-wrap aico-page-container" aria-labelledby="aico-preorder-main-title" hidden data-aico-preorder-main>
     <h2 id="aico-preorder-main-title" class="aico-sr-only">{{ 'aico_preorder.catalog.section_aria' | t }}</h2>
-
-    <p class="aico-preorder-gate-message" data-aico-preorder-gate hidden>{{ 'aico_preorder.catalog.select_addresses' | t }}</p>
     <p class="aico-preorder-catalog-loading" data-aico-preorder-loading hidden>{{ 'aico_preorder.catalog.loading' | t }}</p>
     <p class="aico-preorder-catalog-error" data-aico-preorder-error hidden role="alert">{{ 'aico_preorder.catalog.error' | t }}</p>
 
