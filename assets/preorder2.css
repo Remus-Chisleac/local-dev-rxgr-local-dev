@@ -22,19 +22,7 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.aico-preorder2-group-title-bar {
-  padding: 0.5rem 0.75rem 0.45rem;
-}
-
-.aico-preorder2-group-title {
-  margin: 0 0 0.4rem;
-  padding: 0 0.25rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.aico-preorder2-group-size-row {
+.aico-preorder2-group-header-row {
   display: grid;
   grid-template-columns:
     var(--aico-preorder2-aside-w, 8.25rem)
@@ -42,8 +30,16 @@
     minmax(0, 1fr)
     var(--aico-preorder2-total-w, 6.75rem);
   column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
-  padding: 0 0.75rem 0.4rem;
-  align-items: end;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+}
+
+.aico-preorder2-group-title {
+  margin: 0;
+  padding: 0 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
 }
 
 .aico-preorder2-matrix-total-head {
@@ -54,9 +50,17 @@
   white-space: nowrap;
 }
 
-.aico-preorder2-group-size-row .aico-preorder2-matrix-scroll {
-  overflow-x: hidden;
+.aico-preorder2-matrix-scroll--header {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+}
+
+.aico-preorder2-matrix-scroll--header::-webkit-scrollbar {
+  display: none;
+  height: 0;
 }
 
 .aico-preorder2-matrix-scroll {
@@ -101,9 +105,9 @@
 }
 
 .aico-preorder2-size-head {
-  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
-  width: var(--aico-preorder2-cell-w, 4.25rem);
-  max-width: var(--aico-preorder2-cell-w, 4.25rem);
+  flex: 0 0 var(--aico-preorder2-header-cell-w, 3.25rem);
+  width: var(--aico-preorder2-header-cell-w, 3.25rem);
+  max-width: var(--aico-preorder2-header-cell-w, 3.25rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -213,15 +217,15 @@
 }
 
 .aico-preorder2-qty-box {
-  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
-  width: var(--aico-preorder2-cell-w, 4.25rem);
-  max-width: var(--aico-preorder2-cell-w, 4.25rem);
+  flex: 0 0 var(--aico-preorder2-qty-cell-w, 2.25rem);
+  width: var(--aico-preorder2-qty-cell-w, 2.25rem);
+  max-width: var(--aico-preorder2-qty-cell-w, 2.25rem);
   box-sizing: border-box;
 }
 
 .aico-preorder2-qty-box--empty {
-  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
-  width: var(--aico-preorder2-cell-w, 4.25rem);
+  flex: 0 0 var(--aico-preorder2-qty-cell-w, 2.25rem);
+  width: var(--aico-preorder2-qty-cell-w, 2.25rem);
   min-height: 1.875rem;
   visibility: hidden;
 }

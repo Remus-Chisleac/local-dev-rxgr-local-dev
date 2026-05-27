@@ -303,25 +303,39 @@
     var hasFrac = /[\u2153\u2154]/.test(formatted);
     var wholeLen = formatted.replace(/[\u2153\u2154]/g, '').trim().length;
     var rem = 2.25;
-    if (layout === 'box') {
+    if (layout === 'qty') {
+      rem = 2.25;
+    } else if (layout === 'header') {
+      rem = 0.85 + wholeLen * 0.26 + (hasFrac ? 0.65 : 0);
+    } else if (layout === 'box') {
       rem = 1.55 + wholeLen * 0.42 + (hasFrac ? 1.05 : 0) + 2.05;
     } else {
       rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
     }
-    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem));
+    if (layout === 'qty') return '2.25rem';
+    if (layout === 'header') return Math.min(4.25, Math.max(2.35, rem)) + 'rem';
+    return Math.min(6.5, Math.max(layout === 'box' ? 4.5 : 3.25, rem)) + 'rem';
+  }
+
+  function parseRemValue(remStr) {
+    return parseFloat(String(remStr).replace('rem', '')) || 0;
   }
 
   function computeGlobalSizeCellWidthRem(products, charts, region, layout) {
+    if (layout === 'qty') return '2.25rem';
     var maxRem = 0;
     asArray(products).forEach(function (group) {
       var items = asArray(group && group.items);
       collectGroupSizeValues(items).forEach(function (opt) {
         var label = getCountryLabel(charts, group.optionGroupName, region, opt);
-        var rem = estimateSizeCellWidthRem(label, layout);
+        var rem = parseRemValue(estimateSizeCellWidthRem(label, layout));
         if (rem > maxRem) maxRem = rem;
       });
     });
-    return (maxRem || (layout === 'box' ? 5 : 3.5)) + 'rem';
+    if (!maxRem) {
+      return layout === 'header' ? '3.25rem' : layout === 'box' ? '5rem' : '3.5rem';
+    }
+    return maxRem + 'rem';
   }
 
   function escapeHtml(s) {
@@ -630,7 +644,6 @@
     var isStockRelevant = !!session.isStockRelevant;
 
     if (!this.products.length && !this.loading) {
-      this.catalogEl.style.removeProperty('--aico-preorder2-cell-w');
       this.catalogEl.innerHTML =
         '<p class="aico-preorder2-catalog-empty">' +
         escapeHtml(copy.empty || 'No products.') +
@@ -642,13 +655,6 @@
       escapeHtml(copy.productsHeading || 'Products') +
       '</div>';
 
-    var sizeCellW = computeGlobalSizeCellWidthRem(
-      this.products,
-      charts,
-      region,
-      'header',
-    );
-    this.catalogEl.style.setProperty('--aico-preorder2-cell-w', sizeCellW);
     this.catalogEl.style.setProperty('--aico-preorder2-aside-w', '8.25rem');
     this.catalogEl.style.setProperty('--aico-preorder2-date-w', '4.5rem');
     this.catalogEl.style.setProperty('--aico-preorder2-total-w', '6.75rem');
@@ -659,21 +665,36 @@
       if (!items.length) return;
 
       var sizeValues = collectGroupSizeValues(items);
+      var headerCellW = computeGlobalSizeCellWidthRem(
+        [group],
+        charts,
+        region,
+        'header',
+      );
+      var qtyCellW = computeGlobalSizeCellWidthRem(
+        [group],
+        charts,
+        region,
+        'qty',
+      );
 
-      html += '<section class="aico-preorder2-group" data-aico-preorder2-group>';
+      html +=
+        '<section class="aico-preorder2-group" data-aico-preorder2-group style="--aico-preorder2-header-cell-w:' +
+        headerCellW +
+        ';--aico-preorder2-qty-cell-w:' +
+        qtyCellW +
+        '">';
       html += '<header class="aico-preorder2-group-head">';
-      html += '<div class="aico-preorder2-group-title-bar">';
+      html += '<div class="aico-preorder2-group-header-row">';
       html +=
         '<h3 class="aico-preorder2-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
+      html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
 
       if (sizeValues.length) {
-        html += '<div class="aico-preorder2-group-size-row">';
-        html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
-        html += '<span class="aico-preorder2-grid-spacer" aria-hidden="true"></span>';
         html +=
-          '<div class="aico-preorder2-matrix-scroll" data-aico-preorder2-matrix-scroll data-aico-preorder2-sizes-header><div class="aico-preorder2-matrix-track">';
+          '<div class="aico-preorder2-matrix-scroll aico-preorder2-matrix-scroll--header" data-aico-preorder2-matrix-scroll data-aico-preorder2-sizes-header><div class="aico-preorder2-matrix-track">';
         sizeValues.forEach(function (opt) {
           html +=
             '<span class="aico-preorder2-size-head">' +
@@ -685,7 +706,6 @@
           '<div class="aico-preorder2-matrix-total-head">' +
           escapeHtml(copy.rowTotal || 'Total Input') +
           '</div>';
-        html += '</div>';
       }
       html += '</div></header>';
 
