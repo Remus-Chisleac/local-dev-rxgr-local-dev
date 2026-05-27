@@ -4732,22 +4732,31 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin: 0 0 0.4rem;
   padding: 0 0.25rem;
 }
+.aico-preorder2-group-size-row,
+.aico-preorder2-product-grid {
+  display: grid;
+  grid-template-columns:
+    var(--aico-preorder2-aside-w, 8.25rem)
+    var(--aico-preorder2-date-w, 4.5rem)
+    minmax(0, 1fr)
+    var(--aico-preorder2-total-w, 6.75rem);
+  column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
+  align-items: center;
+}
 .aico-preorder2-group-size-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.35rem;
+  padding: 0 0 0.4rem;
+  align-items: end;
 }
-.aico-preorder2-matrix-aside-spacer {
-  flex: 0 0 8.25rem;
-  width: 8.25rem;
+.aico-preorder2-product-grid {
+  padding: 0.75rem;
+  row-gap: 0.5rem;
 }
-.aico-preorder2-matrix-date-spacer {
-  flex: 0 0 4.5rem;
-  width: 4.5rem;
+.aico-preorder2-product-aside {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
 }
 .aico-preorder2-matrix-total-head {
-  flex: 0 0 6.75rem;
-  width: 6.75rem;
   text-align: right;
   font-size: 0.6875rem;
   font-weight: 600;
@@ -4756,6 +4765,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder2-group-size-row .aico-preorder-matrix-scroll {
   overflow-x: hidden;
   scrollbar-width: none;
+}
+.aico-preorder2 .aico-preorder-matrix-row-total {
+  text-align: right;
 }
 .aico-preorder2-size-head {
   flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
@@ -4849,11 +4861,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: transparent;
   -moz-appearance: textfield;
 }
-.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll {
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll {
   scrollbar-width: thin;
   scrollbar-color: #9d9d9d #e7e7e7;
 }
-.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll .aico-preorder-matrix-scroll::-webkit-scrollbar {
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll::-webkit-scrollbar {
   display: block;
   height: 6px;
 }
