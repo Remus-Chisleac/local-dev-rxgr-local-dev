@@ -32,6 +32,7 @@
       '<span class="aico-preorder-size-box__label">' +
       escapeHtml(label) +
       '</span>' +
+      '<span class="aico-preorder-size-box__qty">' +
       '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
       displayVal +
       '"' +
@@ -53,7 +54,7 @@
       ' aria-label="Decrease quantity">' +
       '<svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</button>' +
-      '</span></span></span>'
+      '</span></span></span></span>'
     );
   }
 
@@ -851,7 +852,7 @@
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty-step]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.preventDefault();
-        var control = btn.closest('.aico-preorder-size-box__inner');
+        var control = btn.closest('.aico-preorder-size-box__qty');
         var input = control && control.querySelector('[data-aico-preorder-qty]');
         if (!input || input.disabled) return;
         var step = parseInt(btn.getAttribute('data-aico-preorder-qty-step'), 10) || 0;
