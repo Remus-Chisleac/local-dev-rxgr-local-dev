@@ -4000,8 +4000,58 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   gap: 1.5rem;
 }
 .aico-preorder-main-wrap[hidden],
-.aico-preorder-prompt[hidden] {
+.aico-preorder-prompt[hidden],
+.aico-preorder-checkout-wrap[hidden],
+.aico-preorder-catalog-tools[hidden] {
   display: none !important;
+}
+.aico-preorder-catalog-tools {
+  display: contents;
+}
+.aico-preorder-setup-filters {
+  display: contents;
+}
+.aico-preorder-b2b-search-wrap {
+  position: relative;
+  width: 100%;
+}
+.aico-preorder-b2b-search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  padding: 0.35rem 0;
+  outline: none;
+}
+.aico-preorder-b2b-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  margin-top: 0.25rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.aico-preorder-b2b-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.aico-preorder-b2b-result:hover {
+  background: #ffefe6;
+}
+.aico-preorder-checkout-wrap {
+  margin-top: 1.5rem;
 }
 .aico-preorder-prompt {
   margin: 2rem auto 1rem;

@@ -253,9 +253,17 @@
     var userId = root.getAttribute('data-aico-preorder-user-id') || 'anon';
     var contextUrl = root.getAttribute('data-aico-preorder-context-url');
     var storageKey = 'aico_preorder_context:' + userId;
+    var SKIP_STORED_KEYS = {
+      b2b_id: true,
+      debtor_id: true,
+      billing_address_id: true,
+      delivery_address_id: true,
+    };
+
     function applyStoredSelections() {
       var stored = readStored(storageKey);
       Object.keys(stored).forEach(function (key) {
+        if (SKIP_STORED_KEYS[key]) return;
         var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
         if (select && stored[key] !== null && stored[key] !== undefined) {
           var matched = Array.prototype.some.call(select.options, function (opt) {
@@ -265,6 +273,10 @@
             select.value = String(stored[key]);
           }
         }
+      });
+      ['billing_address_id', 'delivery_address_id', 'debtor_id'].forEach(function (key) {
+        var select = root.querySelector('[data-aico-preorder-select="' + key + '"]');
+        if (select) select.value = '';
       });
       refreshCustomSelectLabels(root);
     }
@@ -323,6 +335,8 @@
 
     setupPreorderWorkflow(root, {
       storageKey: storageKey,
+      contextUrl: contextUrl,
+      tokenInput: tokenInput,
       applyViewMode: applyViewMode,
     });
   }
@@ -360,8 +374,22 @@
     var selectedDates = [];
     var catalog = null;
     var cartCtrl = null;
+    var selectedB2b = null;
+    var selectedDebtor = null;
+    var isManager = root.getAttribute('data-aico-preorder-is-manager') === '1';
     var mainEl = root.querySelector('[data-aico-preorder-main]');
+    var checkoutEl = root.querySelector('[data-aico-preorder-checkout]');
+    var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
+    var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
+    var b2bSearchEl = root.querySelector('[data-aico-preorder-b2b-search]');
+    var b2bResultsEl = root.querySelector('[data-aico-preorder-b2b-results]');
+    var debtorFieldEl = root.querySelector('[data-aico-preorder-debtor-field]');
+    var addressesUrl = root.getAttribute('data-aico-preorder-addresses-url');
+    var b2bsUrl = root.getAttribute('data-aico-preorder-b2bs-url');
+    var contextUrl = opts.contextUrl;
+    var tokenInput = opts.tokenInput;
+    var storageKey = opts.storageKey;
     var loadingEl = root.querySelector('[data-aico-preorder-loading]');
     var errorEl = root.querySelector('[data-aico-preorder-error]');
     var loadMoreEl = root.querySelector('[data-aico-preorder-load-more]');
@@ -392,28 +420,242 @@
       return getSelectValue(root, 'size_region') || 'EU';
     }
 
-    function addressesReady() {
-      return !!billingId() && !!buyerId();
+    function debtorId() {
+      if (selectedDebtor && selectedDebtor.id) return selectedDebtor.id;
+      return getSelectValue(root, 'debtor_id') || null;
     }
 
-    function updateMainVisibility() {
+    function b2bReady() {
+      if (!isManager) return true;
+      return !!selectedB2b;
+    }
+
+    function debtorReady() {
+      if (!isManager) return true;
+      if (!selectedB2b) return false;
+      var debtors = selectedB2b.debtors || [];
+      if (debtors.length <= 1) return true;
+      return !!debtorId();
+    }
+
+    function addressesReady() {
+      return b2bReady() && debtorReady() && !!billingId() && !!buyerId();
+    }
+
+    function getTotalCartQty() {
+      var total = 0;
+      if (window.AicoPreorderStock && catalog && catalog.products) {
+        catalog.products.forEach(function (group) {
+          group.items.forEach(function (p) {
+            total += window.AicoPreorderStock.getTotalPerProduct(p.id) || 0;
+          });
+        });
+        if (total > 0) return total;
+      }
+      if (!cartCtrl || !cartCtrl.localCart) return 0;
+      cartCtrl.localCart.preorderItemLists.forEach(function (list) {
+        list.preorderItems.forEach(function (it) {
+          total += it.quantity || 0;
+        });
+      });
+      return total;
+    }
+
+    function updatePrompt() {
+      if (!promptEl || !promptTitleEl) return;
+      var msg =
+        root.getAttribute('data-aico-preorder-copy-select-addresses') ||
+        'Select billing and delivery addresses';
+      if (isManager && !selectedB2b) {
+        msg =
+          root.getAttribute('data-aico-preorder-copy-select-b2b') ||
+          'Select B2B';
+      } else if (isManager && !debtorReady()) {
+        msg =
+          root.getAttribute('data-aico-preorder-copy-select-debtor') ||
+          'Select seller';
+      }
+      promptTitleEl.textContent = msg;
+      promptEl.hidden = addressesReady();
+    }
+
+    function updateCheckoutVisibility() {
+      if (!checkoutEl) return;
+      checkoutEl.hidden = !addressesReady() || getTotalCartQty() <= 0;
+    }
+
+    function clearCatalog() {
+      if (catalog) {
+        catalog.products = [];
+        catalog.preorderDates = [];
+        if (catalog.catalogEl) catalog.catalogEl.innerHTML = '';
+        catalog.showError(false);
+        catalog.showLoading(false);
+      }
+      if (errorEl) errorEl.hidden = true;
+      if (loadingEl) loadingEl.hidden = true;
+    }
+
+    function updateFlowState() {
       var ready = addressesReady();
+      updatePrompt();
+      if (catalogToolsEl) catalogToolsEl.hidden = !ready;
       if (mainEl) mainEl.hidden = !ready;
-      if (promptEl) promptEl.hidden = ready;
+      updateCheckoutVisibility();
       if (!ready) {
-        if (catalog) {
-          catalog.products = [];
-          catalog.preorderDates = [];
-          if (catalog.catalogEl) catalog.catalogEl.innerHTML = '';
-          catalog.showError(false);
-          catalog.showLoading(false);
-        }
-        if (errorEl) errorEl.hidden = true;
-        if (loadingEl) loadingEl.hidden = true;
+        clearCatalog();
         return;
       }
       if (cartCtrl) cartCtrl.fetchCart().catch(function () {});
       if (catalog) catalog.reload();
+    }
+
+    function repopulateAddressSelect(name, rows) {
+      var select = root.querySelector('[data-aico-preorder-select="' + name + '"]');
+      if (!select) return;
+      var placeholder =
+        select.getAttribute('data-placeholder') || select.dataset.placeholder || '';
+      select.innerHTML = '';
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = placeholder;
+      select.appendChild(empty);
+      (rows || []).forEach(function (row) {
+        var opt = document.createElement('option');
+        opt.value = String(row.id);
+        opt.textContent = row.label || '';
+        select.appendChild(opt);
+      });
+      select.value = '';
+      select.disabled = !rows || !rows.length;
+      var wrapper = select.closest('[data-aico-custom-select]');
+      if (wrapper) {
+        var trigger = wrapper.querySelector('[data-aico-custom-select-trigger]');
+        if (trigger) trigger.disabled = select.disabled;
+        populateList(wrapper, select);
+        syncCustomSelect(wrapper);
+      }
+    }
+
+    function reloadAddresses(debtorIdValue) {
+      if (!addressesUrl) return Promise.resolve();
+      var url = new URL(addressesUrl, window.location.origin);
+      if (debtorIdValue) url.searchParams.set('debtor_id', String(debtorIdValue));
+      return fetch(url.toString(), {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      })
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (json) {
+          var data = json.data || {};
+          repopulateAddressSelect('billing_address_id', data.billingAddresses);
+          repopulateAddressSelect('delivery_address_id', data.deliveryAddresses);
+          updateFlowState();
+        })
+        .catch(function () {});
+    }
+
+    function populateDebtorSelect(debtors) {
+      var select = root.querySelector('[data-aico-preorder-select="debtor_id"]');
+      if (!select || !debtorFieldEl) return;
+      select.innerHTML = '';
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent =
+        root.getAttribute('data-aico-preorder-copy-select-debtor') || 'Select seller';
+      select.appendChild(empty);
+      (debtors || []).forEach(function (d) {
+        var opt = document.createElement('option');
+        opt.value = String(d.id);
+        opt.textContent = d.name || d.company || '';
+        select.appendChild(opt);
+      });
+      debtorFieldEl.hidden = !debtors || debtors.length <= 1;
+      if (debtors && debtors.length === 1) {
+        selectedDebtor = debtors[0];
+        reloadAddresses(selectedDebtor.id);
+      } else {
+        selectedDebtor = null;
+        select.value = '';
+      }
+      var wrapper = select.closest('[data-aico-custom-select]');
+      if (wrapper) {
+        populateList(wrapper, select);
+        syncCustomSelect(wrapper);
+      }
+    }
+
+    function selectB2b(b2b) {
+      selectedB2b = b2b;
+      selectedDebtor = null;
+      if (b2bSearchEl) b2bSearchEl.value = b2b.company || '';
+      if (b2bResultsEl) b2bResultsEl.hidden = true;
+      persist(contextUrl, tokenInput, storageKey, {
+        b2b_id: b2b.id,
+        debtor_id: null,
+        billing_address_id: null,
+        delivery_address_id: null,
+      });
+      repopulateAddressSelect('billing_address_id', []);
+      repopulateAddressSelect('delivery_address_id', []);
+      populateDebtorSelect(b2b.debtors || []);
+      updateFlowState();
+    }
+
+    function fetchB2bs(searchTerm) {
+      if (!b2bsUrl || !isManager) return Promise.resolve([]);
+      var url = new URL(b2bsUrl, window.location.origin);
+      url.searchParams.set('page[number]', '0');
+      url.searchParams.set('page[size]', '10');
+      if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
+      return fetch(url.toString(), {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      })
+        .then(function (res) {
+          return res.json();
+        })
+        .then(function (json) {
+          return json.data || [];
+        })
+        .catch(function () {
+          return [];
+        });
+    }
+
+    function renderB2bResults(rows) {
+      if (!b2bResultsEl) return;
+      b2bResultsEl.innerHTML = '';
+      if (!rows.length) {
+        b2bResultsEl.hidden = true;
+        return;
+      }
+      rows.forEach(function (b2b) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'aico-preorder-b2b-result';
+        btn.textContent = b2b.company || '';
+        btn.addEventListener('click', function () {
+          selectB2b(b2b);
+        });
+        b2bResultsEl.appendChild(btn);
+      });
+      b2bResultsEl.hidden = false;
+    }
+
+    if (b2bSearchEl) {
+      var b2bTimer;
+      b2bSearchEl.addEventListener('input', function () {
+        clearTimeout(b2bTimer);
+        b2bTimer = setTimeout(function () {
+          fetchB2bs(b2bSearchEl.value).then(renderB2bResults);
+        }, 300);
+      });
+      b2bSearchEl.addEventListener('focus', function () {
+        fetchB2bs(b2bSearchEl.value).then(renderB2bResults);
+      });
     }
 
     function renderDateChips(dates) {
@@ -616,6 +858,7 @@
         submitBtn.disabled =
           !termsOk || hasDirty || cartCtrl.saving || totalQty <= 0;
       }
+      updateCheckoutVisibility();
     }
 
     function fetchSession() {
@@ -718,6 +961,7 @@
         if (cartCtrl) {
           cartCtrl.updateQuantity(productId, variantId, dateLabel, qty, product);
           updateSummary();
+          updateCheckoutVisibility();
         }
       },
     });
@@ -741,7 +985,7 @@
       getBillingAddressId: billingId,
       getDeliveryAddressId: buyerId,
       getDebtorId: function () {
-        return null;
+        return debtorId();
       },
       getPreorderSessionId: function () {
         return (sessionData && sessionData.id) || (cartCtrl.serverCart && cartCtrl.serverCart.preorderSessionId);
@@ -759,11 +1003,32 @@
     root.querySelectorAll('[data-aico-preorder-select]').forEach(function (select) {
       select.addEventListener('change', function () {
         var key = select.getAttribute('data-aico-preorder-select');
+        if (key === 'debtor_id') {
+          var id = debtorId();
+          var debtors = (selectedB2b && selectedB2b.debtors) || [];
+          selectedDebtor = null;
+          for (var di = 0; di < debtors.length; di++) {
+            if (String(debtors[di].id) === String(id)) {
+              selectedDebtor = debtors[di];
+              break;
+            }
+          }
+          persist(contextUrl, tokenInput, storageKey, {
+            debtor_id: id,
+            billing_address_id: null,
+            delivery_address_id: null,
+          });
+          repopulateAddressSelect('billing_address_id', []);
+          repopulateAddressSelect('delivery_address_id', []);
+          if (selectedDebtor) reloadAddresses(selectedDebtor.id);
+          else updateFlowState();
+          return;
+        }
         if (key === 'billing_address_id' || key === 'delivery_address_id') {
-          updateMainVisibility();
+          updateFlowState();
           if (addressesReady()) {
             fetchSession().then(function () {
-              updateMainVisibility();
+              updateFlowState();
             });
           }
           return;
@@ -822,9 +1087,9 @@
     });
 
     fetchSession().then(function () {
-      updateMainVisibility();
+      updateFlowState();
     });
-    updateMainVisibility();
+    updateFlowState();
   }
 
   if (document.readyState === 'loading') {
