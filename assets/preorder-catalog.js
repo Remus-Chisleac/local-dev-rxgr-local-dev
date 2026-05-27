@@ -74,8 +74,8 @@
 
   function extractDatesFromProducts(groups) {
     var set = new Set();
-    groups.forEach(function (group) {
-      group.items.forEach(function (product) {
+    asArray(groups).forEach(function (group) {
+      asArray(group && group.items).forEach(function (product) {
         (product.preorderStockData || []).forEach(function (row) {
           if (row.date) {
             try {
@@ -94,6 +94,13 @@
     return Array.from(set).sort();
   }
 
+  function groupHasMorePages(entry) {
+    if (!entry || !entry.meta) return false;
+    var lastPage = Number(entry.meta.lastPage) || 1;
+    var currentPage = Number(entry.currentPage) || 1;
+    return currentPage < lastPage;
+  }
+
   function buildProductsUrl(baseUrl, params) {
     var url = new URL(baseUrl, window.location.origin);
     if (params.buyerAddressId) {
@@ -110,9 +117,11 @@
     return url.toString();
   }
 
-  function fetchProductsJson(url) {
+  function fetchProductsJson(url, signal) {
     return fetch(url, {
       credentials: 'same-origin',
+      cache: 'no-store',
+      signal: signal,
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     }).then(function (res) {
       return res.text().then(function (text) {
@@ -332,6 +341,8 @@
     this.hasMore = true;
     this.preorderDates = [];
     this.searchQuery = '';
+    this.autoLoadMore = config.autoLoadMore === true;
+    this._abortController = null;
   }
 
   CatalogController.prototype.setSearchQuery = function (q) {
@@ -351,9 +362,14 @@
 
     this.loadGeneration += 1;
     var generation = this.loadGeneration;
+    if (this._abortController) {
+      this._abortController.abort();
+    }
+    this._abortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var signal = this._abortController ? this._abortController.signal : undefined;
     this.products = [];
     this.groupPagination = {};
-    this.hasMore = true;
+    this.hasMore = false;
     this.loading = true;
     this.showLoading(true);
     this.showError(false);
@@ -367,6 +383,7 @@
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
         }),
+        signal,
       );
     });
 
@@ -385,24 +402,28 @@
               meta: result.meta || null,
             };
           } else {
+            var reason = settled.reason;
+            if (reason && reason.name === 'AbortError') {
+              return;
+            }
             failures += 1;
             console.warn(
               'preorder catalog: group fetch failed',
               OPTION_GROUP_ORDER[i],
-              settled.reason,
+              reason,
             );
             pagination[OPTION_GROUP_ORDER[i]] = { currentPage: 1, meta: null };
           }
         });
+        if (generation !== self.loadGeneration) return;
         self.products = merged;
         self.groupPagination = pagination;
         self.preorderDates = extractDatesFromProducts(merged);
-        self.hasMore = OPTION_GROUP_ORDER.some(function (name) {
-          var m = pagination[name] && pagination[name].meta;
-          return m && m.currentPage < m.lastPage;
+        self.hasMore = self.autoLoadMore && OPTION_GROUP_ORDER.some(function (name) {
+          return groupHasMorePages(pagination[name]);
         });
-        if (!merged.length && failures > 0) {
-          self.showError(true);
+        if (!merged.length) {
+          self.showError(failures > 0);
           return;
         }
         self.showError(false);
@@ -410,6 +431,8 @@
           self.onProductsLoaded(self.products, self.preorderDates);
         } catch (hookErr) {
           console.error('preorder catalog: onProductsLoaded', hookErr);
+          self.showError(true);
+          return;
         }
         try {
           self.render();
@@ -418,7 +441,9 @@
           self.showError(true);
           return;
         }
-        if (self.hasMore) self.loadMore();
+        if (self.autoLoadMore && self.hasMore) {
+          self.loadMore();
+        }
       })
       .catch(function (err) {
         if (generation !== self.loadGeneration) return;
@@ -445,7 +470,7 @@
     var groupName = null;
     for (var i = 0; i < OPTION_GROUP_ORDER.length; i++) {
       var g = this.groupPagination[OPTION_GROUP_ORDER[i]];
-      if (g && g.meta && g.meta.currentPage < g.meta.lastPage) {
+      if (groupHasMorePages(g)) {
         groupName = OPTION_GROUP_ORDER[i];
         break;
       }
@@ -462,6 +487,8 @@
     var g = this.groupPagination[groupName];
     var nextPage = g.currentPage + 1;
 
+    var signal = this._abortController ? this._abortController.signal : undefined;
+
     return fetchProductsJson(
       buildProductsUrl(this.productsUrl, {
         buyerAddressId: buyerAddressId,
@@ -470,6 +497,7 @@
         pageSize: PAGE_SIZE,
         optionGroupName: groupName,
       }),
+      signal,
     )
       .then(function (result) {
         if (generation !== self.loadGeneration) return;
@@ -479,13 +507,15 @@
           meta: result.meta || null,
         };
         self.preorderDates = extractDatesFromProducts(self.products);
-        self.hasMore = OPTION_GROUP_ORDER.some(function (name) {
-          var m = self.groupPagination[name] && self.groupPagination[name].meta;
-          return m && m.currentPage < m.lastPage;
+        self.hasMore = self.autoLoadMore && OPTION_GROUP_ORDER.some(function (name) {
+          return groupHasMorePages(self.groupPagination[name]);
         });
-        self.onProductsLoaded(self.products, self.preorderDates);
-        self.render();
-        if (self.hasMore) return self.loadMore();
+        try {
+          self.onProductsLoaded(self.products, self.preorderDates);
+          self.render();
+        } catch (err) {
+          console.error('preorder catalog: loadMore render', err);
+        }
       })
       .catch(function (err) {
         console.warn('preorder catalog: loadMore failed', err);
@@ -545,7 +575,7 @@
       '</div>';
 
     this.products.forEach(function (group) {
-      var items = self.filterItems(group.items);
+      var items = self.filterItems(asArray(group && group.items));
       if (!items.length) return;
 
       var sizeValues = collectGroupSizeValues(items);

@@ -424,7 +424,7 @@
       clearTimeout(catalogReloadTimer);
       catalogReloadTimer = setTimeout(function () {
         catalog.reload();
-      }, 0);
+      }, 150);
     }
 
     function buyerId() {
