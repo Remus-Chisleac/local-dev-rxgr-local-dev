@@ -331,12 +331,16 @@
     },
     "catalog": {
       "section_aria": "PreOrder-Produkte",
+      "products_heading": "Produkte",
       "empty": "Keine Produkte für diese PreOrder verfügbar.",
       "loading": "Produkte werden geladen…",
       "loading_more": "Weitere Produkte werden geladen…",
       "error": "Produkte konnten nicht geladen werden. Bitte erneut versuchen.",
       "select_addresses": "Rechnungs- und Lieferadresse wählen, um Produkte anzuzeigen.",
-      "dates_label": "Liefertermine"
+      "dates_label": "Liefertermine",
+      "row_total": "Total Input",
+      "product_total": "Gesamt",
+      "pcs": "STK"
     },
     "flyers": {
       "section_aria": "Flyer",
@@ -345,15 +349,21 @@
     "summary": {
       "section_aria": "Bestellübersicht",
       "title": "Zusammenfassung",
+      "billing_address": "Rechnungsadresse",
+      "delivery_address": "Lieferadresse",
       "notes_label": "Bemerkungen",
-      "terms_prefix": "Ich akzeptiere die",
-      "terms_link": "AGB",
+      "terms_prefix": "Ich habe die",
+      "terms_link": "Allgemeinen Geschäftsbedingungen",
+      "terms_checkbox": "Ich habe die Allgemeinen Geschäftsbedingungen gelesen und stimme ihnen zu.",
       "save_cart": "Warenkorb speichern",
       "saving": "Warenkorb wird gespeichert…",
       "saved": "Warenkorb gespeichert",
       "place_order": "PreOrder absenden",
-      "total": "Total",
-      "discount": "Mengenrabatt"
+      "subtotal": "Zwischensumme",
+      "total": "GESAMTBETRAG",
+      "discount": "Rabatt",
+      "excl_vat": "ohne MwSt",
+      "stock_warning": "Der Warenkorb wird an die verfügbare Menge angepasst."
     },
     "thank_you": {
       "title": "Vielen Dank",

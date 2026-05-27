@@ -89,21 +89,40 @@
     return Math.max(0, initial - (used - (state.qty[productId][variantId][dateKey] || 0)));
   }
 
-  function getTotalPerProduct(productId) {
+  function getRowTotal(productId, dateLabel) {
+    var dateKey = normalizeDateKey(dateLabel);
     var total = 0;
     var byVariant = state.qty[productId] || {};
     Object.keys(byVariant).forEach(function (vid) {
+      var q =
+        byVariant[vid][dateKey] != null
+          ? byVariant[vid][dateKey]
+          : byVariant[vid][dateLabel];
+      total += q || 0;
+    });
+    return total;
+  }
+
+  function getTotalPerProduct(productId) {
+    var byDate = {};
+    var byVariant = state.qty[productId] || {};
+    Object.keys(byVariant).forEach(function (vid) {
       Object.keys(byVariant[vid]).forEach(function (dk) {
-        total += byVariant[vid][dk] || 0;
+        byDate[dk] = (byDate[dk] || 0) + (byVariant[vid][dk] || 0);
       });
     });
-    return Math.floor(total / 2) || total;
+    var total = 0;
+    Object.keys(byDate).forEach(function (dk) {
+      total += byDate[dk];
+    });
+    return total;
   }
 
   global.AicoPreorderStock = {
     setSizeStockFromProducts: setSizeStockFromProducts,
     adjustStock: adjustStock,
     getMaxQuantity: getMaxQuantity,
+    getRowTotal: getRowTotal,
     getTotalPerProduct: getTotalPerProduct,
     _state: state,
   };

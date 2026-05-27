@@ -331,12 +331,16 @@
     },
     "catalog": {
       "section_aria": "Preorder products",
+      "products_heading": "Products",
       "empty": "No products available for this preorder.",
       "loading": "Loading products…",
       "loading_more": "Loading more products…",
       "error": "Could not load products. Please try again.",
       "select_addresses": "Select billing and delivery addresses to view products.",
-      "dates_label": "Delivery dates"
+      "dates_label": "Delivery dates",
+      "row_total": "Total Input",
+      "product_total": "Total",
+      "pcs": "STK"
     },
     "flyers": {
       "section_aria": "Flyers",
@@ -345,15 +349,21 @@
     "summary": {
       "section_aria": "Order summary",
       "title": "Summary",
+      "billing_address": "Billing address",
+      "delivery_address": "Delivery address",
       "notes_label": "Notes",
-      "terms_prefix": "I accept the",
-      "terms_link": "terms and conditions",
+      "terms_prefix": "I have read the",
+      "terms_link": "General Terms and Conditions",
+      "terms_checkbox": "I have read the General Terms and Conditions and agree with them.",
       "save_cart": "Save cart",
       "saving": "Saving cart…",
       "saved": "Cart saved",
-      "place_order": "Place preorder",
-      "total": "Total",
-      "discount": "Volume discount"
+      "place_order": "Place Pre-order",
+      "subtotal": "Subtotal",
+      "total": "TOTAL AMOUNT",
+      "discount": "Discount",
+      "excl_vat": "excl. VAT",
+      "stock_warning": "Cart will be adjusted to available quantity."
     },
     "thank_you": {
       "title": "Thank you",

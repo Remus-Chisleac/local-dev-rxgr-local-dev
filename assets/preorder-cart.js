@@ -70,6 +70,16 @@
     }
   }
 
+  function resolveItemPrice(product) {
+    if (!product) return 0;
+    if (product.price != null && product.price >= 0) return product.price;
+    if (product.priceList && product.priceList.price != null) {
+      return product.priceList.price;
+    }
+    if (product.variantPrice != null) return product.variantPrice;
+    return 0;
+  }
+
   function CartController(config) {
     this.cartUrl = config.cartUrl;
     this.statusUrl = config.statusUrl;
@@ -180,11 +190,15 @@
     if (idx >= 0) {
       list.preorderItems[idx].quantity = quantity;
       list.preorderItems[idx].shouldUpdate = true;
+      if (!list.preorderItems[idx].itemPrice && product) {
+        list.preorderItems[idx].itemPrice = resolveItemPrice(product);
+      }
     } else if (quantity > 0) {
       list.preorderItems.push({
         productId: productId,
         productVariantId: variantId,
         quantity: quantity,
+        itemPrice: resolveItemPrice(product),
         shouldUpdate: true,
         product: product,
       });

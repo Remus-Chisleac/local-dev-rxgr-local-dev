@@ -59,6 +59,15 @@
       data-aico-preorder-copy-discount="{{ 'aico_preorder.summary.discount' | t | escape }}"
       data-aico-preorder-copy-saving="{{ 'aico_preorder.summary.saving' | t | escape }}"
       data-aico-preorder-copy-saved="{{ 'aico_preorder.summary.saved' | t | escape }}"
+      data-aico-preorder-copy-products-heading="{{ 'aico_preorder.catalog.products_heading' | t | escape }}"
+      data-aico-preorder-copy-row-total="{{ 'aico_preorder.catalog.row_total' | t | escape }}"
+      data-aico-preorder-copy-product-total="{{ 'aico_preorder.catalog.product_total' | t | escape }}"
+      data-aico-preorder-copy-pcs="{{ 'aico_preorder.catalog.pcs' | t | escape }}"
+      data-aico-preorder-copy-billing="{{ 'aico_preorder.summary.billing_address' | t | escape }}"
+      data-aico-preorder-copy-delivery="{{ 'aico_preorder.summary.delivery_address' | t | escape }}"
+      data-aico-preorder-copy-excl-vat="{{ 'aico_preorder.summary.excl_vat' | t | escape }}"
+      data-aico-preorder-copy-subtotal="{{ 'aico_preorder.summary.subtotal' | t | escape }}"
+      data-aico-preorder-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
       {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}
       data-aico-preorder-mock-weeks="{{ mock_weeks }}"
       data-aico-preorder-mock-days="{{ mock_days }}"
@@ -342,14 +351,31 @@
       <div class="aico-preorder-flyers-grid" data-aico-preorder-flyers-grid></div>
     </section>
 
-    <aside class="aico-preorder-summary" data-aico-preorder-summary aria-label="{{ 'aico_preorder.summary.section_aria' | t }}">
-      <h3 class="aico-preorder-summary-title">{{ 'aico_preorder.summary.title' | t }}</h3>
-      <div class="aico-preorder-summary-lines" data-aico-preorder-summary-lines></div>
-      <p class="aico-preorder-summary-total" data-aico-preorder-summary-total></p>
-      <p class="aico-preorder-summary-discount" data-aico-preorder-summary-discount hidden></p>
+    <div class="aico-preorder-checkout-panel" data-aico-preorder-summary aria-label="{{ 'aico_preorder.summary.section_aria' | t }}">
+      <div class="aico-preorder-checkout-addresses">
+        <div class="aico-preorder-checkout-address">
+          <p class="aico-preorder-checkout-address-label">{{ 'aico_preorder.summary.billing_address' | t }}</p>
+          <p class="aico-preorder-checkout-address-value" data-aico-preorder-summary-billing>—</p>
+        </div>
+        <div class="aico-preorder-checkout-address">
+          <p class="aico-preorder-checkout-address-label">{{ 'aico_preorder.summary.delivery_address' | t }}</p>
+          <p class="aico-preorder-checkout-address-value" data-aico-preorder-summary-delivery>—</p>
+        </div>
+      </div>
+      <hr class="aico-preorder-checkout-divider">
+      <div class="aico-preorder-checkout-grid">
+        <div class="aico-preorder-checkout-dates" data-aico-preorder-summary-lines></div>
+        <div class="aico-preorder-checkout-totals-box">
+          <div class="aico-preorder-checkout-total-row" data-aico-preorder-summary-subtotal-row></div>
+          <div class="aico-preorder-checkout-total-row" data-aico-preorder-summary-discount-row hidden></div>
+          <hr class="aico-preorder-checkout-divider">
+          <div class="aico-preorder-checkout-grand-total" data-aico-preorder-summary-total></div>
+        </div>
+      </div>
+      <p class="aico-preorder-checkout-alert" data-aico-preorder-stock-warning>{{ 'aico_preorder.summary.stock_warning' | t }}</p>
       <label class="aico-preorder-notes">
         <span class="aico-preorder-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
-        <textarea name="notes" rows="2" data-aico-preorder-notes></textarea>
+        <textarea name="notes" rows="3" data-aico-preorder-notes></textarea>
       </label>
       {% if preorder_session.terms_pdf_url != blank %}
         <label class="aico-preorder-terms">
@@ -358,13 +384,18 @@
             <a href="{{ preorder_session.terms_pdf_url }}" target="_blank" rel="noopener">{{ 'aico_preorder.summary.terms_link' | t }}</a>
           </span>
         </label>
+      {% else %}
+        <label class="aico-preorder-terms">
+          <input type="checkbox" data-aico-preorder-terms>
+          <span>{{ 'aico_preorder.summary.terms_checkbox' | t }}</span>
+        </label>
       {% endif %}
-      <div class="aico-preorder-summary-actions">
-        <button type="button" class="aico-btn aico-btn-secondary" data-aico-preorder-save disabled>{{ 'aico_preorder.summary.save_cart' | t }}</button>
-        <button type="button" class="aico-btn aico-btn-primary" data-aico-preorder-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
-      </div>
       <p class="aico-preorder-summary-status" data-aico-preorder-summary-status hidden></p>
-    </aside>
+      <div class="aico-preorder-checkout-actions">
+        <button type="button" class="aico-preorder-btn aico-preorder-btn-save" data-aico-preorder-save disabled>{{ 'aico_preorder.summary.save_cart' | t }}</button>
+        <button type="button" class="aico-preorder-btn aico-preorder-btn-place" data-aico-preorder-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
+      </div>
+    </div>
   </section>
 
   <script src="{{ 'preorder-catalog.js' | asset_url }}" defer></script>

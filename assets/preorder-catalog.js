@@ -1,5 +1,5 @@
 /**
- * Preorder product catalog — four-group pagination (b2b-shop parity).
+ * Preorder product catalog — b2b-shop matrix layout + four-group pagination.
  */
 (function (global) {
   'use strict';
@@ -15,29 +15,24 @@
 
   function mergeGroupedProducts(prev, result) {
     var newProducts = prev.slice();
-    var groups = (result && result.data && result.data.products) || [];
-    if (Array.isArray(result && result.data)) {
+    var groups = [];
+    if (result && result.data && Array.isArray(result.data)) {
       groups = groupFlatProducts(result.data);
-    }
-    if (Array.isArray(result)) {
+    } else if (Array.isArray(result)) {
       groups = groupFlatProducts(result);
-    }
-    if (result && result.data && Array.isArray(result.data) && !result.data.products) {
-      groups = groupFlatProducts(result.data);
     }
 
     groups.forEach(function (newGroup) {
-      var name = newGroup.optionGroupName;
       var idx = -1;
       for (var i = 0; i < newProducts.length; i++) {
-        if (newProducts[i].optionGroupName === name) {
+        if (newProducts[i].optionGroupName === newGroup.optionGroupName) {
           idx = i;
           break;
         }
       }
       if (idx >= 0) {
         newProducts[idx] = {
-          optionGroupName: name,
+          optionGroupName: newGroup.optionGroupName,
           items: newProducts[idx].items.concat(newGroup.items),
         };
       } else {
@@ -59,17 +54,6 @@
     return Object.keys(groups).map(function (k) {
       return groups[k];
     });
-  }
-
-  function mergePreorderDates(lists) {
-    var set = new Set();
-    lists.forEach(function (list) {
-      if (!Array.isArray(list)) return;
-      list.forEach(function (d) {
-        if (d) set.add(d);
-      });
-    });
-    return Array.from(set);
   }
 
   function extractDatesFromProducts(groups) {
@@ -112,7 +96,13 @@
       credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     }).then(function (res) {
-      if (!res.ok) throw new Error('products_fetch_failed');
+      if (!res.ok) {
+        return res.json().catch(function () {
+          throw new Error('products_fetch_failed');
+        }).then(function (body) {
+          throw new Error(body && body.error ? body.error : 'products_fetch_failed');
+        });
+      }
       return res.json();
     });
   }
@@ -159,21 +149,55 @@
   }
 
   function productTitle(product) {
-    return product.name || product.webName || product.title || product.sku || '';
+    if (product.name) return product.name;
+    if (product.webName) return product.webName;
+    if (product.title) return product.title;
+    var t = product.translations;
+    if (Array.isArray(t) && t.length) {
+      return t[0].name || t[0].webName || product.sku || '';
+    }
+    if (t && typeof t === 'object') {
+      var first = t[Object.keys(t)[0]];
+      if (first) return first.name || first.webName || product.sku || '';
+    }
+    return product.sku || '';
+  }
+
+  function productPrice(product) {
+    if (product.price != null && product.price >= 0) return product.price;
+    if (product.priceList && product.priceList.price != null) {
+      return product.priceList.price;
+    }
+    if (product.variantPrice != null) return product.variantPrice;
+    return null;
+  }
+
+  function productCurrency(product) {
+    return (
+      product.variantPriceCurrency ||
+      product.currency ||
+      (product.priceList && product.priceList.currency) ||
+      'CHF'
+    );
   }
 
   function productImage(product) {
-    return (
-      product.mainImage ||
-      (product.productImages && product.productImages[0] && product.productImages[0].imageUrl) ||
-      ''
-    );
+    return product.mainImage || '';
   }
 
   function formatMoney(price, currency) {
     if (price == null || price < 0) return '';
-    var cur = currency || 'CHF';
-    return cur + ' ' + Number(price).toFixed(2);
+    return Number(price).toFixed(2) + ' ' + (currency || 'CHF');
+  }
+
+  function rowTotalForDate(productId, dateLabel) {
+    if (!global.AicoPreorderStock || !global.AicoPreorderStock.getRowTotal) return 0;
+    return global.AicoPreorderStock.getRowTotal(productId, dateLabel) || 0;
+  }
+
+  function productTotal(productId) {
+    if (!global.AicoPreorderStock || !global.AicoPreorderStock.getTotalPerProduct) return 0;
+    return global.AicoPreorderStock.getTotalPerProduct(productId) || 0;
   }
 
   function CatalogController(config) {
@@ -194,12 +218,15 @@
       return 'EU';
     };
     this.getSession = config.getSession || function () {
-      return null;
+      return {};
     };
     this.getCartState = config.getCartState || function () {
       return null;
     };
     this.onQuantityChange = config.onQuantityChange || function () {};
+    this.getCopy = config.getCopy || function () {
+      return {};
+    };
 
     this.products = [];
     this.groupPagination = {};
@@ -208,7 +235,13 @@
     this.loadingMore = false;
     this.hasMore = true;
     this.preorderDates = [];
+    this.searchQuery = '';
   }
+
+  CatalogController.prototype.setSearchQuery = function (q) {
+    this.searchQuery = (q || '').toLowerCase().trim();
+    this.render();
+  };
 
   CatalogController.prototype.reload = function () {
     var self = this;
@@ -245,7 +278,7 @@
         var merged = [];
         var pagination = {};
         results.forEach(function (result, i) {
-          merged = mergeGroupedProducts(merged, { data: result.data });
+          merged = mergeGroupedProducts(merged, result);
           pagination[OPTION_GROUP_ORDER[i]] = {
             currentPage: 1,
             meta: result.meta || null,
@@ -262,8 +295,9 @@
         self.render();
         if (self.hasMore) self.loadMore();
       })
-      .catch(function () {
+      .catch(function (err) {
         if (generation !== self.loadGeneration) return;
+        console.error('preorder catalog:', err);
         self.showError(true);
       })
       .finally(function () {
@@ -311,7 +345,7 @@
     )
       .then(function (result) {
         if (generation !== self.loadGeneration) return;
-        self.products = mergeGroupedProducts(self.products, { data: result.data });
+        self.products = mergeGroupedProducts(self.products, result);
         self.groupPagination[groupName] = {
           currentPage: nextPage,
           meta: result.meta || null,
@@ -345,34 +379,49 @@
     if (this.loadMoreEl) this.loadMoreEl.hidden = !on;
   };
 
+  CatalogController.prototype.filterItems = function (items) {
+    var q = this.searchQuery;
+    if (!q) return items;
+    return items.filter(function (p) {
+      var title = productTitle(p).toLowerCase();
+      var sku = (p.sku || '').toLowerCase();
+      return title.indexOf(q) >= 0 || sku.indexOf(q) >= 0;
+    });
+  };
+
   CatalogController.prototype.render = function () {
-    if (!this.catalogEl) return;
     var self = this;
+    if (!this.catalogEl) return;
+
+    var copy = this.getCopy();
     var session = this.getSession() || {};
     var charts = session.shoeSizeCharts || {};
     var region = this.getSizeRegion();
     var dates = this.getSelectedDates();
     if (!dates.length) dates = this.preorderDates;
-    var viewMode = this.root.getAttribute('data-aico-preorder-view-mode') || 'grid';
     var isStockRelevant = !!session.isStockRelevant;
-    var html = '';
 
     if (!this.products.length && !this.loading) {
       this.catalogEl.innerHTML =
         '<p class="aico-preorder-catalog-empty">' +
-        escapeHtml(
-          this.root.getAttribute('data-aico-preorder-copy-empty') || 'No products.',
-        ) +
+        escapeHtml(copy.empty || 'No products.') +
         '</p>';
       return;
     }
 
+    var html = '<div class="aico-preorder-products-heading">' +
+      escapeHtml(copy.productsHeading || 'Products') +
+      '</div>';
+
     this.products.forEach(function (group) {
-      var sizeOpts = [];
-      group.items.forEach(function (item) {
+      var items = self.filterItems(group.items);
+      if (!items.length) return;
+
+      var sizeValues = [];
+      items.forEach(function (item) {
         var so = getSizeOption(item);
         (so.values || []).forEach(function (v) {
-          if (sizeOpts.indexOf(v) < 0) sizeOpts.push(v);
+          if (sizeValues.indexOf(v) < 0) sizeValues.push(v);
         });
       });
 
@@ -381,21 +430,29 @@
         '<header class="aico-preorder-group-header"><h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
-      if (sizeOpts.length) {
-        html += '<div class="aico-preorder-size-labels" aria-hidden="true">';
-        sizeOpts.forEach(function (opt) {
+      if (sizeValues.length) {
+        html += '<div class="aico-preorder-group-sizes" aria-hidden="true">';
+        sizeValues.forEach(function (opt) {
           html +=
-            '<span class="aico-preorder-size-label">' +
+            '<span class="aico-preorder-group-size-pill">' +
             escapeHtml(getCountryLabel(charts, group.optionGroupName, region, opt)) +
             '</span>';
         });
-        html += '</div></header>';
-      } else {
-        html += '</header>';
+        html += '</div>';
       }
+      html += '</header>';
 
-      group.items.forEach(function (product) {
-        html += self.renderProductRow(product, group.optionGroupName, dates, viewMode, isStockRelevant);
+      items.forEach(function (product) {
+        html += self.renderProductCard(
+          product,
+          group.optionGroupName,
+          dates,
+          sizeValues,
+          isStockRelevant,
+          charts,
+          region,
+          copy,
+        );
       });
       html += '</section>';
     });
@@ -404,49 +461,65 @@
     this.bindQuantityInputs();
   };
 
-  CatalogController.prototype.renderProductRow = function (
+  CatalogController.prototype.renderProductCard = function (
     product,
     optionGroupName,
     dates,
-    viewMode,
+    sizeValues,
     isStockRelevant,
+    charts,
+    region,
+    copy,
   ) {
     var self = this;
-    var sizeOption = getSizeOption(product);
-    var values = sizeOption.values || [];
     var title = productTitle(product);
     var img = productImage(product);
-    var price = product.price != null ? product.price : product.variantPrice;
-    var currency = product.variantPriceCurrency || product.currency || 'CHF';
-    var compact = viewMode === 'list' ? ' aico-preorder-product-row--list' : '';
+    var price = productPrice(product);
+    var currency = productCurrency(product);
+    var totalPcs = productTotal(product.id);
 
     var html =
-      '<article class="aico-preorder-product-row' +
-      compact +
-      '" data-aico-preorder-product-id="' +
+      '<article class="aico-preorder-product-card" data-aico-preorder-product-id="' +
       product.id +
-      '">';
+      '"><div class="aico-preorder-product-card-inner">';
+
+    html += '<div class="aico-preorder-product-meta">';
     html += '<div class="aico-preorder-product-media">';
     if (img) {
-      html += '<img src="' + escapeHtml(img) + '" alt="" loading="lazy" decoding="async">';
+      html +=
+        '<img src="' +
+        escapeHtml(img) +
+        '" alt="" loading="lazy" decoding="async" width="120" height="120">';
     }
-    html += '</div><div class="aico-preorder-product-body">';
+    html += '</div><div class="aico-preorder-product-info">';
     html += '<h4 class="aico-preorder-product-title">' + escapeHtml(title) + '</h4>';
     if (product.sku) {
       html += '<p class="aico-preorder-product-sku">' + escapeHtml(product.sku) + '</p>';
     }
     if (price != null && price >= 0) {
-      html += '<p class="aico-preorder-product-price">' + escapeHtml(formatMoney(price, currency)) + '</p>';
+      html +=
+        '<p class="aico-preorder-product-price">' +
+        escapeHtml(formatMoney(price, currency)) +
+        '</p>';
     }
-    html += '<div class="aico-preorder-product-grid">';
+    html += '</div></div>';
 
+    html += '<div class="aico-preorder-matrix-wrap">';
+    html += '<div class="aico-preorder-matrix">';
+    html += '<div class="aico-preorder-matrix-dates">';
     dates.forEach(function (dateLabel) {
-      html += '<div class="aico-preorder-date-column">';
-      html += '<span class="aico-preorder-date-label">' + escapeHtml(dateLabel) + '</span>';
-      html += '<div class="aico-preorder-size-inputs">';
-      values.forEach(function (optVal) {
-        var variant = getVariantForOption(product, optVal);
-        if (!variant) return;
+      html += '<div class="aico-preorder-matrix-date-label">' + escapeHtml(dateLabel) + '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="aico-preorder-matrix-grid">';
+    sizeValues.forEach(function (optVal) {
+      var variant = getVariantForOption(product, optVal);
+      if (!variant) return;
+      var label = getCountryLabel(charts, optionGroupName, region, optVal);
+      html += '<div class="aico-preorder-size-column">';
+      html += '<div class="aico-preorder-size-column-label">' + escapeHtml(label) + '</div>';
+      dates.forEach(function (dateLabel) {
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
         var maxAttr = '';
         if (isStockRelevant && global.AicoPreorderStock) {
@@ -456,12 +529,10 @@
             dateLabel,
             product,
           );
-          if (max >= 0) maxAttr = ' max="' + max + '"';
+          if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
         }
         html +=
-          '<label class="aico-preorder-qty-field"><span class="aico-sr-only">' +
-          escapeHtml(optVal) +
-          '</span><input type="number" min="0" step="1" value="' +
+          '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
           qty +
           '"' +
           maxAttr +
@@ -471,12 +542,34 @@
           variant.id +
           '" data-date="' +
           escapeHtml(dateLabel) +
-          '" data-option-value="' +
-          escapeHtml(optVal) +
-          '"></label>';
+          '" aria-label="' +
+          escapeHtml(label + ' ' + dateLabel) +
+          '">';
       });
-      html += '</div></div>';
+      html += '</div>';
     });
+    html += '</div>';
+
+    html += '<div class="aico-preorder-matrix-row-totals">';
+    dates.forEach(function (dateLabel) {
+      var rowTotal = rowTotalForDate(product.id, dateLabel);
+      html +=
+        '<div class="aico-preorder-matrix-row-total">' +
+        escapeHtml(copy.rowTotal || 'Total Input') +
+        ': <strong>' +
+        rowTotal +
+        '</strong></div>';
+    });
+    html += '</div></div></div>';
+
+    html +=
+      '<p class="aico-preorder-product-total">' +
+      escapeHtml(copy.productTotal || 'Total') +
+      ': <strong>' +
+      totalPcs +
+      ' ' +
+      escapeHtml(copy.pcs || 'STK') +
+      '</strong></p>';
 
     html += '</div></div></article>';
     return html;
@@ -486,7 +579,8 @@
     var cart = this.getCartState();
     if (!cart || !cart.preorderItemLists) return 0;
     var list = cart.preorderItemLists.find(function (l) {
-      return String(l.preorderDate).indexOf(dateLabel) >= 0 || dateLabel.indexOf(String(l.preorderDate)) >= 0;
+      var d = String(l.preorderDate || '');
+      return d.indexOf(dateLabel) >= 0 || dateLabel.indexOf(d) >= 0;
     });
     if (!list) return 0;
     var item = (list.preorderItems || []).find(function (it) {
@@ -497,6 +591,16 @@
     return item ? item.quantity || 0 : 0;
   };
 
+  CatalogController.prototype.findProduct = function (productId) {
+    for (var g = 0; g < this.products.length; g++) {
+      var items = this.products[g].items || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === productId) return items[i];
+      }
+    }
+    return null;
+  };
+
   CatalogController.prototype.bindQuantityInputs = function () {
     var self = this;
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
@@ -504,8 +608,12 @@
         var productId = parseInt(input.getAttribute('data-product-id'), 10);
         var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
         var dateLabel = input.getAttribute('data-date');
-        var qty = parseInt(input.value, 10) || 0;
-        self.onQuantityChange(productId, variantId, dateLabel, qty, input);
+        var qty = parseInt(input.value, 10);
+        if (isNaN(qty) || qty < 0) qty = 0;
+        input.value = qty;
+        var product = self.findProduct(productId);
+        self.onQuantityChange(productId, variantId, dateLabel, qty, product);
+        self.render();
       });
     });
   };
@@ -513,7 +621,6 @@
   global.AicoPreorderCatalog = {
     OPTION_GROUP_ORDER: OPTION_GROUP_ORDER,
     CatalogController: CatalogController,
-    mergeGroupedProducts: mergeGroupedProducts,
-    extractDatesFromProducts: extractDatesFromProducts,
+    productTitle: productTitle,
   };
 })(typeof window !== 'undefined' ? window : this);

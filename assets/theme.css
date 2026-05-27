@@ -2345,6 +2345,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder {
   position: relative;
   padding-bottom: 6rem;
+  background-color: #f5f5f5;
 }
 
 .aico-preorder-hero {
@@ -3991,21 +3992,12 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-thank-you-totals { width: 100%; margin: 0; display: flex; flex-direction: column; gap: 0.375rem; text-align: left; }
 .aico-checkout-thank-you-email { margin: 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
 
-/* ───── Preorder catalog + summary ───── */
+/* ───── Preorder catalog + checkout (b2b-shop parity) ───── */
 .aico-preorder-main-wrap {
-  margin-top: 2rem;
-  display: grid;
-  gap: 2rem;
-}
-@media (min-width: 1024px) {
-  .aico-preorder-main-wrap {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-    align-items: start;
-  }
-  .aico-preorder-summary {
-    position: sticky;
-    top: 6rem;
-  }
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 .aico-preorder-gate-message,
 .aico-preorder-catalog-loading,
@@ -4029,140 +4021,403 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-date-chip {
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid var(--aico-border, #e5e7eb);
+  border: 1px solid #e4e4e4;
   background: #fff;
   font-size: 0.8125rem;
   cursor: pointer;
 }
 .aico-preorder-date-chip-active {
-  border-color: #f97316;
-  background: #fff7ed;
-  color: #c2410c;
+  border-color: #e8702d;
+  background: #ffefe6;
+  color: #be5921;
+}
+.aico-preorder-products-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #272727;
 }
 .aico-preorder-group {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 .aico-preorder-group-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--aico-border, #e5e7eb);
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 4px;
+  background-color: #f1a981;
   position: sticky;
-  top: 5rem;
-  z-index: 2;
-  background: var(--aico-bg, #fff);
+  top: 5.5rem;
+  z-index: 5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .aico-preorder-group-title {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
+  color: #272727;
 }
-.aico-preorder-size-labels {
+.aico-preorder-group-sizes {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.35rem 0.5rem;
+  justify-content: flex-end;
 }
-.aico-preorder-size-label {
-  min-width: 2.5rem;
+.aico-preorder-group-size-pill {
+  min-width: 2rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: #64748b;
+  color: #454545;
 }
-.aico-preorder-product-row {
-  display: grid;
-  grid-template-columns: 5rem minmax(0, 1fr);
+.aico-preorder-product-card {
+  margin-bottom: 0.75rem;
+}
+.aico-preorder-product-card-inner {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1rem 1rem 0.75rem;
+}
+.aico-preorder-product-meta {
+  display: flex;
   gap: 1rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--aico-border, #e5e7eb);
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
 }
-.aico-preorder-product-row--list {
-  grid-template-columns: 4rem minmax(0, 1fr);
+.aico-preorder-product-media {
+  flex: 0 0 7.5rem;
+  max-width: 7.5rem;
 }
 .aico-preorder-product-media img {
   width: 100%;
   height: auto;
   object-fit: contain;
-  border-radius: 0.5rem;
-  background: #f8fafc;
+  border-radius: 4px;
+  background: #f5f5f5;
 }
 .aico-preorder-product-title {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.2rem;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: #272727;
 }
 .aico-preorder-product-sku {
-  margin: 0;
+  margin: 0 0 0.15rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: #9d9d9d;
 }
-.aico-preorder-product-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.75rem;
-}
-.aico-preorder-date-column {
-  min-width: 6rem;
-}
-.aico-preorder-date-label {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 0.35rem;
-}
-.aico-preorder-size-inputs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.aico-preorder-qty-field input {
-  width: 2.75rem;
-  padding: 0.35rem 0.25rem;
-  text-align: center;
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.375rem;
+.aico-preorder-product-price {
+  margin: 0;
   font-size: 0.8125rem;
+  font-weight: 600;
+  color: #272727;
+}
+.aico-preorder-matrix-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.aico-preorder-matrix {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) minmax(6.5rem, auto);
+  gap: 0.35rem 0.5rem;
+  align-items: start;
+  min-width: 32rem;
+}
+.aico-preorder-matrix-dates {
+  padding-top: 1.35rem;
+}
+.aico-preorder-matrix-date-label {
+  font-size: 0.6875rem;
+  line-height: 2.35rem;
+  color: #454545;
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+.aico-preorder-matrix-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.15rem;
+  overflow-x: auto;
+}
+.aico-preorder-size-column {
+  flex: 0 0 auto;
+  text-align: center;
+}
+.aico-preorder-size-column-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #9d9d9d;
+  margin-bottom: 0.25rem;
+  min-height: 1rem;
+}
+.aico-preorder-qty-input {
+  width: 47px;
+  max-width: 47px;
+  margin: 0 auto 0.35rem;
+  padding: 2px;
+  text-align: center;
+  font-size: 0.8125rem;
+  border-radius: 5px;
+  border: 1px solid #000;
+  color: #000;
+  background: #fff;
+}
+.aico-preorder-qty-input:focus {
+  outline: none;
+  box-shadow: 0 0 1px 2px #66b0bb;
+  border-color: transparent;
+}
+.aico-preorder-qty-input:disabled {
+  background: #e7e7e7;
+  border-color: #9d9d9d;
+  color: #9d9d9d;
+}
+.aico-preorder-matrix-row-totals {
+  padding-top: 1.35rem;
+}
+.aico-preorder-matrix-row-total {
+  font-size: 0.6875rem;
+  line-height: 2.35rem;
+  color: #454545;
+  white-space: nowrap;
+}
+.aico-preorder-product-total {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.75rem;
+  text-align: right;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #ffefe6;
+  border-radius: 0 0 6px 6px;
+  color: #272727;
 }
 .aico-preorder-load-more {
   text-align: center;
   font-size: 0.875rem;
-  color: #64748b;
+  color: #9d9d9d;
+  padding: 0.5rem;
 }
-.aico-preorder-summary {
-  padding: 1.25rem;
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
-  background: #f8fafc;
+.aico-preorder-flyers {
+  margin-top: 0.5rem;
 }
-.aico-preorder-summary-title {
-  margin: 0 0 1rem;
+.aico-preorder-flyers-title {
+  margin: 0 0 0.75rem;
   font-size: 1.125rem;
   font-weight: 700;
 }
-.aico-preorder-summary-actions {
+.aico-preorder-flyers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+.aico-preorder-flyer-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.aico-preorder-checkout-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+.aico-preorder-checkout-addresses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2rem;
+}
+@media (max-width: 640px) {
+  .aico-preorder-checkout-addresses {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder-checkout-address-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #007b8e;
+}
+.aico-preorder-checkout-address-value {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #272727;
+  line-height: 1.45;
+}
+.aico-preorder-checkout-divider {
+  border: none;
+  border-top: 1px dotted #e4e4e4;
+  margin: 1.25rem 0;
+}
+.aico-preorder-checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem 2rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .aico-preorder-checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder-summary-date-row {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+.aico-preorder-summary-date-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.aico-preorder-summary-date-row.is-disabled {
+  opacity: 0.45;
+}
+.aico-preorder-summary-date-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  color: #9d9d9d;
+}
+.aico-preorder-summary-date-body {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #272727;
+}
+.aico-preorder-checkout-totals-box {
+  background: #ffefe6;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+.aico-preorder-checkout-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #272727;
+}
+.aico-preorder-checkout-total-row .aico-preorder-summary-label {
+  font-size: 0.6875rem;
+  color: #9d9d9d;
+  margin: 0;
+}
+.aico-preorder-checkout-grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #272727;
+}
+.aico-preorder-checkout-grand-total .aico-preorder-grand-amount {
+  color: #e8702d;
+  font-size: 1.25rem;
+}
+.aico-preorder-checkout-grand-total .aico-preorder-grand-vat {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: #9d9d9d;
+}
+.aico-preorder-badge {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #66b0bb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.aico-preorder-checkout-alert {
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8125rem;
+  background: #fff8e6;
+  border: 1px solid #f1d592;
+  border-radius: 6px;
+  color: #7a5c00;
 }
 .aico-preorder-notes textarea {
   width: 100%;
   margin-top: 0.35rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--aico-border, #e5e7eb);
-  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #e4e4e4;
+  padding: 0.65rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
 }
 .aico-preorder-terms {
   display: flex;
   gap: 0.5rem;
   font-size: 0.8125rem;
-  margin: 0.75rem 0;
+  margin: 1rem 0 0.75rem;
+  align-items: flex-start;
+}
+.aico-preorder-terms a {
+  color: #007b8e;
+}
+.aico-preorder-checkout-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 640px) {
+  .aico-preorder-checkout-actions {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.aico-preorder-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.aico-preorder-btn-save {
+  background: #e4e4e4;
+  color: #272727;
+}
+.aico-preorder-btn-place {
+  background: #e8702d;
+  color: #fff;
+  grid-column: 1 / -1;
+}
+@media (min-width: 641px) {
+  .aico-preorder-btn-place {
+    grid-column: 2;
+  }
+  .aico-preorder-btn-save {
+    grid-column: 1;
+  }
+}
+.aico-preorder-summary-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #007b8e;
 }
 .aico-preorder-thank-you {
   padding: 3rem 1rem;
