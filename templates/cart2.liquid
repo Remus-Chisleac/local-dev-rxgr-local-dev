@@ -72,35 +72,47 @@
           <ul class="aico-cart-group-list">
             <template x-for="group in groupedItems()" :key="group.key">
               <li class="aico-cart-group"
-                  :class="{ 'aico-cart-group-invalid': groupHasInvalidLine(group) }">
-                <div class="aico-cart-group-header">
-                  <a class="aico-cart-line-image" :href="group.url || '#'">
+                  :class="{
+                    'aico-cart-group-invalid': groupHasInvalidLine(group),
+                    'aico-cart-group--open': isGroupOpen(group.key)
+                  }">
+                <button type="button"
+                        class="aico-cart-group-toggle"
+                        @click="toggleGroup(group.key)"
+                        :aria-expanded="isGroupOpen(group.key) ? 'true' : 'false'"
+                        :aria-controls="'aico-cart-group-panel-' + group.key">
+                  <span class="aico-cart-group-chevron" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                  </span>
+
+                  <span class="aico-cart-group-image">
                     <template x-if="group.image">
                       <img :src="group.image" :alt="group.title" loading="lazy">
                     </template>
                     <template x-if="!group.image">
-                      <span class="aico-cart-line-image-empty" aria-hidden="true"></span>
+                      <span class="aico-cart-group-image-empty" aria-hidden="true"></span>
                     </template>
-                  </a>
+                  </span>
 
-                  <div class="aico-cart-group-info">
-                    <a class="aico-cart-line-title" :href="group.url || '#'" x-text="group.title"></a>
-                    <p class="aico-cart-group-unit-price">
-                      <span x-text="$store.cart.formatMoney(group.price)"></span>
-                    </p>
-                  </div>
+                  <span class="aico-cart-group-info">
+                    <span class="aico-cart-group-title" x-text="group.title"></span>
+                    <span class="aico-cart-group-unit-price" x-text="$store.cart.formatMoney(group.price)"></span>
+                  </span>
 
-                  <div class="aico-cart-group-total">
-                    <span x-text="$store.cart.formatMoney(groupLineTotal(group))"></span>
-                  </div>
-                </div>
+                  <span class="aico-cart-group-total" x-text="$store.cart.formatMoney(groupLineTotal(group))"></span>
+                </button>
 
-                <div class="aico-cart-show-data" data-aico-show-data>
+                <div class="aico-cart-group-panel"
+                     :id="'aico-cart-group-panel-' + group.key"
+                     x-show="isGroupOpen(group.key)"
+                     x-cloak>
                   <template x-for="line in group.lines" :key="line.id">
                     <div class="aico-cart-size-row"
                          :class="{ 'aico-cart-size-row-invalid': !line.aico_is_valid || $store.cart.lineExceedsStock(line) }">
                       <div class="aico-cart-size-row-label">
-                        <span class="aico-cart-size-label" x-show="line.aico_variant_label" x-text="line.aico_variant_label"></span>
+                        <span class="aico-cart-size-label" x-text="lineSizeLabel(line, group)"></span>
                         <span class="aico-cart-line-meta aico-cart-line-sku" x-show="line.sku" x-text="line.sku"></span>
                       </div>
 
@@ -134,10 +146,6 @@
                         <template x-if="$store.cart.lineExceedsStock(line)">
                           <p class="aico-cart-line-stock-error" x-text="$store.cart.lineQuantityError(line)"></p>
                         </template>
-                      </div>
-
-                      <div class="aico-cart-size-row-total">
-                        <span x-text="$store.cart.formatMoney(line.line_price)"></span>
                       </div>
 
                       <button type="button"

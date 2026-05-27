@@ -1,9 +1,4 @@
-/* Grouped cart layout for templates/cart2.liquid.
- *
- * Collapses line items that share the same product_id into one card:
- * product image + title + unit price once, variant sizes in a single
- * show-data block below.
- */
+/* Grouped cart layout for templates/cart2.liquid. */
 (function () {
   'use strict';
 
@@ -39,10 +34,21 @@
   function registerGroupedCartPage() {
     Alpine.data('aicoCartGroupedPage', function () {
       return {
+        openGroups: {},
+
         groupedItems() {
           var cart = Alpine.store('cart');
           if (!cart || !cart.data || !Array.isArray(cart.data.items)) return [];
           return buildGroups(cart.data.items);
+        },
+
+        isGroupOpen(key) {
+          if (this.openGroups[key] === undefined) return true;
+          return !!this.openGroups[key];
+        },
+
+        toggleGroup(key) {
+          this.openGroups[key] = !this.isGroupOpen(key);
         },
 
         groupLineTotal(group) {
@@ -56,6 +62,17 @@
           return (group.lines || []).some(function (line) {
             return !line.aico_is_valid || (cart && cart.lineExceedsStock(line));
           });
+        },
+
+        lineSizeLabel(line, group) {
+          var label = (line && line.aico_variant_label) || '';
+          var title = (group && group.title) || '';
+          if (label && title && label.indexOf(title) === 0) {
+            var trimmed = label.slice(title.length).replace(/^[\s,–—-]+/, '').trim();
+            if (trimmed) return trimmed;
+          }
+          if (label) return label;
+          return (line && line.sku) || '';
         },
       };
     });

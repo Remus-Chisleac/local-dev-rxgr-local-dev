@@ -3696,48 +3696,104 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 .aico-cart-group {
   border: 1px solid var(--aico-border, #e5e7eb);
   border-radius: 0.625rem;
   overflow: hidden;
+  background: #fff;
 }
 .aico-cart-group-invalid {
   border-color: #fecaca;
-  background: rgba(254, 226, 226, 0.25);
 }
-.aico-cart-group-header {
-  display: grid;
-  grid-template-columns: 5rem minmax(0, 1fr) auto;
-  gap: 1rem;
+.aico-cart-group-toggle {
+  display: flex;
   align-items: center;
-  padding: 1rem;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 0;
   background: var(--aico-muted, #f9fafb);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.aico-cart-group-toggle:hover {
+  background: #f3f4f6;
+}
+.aico-cart-group--open .aico-cart-group-toggle {
   border-bottom: 1px solid var(--aico-border, #e5e7eb);
 }
-.aico-cart-group-info { min-width: 0; }
-.aico-cart-group-unit-price {
-  margin: 0.25rem 0 0;
-  font-weight: 500;
+.aico-cart-group-chevron {
+  flex: 0 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--aico-muted-fg, #6b7280);
+  transition: transform 0.15s ease;
+}
+.aico-cart-group--open .aico-cart-group-chevron {
+  transform: rotate(180deg);
+}
+.aico-cart-group-image {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-cart-group-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.aico-cart-group-image-empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--aico-skeleton, rgba(0, 0, 0, 0.06));
+}
+.aico-cart-group-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.aico-cart-group-title {
+  font-weight: 600;
   color: var(--aico-fg, #1a1a1a);
+  line-height: 1.35;
+}
+.aico-cart-group-unit-price {
+  font-size: 0.875rem;
+  color: var(--aico-muted-fg, #6b7280);
 }
 .aico-cart-group-total {
+  flex: 0 0 auto;
   font-weight: 600;
   font-size: 1rem;
-  text-align: right;
   white-space: nowrap;
+  margin-left: auto;
 }
-.aico-cart-show-data {
+.aico-cart-group-panel {
   display: flex;
   flex-direction: column;
 }
 .aico-cart-size-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto 2rem;
+  grid-template-columns: minmax(5rem, 1fr) auto 2rem;
   gap: 0.75rem 1rem;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
   border-bottom: 1px solid var(--aico-border, #e5e7eb);
 }
 .aico-cart-size-row:last-child { border-bottom: 0; }
@@ -3749,34 +3805,30 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   min-width: 0;
 }
 .aico-cart-size-label {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.9375rem;
   color: var(--aico-fg, #1a1a1a);
 }
 .aico-cart-size-row-qty { min-width: 9rem; }
-.aico-cart-size-row-total {
-  font-weight: 600;
-  text-align: right;
-  white-space: nowrap;
-}
 @media (max-width: 767px) {
-  .aico-cart-group-header {
-    grid-template-columns: 4rem minmax(0, 1fr);
-    grid-template-areas:
-      "image info"
-      "total total";
+  .aico-cart-group-toggle {
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
-  .aico-cart-group-header .aico-cart-line-image { grid-area: image; width: 4rem; height: 4rem; }
-  .aico-cart-group-info { grid-area: info; }
-  .aico-cart-group-total { grid-area: total; text-align: left; }
+  .aico-cart-group-total {
+    width: 100%;
+    padding-left: 2.75rem;
+    margin-left: 0;
+  }
   .aico-cart-size-row {
     grid-template-columns: 1fr auto;
     grid-template-areas:
-      "label total"
-      "qty remove";
+      "label remove"
+      "qty qty";
+    padding-left: 1rem;
   }
   .aico-cart-size-row-label { grid-area: label; }
   .aico-cart-size-row-qty { grid-area: qty; }
-  .aico-cart-size-row-total { grid-area: total; }
   .aico-cart-size-row .aico-cart-line-remove { grid-area: remove; }
 }
 
