@@ -379,7 +379,7 @@
   }
 
   function setupPreorderWorkflow(root, opts) {
-    if (!window.AicoPreorderCatalog || !window.AicoPreorderCart) return;
+    if (!window.AicoPreorderCatalog) return;
 
     var sessionData = null;
     var selectedDates = [];
@@ -417,6 +417,15 @@
     var termsCheckbox = root.querySelector('[data-aico-preorder-terms]');
     var notesEl = root.querySelector('[data-aico-preorder-notes]');
     var hasDirty = false;
+    var catalogReloadTimer = null;
+
+    function scheduleCatalogReload() {
+      if (!catalog) return;
+      clearTimeout(catalogReloadTimer);
+      catalogReloadTimer = setTimeout(function () {
+        catalog.reload();
+      }, 0);
+    }
 
     function buyerId() {
       return getSelectValue(root, 'delivery_address_id') || null;
@@ -498,8 +507,8 @@
       updateCheckoutVisibility();
       if (!productsOk) {
         clearCatalog();
-      } else if (catalog) {
-        catalog.reload();
+      } else {
+        scheduleCatalogReload();
       }
       if (addressesOk && cartEnabled && cartCtrl) {
         cartCtrl.fetchCart().catch(function () {});
@@ -981,9 +990,6 @@
       updateFlowState();
     });
     updateFlowState();
-    if (!shouldSkipProducts() && catalog) {
-      catalog.reload();
-    }
   }
 
   if (document.readyState === 'loading') {

@@ -13,11 +13,27 @@
 
   var PAGE_SIZE = 15;
 
+  function asArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'object') return Object.values(value);
+    return [];
+  }
+
   function mergeGroupedProducts(prev, result) {
     var newProducts = prev.slice();
     var groups = [];
-    if (result && result.data && Array.isArray(result.data)) {
-      groups = groupFlatProducts(result.data);
+    if (result && result.data) {
+      if (Array.isArray(result.data)) {
+        groups = groupFlatProducts(result.data);
+      } else if (result.data.products && Array.isArray(result.data.products)) {
+        groups = result.data.products.map(function (g) {
+          return {
+            optionGroupName: g.optionGroupName || 'Other',
+            items: asArray(g.items),
+          };
+        });
+      }
     } else if (Array.isArray(result)) {
       groups = groupFlatProducts(result);
     }
@@ -99,14 +115,23 @@
       credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     }).then(function (res) {
-      if (!res.ok) {
-        return res.json().catch(function () {
-          throw new Error('products_fetch_failed');
-        }).then(function (body) {
+      return res.text().then(function (text) {
+        var body = null;
+        if (text) {
+          try {
+            body = JSON.parse(text);
+          } catch (parseErr) {
+            throw new Error('products_invalid_json');
+          }
+        }
+        if (!res.ok) {
           throw new Error(body && body.error ? body.error : 'products_fetch_failed');
-        });
-      }
-      return res.json();
+        }
+        if (body && body.error && body.data == null) {
+          throw new Error(body.error);
+        }
+        return body || { data: [], meta: null };
+      });
     });
   }
 
@@ -345,17 +370,29 @@
       );
     });
 
-    return Promise.all(fetches)
-      .then(function (results) {
+    return Promise.allSettled(fetches)
+      .then(function (settlements) {
         if (generation !== self.loadGeneration) return;
         var merged = [];
         var pagination = {};
-        results.forEach(function (result, i) {
-          merged = mergeGroupedProducts(merged, result);
-          pagination[OPTION_GROUP_ORDER[i]] = {
-            currentPage: 1,
-            meta: result.meta || null,
-          };
+        var failures = 0;
+        settlements.forEach(function (settled, i) {
+          if (settled.status === 'fulfilled') {
+            var result = settled.value;
+            merged = mergeGroupedProducts(merged, result);
+            pagination[OPTION_GROUP_ORDER[i]] = {
+              currentPage: 1,
+              meta: result.meta || null,
+            };
+          } else {
+            failures += 1;
+            console.warn(
+              'preorder catalog: group fetch failed',
+              OPTION_GROUP_ORDER[i],
+              settled.reason,
+            );
+            pagination[OPTION_GROUP_ORDER[i]] = { currentPage: 1, meta: null };
+          }
         });
         self.products = merged;
         self.groupPagination = pagination;
@@ -364,8 +401,23 @@
           var m = pagination[name] && pagination[name].meta;
           return m && m.currentPage < m.lastPage;
         });
-        self.onProductsLoaded(self.products, self.preorderDates);
-        self.render();
+        if (!merged.length && failures > 0) {
+          self.showError(true);
+          return;
+        }
+        self.showError(false);
+        try {
+          self.onProductsLoaded(self.products, self.preorderDates);
+        } catch (hookErr) {
+          console.error('preorder catalog: onProductsLoaded', hookErr);
+        }
+        try {
+          self.render();
+        } catch (renderErr) {
+          console.error('preorder catalog: render', renderErr);
+          self.showError(true);
+          return;
+        }
         if (self.hasMore) self.loadMore();
       })
       .catch(function (err) {
@@ -434,6 +486,9 @@
         self.onProductsLoaded(self.products, self.preorderDates);
         self.render();
         if (self.hasMore) return self.loadMore();
+      })
+      .catch(function (err) {
+        console.warn('preorder catalog: loadMore failed', err);
       })
       .finally(function () {
         if (generation === self.loadGeneration) {

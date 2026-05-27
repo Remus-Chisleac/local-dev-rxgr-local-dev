@@ -9,6 +9,13 @@
     qty: {},
   };
 
+  function asArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'object') return Object.values(value);
+    return [];
+  }
+
   function normalizeDateKey(dateLabel) {
     try {
       var d = new Date(dateLabel);
@@ -21,14 +28,14 @@
 
   function setSizeStockFromProducts(productGroups) {
     var map = {};
-    productGroups.forEach(function (group) {
-      group.items.forEach(function (product) {
+    asArray(productGroups).forEach(function (group) {
+      asArray(group && group.items).forEach(function (product) {
         var productId = product.id;
         if (!map[productId]) map[productId] = {};
-        (product.preorderStockData || []).forEach(function (dateRow) {
+        asArray(product.preorderStockData).forEach(function (dateRow) {
           var dateKey = normalizeDateKey(dateRow.date);
-          (dateRow.data || []).forEach(function (dataRow) {
-            (dataRow.stocks || []).forEach(function (stock) {
+          asArray(dateRow.data).forEach(function (dataRow) {
+            asArray(dataRow.stocks).forEach(function (stock) {
               var variantId = stock.variantId;
               if (!variantId) return;
               if (!map[productId][variantId]) map[productId][variantId] = {};
