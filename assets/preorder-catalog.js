@@ -30,7 +30,7 @@
       '">' +
       '<span class="aico-preorder-size-box__inner">' +
       '<span class="aico-preorder-size-box__label">' +
-      escapeHtml(label) +
+      formatSizeLabelHtml(label) +
       '</span>' +
       '<span class="aico-preorder-size-box__qty">' +
       '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
@@ -278,6 +278,15 @@
     return String(label)
       .replace(/ 1\/3/g, ' \u2153')
       .replace(/ 2\/3/g, ' \u2154');
+  }
+
+  function formatSizeLabelHtml(label) {
+    var formatted = formatSizeLabel(label);
+    var parts = formatted.match(/^(\d+(?:[.,]\d+)?)\s*([\u2153\u2154])?$/);
+    if (!parts) return escapeHtml(formatted);
+    var whole = escapeHtml(parts[1]);
+    if (!parts[2]) return whole;
+    return whole + '<span class="aico-preorder-size-frac">' + parts[2] + '</span>';
   }
 
   function getCountryLabel(charts, optionGroupName, region, option) {
