@@ -348,7 +348,8 @@
     },
     "flyers": {
       "section_aria": "Flyers",
-      "title": "Flyers"
+      "title": "Choose your flyers",
+      "total": "Total"
     },
     "summary": {
       "section_aria": "Order summary",

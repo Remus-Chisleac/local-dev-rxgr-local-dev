@@ -4,6 +4,14 @@
 (function () {
   'use strict';
 
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   function readStored(storageKey) {
     try {
       return JSON.parse(localStorage.getItem(storageKey) || '{}');
@@ -787,6 +795,70 @@
         .catch(function () {});
     }
 
+    var PCS_PER_FLYER = 25;
+    var flyerQtyLocal = {};
+    var flyerDebounceTimers = {};
+
+    function getFlyerCopy() {
+      return {
+        total:
+          root.getAttribute('data-aico-preorder-copy-flyer-total') || 'Total',
+        pcs: root.getAttribute('data-aico-preorder-copy-pcs') || 'STK',
+      };
+    }
+
+    function getFlyerQuantity(flyerId) {
+      if (cartEnabled && cartCtrl) {
+        return cartCtrl.getFlyerQuantity(flyerId);
+      }
+      return flyerQtyLocal[flyerId] || 0;
+    }
+
+    function setFlyerQuantity(flyerId, quantity) {
+      if (cartEnabled && cartCtrl) {
+        cartCtrl.updateFlyerQuantity(flyerId, quantity);
+        return;
+      }
+      flyerQtyLocal[flyerId] = quantity;
+      renderFlyers(sessionData && sessionData.flyers);
+    }
+
+    function updateFlyerCardTotals(card, quantity) {
+      var totalEl = card.querySelector('[data-aico-preorder-flyer-total]');
+      if (totalEl) {
+        var copy = getFlyerCopy();
+        totalEl.textContent =
+          copy.total + ': ' + PCS_PER_FLYER * quantity + ' ' + copy.pcs;
+      }
+    }
+
+    function bindFlyerSliders() {
+      var grid = root.querySelector('[data-aico-preorder-flyers-grid]');
+      if (!grid) return;
+      grid.querySelectorAll('[data-aico-preorder-flyer-range]').forEach(function (range) {
+        function syncTrack() {
+          range.style.setProperty('--flyer-value', String(range.value));
+        }
+        syncTrack();
+        range.addEventListener('input', function () {
+          syncTrack();
+          var card = range.closest('[data-aico-preorder-flyer-card]');
+          var qty = parseInt(range.value, 10) || 0;
+          if (card) updateFlyerCardTotals(card, qty);
+        });
+        range.addEventListener('change', function () {
+          var flyerId = parseInt(range.getAttribute('data-flyer-id'), 10);
+          var qty = parseInt(range.value, 10) || 0;
+          if (flyerDebounceTimers[flyerId]) {
+            clearTimeout(flyerDebounceTimers[flyerId]);
+          }
+          flyerDebounceTimers[flyerId] = setTimeout(function () {
+            setFlyerQuantity(flyerId, qty);
+          }, 300);
+        });
+      });
+    }
+
     function renderFlyers(flyers) {
       var section = root.querySelector('[data-aico-preorder-flyers]');
       var grid = root.querySelector('[data-aico-preorder-flyers-grid]');
@@ -794,17 +866,52 @@
         if (section) section.hidden = true;
         return;
       }
+      var copy = getFlyerCopy();
       section.hidden = false;
       grid.innerHTML = flyers
         .map(function (f) {
-          var title = f.name || f.webName || f.sku || '';
+          var flyerId = f.id;
+          var title = f.title || f.name || f.webName || f.sku || '';
+          var sku = f.sku || '';
+          var qty = getFlyerQuantity(flyerId);
+          var totalPcs = PCS_PER_FLYER * qty;
+          var marks = '';
+          for (var i = 0; i <= 5; i++) {
+            marks += '<span>' + i + '</span>';
+          }
           return (
-            '<div class="aico-preorder-flyer-card"><span>' +
-            title +
-            '</span></div>'
+            '<article class="aico-preorder-flyer-card" data-aico-preorder-flyer-card data-flyer-id="' +
+            flyerId +
+            '">' +
+            '<header class="aico-preorder-flyer-card__head">' +
+            '<h4 class="aico-preorder-flyer-card__title">' +
+            escapeHtml(title) +
+            '</h4>' +
+            '<p class="aico-preorder-flyer-card__total" data-aico-preorder-flyer-total>' +
+            escapeHtml(copy.total + ': ' + totalPcs + ' ' + copy.pcs) +
+            '</p>' +
+            '</header>' +
+            (sku
+              ? '<p class="aico-preorder-flyer-card__sku">' + escapeHtml(sku) + '</p>'
+              : '') +
+            '<div class="aico-preorder-flyer-slider">' +
+            '<input type="range" class="aico-preorder-flyer-range" data-aico-preorder-flyer-range data-flyer-id="' +
+            flyerId +
+            '" min="0" max="5" step="1" value="' +
+            qty +
+            '" style="--flyer-value:' +
+            qty +
+            '" aria-label="' +
+            escapeHtml(title) +
+            '">' +
+            '<div class="aico-preorder-flyer-marks">' +
+            marks +
+            '</div>' +
+            '</div></article>'
           );
         })
         .join('');
+      bindFlyerSliders();
     }
 
     catalog = new window.AicoPreorderCatalog.CatalogController({
@@ -912,6 +1019,7 @@
         },
         onCartUpdated: function () {
           if (catalog) catalog.render();
+          renderFlyers(sessionData && sessionData.flyers);
           updateSummary();
         },
         onDirtyChange: function (dirty) {

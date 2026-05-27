@@ -218,7 +218,53 @@
         return it.shouldUpdate;
       });
     });
-    return dirty;
+    if (dirty) return true;
+    if (this.localCart.flyers && this.localCart.flyers.shouldUpdate) {
+      return (this.localCart.flyers.preorderItems || []).some(function (it) {
+        return it.shouldUpdate;
+      });
+    }
+    return false;
+  };
+
+  CartController.prototype.getFlyerQuantity = function (flyerId) {
+    if (!this.localCart || !this.localCart.flyers) return 0;
+    var item = (this.localCart.flyers.preorderItems || []).find(function (it) {
+      return it.productId === flyerId;
+    });
+    return item ? item.quantity || 0 : 0;
+  };
+
+  CartController.prototype.updateFlyerQuantity = function (flyerId, quantity) {
+    if (!this.localCart) {
+      this.localCart = mapCartToItemList(null, []);
+    }
+    quantity = Math.max(0, Math.min(5, Math.floor(quantity) || 0));
+    if (!this.localCart.flyers) {
+      this.localCart.flyers = {
+        id: null,
+        preorderDate: new Date().toISOString(),
+        preorderItems: [],
+      };
+    }
+    this.localCart.flyers.shouldUpdate = true;
+    var items = this.localCart.flyers.preorderItems;
+    var idx = items.findIndex(function (it) {
+      return it.productId === flyerId;
+    });
+    if (idx >= 0) {
+      items[idx].quantity = quantity;
+      items[idx].shouldUpdate = true;
+    } else {
+      items.push({
+        productId: flyerId,
+        productVariantId: null,
+        quantity: quantity,
+        shouldUpdate: true,
+      });
+    }
+    this.onDirtyChange(this.hasDirty());
+    this.onCartUpdated(this.serverCart, this.localCart);
   };
 
   CartController.prototype.filterDirtyPayload = function () {
@@ -292,6 +338,12 @@
         it.shouldUpdate = false;
       });
     });
+    if (this.localCart.flyers) {
+      this.localCart.flyers.shouldUpdate = false;
+      (this.localCart.flyers.preorderItems || []).forEach(function (it) {
+        it.shouldUpdate = false;
+      });
+    }
     this.onDirtyChange(false);
   };
 

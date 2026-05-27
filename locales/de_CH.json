@@ -348,7 +348,8 @@
     },
     "flyers": {
       "section_aria": "Flyer",
-      "title": "Flyer"
+      "title": "Wählen Sie Ihre Flyer aus",
+      "total": "Gesamt"
     },
     "summary": {
       "section_aria": "Bestellübersicht",
