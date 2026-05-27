@@ -189,7 +189,7 @@
   }
 
   function initPreorderPage() {
-    var root = document.querySelector('[data-aico-preorder2]');
+    var root = document.querySelector('[data-aico-preorder]');
     if (!root) return;
 
     function intAttr(element, name) {
@@ -462,10 +462,10 @@
 
     function getTotalCartQty() {
       var total = 0;
-      if (window.AicoPreorder2Stock && catalog && catalog.products) {
+      if (window.AicoPreorderStock && catalog && catalog.products) {
         catalog.products.forEach(function (group) {
           group.items.forEach(function (p) {
-            total += window.AicoPreorder2Stock.getTotalPerProduct(p.id) || 0;
+            total += window.AicoPreorderStock.getTotalPerProduct(p.id) || 0;
           });
         });
         if (total > 0) return total;
@@ -603,10 +603,10 @@
 
     function getQtyForDate(dateLabel) {
       var total = 0;
-      if (window.AicoPreorder2Stock && catalog && catalog.products) {
+      if (window.AicoPreorderStock && catalog && catalog.products) {
         catalog.products.forEach(function (group) {
           group.items.forEach(function (p) {
-            total += window.AicoPreorder2Stock.getRowTotal(p.id, dateLabel) || 0;
+            total += window.AicoPreorderStock.getRowTotal(p.id, dateLabel) || 0;
           });
         });
         if (total > 0) return total;
@@ -944,8 +944,8 @@
         return cartEnabled && cartCtrl ? cartCtrl.localCart : null;
       },
       onProductsLoaded: function (products, dates) {
-        if (window.AicoPreorder2Stock) {
-          window.AicoPreorder2Stock.setSizeStockFromProducts(products);
+        if (window.AicoPreorderStock) {
+          window.AicoPreorderStock.setSizeStockFromProducts(products);
         }
         renderDateChips(dates);
         if (sessionData && cartCtrl && cartCtrl.serverCart) {
@@ -962,7 +962,7 @@
           });
           payloads.forEach(function (p) {
             if (p.productId && p.variantId) {
-              window.AicoPreorder2Stock.adjustStock(
+              window.AicoPreorderStock.adjustStock(
                 p.productId,
                 p.variantId,
                 p.date,
@@ -973,8 +973,8 @@
         }
       },
       onQuantityChange: function (productId, variantId, dateLabel, qty, product) {
-        if (window.AicoPreorder2Stock) {
-          window.AicoPreorder2Stock.adjustStock(
+        if (window.AicoPreorderStock) {
+          window.AicoPreorderStock.adjustStock(
             productId,
             variantId,
             dateLabel,
@@ -1000,7 +1000,7 @@
     }
 
     if (cartEnabled) {
-      cartCtrl = new window.AicoPreorder2Cart.CartController({
+      cartCtrl = new window.AicoPreorderCart.CartController({
         cartUrl: root.getAttribute('data-aico-preorder-cart-url'),
         statusUrl: root.getAttribute('data-aico-preorder-cart-status-url'),
         itemsUrl: root.getAttribute('data-aico-preorder-cart-items-url'),

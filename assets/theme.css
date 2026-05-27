@@ -4898,4 +4898,160 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin-top: 1.5rem;
 }
 
-/* Preorder2 layout lives in assets/preorder2.css (loaded only on /preorder2). */
+/* Preorder2 — sizes in sticky teal category header, qty-only matrix cells */
+.aico-preorder2 .aico-preorder2-group {
+  overflow: visible;
+}
+.aico-preorder2 .aico-preorder2-group-head {
+  position: sticky;
+  top: var(--aico-chrome-height, 5.75rem);
+  z-index: 6;
+  margin: 0;
+  background: #66b0bb;
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.aico-preorder2-group-title-bar {
+  padding: 0.5rem 0.75rem 0.45rem;
+}
+.aico-preorder2-group-title-bar .aico-preorder-group-title {
+  margin: 0 0 0.4rem;
+  padding: 0 0.25rem;
+}
+.aico-preorder2-group-size-row,
+.aico-preorder2-product-grid {
+  display: grid;
+  grid-template-columns:
+    var(--aico-preorder2-aside-w, 8.25rem)
+    var(--aico-preorder2-date-w, 4.5rem)
+    minmax(0, 1fr)
+    var(--aico-preorder2-total-w, 6.75rem);
+  column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
+  align-items: center;
+}
+.aico-preorder2-group-size-row {
+  padding: 0 0 0.4rem;
+  align-items: end;
+}
+.aico-preorder2-product-grid {
+  padding: 0.75rem;
+  row-gap: 0.5rem;
+}
+.aico-preorder2-product-aside {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
+}
+.aico-preorder2-matrix-total-head {
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+.aico-preorder2-group-size-row .aico-preorder-matrix-scroll {
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.aico-preorder2 .aico-preorder-matrix-row-total {
+  text-align: right;
+}
+.aico-preorder2-size-head {
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
+  max-width: var(--aico-preorder2-cell-w, 4.25rem);
+  padding: 0 0.15rem;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #fff;
+  box-sizing: border-box;
+}
+.aico-preorder2-size-head .aico-preorder-size-frac {
+  font-size: 12px;
+  font-weight: 600;
+}
+.aico-preorder2-qty-box {
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
+  max-width: var(--aico-preorder2-cell-w, 4.25rem);
+  box-sizing: border-box;
+}
+.aico-preorder2-qty-box--empty {
+  flex: 0 0 var(--aico-preorder2-cell-w, 4.25rem);
+  width: var(--aico-preorder2-cell-w, 4.25rem);
+  min-height: 1.875rem;
+  visibility: hidden;
+}
+.aico-preorder2-qty-box__inner {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 1.875rem;
+  border-radius: 0.4375rem;
+  background: #f0f0f0;
+  border: 1px solid #d4d4d4;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.aico-preorder2-qty-box--filled .aico-preorder2-qty-box__inner {
+  border-color: transparent;
+  box-shadow: 0 0 1px 2px #66b0bb;
+}
+.aico-preorder2-qty-box--disabled .aico-preorder2-qty-box__inner {
+  background: #e0e0e0;
+  border-color: #c8c8c8;
+}
+.aico-preorder2-qty-box__spinners {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 12px;
+  width: 12px;
+  border-left: 1px solid #d8d8d8;
+}
+.aico-preorder2-qty-box__step {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #f0f0f0;
+  color: #5a5a5a;
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-preorder2-qty-box__step svg {
+  width: 7px;
+  height: 4px;
+}
+.aico-preorder2-qty-box__step:hover:not(:disabled) {
+  background: #e4e4e4;
+}
+.aico-preorder2-qty-box__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.aico-preorder2-qty-box__step + .aico-preorder2-qty-box__step {
+  border-top: 1px solid #d8d8d8;
+}
+.aico-preorder2-qty-box__inner .aico-preorder-qty-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0 0.15rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  border: 0;
+  background: transparent;
+  -moz-appearance: textfield;
+}
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9d9d9d #e7e7e7;
+}
+.aico-preorder2 .aico-preorder2-group .aico-preorder-matrix-row--scroll::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
