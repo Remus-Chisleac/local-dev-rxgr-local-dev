@@ -367,8 +367,50 @@
     this.showLoading(true);
     this.showError(false);
 
-    var fetches = OPTION_GROUP_ORDER.map(function (groupName) {
-      return fetchProductsJson(
+    var failures = 0;
+    var completed = 0;
+    var totalGroups = OPTION_GROUP_ORDER.length;
+
+    function hasAnyItems() {
+      return self.products.some(function (g) {
+        return asArray(g && g.items).length > 0;
+      });
+    }
+
+    function displayCatalog() {
+      try {
+        self.onProductsLoaded(self.products, self.preorderDates);
+        self.render();
+      } catch (err) {
+        console.error('preorder catalog: display', err);
+        self.showError(true);
+      }
+    }
+
+    function finishGroup() {
+      completed += 1;
+      if (generation !== self.loadGeneration) return;
+      if (hasAnyItems()) {
+        self.showError(false);
+        self.showLoading(false);
+      }
+      if (completed < totalGroups) return;
+      self.loading = false;
+      if (!hasAnyItems()) {
+        self.showError(failures > 0);
+      }
+      self.hasMore =
+        self.autoLoadMore &&
+        OPTION_GROUP_ORDER.some(function (name) {
+          return groupHasMorePages(self.groupPagination[name]);
+        });
+      if (self.autoLoadMore && self.hasMore) {
+        self.loadMore();
+      }
+    }
+
+    OPTION_GROUP_ORDER.forEach(function (groupName) {
+      fetchProductsJson(
         buildProductsUrl(self.productsUrl, {
           buyerAddressId: buyerAddressId,
           debtorId: debtorId,
@@ -376,72 +418,28 @@
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
         }),
-      );
+      )
+        .then(function (result) {
+          if (generation !== self.loadGeneration) return;
+          self.products = mergeGroupedProducts(self.products, result);
+          self.groupPagination[groupName] = {
+            currentPage: 1,
+            meta: result.meta || null,
+          };
+          self.preorderDates = extractDatesFromProducts(self.products);
+          displayCatalog();
+          finishGroup();
+        })
+        .catch(function (err) {
+          if (generation !== self.loadGeneration) return;
+          failures += 1;
+          console.warn('preorder catalog: group fetch failed', groupName, err);
+          self.groupPagination[groupName] = { currentPage: 1, meta: null };
+          finishGroup();
+        });
     });
 
-    return Promise.allSettled(fetches)
-      .then(function (settlements) {
-        if (generation !== self.loadGeneration) return;
-        var merged = [];
-        var pagination = {};
-        var failures = 0;
-        settlements.forEach(function (settled, i) {
-          if (settled.status === 'fulfilled') {
-            var result = settled.value;
-            merged = mergeGroupedProducts(merged, result);
-            pagination[OPTION_GROUP_ORDER[i]] = {
-              currentPage: 1,
-              meta: result.meta || null,
-            };
-          } else {
-            failures += 1;
-            console.warn(
-              'preorder catalog: group fetch failed',
-              OPTION_GROUP_ORDER[i],
-              reason,
-            );
-            pagination[OPTION_GROUP_ORDER[i]] = { currentPage: 1, meta: null };
-          }
-        });
-        if (generation !== self.loadGeneration) return;
-        var anyItems = merged.some(function (g) {
-          return asArray(g && g.items).length > 0;
-        });
-        if (!anyItems) {
-          self.products = [];
-          self.showError(failures > 0);
-          return;
-        }
-        self.products = merged;
-        self.groupPagination = pagination;
-        self.preorderDates = extractDatesFromProducts(merged);
-        self.hasMore = self.autoLoadMore && OPTION_GROUP_ORDER.some(function (name) {
-          return groupHasMorePages(pagination[name]);
-        });
-        self.showError(false);
-        try {
-          self.onProductsLoaded(self.products, self.preorderDates);
-          self.render();
-        } catch (err) {
-          console.error('preorder catalog: display', err);
-          self.showError(true);
-          return;
-        }
-        if (self.autoLoadMore && self.hasMore) {
-          self.loadMore();
-        }
-      })
-      .catch(function (err) {
-        if (generation !== self.loadGeneration) return;
-        console.error('preorder catalog:', err);
-        self.showError(true);
-      })
-      .finally(function () {
-        if (generation === self.loadGeneration) {
-          self.loading = false;
-          self.showLoading(false);
-        }
-      });
+    return Promise.resolve();
   };
 
   CatalogController.prototype.loadMore = function () {
@@ -564,12 +562,13 @@
       var sizeValues = collectGroupSizeValues(items);
 
       html += '<section class="aico-preorder-group" data-aico-preorder-group>';
+      html += '<header class="aico-preorder-group-header">';
       html +=
-        '<header class="aico-preorder-group-header"><h3 class="aico-preorder-group-title">' +
+        '<h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
       if (sizeValues.length) {
-        html += '<div class="aico-preorder-group-sizes" aria-hidden="true">';
+        html += '<div class="aico-preorder-group-sizes">';
         sizeValues.forEach(function (opt) {
           html +=
             '<span class="aico-preorder-group-size-pill">' +
@@ -577,6 +576,10 @@
             '</span>';
         });
         html += '</div>';
+        html +=
+          '<span class="aico-preorder-matrix-head-total">' +
+          escapeHtml(copy.rowTotal || 'Total Input') +
+          '</span>';
       }
       html += '</header>';
 
@@ -644,20 +647,21 @@
 
     html += '<div class="aico-preorder-matrix-wrap">';
     html += '<div class="aico-preorder-matrix">';
-    html += '<div class="aico-preorder-matrix-dates">';
-    dates.forEach(function (dateLabel) {
-      html += '<div class="aico-preorder-matrix-date-label">' + escapeHtml(dateLabel) + '</div>';
-    });
-    html += '</div>';
 
-    html += '<div class="aico-preorder-matrix-grid">';
-    sizeValues.forEach(function (optVal) {
-      var variant = getVariantForOption(product, optVal);
-      if (!variant) return;
-      var label = getCountryLabel(charts, optionGroupName, region, optVal);
-      html += '<div class="aico-preorder-size-column">';
-      html += '<div class="aico-preorder-size-column-label">' + escapeHtml(label) + '</div>';
-      dates.forEach(function (dateLabel) {
+    dates.forEach(function (dateLabel) {
+      html += '<div class="aico-preorder-matrix-row">';
+      html +=
+        '<div class="aico-preorder-matrix-date">' +
+        escapeHtml(dateLabel) +
+        '</div>';
+      html += '<div class="aico-preorder-matrix-cells">';
+      sizeValues.forEach(function (optVal) {
+        var variant = getVariantForOption(product, optVal);
+        if (!variant) {
+          html += '<span class="aico-preorder-matrix-cell aico-preorder-matrix-cell-empty"></span>';
+          return;
+        }
+        var label = getCountryLabel(charts, optionGroupName, region, optVal);
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
         var maxAttr = '';
         if (isStockRelevant && global.AicoPreorderStock && global.AicoPreorderStock.getMaxQuantity) {
@@ -668,6 +672,7 @@
           );
           if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
         }
+        html += '<span class="aico-preorder-matrix-cell">';
         html +=
           '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
           qty +
@@ -682,13 +687,9 @@
           '" aria-label="' +
           escapeHtml(label + ' ' + dateLabel) +
           '">';
+        html += '</span>';
       });
       html += '</div>';
-    });
-    html += '</div>';
-
-    html += '<div class="aico-preorder-matrix-row-totals">';
-    dates.forEach(function (dateLabel) {
       var rowTotal = rowTotalForDate(product.id, dateLabel);
       html +=
         '<div class="aico-preorder-matrix-row-total">' +
@@ -696,8 +697,10 @@
         ': <strong>' +
         rowTotal +
         '</strong></div>';
+      html += '</div>';
     });
-    html += '</div></div></div>';
+
+    html += '</div></div>';
 
     html +=
       '<p class="aico-preorder-product-total">' +

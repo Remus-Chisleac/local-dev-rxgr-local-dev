@@ -4104,14 +4104,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin-bottom: 1.5rem;
 }
 .aico-preorder-group-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr) minmax(6.5rem, auto);
+  gap: 0.35rem 0.5rem;
+  align-items: end;
+  margin-bottom: 0;
   padding: 0.65rem 1rem;
-  border-radius: 4px;
+  border-radius: 4px 4px 0 0;
   background-color: #f1a981;
   position: sticky;
   top: 5.5rem;
@@ -4123,19 +4122,38 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 1.0625rem;
   font-weight: 700;
   color: #272727;
+  grid-column: 1;
 }
 .aico-preorder-group-sizes {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.5rem;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 11px;
+  justify-content: flex-start;
+  padding-left: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  grid-column: 2;
 }
 .aico-preorder-group-size-pill {
-  min-width: 2rem;
+  flex: 0 0 47px;
+  width: 47px;
   text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #454545;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aico-preorder-group-header .aico-preorder-matrix-head-total {
+  grid-column: 3;
+  text-align: right;
   font-size: 0.6875rem;
   font-weight: 600;
   color: #454545;
+}
+.aico-preorder-group .aico-preorder-product-card-inner {
+  border-radius: 0 0 8px 8px;
 }
 .aico-preorder-product-card {
   margin-bottom: 0.75rem;
@@ -4185,43 +4203,60 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   -webkit-overflow-scrolling: touch;
 }
 .aico-preorder-matrix {
+  min-width: min(100%, 28rem);
+}
+.aico-preorder-matrix-head,
+.aico-preorder-matrix-row {
   display: grid;
-  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) minmax(6.5rem, auto);
+  grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr) minmax(6.5rem, auto);
   gap: 0.35rem 0.5rem;
-  align-items: start;
-  min-width: 32rem;
+  align-items: center;
 }
-.aico-preorder-matrix-dates {
-  padding-top: 1.35rem;
+.aico-preorder-matrix-head {
+  margin-bottom: 0.35rem;
 }
-.aico-preorder-matrix-date-label {
-  font-size: 0.6875rem;
-  line-height: 2.35rem;
-  color: #454545;
-  margin-bottom: 0.15rem;
-  white-space: nowrap;
+.aico-preorder-matrix-head-date {
+  min-height: 1rem;
 }
-.aico-preorder-matrix-grid {
+.aico-preorder-matrix-head-sizes,
+.aico-preorder-matrix-cells {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.15rem;
+  gap: 11px;
+  padding-left: 6px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.aico-preorder-size-column {
-  flex: 0 0 auto;
+.aico-preorder-matrix-size-label {
+  flex: 0 0 47px;
+  width: 47px;
   text-align: center;
-}
-.aico-preorder-size-column-label {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #9d9d9d;
-  margin-bottom: 0.25rem;
-  min-height: 1rem;
+  color: #454545;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aico-preorder-matrix-date {
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: #454545;
+  white-space: nowrap;
+}
+.aico-preorder-matrix-cell {
+  flex: 0 0 47px;
+  width: 47px;
+  display: flex;
+  justify-content: center;
+}
+.aico-preorder-matrix-cell-empty {
+  visibility: hidden;
 }
 .aico-preorder-qty-input {
   width: 47px;
   max-width: 47px;
-  margin: 0 auto 0.35rem;
+  margin: 0;
   padding: 2px;
   text-align: center;
   font-size: 0.8125rem;
@@ -4229,6 +4264,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border: 1px solid #000;
   color: #000;
   background: #fff;
+  box-sizing: border-box;
 }
 .aico-preorder-qty-input:focus {
   outline: none;
@@ -4240,14 +4276,15 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-color: #9d9d9d;
   color: #9d9d9d;
 }
-.aico-preorder-matrix-row-totals {
-  padding-top: 1.35rem;
-}
+.aico-preorder-matrix-head-total,
 .aico-preorder-matrix-row-total {
   font-size: 0.6875rem;
-  line-height: 2.35rem;
   color: #454545;
   white-space: nowrap;
+  text-align: right;
+}
+.aico-preorder-matrix-row {
+  margin-bottom: 0.35rem;
 }
 .aico-preorder-product-total {
   margin: 0.5rem 0 0;

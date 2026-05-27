@@ -925,11 +925,12 @@
       select.addEventListener('change', function () {
         var key = select.getAttribute('data-aico-preorder-select');
         if (key === 'billing_address_id' || key === 'delivery_address_id') {
-          updateFlowState();
           if (addressesReady()) {
             fetchSession().then(function () {
               updateFlowState();
             });
+          } else {
+            updateFlowState();
           }
           return;
         }
@@ -989,7 +990,6 @@
     fetchSession().then(function () {
       updateFlowState();
     });
-    updateFlowState();
   }
 
   if (document.readyState === 'loading') {
