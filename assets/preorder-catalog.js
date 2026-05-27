@@ -845,14 +845,23 @@
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
         var maxAttr = '';
         var disabled = false;
-        if (isStockRelevant && global.AicoPreorderStock && global.AicoPreorderStock.getMaxQuantity) {
-          var max = global.AicoPreorderStock.getMaxQuantity(
-            product.id,
-            variant.id,
-            dateLabel,
-          );
-          if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
-          if (max <= 0) disabled = true;
+        if (isStockRelevant && global.AicoPreorderStock) {
+          if (global.AicoPreorderStock.isCellEnabled) {
+            disabled = !global.AicoPreorderStock.isCellEnabled(
+              product.id,
+              variant.id,
+              dateLabel,
+              true,
+            );
+          }
+          if (global.AicoPreorderStock.getMaxQuantity) {
+            var max = global.AicoPreorderStock.getMaxQuantity(
+              product.id,
+              variant.id,
+              dateLabel,
+            );
+            if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
+          }
         }
         html += renderQtyInput({
           ariaLabel: label + ' ' + dateLabel,
@@ -895,15 +904,17 @@
   };
 
   CatalogController.prototype.getQuantity = function (productId, variantId, dateLabel) {
-    if (global.AicoPreorderStock && global.AicoPreorderStock.getQuantity) {
-      var cart = this.getCartState();
-      if (!cart || !cart.preorderItemLists) {
-        return global.AicoPreorderStock.getQuantity(
-          productId,
-          variantId,
-          dateLabel,
-        );
-      }
+    var session = this.getSession() || {};
+    if (
+      session.isStockRelevant &&
+      global.AicoPreorderStock &&
+      global.AicoPreorderStock.getQuantity
+    ) {
+      return global.AicoPreorderStock.getQuantity(
+        productId,
+        variantId,
+        dateLabel,
+      );
     }
     var cart = this.getCartState();
     if (!cart || !cart.preorderItemLists) return 0;
@@ -937,13 +948,32 @@
       var productId = parseInt(input.getAttribute('data-product-id'), 10);
       var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
       var dateLabel = input.getAttribute('data-date');
-      var qty = parseInt(input.value, 10);
-      if (isNaN(qty) || qty < 0) qty = 0;
-      var max = input.max ? parseInt(input.max, 10) : 10000;
-      if (!isNaN(max) && qty > max) qty = max;
-      input.value = qty > 0 ? String(qty) : '';
+      var session = self.getSession() || {};
+      var isStockRelevant = !!session.isStockRelevant;
+      var raw = input.value === '' ? 0 : parseInt(input.value, 10);
+      var max = input.max ? parseInt(input.max, 10) : null;
+      var qty = raw;
+      if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
+        qty = global.AicoPreorderStock.clampQuantity(raw, max, isStockRelevant);
+      } else {
+        if (isNaN(qty) || qty < 0) qty = 0;
+        if (!isNaN(max) && qty > max) qty = max;
+        qty = Math.min(10000, qty);
+      }
       var product = self.findProduct(productId);
       self.onQuantityChange(productId, variantId, dateLabel, qty, product);
+      if (
+        isStockRelevant &&
+        global.AicoPreorderStock &&
+        global.AicoPreorderStock.getQuantity
+      ) {
+        qty = global.AicoPreorderStock.getQuantity(
+          productId,
+          variantId,
+          dateLabel,
+        );
+      }
+      input.value = qty > 0 ? String(qty) : '';
       self.render();
     }
 
@@ -964,9 +994,16 @@
         var input = control && control.querySelector('[data-aico-preorder-qty]');
         if (!input || input.disabled) return;
         var step = parseInt(btn.getAttribute('data-aico-preorder-qty-step'), 10) || 0;
+        var session = self.getSession() || {};
+        var isStockRelevant = !!session.isStockRelevant;
         var qty = parseInt(input.value, 10) || 0;
-        var max = input.max ? parseInt(input.max, 10) : 10000;
-        qty = Math.max(0, Math.min(isNaN(max) ? 10000 : max, qty + step));
+        var max = input.max ? parseInt(input.max, 10) : null;
+        qty = qty + step;
+        if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
+          qty = global.AicoPreorderStock.clampQuantity(qty, max, isStockRelevant);
+        } else {
+          qty = Math.max(0, Math.min(isNaN(max) ? 10000 : max, qty));
+        }
         input.value = qty > 0 ? String(qty) : '';
         applyInputChange(input);
       });

@@ -973,6 +973,7 @@
         }
       },
       onQuantityChange: function (productId, variantId, dateLabel, qty, product) {
+        var session = sessionData || {};
         if (window.AicoPreorderStock) {
           window.AicoPreorderStock.adjustStock(
             productId,
@@ -980,6 +981,16 @@
             dateLabel,
             qty,
           );
+          if (
+            session.isStockRelevant &&
+            window.AicoPreorderStock.getQuantity
+          ) {
+            qty = window.AicoPreorderStock.getQuantity(
+              productId,
+              variantId,
+              dateLabel,
+            );
+          }
         }
         if (cartEnabled && cartCtrl) {
           cartCtrl.updateQuantity(productId, variantId, dateLabel, qty, product);
