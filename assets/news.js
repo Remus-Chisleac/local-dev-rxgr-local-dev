@@ -46,6 +46,16 @@ if(current_locale_code == 'de'){
 }
 var Authorization = '';
 
+// Storefront base prefix: '' on the host-based deployment
+// ({slug}.shops.aico.swiss), '/__storefront-preview/{slug}' in the
+// path-based preview. Derived from the current path so both the proxy
+// fetch URLs and the generated links resolve correctly in either mode.
+var STOREFRONT_PREFIX = (function () {
+  var path = window.location.pathname;
+  var index = path.indexOf('/blogs/news');
+  return index > 0 ? path.slice(0, index) : '';
+})();
+
 var url = window.location.href,
     parts = url.split("/"),
     last_part = parts[parts.length-1];
@@ -144,7 +154,7 @@ $(document).ready(function(){
   //console.log(q);
   
   var settings = {
-    "url": "/blogs/news/feed.js"+q,
+    "url": STOREFRONT_PREFIX + "/blogs/news/feed.js"+q,
     "method": "GET",
     "timeout": 0,
     "headers": {
@@ -182,7 +192,7 @@ $(document).ready(function(){
       
       
       var settings = {
-        "url": "/blogs/news/feed.js?page[number]=1&page[size]=5&filter[isActive]=1&sort=-publishDate"+nq,
+        "url": STOREFRONT_PREFIX + "/blogs/news/feed.js?page[number]=1&page[size]=5&filter[isActive]=1&sort=-publishDate"+nq,
         "method": "GET",
         "timeout": 0,
         "headers": {
@@ -308,7 +318,7 @@ $(document).ready(function(){
           if(data.newsCategory != null ){
             var cat = data.newsCategory;
             var catName = cat.translations[0].webName;
-            var catLink = '/blogs/news?category='+cat.id;
+            var catLink = STOREFRONT_PREFIX + '/blogs/news?category='+cat.id;
             if(catName == 'Profis'){
               catName = 'ERSTE MANNSCHAFT';
               catLink = '/pages/profis-erste-mannschaft';
@@ -1465,9 +1475,9 @@ $(document).ready(function(){
               /*if(title.length > 50){
                 title = jQuery.trim(json_response.name).substring(0, 50).split(" ").slice(0, -1).join(" ") + "...";
               }*/
-              var url= '/blogs/news/'+responsen.data[nz].id;
+              var url= STOREFRONT_PREFIX + '/blogs/news/'+responsen.data[nz].id;
               if(json_response.urlHandle != null){
-                url = '/blogs/news/'+json_response.urlHandle;
+                url = STOREFRONT_PREFIX + '/blogs/news/'+json_response.urlHandle;
               }
 
               if(main_news_id == responsen.data[nz].id){                
@@ -1494,7 +1504,7 @@ $(document).ready(function(){
             }
             
           html += '</div>';
-        html += '<div class="center"><a class="button button--primary" href="/blogs/news">Alle Nachrichten ansehen</a></div>';
+        html += '<div class="center"><a class="button button--primary" href="'+STOREFRONT_PREFIX+'/blogs/news">Alle Nachrichten ansehen</a></div>';
         html += '</div>';
         html += '</div>';
         
@@ -1802,7 +1812,7 @@ $(document).ready(function(){
                       html += '<div class="newsblock__details">'+description+'</div>';
                   html += '</div>';
                   html += '<div class="link-wrapper">';
-                      html +='<a href="/blogs/news/'+url+'" class="block-btn">';
+                      html +='<a href="'+STOREFRONT_PREFIX+'/blogs/news/'+url+'" class="block-btn">';
                           html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M256 64C256 46.33 270.3 32 288 32H415.1C415.1 32 415.1 32 415.1 32C420.3 32 424.5 32.86 428.2 34.43C431.1 35.98 435.5 38.27 438.6 41.3C438.6 41.35 438.6 41.4 438.7 41.44C444.9 47.66 447.1 55.78 448 63.9C448 63.94 448 63.97 448 64V192C448 209.7 433.7 224 416 224C398.3 224 384 209.7 384 192V141.3L214.6 310.6C202.1 323.1 181.9 323.1 169.4 310.6C156.9 298.1 156.9 277.9 169.4 265.4L338.7 96H288C270.3 96 256 81.67 256 64V64zM0 128C0 92.65 28.65 64 64 64H160C177.7 64 192 78.33 192 96C192 113.7 177.7 128 160 128H64V416H352V320C352 302.3 366.3 288 384 288C401.7 288 416 302.3 416 320V416C416 451.3 387.3 480 352 480H64C28.65 480 0 451.3 0 416V128z"></path></svg>';
                       html += '</a>';
                   html += '</div>';
@@ -1854,7 +1864,7 @@ $(document).ready(function(){
         if(currentPage > 1) {
           
           pagi += '<li>';
-          pagi += '<a href="/blogs/news'+pg+(currentPage-1)+'" class="pagination__item pagination__item--prev pagination__item-arrow link motion-reduce">';
+          pagi += '<a href="'+STOREFRONT_PREFIX+'/blogs/news'+pg+(currentPage-1)+'" class="pagination__item pagination__item--prev pagination__item-arrow link motion-reduce">';
           pagi += '<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-caret" viewBox="0 0 10 6"> <path fill-rule="evenodd" clip-rule="evenodd" d="M9.354.646a.5.5 0 00-.708 0L5 4.293 1.354.646a.5.5 0 00-.708.708l4 4a.5.5 0 00.708 0l4-4a.5.5 0 000-.708z" fill="currentColor"> </path> </svg>';
           pagi += '</a>';
           pagi += '</li>';
@@ -1862,7 +1872,7 @@ $(document).ready(function(){
 
         if(currentPage > 3) 
         {
-          pagi += '<li><a href="/blogs/news'+pg+'1" class="pagination__item link">1</a></li>';
+          pagi += '<li><a href="'+STOREFRONT_PREFIX+'/blogs/news'+pg+'1" class="pagination__item link">1</a></li>';
           pagi += '<li><span class="pagination__item">...</span></li>';
         }
         for(var $x=$start ; $x<$end ;$x++)
@@ -1876,21 +1886,21 @@ $(document).ready(function(){
           }
           else
           {
-            pagi += '<a href="/blogs/news'+pg+$x+'" class="pagination__item link">'+$x+'</a>';
+            pagi += '<a href="'+STOREFRONT_PREFIX+'/blogs/news'+pg+$x+'" class="pagination__item link">'+$x+'</a>';
           }
           pagi += '</li>';
 
         }
         if(currentPage < lastPage){
           pagi += '<li><span class="pagination__item">...</span></li>';
-          pagi += '<li><a href="/blogs/news'+pg+lastPage+'" class="pagination__item link">'+lastPage+'</a></li>';
+          pagi += '<li><a href="'+STOREFRONT_PREFIX+'/blogs/news'+pg+lastPage+'" class="pagination__item link">'+lastPage+'</a></li>';
 
         }
 
         if(currentPage < lastPage )
         {
           pagi += '<li>';
-          pagi += '<a href="/blogs/news'+pg+(parseInt(currentPage)+1)+'" class="pagination__item pagination__item--next pagination__item-arrow link motion-reduce">';
+          pagi += '<a href="'+STOREFRONT_PREFIX+'/blogs/news'+pg+(parseInt(currentPage)+1)+'" class="pagination__item pagination__item--next pagination__item-arrow link motion-reduce">';
           pagi += '<svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-caret" viewBox="0 0 10 6"> <path fill-rule="evenodd" clip-rule="evenodd" d="M9.354.646a.5.5 0 00-.708 0L5 4.293 1.354.646a.5.5 0 00-.708.708l4 4a.5.5 0 00.708 0l4-4a.5.5 0 000-.708z" fill="currentColor"> </path> </svg>';
           pagi += '</a>';
           pagi += '</li>';
@@ -1973,7 +1983,7 @@ $(document).ready(function(){
 
   if(is_listpage == true){
   var settings = {
-    "url": "/blogs/news/categories.js",
+    "url": STOREFRONT_PREFIX + "/blogs/news/categories.js",
     "method": "GET",
     "timeout": 0,
     "headers": {
@@ -2042,12 +2052,12 @@ $(document).on('click','#filter-container .btn', function(){
   if($(this).hasClass('active')){
     var dataCat = $(this).data('catid');
     if(typeof dataCat !== 'undefined'){
-        window.location.href="/blogs/news?category="+dataCat;
+        window.location.href=STOREFRONT_PREFIX+"/blogs/news?category="+dataCat;
     }else{
-      window.location.href="/blogs/news";
+      window.location.href=STOREFRONT_PREFIX+"/blogs/news";
     }
   }else{
-    window.location.href="/blogs/news";
+    window.location.href=STOREFRONT_PREFIX+"/blogs/news";
   }
   
   /*
