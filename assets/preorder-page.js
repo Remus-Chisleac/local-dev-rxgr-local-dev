@@ -253,10 +253,21 @@
       slots.seconds.textContent = countdownText('seconds', seconds);
     }
 
-    tick();
-    if (isFinite(deadlineMs)) {
-      setInterval(tick, 1000);
+    // Replace the mock deadline with the real preorder session end date once
+    // the live session is fetched (preorder/session.js → endDate).
+    function updateDeadline(iso) {
+      if (!iso) return;
+      var ms = Date.parse(iso);
+      if (!isFinite(ms)) return;
+      deadlineMs = ms;
+      try {
+        sessionStorage.removeItem('aico_preorder_mock_deadline');
+      } catch (_) {}
+      tick();
     }
+
+    tick();
+    setInterval(tick, 1000);
 
     var userId = root.getAttribute('data-aico-preorder-user-id') || 'anon';
     var contextUrl = root.getAttribute('data-aico-preorder-context-url');
@@ -357,6 +368,7 @@
       contextUrl: contextUrl,
       tokenInput: tokenInput,
       applyViewMode: applyViewMode,
+      updateDeadline: updateDeadline,
     });
   }
 
@@ -413,8 +425,7 @@
     var errorEl = root.querySelector('[data-aico-preorder-error]');
     var loadMoreEl = root.querySelector('[data-aico-preorder-load-more]');
     var catalogEl = root.querySelector('[data-aico-preorder-catalog]');
-    var dateFilterEl = root.querySelector('[data-aico-preorder-date-filter]');
-    var dateChipsEl = root.querySelector('[data-aico-preorder-date-chips]');
+    var dateSelectEl = root.querySelector('[data-aico-preorder-date-select]');
     var saveBtn = root.querySelector('[data-aico-preorder-save]');
     var submitBtn = root.querySelector('[data-aico-preorder-submit]');
     var summaryLines = root.querySelector('[data-aico-preorder-summary-lines]');
@@ -513,7 +524,9 @@
       var addressesOk = addressesReady();
       var productsOk = !shouldSkipProducts();
       updatePrompt();
-      if (catalogToolsEl) catalogToolsEl.hidden = !addressesOk;
+      // Filter dropdowns (search / dates / size) stay visible from the start;
+      // only the product grid waits for addresses.
+      if (catalogToolsEl) catalogToolsEl.hidden = false;
       if (mainEl) mainEl.hidden = !addressesOk;
       updateCheckoutVisibility();
       if (!productsOk) {
@@ -655,35 +668,40 @@
         .catch(function () {});
     }
 
-    function renderDateChips(dates) {
-      if (!dateChipsEl || !dateFilterEl) return;
-      if (!dates || !dates.length) {
-        dateFilterEl.hidden = true;
-        return;
+    // Date selector is a single dropdown: "All" (every delivery date) or one
+    // specific date. selectedDates drives both the catalog grid and the summary.
+    function applyDateSelection(dates) {
+      var value = dateSelectEl ? dateSelectEl.value : '__all__';
+      if (!value || value === '__all__') {
+        selectedDates = dates && dates.length ? dates.slice() : [];
+      } else {
+        selectedDates = [value];
       }
-      dateFilterEl.hidden = false;
-      if (!selectedDates.length) selectedDates = dates.slice();
-      dateChipsEl.innerHTML = '';
-      dates.forEach(function (date) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'aico-preorder-date-chip';
-        btn.textContent = date;
-        var active = selectedDates.indexOf(date) >= 0;
-        if (active) btn.classList.add('aico-preorder-date-chip-active');
-        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-        btn.addEventListener('click', function () {
-          var idx = selectedDates.indexOf(date);
-          if (idx >= 0) {
-            if (selectedDates.length > 1) selectedDates.splice(idx, 1);
-          } else {
-            selectedDates.push(date);
-          }
-          renderDateChips(dates);
-          if (catalog) catalog.render();
-        });
-        dateChipsEl.appendChild(btn);
+    }
+
+    function renderDateSelect(dates) {
+      if (!dateSelectEl) return;
+      var prev = dateSelectEl.value || '__all__';
+      // Keep the first "All" option (localized); rebuild the date options after it.
+      while (dateSelectEl.options.length > 1) {
+        dateSelectEl.remove(1);
+      }
+      (dates || []).forEach(function (date) {
+        var opt = document.createElement('option');
+        opt.value = date;
+        opt.textContent = date;
+        dateSelectEl.appendChild(opt);
       });
+      var stillValid = Array.prototype.some.call(dateSelectEl.options, function (o) {
+        return o.value === prev;
+      });
+      dateSelectEl.value = stillValid ? prev : '__all__';
+      applyDateSelection(dates);
+      var wrapper = dateSelectEl.closest('[data-aico-custom-select]');
+      if (wrapper) {
+        populateList(wrapper, dateSelectEl);
+        syncCustomSelect(wrapper);
+      }
     }
 
     function getQtyForDate(dateLabel) {
@@ -875,6 +893,9 @@
         })
         .then(function (json) {
           sessionData = json.data || null;
+          if (sessionData && opts.updateDeadline) {
+            opts.updateDeadline(sessionData.endDate || sessionData.deadlineAt);
+          }
           renderFlyers(sessionData && sessionData.flyers);
         })
         .catch(function () {});
@@ -1032,7 +1053,7 @@
         if (window.AicoPreorderStock) {
           window.AicoPreorderStock.setSizeStockFromProducts(products);
         }
-        renderDateChips(dates);
+        renderDateSelect(dates);
         if (sessionData && cartCtrl && cartCtrl.serverCart) {
           var payloads = [];
           (cartCtrl.serverCart.preorderItemLists || []).forEach(function (list) {
@@ -1148,6 +1169,12 @@
         }
         if (key === 'size_region') {
           if (catalog && addressesReady()) catalog.render();
+          return;
+        }
+        if (key === 'date_filter') {
+          applyDateSelection(catalog ? catalog.preorderDates : []);
+          if (catalog) catalog.render();
+          updateSummary();
           return;
         }
         if (addressesReady()) {

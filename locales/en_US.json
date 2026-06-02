@@ -351,6 +351,7 @@
       "select_b2b": "Select B2B",
       "select_debtor": "Select seller",
       "dates_label": "Delivery dates",
+      "dates_all": "All",
       "row_total": "Total Input",
       "product_total": "Total",
       "pcs": "STK"

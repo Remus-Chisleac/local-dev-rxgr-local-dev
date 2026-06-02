@@ -284,7 +284,7 @@
         </div>
         </div>
 
-        <div class="aico-preorder-catalog-tools" data-aico-preorder-catalog-tools hidden>
+        <div class="aico-preorder-catalog-tools" data-aico-preorder-catalog-tools>
         <label class="aico-preorder-field aico-preorder-field-search" data-aico-field="search">
           <span class="aico-preorder-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
           <span class="aico-preorder-field-control">
@@ -298,9 +298,31 @@
           </span>
         </label>
 
-        <div class="aico-preorder-date-filter aico-preorder-field" data-aico-preorder-date-filter data-aico-field="dates" hidden>
-          <span class="aico-preorder-field-label">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
-          <div class="aico-preorder-date-chips" data-aico-preorder-date-chips></div>
+        <div class="aico-preorder-field aico-preorder-field-dates" data-aico-field="dates">
+          <span id="aico-preorder-dates-label" class="aico-preorder-field-label">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
+          <div class="aico-preorder-field-control aico-preorder-field-control-select">
+            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path>
+            </svg>
+            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+              <select name="date_filter" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
+                      aria-labelledby="aico-preorder-dates-label"
+                      data-aico-preorder-select="date_filter" data-aico-preorder-date-select>
+                <option value="__all__">{{ 'aico_preorder.catalog.dates_all' | t }}</option>
+              </select>
+              <button type="button" id="aico-preorder-dates-trigger" class="aico-preorder-custom-select-trigger"
+                      data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
+                      aria-labelledby="aico-preorder-dates-label">
+                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {%- assign size_selected = aico_preorder.size_region | default: 'EU' | upcase -%}
