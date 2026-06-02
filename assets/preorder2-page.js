@@ -1053,6 +1053,10 @@
           }
           return;
         }
+        if (key === 'size_region') {
+          if (catalog && addressesReady()) catalog.render();
+          return;
+        }
         if (addressesReady()) {
           fetchSession().catch(function () {});
           if (catalog) catalog.render();

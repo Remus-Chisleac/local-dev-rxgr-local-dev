@@ -285,15 +285,64 @@
     return whole + '<span class="aico-preorder-size-frac">' + parts[2] + '</span>';
   }
 
+  function normalizeShoeSizeCharts(charts) {
+    if (!charts || typeof charts !== 'object') return {};
+    if (charts.data && typeof charts.data === 'object') return charts.data;
+    return charts;
+  }
+
+  function regionToChartKey(region) {
+    var key = String(region || 'EU').toUpperCase();
+    if (key === 'KR' || key === 'MM') return 'Millimeters';
+    return key;
+  }
+
+  function resolveChartGender(charts, optionGroupName) {
+    if (!charts || typeof charts !== 'object') return null;
+    var name = String(optionGroupName || '').toLowerCase();
+    var keys = Object.keys(charts);
+    function pick(test) {
+      var lower = test.toLowerCase();
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toLowerCase() === lower) return keys[i];
+      }
+      for (var j = 0; j < keys.length; j++) {
+        if (keys[j].toLowerCase().indexOf(lower) >= 0) return keys[j];
+      }
+      return null;
+    }
+    if (/women|woman/.test(name)) return pick('women') || pick('Women');
+    if (/unisex/.test(name)) return pick('unisex') || pick('Unisex');
+    if (/men|man/.test(name)) return pick('men') || pick('Men');
+    return pick('men') || pick('Men') || pick('women') || keys[0] || null;
+  }
+
+  function lookupChartSize(sizes, option) {
+    if (!sizes || typeof sizes !== 'object') return null;
+    if (sizes[option] != null) return sizes[option];
+    var trimmed = String(option).trim();
+    var keys = Object.keys(sizes);
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i]).trim() === trimmed) return sizes[keys[i]];
+    }
+    var num = parseFloat(trimmed);
+    if (!isNaN(num)) {
+      for (var j = 0; j < keys.length; j++) {
+        var kn = parseFloat(String(keys[j]));
+        if (!isNaN(kn) && Math.abs(kn - num) < 0.0001) return sizes[keys[j]];
+      }
+    }
+    return null;
+  }
+
   function getCountryLabel(charts, optionGroupName, region, option) {
     var raw = option;
-    if (charts && typeof charts === 'object') {
-      var gender =
-        Object.keys(charts).find(function (g) {
-          return optionGroupName.indexOf(g) >= 0;
-        }) || 'Men';
-      var sizes = charts[gender] && charts[gender][region];
-      if (sizes && sizes[option]) raw = sizes[option];
+    var normalized = normalizeShoeSizeCharts(charts);
+    var gender = resolveChartGender(normalized, optionGroupName);
+    var chartKey = regionToChartKey(region);
+    if (gender && normalized[gender] && normalized[gender][chartKey]) {
+      var mapped = lookupChartSize(normalized[gender][chartKey], option);
+      if (mapped != null && mapped !== '') raw = mapped;
     }
     return formatSizeLabel(raw);
   }
@@ -645,7 +694,7 @@
 
     var copy = this.getCopy();
     var session = this.getSession() || {};
-    var charts = session.shoeSizeCharts || {};
+    var charts = normalizeShoeSizeCharts(session.shoeSizeCharts || {});
     var region = this.getSizeRegion();
     var dates = this.getSelectedDates();
     if (!dates.length) dates = this.preorderDates;
