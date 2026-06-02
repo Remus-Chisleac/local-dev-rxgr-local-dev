@@ -285,15 +285,64 @@
     return whole + '<span class="aico-preorder2-size-frac">' + parts[2] + '</span>';
   }
 
+  function normalizeShoeSizeCharts(charts) {
+    if (!charts || typeof charts !== 'object') return {};
+    if (charts.data && typeof charts.data === 'object') return charts.data;
+    return charts;
+  }
+
+  function regionToChartKey(region) {
+    var key = String(region || 'EU').toUpperCase();
+    if (key === 'KR' || key === 'MM') return 'Millimeters';
+    return key;
+  }
+
+  function resolveChartGender(charts, optionGroupName) {
+    if (!charts || typeof charts !== 'object') return null;
+    var name = String(optionGroupName || '').toLowerCase();
+    var keys = Object.keys(charts);
+    function pick(test) {
+      var lower = test.toLowerCase();
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toLowerCase() === lower) return keys[i];
+      }
+      for (var j = 0; j < keys.length; j++) {
+        if (keys[j].toLowerCase().indexOf(lower) >= 0) return keys[j];
+      }
+      return null;
+    }
+    if (/women|woman/.test(name)) return pick('women') || pick('Women');
+    if (/unisex/.test(name)) return pick('unisex') || pick('Unisex');
+    if (/men|man/.test(name)) return pick('men') || pick('Men');
+    return pick('men') || pick('Men') || pick('women') || keys[0] || null;
+  }
+
+  function lookupChartSize(sizes, option) {
+    if (!sizes || typeof sizes !== 'object') return null;
+    if (sizes[option] != null) return sizes[option];
+    var trimmed = String(option).trim();
+    var keys = Object.keys(sizes);
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i]).trim() === trimmed) return sizes[keys[i]];
+    }
+    var num = parseFloat(trimmed);
+    if (!isNaN(num)) {
+      for (var j = 0; j < keys.length; j++) {
+        var kn = parseFloat(String(keys[j]));
+        if (!isNaN(kn) && Math.abs(kn - num) < 0.0001) return sizes[keys[j]];
+      }
+    }
+    return null;
+  }
+
   function getCountryLabel(charts, optionGroupName, region, option) {
     var raw = option;
-    if (charts && typeof charts === 'object') {
-      var gender =
-        Object.keys(charts).find(function (g) {
-          return optionGroupName.indexOf(g) >= 0;
-        }) || 'Men';
-      var sizes = charts[gender] && charts[gender][region];
-      if (sizes && sizes[option]) raw = sizes[option];
+    var normalized = normalizeShoeSizeCharts(charts);
+    var gender = resolveChartGender(normalized, optionGroupName);
+    var chartKey = regionToChartKey(region);
+    if (gender && normalized[gender] && normalized[gender][chartKey]) {
+      var mapped = lookupChartSize(normalized[gender][chartKey], option);
+      if (mapped != null && mapped !== '') raw = mapped;
     }
     return formatSizeLabel(raw);
   }
@@ -646,7 +695,7 @@
 
     var copy = this.getCopy();
     var session = this.getSession() || {};
-    var charts = session.shoeSizeCharts || {};
+    var charts = normalizeShoeSizeCharts(session.shoeSizeCharts || {});
     var region = this.getSizeRegion();
     var dates = this.getSelectedDates();
     if (!dates.length) dates = this.preorderDates;
@@ -847,14 +896,23 @@
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
         var maxAttr = '';
         var disabled = false;
-        if (isStockRelevant && global.AicoPreorderStock && global.AicoPreorderStock.getMaxQuantity) {
-          var max = global.AicoPreorderStock.getMaxQuantity(
-            product.id,
-            variant.id,
-            dateLabel,
-          );
-          if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
-          if (max <= 0) disabled = true;
+        if (isStockRelevant && global.AicoPreorderStock) {
+          if (global.AicoPreorderStock.isCellEnabled) {
+            disabled = !global.AicoPreorderStock.isCellEnabled(
+              product.id,
+              variant.id,
+              dateLabel,
+              true,
+            );
+          }
+          if (global.AicoPreorderStock.getMaxQuantity) {
+            var max = global.AicoPreorderStock.getMaxQuantity(
+              product.id,
+              variant.id,
+              dateLabel,
+            );
+            if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
+          }
         }
         html += renderQtyInput({
           ariaLabel: label + ' ' + dateLabel,
@@ -897,15 +955,17 @@
   };
 
   CatalogController.prototype.getQuantity = function (productId, variantId, dateLabel) {
-    if (global.AicoPreorderStock && global.AicoPreorderStock.getQuantity) {
-      var cart = this.getCartState();
-      if (!cart || !cart.preorderItemLists) {
-        return global.AicoPreorderStock.getQuantity(
-          productId,
-          variantId,
-          dateLabel,
-        );
-      }
+    var session = this.getSession() || {};
+    if (
+      session.isStockRelevant &&
+      global.AicoPreorderStock &&
+      global.AicoPreorderStock.getQuantity
+    ) {
+      return global.AicoPreorderStock.getQuantity(
+        productId,
+        variantId,
+        dateLabel,
+      );
     }
     var cart = this.getCartState();
     if (!cart || !cart.preorderItemLists) return 0;
@@ -939,13 +999,32 @@
       var productId = parseInt(input.getAttribute('data-product-id'), 10);
       var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
       var dateLabel = input.getAttribute('data-date');
-      var qty = parseInt(input.value, 10);
-      if (isNaN(qty) || qty < 0) qty = 0;
-      var max = input.max ? parseInt(input.max, 10) : 10000;
-      if (!isNaN(max) && qty > max) qty = max;
-      input.value = qty > 0 ? String(qty) : '';
+      var session = self.getSession() || {};
+      var isStockRelevant = !!session.isStockRelevant;
+      var raw = input.value === '' ? 0 : parseInt(input.value, 10);
+      var max = input.max ? parseInt(input.max, 10) : null;
+      var qty = raw;
+      if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
+        qty = global.AicoPreorderStock.clampQuantity(raw, max, isStockRelevant);
+      } else {
+        if (isNaN(qty) || qty < 0) qty = 0;
+        if (!isNaN(max) && qty > max) qty = max;
+        qty = Math.min(10000, qty);
+      }
       var product = self.findProduct(productId);
       self.onQuantityChange(productId, variantId, dateLabel, qty, product);
+      if (
+        isStockRelevant &&
+        global.AicoPreorderStock &&
+        global.AicoPreorderStock.getQuantity
+      ) {
+        qty = global.AicoPreorderStock.getQuantity(
+          productId,
+          variantId,
+          dateLabel,
+        );
+      }
+      input.value = qty > 0 ? String(qty) : '';
       self.render();
     }
 
@@ -966,9 +1045,16 @@
         var input = control && control.querySelector('[data-aico-preorder-qty]');
         if (!input || input.disabled) return;
         var step = parseInt(btn.getAttribute('data-aico-preorder-qty-step'), 10) || 0;
+        var session = self.getSession() || {};
+        var isStockRelevant = !!session.isStockRelevant;
         var qty = parseInt(input.value, 10) || 0;
-        var max = input.max ? parseInt(input.max, 10) : 10000;
-        qty = Math.max(0, Math.min(isNaN(max) ? 10000 : max, qty + step));
+        var max = input.max ? parseInt(input.max, 10) : null;
+        qty = qty + step;
+        if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
+          qty = global.AicoPreorderStock.clampQuantity(qty, max, isStockRelevant);
+        } else {
+          qty = Math.max(0, Math.min(isNaN(max) ? 10000 : max, qty));
+        }
         input.value = qty > 0 ? String(qty) : '';
         applyInputChange(input);
       });
