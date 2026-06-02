@@ -620,7 +620,10 @@
     function loadB2bs(searchTerm, keepOpen) {
       if (!isManager || !b2bsUrl) return;
       var url = new URL(b2bsUrl, window.location.origin);
-      url.searchParams.set('page[number]', '1');
+      // Pagination is 0-based (matches b2b-shop's currentPage default of 0):
+      // page 0 is the first page; sending 1 skips the first 100 B2Bs and
+      // drops single search hits that live on page 0.
+      url.searchParams.set('page[number]', '0');
       url.searchParams.set('page[size]', '100');
       if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
       fetch(url.toString(), {
