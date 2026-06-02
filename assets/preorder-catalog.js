@@ -717,7 +717,7 @@
       '</div>';
 
     this.catalogEl.style.setProperty('--aico-preorder-aside-w', '8.25rem');
-    this.catalogEl.style.setProperty('--aico-preorder-date-w', '4.5rem');
+    this.catalogEl.style.setProperty('--aico-preorder-date-w', '5.5rem');
     this.catalogEl.style.setProperty('--aico-preorder-total-w', '6.75rem');
     this.catalogEl.style.setProperty('--aico-preorder-grid-gap', '0.35rem');
 
@@ -875,11 +875,7 @@
         if (!variant) {
           html +=
             '<span class="aico-preorder-qty-box aico-preorder-qty-box--missing" aria-hidden="true">' +
-            '<span class="aico-preorder-qty-box__size">' +
-            formatSizeLabelHtml(label) +
-            '</span>' +
-            '<span class="aico-preorder-qty-box__inner aico-preorder-qty-box__inner--missing">' +
-            '<span class="aico-preorder-qty-box__dash">-</span></span></span>';
+            '<span class="aico-preorder-qty-box__dash">-</span></span>';
           return;
         }
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
