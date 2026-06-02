@@ -138,6 +138,15 @@
     "info_tabs_aria": "Produktinformationen",
     "about_product": "Über dieses Produkt",
     "specs": "Spezifikationen",
+    "specs_label": {
+      "gender": "Geschlecht",
+      "material": "Material",
+      "shoe_insole": "Schuheinlage",
+      "shoe_last_width": "Schuhleistenbreite",
+      "shoe_sole_category": "Schuhsohlenkategorie",
+      "sku": "Artikelnummer",
+      "hs_code": "Zolltarifnummer"
+    },
     "gender": {
       "men": "Herren",
       "women": "Damen",

@@ -421,7 +421,7 @@
             <dl class="aico-pdp-specs">
               {% for row in product.aico_specs %}
                 <div class="aico-pdp-specs-row">
-                  <dt>{{ row.label }}</dt>
+                  <dt>{% if row.label_key %}{{ row.label_key | t }}{% else %}{{ row.label }}{% endif %}</dt>
                   <dd>{% if row.value_key %}{{ row.value_key | t }}{% else %}{{ row.value }}{% endif %}</dd>
                 </div>
               {% endfor %}

@@ -138,6 +138,15 @@
     "info_tabs_aria": "Product information",
     "about_product": "About this product",
     "specs": "Specifications",
+    "specs_label": {
+      "gender": "Gender",
+      "material": "Material",
+      "shoe_insole": "Shoe Insole",
+      "shoe_last_width": "Shoe Last Width",
+      "shoe_sole_category": "Shoe Sole Category",
+      "sku": "SKU",
+      "hs_code": "HS code"
+    },
     "gender": {
       "men": "Men",
       "women": "Women",
