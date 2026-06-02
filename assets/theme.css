@@ -4190,14 +4190,20 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-b2b-search-wrap {
   position: relative;
   width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
 }
 .aico-preorder-b2b-search-input {
   width: 100%;
-  border: none;
-  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.375rem;
+  background: var(--aico-bg);
   font: inherit;
-  padding: 0.35rem 0;
+  padding: 0.35rem 0.5rem;
   outline: none;
+}
+.aico-preorder-b2b-search-input:focus {
+  border-color: var(--color-accent);
 }
 .aico-preorder-b2b-results {
   position: absolute;

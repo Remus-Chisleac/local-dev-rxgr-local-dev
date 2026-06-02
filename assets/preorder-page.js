@@ -614,11 +614,15 @@
       updateFlowState();
     }
 
-    function loadB2bs() {
+    // Mirrors b2b-shop's SortFilterControl: the B2B list comes from the
+    // active preorder session and is filtered SERVER-SIDE via
+    // `filter[searchTerm]` (same endpoint/service the old shop calls).
+    function loadB2bs(searchTerm, keepOpen) {
       if (!isManager || !b2bsUrl) return;
       var url = new URL(b2bsUrl, window.location.origin);
       url.searchParams.set('page[number]', '1');
       url.searchParams.set('page[size]', '100');
+      if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
       fetch(url.toString(), {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
@@ -634,6 +638,16 @@
               return { id: b.id, label: b.company };
             }),
           );
+          if (keepOpen) {
+            var wrapper = root.querySelector('[data-aico-preorder-b2b-field] [data-aico-custom-select]');
+            if (wrapper) {
+              wrapper.classList.add('aico-preorder-custom-select-open');
+              var panel = wrapper.querySelector('[data-aico-custom-select-dropdown]');
+              if (panel) panel.hidden = false;
+            }
+            var input = root.querySelector('[data-aico-preorder-b2b-search]');
+            if (input) input.focus();
+          }
         })
         .catch(function () {});
     }
@@ -1185,6 +1199,29 @@
       event.preventDefault();
       event.returnValue = '';
     });
+
+    var b2bSearchInput = root.querySelector('[data-aico-preorder-b2b-search]');
+    if (b2bSearchInput) {
+      var b2bSearchTimer;
+      b2bSearchInput.addEventListener('input', function () {
+        clearTimeout(b2bSearchTimer);
+        var term = b2bSearchInput.value;
+        b2bSearchTimer = setTimeout(function () {
+          loadB2bs(term, true);
+        }, 300);
+      });
+      // Keep the dropdown open while interacting with the search box
+      // (the global document-click handler closes open custom-selects).
+      b2bSearchInput.addEventListener('mousedown', function (e) {
+        e.stopPropagation();
+      });
+      b2bSearchInput.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+      b2bSearchInput.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') e.stopPropagation();
+      });
+    }
 
     loadB2bs();
     fetchSession().then(function () {

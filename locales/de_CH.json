@@ -330,6 +330,7 @@
       "size_region_label": "Grössentyp",
       "b2b_label": "B2B",
       "b2b_placeholder": "B2B wählen",
+      "b2b_search_placeholder": "B2B suchen…",
       "debtor_label": "Verkäufer",
       "debtor_placeholder": "Verkäufer wählen",
       "billing_label": "Rechnungsadresse",
