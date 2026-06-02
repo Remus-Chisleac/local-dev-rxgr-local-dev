@@ -3210,9 +3210,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex: 0 0 7.5rem;
   min-width: 6.5rem;
 }
-.aico-preorder-field-b2b {
-  flex: 2 1 14rem;
-  min-width: 12rem;
+.aico-preorder-field-b2b,
+.aico-preorder-field-debtor {
+  flex: 1 1 0;
+  min-width: 10rem;
+}
+.aico-preorder-field[hidden] {
+  display: none;
 }
 
 .aico-preorder-view-toggle {
