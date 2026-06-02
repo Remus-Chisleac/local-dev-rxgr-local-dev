@@ -19,6 +19,7 @@
     var disabled = !!opts.disabled;
     var attrs = opts.attrs || '';
     var maxAttr = opts.maxAttr || '';
+    var sizeLabelHtml = opts.sizeLabelHtml || '';
     var displayVal = qty > 0 ? String(qty) : '';
     var disabledAttr = disabled ? ' disabled' : '';
     var filledClass = qty > 0 ? ' aico-preorder-qty-box--filled' : '';
@@ -28,6 +29,9 @@
       filledClass +
       disabledClass +
       '">' +
+      '<span class="aico-preorder-qty-box__size" aria-hidden="true">' +
+      sizeLabelHtml +
+      '</span>' +
       '<span class="aico-preorder-qty-box__inner">' +
       '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
       displayVal +
@@ -734,23 +738,6 @@
         '<h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
-      html += '<span class="aico-preorder-grid-spacer" aria-hidden="true"></span>';
-
-      if (sizeValues.length) {
-        html +=
-          '<div class="aico-preorder-matrix-scroll aico-preorder-matrix-scroll--header" data-aico-preorder-matrix-scroll data-aico-preorder-sizes-header><div class="aico-preorder-matrix-track">';
-        sizeValues.forEach(function (opt) {
-          html +=
-            '<span class="aico-preorder-size-head">' +
-            formatSizeLabelHtml(getCountryLabel(charts, group.optionGroupName, region, opt)) +
-            '</span>';
-        });
-        html += '</div></div>';
-        html +=
-          '<div class="aico-preorder-matrix-total-head">' +
-          escapeHtml(copy.rowTotal || 'Total Input') +
-          '</div>';
-      }
       html += '</div></header>';
 
       items.forEach(function (product) {
@@ -887,8 +874,12 @@
         var label = getCountryLabel(charts, optionGroupName, region, optVal);
         if (!variant) {
           html +=
-            '<span class="aico-preorder-qty-box aico-preorder-qty-box--empty" aria-hidden="true">' +
-            '<span class="aico-preorder-qty-box__inner"></span></span>';
+            '<span class="aico-preorder-qty-box aico-preorder-qty-box--missing" aria-hidden="true">' +
+            '<span class="aico-preorder-qty-box__size">' +
+            formatSizeLabelHtml(label) +
+            '</span>' +
+            '<span class="aico-preorder-qty-box__inner aico-preorder-qty-box__inner--missing">' +
+            '<span class="aico-preorder-qty-box__dash">-</span></span></span>';
           return;
         }
         var qty = self.getQuantity(product.id, variant.id, dateLabel);
@@ -917,6 +908,7 @@
           qty: qty,
           disabled: disabled,
           maxAttr: maxAttr,
+          sizeLabelHtml: formatSizeLabelHtml(label),
           attrs:
             'data-product-id="' +
             product.id +

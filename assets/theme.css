@@ -2,7 +2,7 @@
   --color-bg: #fafafa;
   --color-text: #1a1a1a;
   --color-accent: #2563eb;
-  --max-width: 80rem;
+  --max-width: 87.5rem; /* 1400px */
 
   /* Tokens used by the storefront chrome and skeletons. Names mirror
      shadcn semantic tokens (background/foreground/muted/border/etc.)
@@ -4464,29 +4464,52 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex: 0 0 var(--aico-preorder-cell-w, 2.75rem);
   width: var(--aico-preorder-cell-w, 2.75rem);
   max-width: var(--aico-preorder-cell-w, 2.75rem);
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
-.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--empty {
-  flex: 0 0 var(--aico-preorder-cell-w, 2.75rem);
-  width: var(--aico-preorder-cell-w, 2.75rem);
-  max-width: var(--aico-preorder-cell-w, 2.75rem);
-  box-sizing: border-box;
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__size {
+  display: block;
+  padding-left: 0.15rem;
+  margin-bottom: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #6b6b6b;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__size .aico-preorder-size-frac {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: middle;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--missing {
   pointer-events: none;
 }
-.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--empty .aico-preorder-qty-box__inner {
-  min-height: 1.875rem;
-  visibility: hidden;
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__inner--missing {
+  justify-content: center;
   background: transparent;
   border-color: transparent;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__dash {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: #b8b8b8;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__inner {
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 1.875rem;
-  border-radius: 0.4375rem;
-  background: #f0f0f0;
-  border: 1px solid #d4d4d4;
+  min-height: 1.5rem;
+  border-radius: 0.3125rem;
+  background: #fff;
+  border: 1px solid #cfcfcf;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -4513,7 +4536,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin: 0;
   padding: 0;
   border: 0;
-  background: #f0f0f0;
+  background: #fff;
   color: #5a5a5a;
   cursor: pointer;
   line-height: 0;
@@ -4523,7 +4546,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   height: 4px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:hover:not(:disabled) {
-  background: #e4e4e4;
+  background: #f0f0f0;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:disabled {
   opacity: 0.35;
@@ -4536,10 +4559,10 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
-  height: 1.875rem;
+  height: 1.5rem;
   margin: 0;
   padding: 0 0.15rem;
-  line-height: 1.875rem;
+  line-height: 1.5rem;
   text-align: center;
   font-size: 0.8125rem;
   vertical-align: middle;
