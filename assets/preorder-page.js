@@ -130,7 +130,11 @@
       .forEach(function (other) {
         if (other !== wrapper) closeDropdown(other);
       });
-    populateList(wrapper, native);
+    // "Managed" wrappers (e.g. the multi-select date filter) render their own
+    // list; don't overwrite it with the single-select option buttons.
+    if (!wrapper.hasAttribute('data-aico-custom-select-managed')) {
+      populateList(wrapper, native);
+    }
     panel.hidden = false;
     trigger.setAttribute('aria-expanded', 'true');
     wrapper.classList.add('aico-preorder-custom-select-open');
@@ -197,33 +201,12 @@
       return isFinite(raw) ? raw : 0;
     }
 
+    // Real countdown only: the deadline is the active preorder session end
+    // date. It's server-rendered into data-aico-preorder-deadline when known,
+    // and otherwise filled in on page load from preorder/session.js
+    // (updateDeadline). No hardcoded/mock fallback.
     var serverDeadline = root.getAttribute('data-aico-preorder-deadline');
-    var deadlineMs;
-    if (serverDeadline) {
-      deadlineMs = Date.parse(serverDeadline);
-    } else {
-      var sessionKey = 'aico_preorder_mock_deadline';
-      var storedDeadline = NaN;
-      try {
-        var rawDeadline = sessionStorage.getItem(sessionKey);
-        storedDeadline = rawDeadline ? parseInt(rawDeadline, 10) : NaN;
-      } catch (_) {}
-
-      if (!isFinite(storedDeadline) || storedDeadline <= Date.now()) {
-        var offsetMs =
-          intAttr(root, 'data-aico-preorder-mock-weeks') * 7 * 86400000 +
-          intAttr(root, 'data-aico-preorder-mock-days') * 86400000 +
-          intAttr(root, 'data-aico-preorder-mock-hours') * 3600000 +
-          intAttr(root, 'data-aico-preorder-mock-minutes') * 60000 +
-          intAttr(root, 'data-aico-preorder-mock-seconds') * 1000;
-        deadlineMs = Date.now() + offsetMs;
-        try {
-          sessionStorage.setItem(sessionKey, String(deadlineMs));
-        } catch (_) {}
-      } else {
-        deadlineMs = storedDeadline;
-      }
-    }
+    var deadlineMs = serverDeadline ? Date.parse(serverDeadline) : NaN;
 
     var slots = {
       days: root.querySelector('[data-aico-countdown-days]'),
@@ -668,40 +651,71 @@
         .catch(function () {});
     }
 
-    // Date selector is a single dropdown: "All" (every delivery date) or one
-    // specific date. selectedDates drives both the catalog grid and the summary.
-    function applyDateSelection(dates) {
-      var value = dateSelectEl ? dateSelectEl.value : '__all__';
-      if (!value || value === '__all__') {
-        selectedDates = dates && dates.length ? dates.slice() : [];
+    // Multi-select date filter: "All" + each delivery date as toggleable rows
+    // inside the managed dropdown. selectedDates drives the grid + summary.
+    function dateAllLabel() {
+      return (dateSelectEl && dateSelectEl.options[0] && dateSelectEl.options[0].textContent) || 'All';
+    }
+
+    function updateDateLabel(dates) {
+      var wrapper = dateSelectEl ? dateSelectEl.closest('[data-aico-custom-select]') : null;
+      var label = wrapper ? wrapper.querySelector('[data-aico-custom-select-label]') : null;
+      if (!label) return;
+      var all = dates || [];
+      if (!selectedDates.length || (all.length && selectedDates.length === all.length)) {
+        label.textContent = dateAllLabel();
       } else {
-        selectedDates = [value];
+        label.textContent = selectedDates.join(', ');
       }
     }
 
     function renderDateSelect(dates) {
       if (!dateSelectEl) return;
-      var prev = dateSelectEl.value || '__all__';
-      // Keep the first "All" option (localized); rebuild the date options after it.
-      while (dateSelectEl.options.length > 1) {
-        dateSelectEl.remove(1);
-      }
-      (dates || []).forEach(function (date) {
-        var opt = document.createElement('option');
-        opt.value = date;
-        opt.textContent = date;
-        dateSelectEl.appendChild(opt);
-      });
-      var stillValid = Array.prototype.some.call(dateSelectEl.options, function (o) {
-        return o.value === prev;
-      });
-      dateSelectEl.value = stillValid ? prev : '__all__';
-      applyDateSelection(dates);
+      dates = dates || [];
+      // Default: every date selected ("All").
+      if (!selectedDates.length && dates.length) selectedDates = dates.slice();
       var wrapper = dateSelectEl.closest('[data-aico-custom-select]');
-      if (wrapper) {
-        populateList(wrapper, dateSelectEl);
-        syncCustomSelect(wrapper);
+      var list = wrapper ? wrapper.querySelector('[data-aico-custom-select-list]') : null;
+      if (!list) {
+        updateDateLabel(dates);
+        return;
       }
+      var allSelected = dates.length > 0 && selectedDates.length === dates.length;
+      function row(value, text, checked) {
+        return (
+          '<button type="button" role="option" class="aico-preorder-custom-select-option aico-preorder-date-option' +
+          (checked ? ' is-checked' : '') +
+          '" data-date-value="' + escapeHtml(value) + '" aria-selected="' + (checked ? 'true' : 'false') + '">' +
+          '<span class="aico-preorder-date-check" aria-hidden="true"></span>' +
+          '<span>' + escapeHtml(text) + '</span></button>'
+        );
+      }
+      var html = row('__all__', dateAllLabel(), allSelected);
+      dates.forEach(function (d) {
+        html += row(d, d, selectedDates.indexOf(d) >= 0);
+      });
+      list.innerHTML = html;
+      list.querySelectorAll('[data-date-value]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var val = btn.getAttribute('data-date-value');
+          if (val === '__all__') {
+            selectedDates = dates.slice();
+          } else {
+            var idx = selectedDates.indexOf(val);
+            if (idx >= 0) {
+              if (selectedDates.length > 1) selectedDates.splice(idx, 1);
+            } else {
+              selectedDates.push(val);
+            }
+          }
+          renderDateSelect(dates);
+          if (catalog) catalog.render();
+          updateSummary();
+        });
+      });
+      updateDateLabel(dates);
     }
 
     function getQtyForDate(dateLabel) {
@@ -982,7 +996,7 @@
           var qty = getFlyerQuantity(flyerId);
           var totalPcs = PCS_PER_FLYER * qty;
           var marks = '';
-          for (var i = 0; i <= 5; i++) {
+          for (var i = 0; i <= 3; i++) {
             marks += '<span>' + i + '</span>';
           }
           return (
@@ -1003,7 +1017,7 @@
             '<div class="aico-preorder-flyer-slider">' +
             '<input type="range" class="aico-preorder-flyer-range" data-aico-preorder-flyer-range data-flyer-id="' +
             flyerId +
-            '" min="0" max="5" step="1" value="' +
+            '" min="0" max="3" step="1" value="' +
             qty +
             '" style="--flyer-value:' +
             qty +
@@ -1171,12 +1185,6 @@
           if (catalog && addressesReady()) catalog.render();
           return;
         }
-        if (key === 'date_filter') {
-          applyDateSelection(catalog ? catalog.preorderDates : []);
-          if (catalog) catalog.render();
-          updateSummary();
-          return;
-        }
         if (addressesReady()) {
           fetchSession().catch(function () {});
           if (catalog) catalog.render();
@@ -1253,6 +1261,7 @@
       });
     }
 
+    renderDateSelect([]);
     loadB2bs();
     fetchSession().then(function () {
       updateFlowState();
