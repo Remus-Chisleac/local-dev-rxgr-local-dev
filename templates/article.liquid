@@ -1,0 +1,46 @@
+{%- comment -%}
+  Single news article — Shopify blog convention at /blogs/news/<handle>.
+
+  Rendered client-side by news.js, which reads the article handle from the
+  URL and fetches /blogs/news/feed.js?filter[urlHandle]=<handle>. Legacy
+  content renders via news.js's contentBuilder path; articles authored in
+  the AICO Neo content builder render via news-neo.js (window.NewsNeo),
+  which news.js hydrates into #news-details-container after injection.
+{%- endcomment -%}
+
+<style>
+  .aico-news--detail { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .aico-news--detail #news-details-container.hidden { display: none; }
+  .aico-news--detail .title-wrapper h1,
+  .aico-news--detail .title-wrapper h2 { font-size: 2rem; line-height: 1.2; margin: 0 0 1rem; }
+  .aico-news--detail .tag-wrapper { color: #888; font-size: .9rem; margin-bottom: 1.5rem; }
+  .aico-news--detail .tag-wrapper a { color: #888; text-decoration: none; }
+  .aico-news--detail .image-wrapper img,
+  .aico-news--detail img { max-width: 100%; height: auto; }
+  .aico-news--detail .description-wrapper { font-size: 1.05rem; line-height: 1.65; color: #222; }
+  .aico-news--detail .content-row { margin: 1.25rem 0; }
+  .aico-news-back { margin-top: 2.5rem; }
+  .aico-news-back-link { text-decoration: none; color: #111; font-weight: 600; }
+</style>
+
+<section class="aico-news aico-news--detail" data-aico-news="article">
+  <div id="status" class="aico-news-status" aria-hidden="true"></div>
+  <div id="preloader" class="aico-news-preloader" aria-hidden="true"></div>
+  <div class="page-wrapper"></div>
+
+  <div id="news-container" class="aico-news-detail">
+    <div id="news-details-container" class="hidden"></div>
+  </div>
+
+  <p class="aico-news-back">
+    <a href="/blogs/news" class="aico-news-back-link">&larr; News</a>
+  </p>
+</section>
+
+{%- comment -%} jQuery + slick are dependencies of the ported news.js renderer. {%- endcomment -%}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
+<script src="https://code.jquery.com/jquery-3.6.4.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
+<script src="{{ 'news-neo.js' | asset_url }}" defer></script>
+<script src="{{ 'news.js' | asset_url }}" defer></script>
