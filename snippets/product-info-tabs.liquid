@@ -1,31 +1,72 @@
 {% comment %}
-  product-info-tabs snippet — description + spec table + downloads.
-  Inlined by `templates/product.liquid`.
+  product-info-tabs snippet — specs + description behind a tab switcher,
+  plus the downloads block. Inlined by `templates/product.liquid`.
+  Specifications is the default tab; description is the second tab.
 {% endcomment %}
 
-<section class="aico-pdp-info-tabs" aria-label="{{ 'product.info_tabs_aria' | t }}">
-  {% if product.description %}
-    <article class="aico-pdp-info-block">
-      <h2 class="aico-pdp-section-heading">{{ 'product.about_product' | t }}</h2>
-      <div class="aico-pdp-info-prose">{{ product.description }}</div>
-    </article>
-  {% endif %}
+{% if product.aico_specs.size > 0 or product.description %}
+  <section class="aico-pdp-info-tabs" aria-label="{{ 'product.info_tabs_aria' | t }}">
+    <div class="aico-pdp-tabs" role="tablist" aria-label="{{ 'product.info_tabs_aria' | t }}" data-aico-pdp-tabs>
+      {% if product.aico_specs.size > 0 %}
+        <button
+          type="button"
+          role="tab"
+          id="aico-pdp-tab-specs"
+          class="aico-pdp-tab aico-pdp-tab-active"
+          aria-selected="true"
+          aria-controls="aico-pdp-panel-specs"
+          data-aico-pdp-tab="specs"
+        >{{ 'product.specs' | t }}</button>
+      {% endif %}
+      {% if product.description %}
+        <button
+          type="button"
+          role="tab"
+          id="aico-pdp-tab-description"
+          class="aico-pdp-tab{% unless product.aico_specs.size > 0 %} aico-pdp-tab-active{% endunless %}"
+          aria-selected="{% if product.aico_specs.size > 0 %}false{% else %}true{% endif %}"
+          aria-controls="aico-pdp-panel-description"
+          data-aico-pdp-tab="description"
+        >{{ 'product.about_product' | t }}</button>
+      {% endif %}
+    </div>
 
-  {% if product.aico_specs.size > 0 %}
-    <article class="aico-pdp-info-block">
-      <h2 class="aico-pdp-section-heading">{{ 'product.specs' | t }}</h2>
-      <dl class="aico-pdp-specs">
-        {% for row in product.aico_specs %}
-          <div class="aico-pdp-specs-row">
-            <dt>{{ row.label }}</dt>
-            <dd>{{ row.value }}</dd>
-          </div>
-        {% endfor %}
-      </dl>
-    </article>
-  {% endif %}
+    {% if product.aico_specs.size > 0 %}
+      <div
+        role="tabpanel"
+        id="aico-pdp-panel-specs"
+        class="aico-pdp-tab-panel aico-pdp-tab-panel-active"
+        aria-labelledby="aico-pdp-tab-specs"
+        data-aico-pdp-panel="specs"
+      >
+        <dl class="aico-pdp-specs">
+          {% for row in product.aico_specs %}
+            <div class="aico-pdp-specs-row">
+              <dt>{{ row.label }}</dt>
+              <dd>{% if row.value_key %}{{ row.value_key | t }}{% else %}{{ row.value }}{% endif %}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </div>
+    {% endif %}
 
-  {% if product.aico_files.size > 0 %}
+    {% if product.description %}
+      <div
+        role="tabpanel"
+        id="aico-pdp-panel-description"
+        class="aico-pdp-tab-panel{% unless product.aico_specs.size > 0 %} aico-pdp-tab-panel-active{% endunless %}"
+        aria-labelledby="aico-pdp-tab-description"
+        data-aico-pdp-panel="description"
+        {% if product.aico_specs.size > 0 %}hidden{% endif %}
+      >
+        <div class="aico-pdp-info-prose">{{ product.description }}</div>
+      </div>
+    {% endif %}
+  </section>
+{% endif %}
+
+{% if product.aico_files.size > 0 %}
+  <section class="aico-pdp-info-tabs aico-pdp-downloads-section" aria-label="{{ 'product.downloads' | t }}">
     <article class="aico-pdp-info-block">
       <h2 class="aico-pdp-section-heading">{{ 'product.downloads' | t }}</h2>
       <ul class="aico-pdp-files">
@@ -41,5 +82,5 @@
         {% endfor %}
       </ul>
     </article>
-  {% endif %}
-</section>
+  </section>
+{% endif %}

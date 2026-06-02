@@ -12,6 +12,47 @@
 //      (see the PDP plan §5 + storefront.php route stub). The script
 //      degrades to a no-op error banner in that case.
 
+// Info tabs — specs / description switcher. Self-contained so it runs
+// regardless of whether the buy form is present (the main IIFE below
+// early-returns when there is no form).
+(function setupInfoTabs() {
+  'use strict';
+
+  var tablist = document.querySelector('[data-aico-pdp-tabs]');
+  if (!tablist) {
+    return;
+  }
+  var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[data-aico-pdp-tab]'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-aico-pdp-panel]'));
+  if (tabs.length < 2) {
+    // Nothing to switch between — leave the single panel as-is.
+    return;
+  }
+
+  function activate(name) {
+    tabs.forEach(function (tab) {
+      var isActive = tab.getAttribute('data-aico-pdp-tab') === name;
+      tab.classList.toggle('aico-pdp-tab-active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    panels.forEach(function (panel) {
+      var isActive = panel.getAttribute('data-aico-pdp-panel') === name;
+      panel.classList.toggle('aico-pdp-tab-panel-active', isActive);
+      if (isActive) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+    });
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      activate(tab.getAttribute('data-aico-pdp-tab'));
+    });
+  });
+})();
+
 (function () {
   'use strict';
 

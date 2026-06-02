@@ -138,6 +138,14 @@
     "info_tabs_aria": "Product information",
     "about_product": "About this product",
     "specs": "Specifications",
+    "gender": {
+      "men": "Men",
+      "women": "Women",
+      "unisex": "Unisex",
+      "kids": "Kids",
+      "boys": "Boys",
+      "girls": "Girls"
+    },
     "downloads": "Downloads",
     "you_may_also_like": "You may also like",
     "stock": {
