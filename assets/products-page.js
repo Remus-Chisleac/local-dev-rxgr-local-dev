@@ -164,6 +164,28 @@
     return m ? m[1] : String(value);
   }
 
+  // Seed the EU-size universe (the set getEuSizeGroup checks against, so it
+  // can form ⅓-step bands) from the live size facet distribution. The
+  // server seeds `config.euSizes` empty and leaves the finer grouping to the
+  // client, so without this the chips never group. Seeded once from the
+  // first (unfiltered) distribution so the bands stay stable as filters
+  // narrow the results.
+  var euUniverseSeeded = false;
+  function setEuUniverse(sizeDistribution) {
+    if (euUniverseSeeded || !sizeDistribution) {
+      return;
+    }
+    var keys = Object.keys(sizeDistribution);
+    if (!keys.length) {
+      return;
+    }
+    EU_SIZES_SET = {};
+    for (var i = 0; i < keys.length; i++) {
+      EU_SIZES_SET[stripWarehousePrefix(keys[i])] = true;
+    }
+    euUniverseSeeded = true;
+  }
+
   function buildSizeChips(distribution) {
     if (!distribution) {
       return [];
@@ -935,6 +957,7 @@
 
       if (opts && opts.includeFacets && resp.facetDistribution) {
         state.lastDistribution = resp.facetDistribution;
+        setEuUniverse(resp.facetDistribution[SIZE_FACET_ATTRIBUTE]);
         renderFacetColumns(resp.facetDistribution);
       }
     }).catch(function (err) {
@@ -1144,4 +1167,17 @@
   }
 
   updateFilterCountBadge();
+
+  // Seed the live facet distribution + EU-size universe on boot. Without
+  // this the size chips can't group by ⅓ band (empty universe) and the
+  // first size selection is a no-op (the size filter expands display→raw
+  // values via the distribution, which is empty until the first fetch).
+  // Facet-only fetch — leaves the SSR'd first page of cards untouched.
+  meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
+    if (resp && resp.facetDistribution) {
+      state.lastDistribution = resp.facetDistribution;
+      setEuUniverse(resp.facetDistribution[SIZE_FACET_ATTRIBUTE]);
+      renderFacetColumns(resp.facetDistribution);
+    }
+  }).catch(function () {});
 })();
