@@ -486,8 +486,13 @@
 
     function updateCheckoutVisibility() {
       if (!checkoutEl) return;
-      checkoutEl.hidden =
-        !cartEnabled || !addressesReady() || getTotalCartQty() <= 0;
+      // Show the checkout/summary as soon as the cart is enabled and both
+      // addresses are selected — don't wait for a non-empty cart. The summary
+      // just shows zeros until items are added, and the Submit button stays
+      // disabled until there's a quantity + accepted terms (see updateSummary).
+      // Gating on quantity made the whole bottom section look "missing" before
+      // anything was added.
+      checkoutEl.hidden = !cartEnabled || !addressesReady();
     }
 
     function clearCatalog() {
