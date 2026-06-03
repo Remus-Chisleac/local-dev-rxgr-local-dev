@@ -1,7 +1,9 @@
-{% comment %} Product card — image + title (+ optional price), linking to the PDP. {% endcomment %}
+{% comment %} Product card — grey media panel + title (+ optional price), linking to the PDP. {% endcomment %}
 {%- assign data = block.aico_data -%}
 {%- if data.href != '' -%}<a class="page-product" href="{{ data.href }}">{%- else -%}<div class="page-product">{%- endif -%}
-  {%- if data.image != '' -%}<img class="page-product__image" src="{{ data.image }}" alt="{{ data.title }}" loading="lazy">{%- endif -%}
+  <span class="page-product__media">
+    {%- if data.image != '' -%}<img class="page-product__image" src="{{ data.image }}" alt="{{ data.title }}" loading="lazy">{%- endif -%}
+  </span>
   {%- if data.title != '' -%}<span class="page-product__title">{{ data.title }}</span>{%- endif -%}
   {%- if data.price != '' -%}<span class="page-product__price">{{ data.price }}</span>{%- endif -%}
 {%- if data.href != '' -%}</a>{%- else -%}</div>{%- endif -%}
