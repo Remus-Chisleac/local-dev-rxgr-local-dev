@@ -1618,6 +1618,21 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   outline-offset: 2px;
 }
 
+/* The accessible home brand tile is a select-brand POST form (mirrors the
+   drawer brand picker); the clickable card is a <button>, so reset native
+   button chrome to render identically to the previous <a> card. */
+.aico-home-brand-card-form {
+  display: contents;
+}
+button.aico-home-brand-card {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  text-align: inherit;
+  padding: 0;
+  margin: 0;
+}
+
 .aico-home-brand-card-disabled {
   cursor: not-allowed;
   opacity: 0.4;

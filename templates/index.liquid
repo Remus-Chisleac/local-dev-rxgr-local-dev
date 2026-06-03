@@ -30,38 +30,47 @@
         {% for brand in aico_shop_brands %}
           <li class="aico-home-brand-grid-item">
             {% if brand.aico_is_accessible? %}
-              <a
-                href="{{ brand.url }}"
-                class="aico-home-brand-card aico-home-brand-card-accessible"
-                aria-label="{{ brand.label }}"
+              <form
+                method="post"
+                action="{{ routes.aico_account_select_brand_url }}"
+                class="aico-home-brand-card-form"
               >
-                <div class="aico-home-brand-card-photo-wrap">
-                  {% if brand.image_url %}
-                    <img
-                      src="{{ brand.image_url }}"
-                      alt=""
-                      class="aico-home-brand-card-photo"
-                      loading="lazy"
-                      decoding="async"
-                    >
-                  {% else %}
-                    <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
-                  {% endif %}
-                </div>
-                <div class="aico-home-brand-card-footer">
-                  {% if brand.logo_url %}
-                    <img
-                      src="{{ brand.logo_url }}"
-                      alt="{{ brand.label }}"
-                      class="aico-home-brand-card-logo"
-                      loading="lazy"
-                      decoding="async"
-                    >
-                  {% else %}
-                    <span class="aico-home-brand-card-label">{{ brand.label }}</span>
-                  {% endif %}
-                </div>
-              </a>
+                <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+                <input type="hidden" name="brand_id" value="{{ brand.id }}">
+                <input type="hidden" name="return_url" value="{{ brand.url }}">
+                <button
+                  type="submit"
+                  class="aico-home-brand-card aico-home-brand-card-accessible"
+                  aria-label="{{ brand.label }}"
+                >
+                  <div class="aico-home-brand-card-photo-wrap">
+                    {% if brand.image_url %}
+                      <img
+                        src="{{ brand.image_url }}"
+                        alt=""
+                        class="aico-home-brand-card-photo"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    {% else %}
+                      <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
+                    {% endif %}
+                  </div>
+                  <div class="aico-home-brand-card-footer">
+                    {% if brand.logo_url %}
+                      <img
+                        src="{{ brand.logo_url }}"
+                        alt="{{ brand.label }}"
+                        class="aico-home-brand-card-logo"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    {% else %}
+                      <span class="aico-home-brand-card-label">{{ brand.label }}</span>
+                    {% endif %}
+                  </div>
+                </button>
+              </form>
             {% else %}
               <div
                 class="aico-home-brand-card aico-home-brand-card-disabled"
