@@ -5743,12 +5743,14 @@ button.aico-home-brand-card {
 
 /* ── Content pages (/pages/<handle>) — content-builder block layout ── */
 .page-builder {
-  max-width: 72rem;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
+  padding: 2rem 1rem 4rem;
 }
-.page-builder__header h1 {
-  margin: 0 0 1.5rem;
+@media (min-width: 640px) {
+  .page-builder {
+    padding: 2rem 1.25rem 4rem;
+  }
 }
 .page-builder .content-row {
   display: flex;

@@ -10,10 +10,11 @@
 {% endcomment %}
 
 <article class="page-builder" data-page-handle="{{ page.handle }}">
-  {%- if page.title != '' -%}
-    <header class="page-builder__header"><h1>{{ page.title }}</h1></header>
-  {%- endif -%}
-
+  {%- comment -%}
+    The page title is rendered by the content (a title/heading block) when the
+    author wants it, so it is not emitted here — avoids a duplicate heading and
+    matches the brand page which leads with its hero, not an auto title.
+  {%- endcomment -%}
   {%- for row in page.aico_rows -%}
     <div class="content-row{% if row.is_full_width %} fullwidth{% endif %} total-columns-{{ row.columns | size }}">
       {%- for column in row.columns -%}
