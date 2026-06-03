@@ -1,0 +1,58 @@
+{% comment %}
+  Contact page (`/contact`) — recreates the b2b shop's contact page:
+  a heading, a message form, and the company-info card. The form posts to
+  `POST /contact` (StorefrontContactController), which emails the shop's
+  partner inbox via the AicoShop feedback service. Success/error is surfaced
+  through the Shopify-shaped `form` drop on the redirect.
+
+  Company details are inlined here (as in the b2b shop); a theme can edit them
+  directly or wire them to theme settings.
+{% endcomment %}
+
+<main class="aico-page-container aico-contact" aria-labelledby="aico-contact-heading">
+  <h1 id="aico-contact-heading" class="aico-contact-heading">{{ 'contact.title' | t }}</h1>
+
+  {%- if form.posted_successfully? and form.form_type == 'contact' -%}
+    <p class="aico-contact-banner aico-contact-banner--success" role="status">{{ 'contact.success' | t }}</p>
+  {%- elsif request.query.aico_contact_error -%}
+    <p class="aico-contact-banner aico-contact-banner--error" role="alert">{{ 'contact.error' | t }}</p>
+  {%- endif -%}
+
+  <div class="aico-contact-grid">
+    {%- comment -%} ── Message form ── {%- endcomment -%}
+    <form class="aico-contact-form" action="{{ routes.aico_contact_url }}" method="post">
+      <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+      <label class="aico-contact-field">
+        <span class="aico-contact-label">{{ 'contact.subject_label' | t }}</span>
+        <input type="text" name="contact[subject]" placeholder="{{ 'contact.subject_placeholder' | t }}">
+      </label>
+
+      <label class="aico-contact-field">
+        <span class="aico-contact-label">{{ 'contact.message_label' | t }}</span>
+        <textarea name="contact[body]" rows="6" required placeholder="{{ 'contact.message_placeholder' | t }}"></textarea>
+      </label>
+
+      <button type="submit" class="button button--primary aico-contact-submit">{{ 'contact.send' | t }}</button>
+    </form>
+
+    {%- comment -%} ── Company info card ── {%- endcomment -%}
+    <aside class="aico-contact-card">
+      <p class="aico-contact-company">kybun Joya</p>
+      <p class="aico-contact-lines">
+        kybun Joya Retail AG<br>
+        kybun Tower<br>
+        Mühleweg 4<br>
+        CH-9325 Roggwil (TG)
+      </p>
+
+      <p class="aico-contact-subheading">{{ 'contact.contact_details' | t }}</p>
+      <p class="aico-contact-lines">
+        {{ 'contact.phone' | t }} (CH): <a href="tel:+41583294040">+41 58 329 40 40</a><br>
+        {{ 'contact.phone' | t }} (DE): <a href="tel:+4975319216060">+49 7531 921 60 60</a><br>
+        {{ 'contact.email' | t }}: <a href="mailto:partner@kybunjoya.swiss">partner@kybunjoya.swiss</a><br>
+        WhatsApp: <a href="https://wa.me/41583294040" target="_blank" rel="noopener">+41 58 329 40 40</a>
+      </p>
+    </aside>
+  </div>
+</main>

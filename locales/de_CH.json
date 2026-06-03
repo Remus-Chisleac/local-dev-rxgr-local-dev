@@ -425,5 +425,18 @@
     },
     "cart_button_aria": "PreOrder-Warenkorb öffnen",
     "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
+  },
+  "contact": {
+    "title": "Kontakt",
+    "subject_label": "Betreff",
+    "subject_placeholder": "Geben Sie hier Ihren Betreff ein…",
+    "message_label": "Nachricht",
+    "message_placeholder": "Schreiben Sie Ihre Nachricht hier…",
+    "send": "Nachricht senden",
+    "success": "Danke für Ihre Nachricht!",
+    "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    "contact_details": "Kontaktdaten",
+    "phone": "Telefon",
+    "email": "E-Mail"
   }
 }

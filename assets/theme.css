@@ -5859,9 +5859,80 @@ button.aico-home-brand-card {
   position: relative;
   background: #ffffff;
 }
-.page-builder .page-product__title {
+/* ── Contact page (/contact) ── */
+.aico-contact {
+  padding: 2rem 1rem 4rem;
+}
+.aico-contact-heading {
+  margin: 0 0 1.5rem;
+}
+.aico-contact-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+}
+.aico-contact-banner--success {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.aico-contact-banner--error {
+  background: #fdecea;
+  color: #b71c1c;
+}
+.aico-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media (min-width: 800px) {
+  .aico-contact-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+.aico-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.aico-contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.aico-contact-label {
+  font-size: 0.875rem;
   font-weight: 600;
 }
-.page-builder .page-product__price {
-  color: var(--aico-muted, #666);
+.aico-contact-form input,
+.aico-contact-form textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--aico-border, #ddd);
+  border-radius: 0.25rem;
+  font: inherit;
+}
+.aico-contact-submit {
+  align-self: flex-start;
+}
+.aico-contact-card {
+  background: rgba(228, 228, 231, 0.45);
+  border: 1px solid var(--aico-border, #ddd);
+  border-radius: 0.25rem;
+  padding: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.aico-contact-company {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+.aico-contact-subheading {
+  font-weight: 600;
+  margin: 1rem 0 0.25rem;
+}
+.aico-contact-card a {
+  color: inherit;
 }

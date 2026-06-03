@@ -425,5 +425,18 @@
     },
     "cart_button_aria": "Open preorder cart",
     "address_change_warning": "Changing the address will reset your preorder cart."
+  },
+  "contact": {
+    "title": "Contact us",
+    "subject_label": "Subject",
+    "subject_placeholder": "Type your subject here…",
+    "message_label": "Message",
+    "message_placeholder": "Type your message here…",
+    "send": "Send message",
+    "success": "Thank you for your message!",
+    "error": "Something went wrong. Please try again.",
+    "contact_details": "Contact details",
+    "phone": "Phone",
+    "email": "Email"
   }
 }
