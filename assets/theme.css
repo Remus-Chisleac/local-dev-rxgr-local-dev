@@ -5840,7 +5840,14 @@ button.aico-home-brand-card {
   width: 100%;
   display: block;
 }
-/* Product / divider blocks reuse the brand page's `aico-brand-*` styling. */
+/* Product / divider blocks reuse the brand page's `aico-brand-*` styling.
+   The brand grid anchors the absolute cart button via `.aico-brand-products
+   .aico-brand-product-card { position: relative }`; mirror that here so the
+   cart sits inside each card on content pages too. */
+.page-builder .aico-brand-product-card {
+  position: relative;
+  background: #ffffff;
+}
 .page-builder .page-product__title {
   font-weight: 600;
 }
