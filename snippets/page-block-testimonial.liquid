@@ -1,0 +1,9 @@
+{% comment %} Testimonial — quote, author, optional image / rating. {% endcomment %}
+{%- assign data = block.aico_data -%}
+<figure class="page-testimonial">
+  {%- if data.subsection_title != blank -%}<p class="page-testimonial__subsection">{{ data.subsection_title }}</p>{%- endif -%}
+  {%- if data.image != blank -%}<img class="page-testimonial__image" src="{{ data.image }}" alt="{{ data.author }}" loading="lazy">{%- endif -%}
+  {%- if data.title != blank -%}<h3 class="page-testimonial__title">{{ data.title }}</h3>{%- endif -%}
+  <blockquote class="page-testimonial__quote">{{ data.text_html }}</blockquote>
+  {%- if data.author != blank -%}<figcaption class="page-testimonial__author">{{ data.author }}</figcaption>{%- endif -%}
+</figure>

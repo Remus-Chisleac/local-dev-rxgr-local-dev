@@ -5583,3 +5583,88 @@ button.aico-home-brand-card {
   line-height: 1.35;
   color: var(--aico-fg);
 }
+
+/* ── Content pages (/pages/<handle>) — content-builder block layout ── */
+.page-builder {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+.page-builder__header h1 {
+  margin: 0 0 1.5rem;
+}
+.page-builder .content-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.page-builder .content-row.fullwidth {
+  max-width: none;
+}
+.page-builder .content-column {
+  flex: 1 1 0;
+  min-width: min(100%, 18rem);
+}
+.page-builder .content + .content {
+  margin-top: 1.25rem;
+}
+.page-builder img {
+  max-width: 100%;
+  height: auto;
+}
+.page-builder .page-album {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+.page-builder .page-quote {
+  border-left: 3px solid var(--aico-fg);
+  padding-left: 1rem;
+  font-style: italic;
+}
+.page-builder .page-quote cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-weight: 600;
+}
+.page-builder .page-bullets {
+  padding-left: 1.25rem;
+}
+.page-builder .page-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.page-builder .page-table th,
+.page-builder .page-table td {
+  border: 1px solid var(--aico-border, #ddd);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.page-builder .content-type-video iframe,
+.page-builder .content-type-video video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+.page-builder .page-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.page-builder .page-faq__item {
+  border-bottom: 1px solid var(--aico-border, #ddd);
+  padding: 0.75rem 0;
+}
+.page-builder .page-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.page-builder .page-testimonial {
+  margin: 0;
+}
+.page-builder .page-testimonial__image {
+  max-width: 5rem;
+  border-radius: 50%;
+}

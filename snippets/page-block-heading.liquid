@@ -1,0 +1,4 @@
+{% comment %} Heading block — heading + optional sub-description. {% endcomment %}
+{%- assign data = block.aico_data -%}
+<{{ data.tag }}{{ data.color_style }}>{{ data.title }}</{{ data.tag }}>
+{%- if data.description != blank -%}<p>{{ data.description }}</p>{%- endif -%}

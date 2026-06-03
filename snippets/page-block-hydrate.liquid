@@ -1,0 +1,8 @@
+{% comment %}
+  Hydration placeholder for interactive blocks (carousel, product, collection,
+  news, form). The raw block payload is emitted as JSON for a client script to
+  read and render. Server-side rendering of these is intentionally deferred.
+{% endcomment %}
+<div class="aico-block aico-block--{{ block.type }}" data-aico-block="{{ block.type }}">
+  <script type="application/json" class="aico-block-data">{{ block.aico_hydration_json }}</script>
+</div>

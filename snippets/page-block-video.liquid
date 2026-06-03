@@ -1,0 +1,7 @@
+{% comment %} Video block — YouTube embed or direct <video>. {% endcomment %}
+{%- assign data = block.aico_data -%}
+{%- if data.youtube_id != blank -%}
+  <iframe src="https://www.youtube.com/embed/{{ data.youtube_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+{%- elsif data.src != blank -%}
+  <video src="{{ data.src }}" controls preload="metadata"></video>
+{%- endif -%}

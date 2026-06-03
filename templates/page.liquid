@@ -1,4 +1,46 @@
-<article class="page">
-  <h1>{{ 'pages.placeholder.title' | t }}</h1>
-  <p>{{ 'pages.placeholder.body' | t }}</p>
+{% comment %}
+  Content page (`/pages/<handle>`). The `page` drop is hydrated server-side by
+  PageLoader, which walks the merchant's content-builder into per-block drops.
+
+  Each block is dispatched to its own editable snippet
+  (`snippets/page-block-<type>.liquid`) via the case below — a merchant can
+  override how any block type renders by editing its snippet. Interactive types
+  (carousel, product, collection, news, form) render a placeholder that a
+  client script hydrates from the embedded JSON payload.
+{% endcomment %}
+
+<article class="page-builder" data-page-handle="{{ page.handle }}">
+  {%- if page.title != blank -%}
+    <header class="page-builder__header"><h1>{{ page.title }}</h1></header>
+  {%- endif -%}
+
+  {%- for row in page.aico_rows -%}
+    <div class="content-row{% if row.is_full_width %} fullwidth{% endif %} total-columns-{{ row.columns | size }}">
+      {%- for column in row.columns -%}
+        <div class="content-column">
+          {%- for block in column.blocks -%}
+            <div class="content content-type-{{ block.type }}">
+              {%- case block.type -%}
+                {%- when 'text' -%}{% render 'page-block-text', block: block %}
+                {%- when 'title' -%}{% render 'page-block-title', block: block %}
+                {%- when 'heading' -%}{% render 'page-block-heading', block: block %}
+                {%- when 'album' -%}{% render 'page-block-album', block: block %}
+                {%- when 'block_quote' -%}{% render 'page-block-quote', block: block %}
+                {%- when 'link' -%}{% render 'page-block-link', block: block %}
+                {%- when 'video' -%}{% render 'page-block-video', block: block %}
+                {%- when 'divider' -%}{% render 'page-block-divider', block: block %}
+                {%- when 'bullet' -%}{% render 'page-block-bullet', block: block %}
+                {%- when 'table' -%}{% render 'page-block-table', block: block %}
+                {%- when 'content_card' -%}{% render 'page-block-content-card', block: block %}
+                {%- when 'testimonial' -%}{% render 'page-block-testimonial', block: block %}
+                {%- when 'faq' -%}{% render 'page-block-faq', block: block %}
+                {%- when 'html' -%}{% render 'page-block-html', block: block %}
+                {%- else -%}{% render 'page-block-hydrate', block: block %}
+              {%- endcase -%}
+            </div>
+          {%- endfor -%}
+        </div>
+      {%- endfor -%}
+    </div>
+  {%- endfor -%}
 </article>

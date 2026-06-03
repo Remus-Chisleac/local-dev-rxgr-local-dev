@@ -1,0 +1,6 @@
+{% comment %} Album block — image grid. {% endcomment %}
+<div class="page-album">
+  {%- for image in block.aico_data.images -%}
+    <img src="{{ image.src }}" alt="{{ image.alt }}" loading="lazy">
+  {%- endfor -%}
+</div>

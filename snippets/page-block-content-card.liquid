@@ -1,0 +1,7 @@
+{% comment %} Content card — image + title + rich text, optional link wrapper. {% endcomment %}
+{%- assign data = block.aico_data -%}
+{%- if data.href != blank -%}<a class="page-card" href="{{ data.href }}">{%- else -%}<div class="page-card">{%- endif -%}
+  {%- if data.image != blank -%}<img class="page-card__image" src="{{ data.image }}" alt="{{ data.title }}" loading="lazy">{%- endif -%}
+  {%- if data.title != blank -%}<h3 class="page-card__title">{{ data.title }}</h3>{%- endif -%}
+  <div class="page-card__body">{{ data.text_html }}</div>
+{%- if data.href != blank -%}</a>{%- else -%}</div>{%- endif -%}

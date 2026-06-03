@@ -1,0 +1,11 @@
+{% comment %} FAQ — accordion of question/answer pairs. {% endcomment %}
+{%- assign data = block.aico_data -%}
+{%- if data.subsection_title != blank -%}<h3 class="page-faq__title">{{ data.subsection_title }}</h3>{%- endif -%}
+<div class="page-faq">
+  {%- for item in data.items -%}
+    <details class="page-faq__item">
+      <summary>{{ item.question }}</summary>
+      <div class="page-faq__answer">{{ item.answer_html }}</div>
+    </details>
+  {%- endfor -%}
+</div>

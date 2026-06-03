@@ -1,0 +1,6 @@
+{% comment %} Bullet block — optional title + bullet list. {% endcomment %}
+{%- assign data = block.aico_data -%}
+{%- if data.title != blank -%}<h3>{{ data.title }}</h3>{%- endif -%}
+<ul class="page-bullets">
+  {%- for item in data.items -%}<li>{{ item }}</li>{%- endfor -%}
+</ul>

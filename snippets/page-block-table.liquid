@@ -1,0 +1,10 @@
+{% comment %} Table block — rows of cells; heading rows use <th>. {% endcomment %}
+<table class="page-table">
+  {%- for row in block.aico_data.rows -%}
+    <tr>
+      {%- for cell in row.cells -%}
+        {%- if row.is_heading -%}<th>{{ cell }}</th>{%- else -%}<td>{{ cell }}</td>{%- endif -%}
+      {%- endfor -%}
+    </tr>
+  {%- endfor -%}
+</table>
