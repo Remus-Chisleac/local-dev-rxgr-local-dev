@@ -259,6 +259,16 @@
     return '(' + ors.join(' OR ') + ')';
   }
 
+  // Same-facet multi-select narrows results: the indexed attribute is an
+  // array of a product's variants, so requiring every selected value (AND)
+  // matches b2b-shop. Only the size grouping above uses OR.
+  function stringFacetAndClause(attribute, values) {
+    var ands = values.map(function (v) {
+      return attribute + ' = "' + escapeFilterString(v) + '"';
+    });
+    return '(' + ands.join(' AND ') + ')';
+  }
+
   function buildFilter() {
     var parts = [];
     if (config.scope && config.scope.filter) {
@@ -286,7 +296,7 @@
         return;
       }
       var clean = facetId === 'color' ? values.map(normalizeColor) : values;
-      parts.push(stringFacetOrClause(attr, clean));
+      parts.push(stringFacetAndClause(attr, clean));
     });
     return parts.join(' AND ');
   }
