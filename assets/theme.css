@@ -3085,13 +3085,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 12rem;
+  min-width: 10.5rem;
 }
 .aico-preorder-field-search {
   /* The search input is the row's lead element; gets a wider min width
      so the placeholder text stays legible at every viewport. */
   flex: 2 1 0;
-  min-width: 14rem;
+  min-width: 12rem;
 }
 .aico-preorder-field-label {
   font-size: 0.75rem;
@@ -3286,7 +3286,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-field-b2b,
 .aico-preorder-field-debtor {
   flex: 1.75 1 0;
-  min-width: 16rem;
+  min-width: 12rem;
 }
 .aico-preorder-field[data-aico-field="billing_address"] .aico-preorder-custom-select-dropdown,
 .aico-preorder-field[data-aico-field="delivery_address"] .aico-preorder-custom-select-dropdown,
