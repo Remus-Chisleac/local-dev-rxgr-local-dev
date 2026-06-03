@@ -309,11 +309,16 @@
         return;
       }
       if (facetId === 'sizes') {
-        var distribution = state.lastDistribution[SIZE_FACET_ATTRIBUTE] || {};
-        var raws = expandSelectedDisplaysToRawValues(values, distribution);
-        if (raws.length) {
-          parts.push(stringFacetOrClause(SIZE_FACET_ATTRIBUTE, raws));
-        }
+        // Each selected band is an OR of its raw ⅓/⅔ values; multiple bands
+        // are AND'd (one clause each), so a product must be available in
+        // every chosen size — e.g. 34 AND 37, each incl. its thirds.
+        var sizeDistribution = state.lastDistribution[SIZE_FACET_ATTRIBUTE] || {};
+        values.forEach(function (display) {
+          var bandRaws = expandSelectedDisplaysToRawValues([display], sizeDistribution);
+          if (bandRaws.length) {
+            parts.push(stringFacetOrClause(SIZE_FACET_ATTRIBUTE, bandRaws));
+          }
+        });
         return;
       }
       var attr = config.facetAttributes[facetId];
