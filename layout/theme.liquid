@@ -525,6 +525,7 @@
                         <template x-if="product.image"><img :src="product.image" :alt="product.title" loading="lazy"></template>
                         <template x-if="!product.image"><span class="aico-search-result-image-empty" aria-hidden="true"></span></template>
                         <template x-if="product.onSale"><span class="aico-search-result-badge">{{ 'general.search.sale' | t }}</span></template>
+                        <template x-if="product.brandLogo"><img class="aico-search-result-brand" :src="product.brandLogo" :alt="product.brandLabel || ''" loading="lazy"></template>
                       </span>
                       <span class="aico-search-result-info">
                         <span class="aico-search-result-title" x-text="product.title"></span>
