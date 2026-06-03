@@ -422,8 +422,34 @@
     return product.sku || '';
   }
 
+  // Pick the price-list row that prices this product. The payload nests rows
+  // under priceList.priceListRows (per country/currency); there is no flat
+  // priceList.price. Prefer a non-free row (first one is fine for display).
+  function priceRowFor(product) {
+    var priceList = product && product.priceList;
+    if (!priceList || !priceList.priceListRows || !priceList.priceListRows.length) {
+      return null;
+    }
+    var rows = priceList.priceListRows;
+    return (
+      rows.find(function (row) {
+        return !row.is_free && !row.isFree;
+      }) || rows[0]
+    );
+  }
+
   function productPrice(product) {
     if (product.price != null && product.price >= 0) return product.price;
+    var row = priceRowFor(product);
+    if (row) {
+      // Mirror the backend (AicoShopItemService::setItemPrice): use the discount
+      // price only when it is a real reduction, otherwise the selling price.
+      var selling = row.selling_price != null ? row.selling_price : row.sellingPrice;
+      var discount = row.discount_price != null ? row.discount_price : row.discountPrice;
+      if (discount != null && discount > 0 && discount < selling) return discount;
+      if (selling != null) return selling;
+      if (discount != null) return discount;
+    }
     if (product.priceList && product.priceList.price != null) {
       return product.priceList.price;
     }
@@ -432,12 +458,13 @@
   }
 
   function productCurrency(product) {
-    return (
-      product.variantPriceCurrency ||
-      product.currency ||
-      (product.priceList && product.priceList.currency) ||
-      'CHF'
-    );
+    if (product.variantPriceCurrency) return product.variantPriceCurrency;
+    if (product.currency) return product.currency;
+    var row = priceRowFor(product);
+    if (row && row.currency) {
+      return row.currency.name || row.currency.code || 'CHF';
+    }
+    return 'CHF';
   }
 
   function productImage(product) {
