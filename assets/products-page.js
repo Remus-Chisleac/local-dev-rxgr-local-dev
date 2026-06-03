@@ -164,26 +164,29 @@
     return m ? m[1] : String(value);
   }
 
-  // Seed the EU-size universe (the set getEuSizeGroup checks against, so it
-  // can form ⅓-step bands) from the live size facet distribution. The
-  // server seeds `config.euSizes` empty and leaves the finer grouping to the
-  // client, so without this the chips never group. Seeded once from the
-  // first (unfiltered) distribution so the bands stay stable as filters
-  // narrow the results.
+  // Size-grouping universe: the set getEuSizeGroup checks band patterns
+  // against. The server ships `config.euSizes` empty and leaves the ⅓-step
+  // grouping to the client, so we seed a canonical EU ⅓-step ladder (matches
+  // b2b-shop's static sizeCharts). It is deliberately NOT derived from the
+  // live size distribution: a filtered result set can be missing a whole
+  // size while still having its thirds, which makes getEuSizeGroup anchor the
+  // band on a fraction (e.g. "34 1/3" instead of "34"). A fixed ladder keeps
+  // every band's middle on a whole size. Seeded once; any arg is ignored.
   var euUniverseSeeded = false;
-  function setEuUniverse(sizeDistribution) {
-    if (euUniverseSeeded || !sizeDistribution) {
+  function setEuUniverse() {
+    if (euUniverseSeeded) {
       return;
-    }
-    var keys = Object.keys(sizeDistribution);
-    if (!keys.length) {
-      return;
-    }
-    EU_SIZES_SET = {};
-    for (var i = 0; i < keys.length; i++) {
-      EU_SIZES_SET[stripWarehousePrefix(keys[i])] = true;
     }
     euUniverseSeeded = true;
+    // Respect a theme-provided euSizes list when present.
+    if (Object.keys(EU_SIZES_SET).length > 0) {
+      return;
+    }
+    for (var euLadderN = 33; euLadderN <= 52; euLadderN++) {
+      EU_SIZES_SET[String(euLadderN)] = true;
+      EU_SIZES_SET[euLadderN + ' 1/3'] = true;
+      EU_SIZES_SET[euLadderN + ' 2/3'] = true;
+    }
   }
 
   function buildSizeChips(distribution) {
@@ -957,7 +960,7 @@
 
       if (opts && opts.includeFacets && resp.facetDistribution) {
         state.lastDistribution = resp.facetDistribution;
-        setEuUniverse(resp.facetDistribution[SIZE_FACET_ATTRIBUTE]);
+        setEuUniverse();
         renderFacetColumns(resp.facetDistribution);
       }
     }).catch(function (err) {
@@ -1176,7 +1179,7 @@
   meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
     if (resp && resp.facetDistribution) {
       state.lastDistribution = resp.facetDistribution;
-      setEuUniverse(resp.facetDistribution[SIZE_FACET_ATTRIBUTE]);
+      setEuUniverse();
       renderFacetColumns(resp.facetDistribution);
     }
     // Deep-link: the page can load with facets already in the URL (chips
