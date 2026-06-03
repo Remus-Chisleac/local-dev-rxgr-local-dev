@@ -21,7 +21,7 @@
      injected by the layout via an inline style (only on customer pages),
      so non-auth pages don't pay for the asset. */
   --aico-auth-bg-image: none;
-  --aico-auth-card-radius: 0.75rem;
+  --aico-auth-card-radius: 0.125rem;
   --aico-auth-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
@@ -163,7 +163,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   height: 2.25rem;
   background: transparent;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   color: var(--aico-fg);
   cursor: pointer;
   text-decoration: none;
@@ -185,7 +185,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   height: 2.25rem;
   background: transparent;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   font: inherit;
   color: var(--aico-fg);
   cursor: pointer;
@@ -231,7 +231,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
 
 .aico-skeleton {
   background: var(--aico-skeleton);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
 }
 .aico-skel-pulse { animation: aicoSkelPulse 1.6s ease-in-out infinite; }
 @keyframes aicoSkelPulse {
@@ -326,7 +326,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   width: 100%;
   aspect-ratio: 4 / 3;
   border: 1px solid var(--aico-border);
-  border-radius: 1rem;
+  border-radius: 0.125rem;
   background: var(--aico-card);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -358,7 +358,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   flex-direction: column;
   border: 1px solid var(--aico-border);
   background: var(--aico-card);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   overflow: hidden;
 }
 .aico-home-product-image {
@@ -409,7 +409,7 @@ body:not(.aico-template-customers) > .aico-shell-body {
   min-height: 14rem;
   border: 1px solid var(--aico-border);
   background: var(--aico-card);
-  border-radius: 1rem;
+  border-radius: 0.125rem;
   overflow: hidden;
 }
 @media (min-width: 640px) { .aico-home-news-card { min-height: 16rem; } }
@@ -526,7 +526,7 @@ body.aico-template-customers {
 .aico-auth-field input {
   padding: 0.5rem 0.75rem;
   border: 1px solid #d4d4d8;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   font: inherit;
   background: #ffffff;
 }
@@ -554,7 +554,7 @@ body.aico-template-customers {
   color: #ffffff;
   font: inherit;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   text-decoration: none;
 }
@@ -568,7 +568,7 @@ body.aico-template-customers {
 .aico-auth-error {
   margin: 0;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: #fef2f2;
   color: #b91c1c;
   font-size: 0.875rem;
@@ -576,7 +576,7 @@ body.aico-template-customers {
 .aico-auth-success {
   margin: 0;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: #ecfdf5;
   color: #047857;
   font-size: 0.875rem;
@@ -750,7 +750,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-drawer-brand-summary {
   background: var(--aico-bg);
   border: 1px solid var(--aico-border);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   padding: 0.625rem 0.75rem;
   margin-top: 0.5rem;
@@ -781,7 +781,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   z-index: 50;
   margin-top: 0.375rem;
   border: 1px solid var(--aico-border);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: var(--aico-bg);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   overflow: visible;
@@ -792,7 +792,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: 2.25rem;
   height: 2.25rem;
   flex-shrink: 0;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: var(--aico-muted);
   object-fit: contain;
   padding: 0.25rem;
@@ -968,7 +968,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   gap: 0.75rem;
   background: var(--aico-bg);
   border: 1px solid var(--aico-border);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   padding: 0.75rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   align-items: flex-start;
@@ -1027,7 +1027,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 1rem 1.25rem;
   border: 1px solid var(--aico-border);
   background: var(--aico-card);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   text-align: center;
   color: var(--aico-muted-fg);
 }
@@ -1052,7 +1052,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-card);
   color: var(--aico-fg);
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease-out;
@@ -1107,7 +1107,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
 }
 .aico-product-card-badge-sale {
   left: 0.5rem;
@@ -1150,7 +1150,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-product-card-discount {
   background: rgba(185, 28, 28, 0.15);
   color: #b91c1c;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   padding: 0.0625rem 0.375rem;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1177,7 +1177,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-filterbar {
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
-  border-radius: 0.875rem;
+  border-radius: 0.125rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   margin-bottom: 1rem;
 }
@@ -1257,7 +1257,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: var(--aico-fg);
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   transition: color 0.15s;
 }
@@ -1309,7 +1309,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--aico-fg);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   outline: none;
 }
@@ -1365,7 +1365,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.375rem 0.5rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   cursor: pointer;
 }
 .aico-filterbar-clear:hover { color: var(--aico-fg); background: var(--aico-muted); }
@@ -1412,7 +1412,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.875rem;
   text-align: left;
   cursor: pointer;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   transition: color 0.15s;
 }
 .aico-filtercol-item:hover { color: #ea580c; }
@@ -1491,7 +1491,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.875rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
@@ -1593,7 +1593,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   aspect-ratio: 458 / 409;
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   text-decoration: none;
@@ -1691,7 +1691,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   text-align: center;
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   color: var(--aico-muted-fg);
 }
 
@@ -1883,7 +1883,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-brand-restricted-banner {
   margin: 0.875rem 0 0;
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.92);
   color: #92400e;
   font-size: 0.8125rem;
@@ -1894,7 +1894,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-brand-unknown-banner {
   margin: 0.875rem 0 0;
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.92);
   color: #334155;
   font-size: 0.8125rem;
@@ -1909,7 +1909,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 
 .aico-brand-hero-logo-slot {
   aspect-ratio: 16 / 10;
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
 }
 
 .aico-brand-carousel-dots {
@@ -1945,7 +1945,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 
 .skeleton-block {
   width: 100%;
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   background: linear-gradient(
     110deg,
     rgba(161, 161, 170, 0.35) 0%,
@@ -1959,7 +1959,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .skeleton-line {
   display: block;
   height: 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.35);
   overflow: hidden;
   position: relative;
@@ -2001,7 +2001,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   background: rgba(24, 24, 27, 0.9);
   color: #ffffff;
   font-size: 0.6875rem;
@@ -2013,7 +2013,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .skeleton-stars {
   width: 4rem;
   height: 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: rgba(251, 191, 36, 0.55);
 }
 
@@ -2041,7 +2041,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   min-height: 10.5rem;
   padding: 1.5rem 1rem;
-  border-radius: 1.25rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   border: 1px solid var(--aico-border);
 }
@@ -2125,7 +2125,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex-direction: column;
   background: rgba(228, 228, 231, 0.45);
   border: 1px solid var(--aico-border);
-  border-radius: 1rem;
+  border-radius: 0.125rem;
   padding: 0.75rem;
   min-width: 0;
 }
@@ -2234,7 +2234,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: 100%;
   background: var(--aico-bg);
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   overflow: hidden;
 }
 .aico-pdp-gallery-slide {
@@ -2285,7 +2285,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0;
   border: 2px solid transparent;
   background: var(--aico-bg);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   cursor: pointer;
   opacity: 0.7;
@@ -2310,7 +2310,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-muted);
   color: var(--aico-muted-fg);
   border: 1px solid var(--aico-border);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
 }
 
 /* ── Info column ── */
@@ -2450,7 +2450,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   align-items: center;
   gap: 0.25rem;
   padding: 0.625rem 0.875rem;
-  border-radius: 0.875rem;
+  border-radius: 0.125rem;
   background: linear-gradient(180deg, #ff7900 0%, #f97316 100%);
   box-shadow: 0 8px 22px rgba(249, 115, 22, 0.35);
 }
@@ -2462,7 +2462,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   min-width: 3.25rem;
   padding: 0.5rem 0.5rem 0.45rem;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.28);
 }
 
@@ -2504,7 +2504,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border: 1px solid var(--aico-border);
   background: var(--aico-muted);
   color: var(--aico-muted-fg);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -2549,7 +2549,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-discount {
   background: rgba(185, 28, 28, 0.15);
   color: #b91c1c;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -2620,7 +2620,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   height: 2.25rem;
   padding: 0 0.625rem;
   border: 1px solid var(--aico-border);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: var(--aico-bg);
   font-size: 0.875rem;
   color: var(--aico-fg);
@@ -2685,7 +2685,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-size-guide-link:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
 }
 .aico-pdp-size-guide-link--disabled {
   cursor: default;
@@ -2700,7 +2700,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: max-content;
   max-width: min(18rem, 88vw);
   padding: 0.5rem 0.625rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.35;
@@ -2767,7 +2767,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   min-height: 3.25rem;
   padding: 0.5rem 0.5rem 0.625rem;
   border: 1px solid var(--aico-border);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
   background: var(--aico-bg);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -2789,7 +2789,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   bottom: 0;
   height: 4px;
   background: #22c55e;
-  border-radius: 0 0 0.5rem 0.5rem;
+  border-radius: 0 0 0.125rem 0.125rem;
 }
 .aico-pdp-size-cell-label {
   grid-column: 1;
@@ -2808,7 +2808,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0 0.25rem;
   border: 1px solid var(--aico-border);
   background: var(--aico-muted);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   font-size: 0.8125rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -2834,7 +2834,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   bottom: 0;
   height: 3px;
   background: var(--aico-muted-strong);
-  border-radius: 0 0 0.5rem 0.5rem;
+  border-radius: 0 0 0.125rem 0.125rem;
 }
 .aico-pdp-size-cell-out {
   opacity: 0.5;
@@ -2875,7 +2875,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-fg);
   color: var(--aico-bg);
   border: 1px solid var(--aico-fg);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -2937,7 +2937,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0.25rem;
   background: var(--aico-muted, #f4f4f5);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
   align-self: flex-start;
 }
 .aico-pdp-tab {
@@ -2949,7 +2949,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border: none;
   background: transparent;
   color: var(--aico-muted-fg, #6b7280);
-  border-radius: 0.4375rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
@@ -2976,7 +2976,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin: 0;
   padding: 0;
   border: 1px solid var(--aico-border);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   background: var(--aico-bg);
 }
@@ -3060,7 +3060,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0.75rem 1rem;
   background: #fef3c7;
   border: 1px solid #fcd34d;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   color: #92400e;
   font-size: 0.875rem;
 }
@@ -3071,7 +3071,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   align-items: center;
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
   padding: 0.875rem;
 }
 .aico-preorder-filters-disabled {
@@ -3104,7 +3104,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   align-items: center;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   background: var(--aico-bg);
   padding: 0 0.6rem 0 2rem;
   min-height: 2.5rem;
@@ -3159,7 +3159,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   min-height: 2.25rem;
   padding: 0.35rem 0.35rem 0.35rem 0.15rem;
   border: 0;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: transparent;
   font: inherit;
   font-size: 0.875rem;
@@ -3202,7 +3202,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   right: 0;
   max-height: 14rem;
   overflow: auto;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   border: 1px solid var(--aico-border);
   background: var(--aico-bg);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
@@ -3219,7 +3219,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   text-align: left;
   padding: 0.5rem 0.625rem;
   border: 0;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: transparent;
   font: inherit;
   font-size: 0.875rem;
@@ -3241,7 +3241,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: 1rem;
   height: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.7);
-  border-radius: 0.1875rem;
+  border-radius: 0.125rem;
   position: relative;
 }
 .aico-preorder-date-option.is-checked .aico-preorder-date-check {
@@ -3337,7 +3337,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0.75rem 1rem;
   background: #1e3a8a;
   color: #ffffff;
-  border-radius: 0.5rem 0.5rem 0 0;
+  border-radius: 0.125rem 0.125rem 0 0;
   font-weight: 600;
   min-height: 2.75rem;
 }
@@ -3354,7 +3354,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-card);
   border: 1px solid var(--aico-border);
   border-top: 0;
-  border-radius: 0 0 0.5rem 0.5rem;
+  border-radius: 0 0 0.125rem 0.125rem;
   text-align: center;
 }
 .aico-preorder-step2-placeholder-text {
@@ -3411,7 +3411,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   padding: 0.25rem;
   background: var(--aico-muted, #f4f4f5);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
 }
 .aico-pdp-size-region-tab {
   flex: 0 0 auto;
@@ -3422,7 +3422,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border: none;
   background: transparent;
   color: var(--aico-muted-fg, #6b7280);
-  border-radius: 0.4375rem;
+  border-radius: 0.125rem;
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
@@ -3449,7 +3449,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
   aspect-ratio: 1 / 1; padding: 0.375rem;
   background: var(--aico-card, #fff); border: 2px solid transparent;
-  border-radius: 0.625rem; overflow: hidden;
+  border-radius: 0.125rem; overflow: hidden;
   transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 .aico-pdp-color-tile:hover { border-color: var(--aico-border, #e5e7eb); transform: translateY(-1px); }
@@ -3523,7 +3523,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-pdp-reviews-ai {
   background: rgba(244, 244, 245, 0.5);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem; padding: 1.25rem 1.5rem;
+  border-radius: 0.125rem; padding: 1.25rem 1.5rem;
   display: flex; flex-direction: column; gap: 0.5rem;
 }
 .aico-pdp-reviews-ai h3 { margin: 0; font-size: 1rem; font-weight: 600; }
@@ -3560,7 +3560,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex; gap: 0.75rem;
   background: rgba(244, 244, 245, 0.7);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem; padding: 1rem;
+  border-radius: 0.125rem; padding: 1rem;
 }
 .aico-pdp-reviews-sample-reply-avatar {
   width: 2.25rem; height: 2.25rem; border-radius: 9999px;
@@ -3593,7 +3593,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font: inherit;
   font-weight: 500;
   text-decoration: none;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   border: 1px solid transparent;
   cursor: pointer;
   transition: filter 0.12s ease, background 0.12s ease, border-color 0.12s ease;
@@ -3621,7 +3621,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-alert {
   padding: 0.875rem 1rem;
   margin-bottom: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   border: 1px solid transparent;
   font-size: 0.9375rem;
   line-height: 1.4;
@@ -3649,7 +3649,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   background: #ffffff;
 }
@@ -3707,7 +3707,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   text-align: center;
   padding: 3rem 1rem;
   background: var(--aico-muted, #f4f4f5);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
 }
 .aico-cart-empty-heading { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
 .aico-cart-empty-body { margin: 0 0 1.5rem; color: var(--aico-muted-fg, #6b7280); }
@@ -3721,7 +3721,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   .aico-cart-grid { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
 }
 
-.aico-cart-items { background: #ffffff; border: 1px solid var(--aico-border, #e5e7eb); border-radius: 0.75rem; padding: 1rem; }
+.aico-cart-items { background: #ffffff; border: 1px solid var(--aico-border, #e5e7eb); border-radius: 0.125rem; padding: 1rem; }
 .aico-cart-line-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
 .aico-cart-line {
   display: grid;
@@ -3750,7 +3750,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   width: 5rem;
   height: 5rem;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--aico-border, #e5e7eb);
@@ -3775,10 +3775,10 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   cursor: pointer;
   padding: 0.375rem;
   justify-self: end;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
 }
 .aico-cart-line-remove:hover { background: var(--aico-muted, #f4f4f5); color: #b91c1c; }
-.aico-cart-line-invalid { background: rgba(254, 226, 226, 0.4); border-radius: 0.5rem; padding: 0.5rem; }
+.aico-cart-line-invalid { background: rgba(254, 226, 226, 0.4); border-radius: 0.125rem; padding: 0.5rem; }
 
 /* cart2 — product-grouped cart layout */
 .aico-cart-page--grouped .aico-cart-group-list {
@@ -3791,7 +3791,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-cart-group {
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.625rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   background: #fff;
 }
@@ -3835,7 +3835,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--aico-border, #e5e7eb);
@@ -3943,7 +3943,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-cart-summary {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   padding: 1.25rem;
   position: sticky;
   top: calc(var(--aico-chrome-height, 5.75rem) + 1rem);
@@ -4019,7 +4019,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-mini-cart-empty { text-align: center; padding: 2rem 0; color: var(--aico-muted-fg, #6b7280); display: flex; flex-direction: column; gap: 1rem; align-items: center; }
 .aico-mini-cart-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.875rem; }
 .aico-mini-cart-line { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.75rem; align-items: center; }
-.aico-mini-cart-line-image { width: 3rem; height: 3rem; border-radius: 0.25rem; overflow: hidden; background: var(--aico-muted, #f4f4f5); display: block; }
+.aico-mini-cart-line-image { width: 3rem; height: 3rem; border-radius: 0.125rem; overflow: hidden; background: var(--aico-muted, #f4f4f5); display: block; }
 .aico-mini-cart-line-image img { width: 100%; height: 100%; object-fit: cover; }
 .aico-mini-cart-line-image-empty { display: block; width: 100%; height: 100%; background: var(--aico-skeleton, rgba(0,0,0,0.08)); }
 .aico-mini-cart-line-info { min-width: 0; }
@@ -4051,7 +4051,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: #1a1a1a;
   color: #ffffff;
   padding: 0.625rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   font-size: 0.875rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
@@ -4077,7 +4077,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-section {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -4096,7 +4096,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-radio {
   display: flex; align-items: flex-start; gap: 0.75rem;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.5rem;
+  border-radius: 0.125rem;
   padding: 0.75rem 1rem;
   cursor: pointer;
   transition: border-color 0.12s ease, background 0.12s ease;
@@ -4117,7 +4117,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-weight: 700;
   letter-spacing: 0.05em;
   background: var(--aico-muted, #f4f4f5);
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   color: var(--aico-muted-fg, #6b7280);
 }
 .aico-checkout-cc-disclaimer {
@@ -4126,7 +4126,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: var(--aico-muted-fg, #6b7280);
   padding: 0.625rem 0.75rem;
   background: var(--aico-muted, #f4f4f5);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
 }
 
 .aico-checkout-discount-form { display: flex; gap: 0.5rem; align-items: stretch; }
@@ -4134,7 +4134,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex: 1;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   font: inherit;
 }
 .aico-checkout-discount-error   { margin: 0; font-size: 0.875rem; color: #b91c1c; }
@@ -4153,7 +4153,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-summary {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   padding: 1.25rem;
   position: sticky;
   top: calc(var(--aico-chrome-height, 5.75rem) + 1rem);
@@ -4189,7 +4189,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-checkout-processing-card {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   padding: 2.5rem;
   max-width: 28rem;
   text-align: center;
@@ -4210,7 +4210,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin: 0 auto;
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: 0.125rem;
   padding: 2.5rem;
   text-align: center;
   display: flex;
@@ -4259,7 +4259,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-b2b-search-input {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 0.375rem;
+  border-radius: 0.125rem;
   background: var(--aico-bg);
   font: inherit;
   padding: 0.35rem 0.5rem;
@@ -4279,7 +4279,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   overflow-y: auto;
   background: #fff;
   border: 1px solid #e4e4e4;
-  border-radius: 6px;
+  border-radius: 2px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 .aico-preorder-b2b-result {
@@ -4359,7 +4359,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   z-index: 6;
   margin: 0;
   background: #66b0bb;
-  border-radius: 4px 4px 0 0;
+  border-radius: 2px 2px 0 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-group-header-row {
@@ -4414,11 +4414,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-scroll--bar::-webkit-scrollbar-thumb {
   background: #9d9d9d;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-scroll--bar::-webkit-scrollbar-track {
   background: #e7e7e7;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-track {
   display: flex;
@@ -4444,7 +4444,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   line-height: 1.1;
   color: #fff;
   box-sizing: border-box;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.1);
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-size-head .aico-preorder-size-frac {
@@ -4457,7 +4457,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-card {
   margin: 0 0 0.5rem;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
@@ -4490,7 +4490,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: 96px;
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-title {
   margin: 0 0 0.2rem;
@@ -4576,7 +4576,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   align-items: center;
   width: 100%;
   min-height: 1.75rem;
-  border-radius: 0.3125rem;
+  border-radius: 0.125rem;
   background: #fff;
   border: 1px solid #cfcfcf;
   overflow: hidden;
@@ -4672,7 +4672,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   margin-top: 1.25rem;
   padding: 1.25rem 1rem 1rem;
   background: #e8f0f2;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 .aico-preorder-flyers-title {
   margin: 0 0 1rem;
@@ -4693,7 +4693,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder-flyer-card {
   background: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 0.75rem 1rem 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
@@ -4792,7 +4792,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder-checkout-panel {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   margin-top: 0.5rem;
@@ -4864,7 +4864,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder-checkout-totals-box {
   background: #ffefe6;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 0.75rem 1rem;
 }
 .aico-preorder-checkout-total-row {
@@ -4916,13 +4916,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-size: 0.8125rem;
   background: #fff8e6;
   border: 1px solid #f1d592;
-  border-radius: 6px;
+  border-radius: 2px;
   color: #7a5c00;
 }
 .aico-preorder-notes textarea {
   width: 100%;
   margin-top: 0.35rem;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid #e4e4e4;
   padding: 0.65rem;
   font-family: inherit;
@@ -4956,7 +4956,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   gap: 0.5rem;
   padding: 0.85rem 1.25rem;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 0.9375rem;
   font-weight: 600;
   border: none;
@@ -5016,7 +5016,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   z-index: 6;
   margin: 0;
   background: #66b0bb;
-  border-radius: 4px 4px 0 0;
+  border-radius: 2px 2px 0 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .aico-preorder2 .aico-preorder2-group-header-row {
@@ -5076,11 +5076,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 .aico-preorder2 .aico-preorder2-matrix-scroll--bar::-webkit-scrollbar-thumb {
   background: #9d9d9d;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .aico-preorder2 .aico-preorder2-matrix-scroll--bar::-webkit-scrollbar-track {
   background: #e7e7e7;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .aico-preorder2 .aico-preorder2-matrix-track {
   display: flex;
@@ -5106,7 +5106,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   line-height: 1.1;
   color: #fff;
   box-sizing: border-box;
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.1);
 }
 .aico-preorder2 .aico-preorder2-size-head .aico-preorder2-size-frac {
@@ -5119,7 +5119,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-preorder2 .aico-preorder2-product-card {
   margin: 0 0 0.5rem;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
@@ -5144,7 +5144,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: 96px;
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 .aico-preorder2 .aico-preorder2-product-title {
   margin: 0 0 0.2rem;
@@ -5217,7 +5217,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   align-items: center;
   width: 100%;
   min-height: 1.875rem;
-  border-radius: 0.4375rem;
+  border-radius: 0.125rem;
   background: #f0f0f0;
   border: 1px solid #d4d4d4;
   overflow: hidden;
