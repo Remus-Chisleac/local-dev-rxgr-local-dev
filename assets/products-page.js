@@ -1179,5 +1179,14 @@
       setEuUniverse(resp.facetDistribution[SIZE_FACET_ATTRIBUTE]);
       renderFacetColumns(resp.facetDistribution);
     }
+    // Deep-link: the page can load with facets already in the URL (chips
+    // SSR'd active). The SSR grid doesn't apply the size facet (the client
+    // owns size→raw expansion, which needs the distribution we just seeded),
+    // so the highlighted filters wouldn't actually narrow the results.
+    // Re-query the grid now that the distribution is available so the
+    // results match the active chips.
+    if (Object.keys(state.appliedFacets).length > 0) {
+      refresh();
+    }
   }).catch(function () {});
 })();
