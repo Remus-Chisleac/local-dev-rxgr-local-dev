@@ -5683,15 +5683,13 @@ button.aico-home-brand-card {
   width: 100%;
   display: block;
 }
-.page-builder .content-type-product {
-  display: inline-block;
-}
 .page-builder .page-product {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-decoration: none;
   color: inherit;
+  max-width: 18rem;
 }
 .page-builder .page-product__image {
   width: 100%;
