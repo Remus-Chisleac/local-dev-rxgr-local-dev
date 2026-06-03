@@ -3278,6 +3278,25 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   flex: 1 1 0;
   min-width: 10rem;
 }
+/* Address + B2B/debtor selectors hold long labels (full addresses, company
+   names) — give the triggers more room and let their opened dropdown panels
+   grow past the trigger to fit the longest option instead of truncating. */
+.aico-preorder-field[data-aico-field="billing_address"],
+.aico-preorder-field[data-aico-field="delivery_address"],
+.aico-preorder-field-b2b,
+.aico-preorder-field-debtor {
+  flex: 1.75 1 0;
+  min-width: 16rem;
+}
+.aico-preorder-field[data-aico-field="billing_address"] .aico-preorder-custom-select-dropdown,
+.aico-preorder-field[data-aico-field="delivery_address"] .aico-preorder-custom-select-dropdown,
+.aico-preorder-field-b2b .aico-preorder-custom-select-dropdown,
+.aico-preorder-field-debtor .aico-preorder-custom-select-dropdown {
+  right: auto;
+  width: max-content;
+  min-width: 100%;
+  max-width: 28rem;
+}
 .aico-preorder-field[hidden] {
   display: none;
 }
