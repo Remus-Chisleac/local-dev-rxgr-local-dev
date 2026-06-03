@@ -1,0 +1,450 @@
+// Aico storefront — header panel coordinator + live search drawer.
+//
+// One Alpine store (`$store.panels`) owns which side panel is open —
+// 'menu' or 'search' — so only one occupies the right-edge drawer space
+// at a time, with the same slide / scroll-lock behaviour as the
+// mini-cart. The cart drawer stays owned by `$store.cart`
+// (assets/cart.js); the three are kept mutually exclusive by closing the
+// others whenever one opens.
+//
+// Also registers the `aicoSearch` Alpine component: a debounced live
+// product search that talks to Meilisearch directly with the public
+// read-only key — the same client-side pattern as assets/products-page.js,
+// reusing the `aico_search_config` bootstrap the renderer injects on every
+// page. Results are ordered by name A→Z to match the legacy b2b-shop side
+// search.
+
+(function () {
+  'use strict';
+
+  var ANIM_MS = 220;
+
+  function lockScroll() {
+    document.documentElement.classList.add('aico-no-scroll');
+    document.body.classList.add('aico-no-scroll');
+  }
+  function unlockScroll() {
+    document.documentElement.classList.remove('aico-no-scroll');
+    document.body.classList.remove('aico-no-scroll');
+  }
+
+  // ---- Panel coordinator store ------------------------------------
+
+  function registerPanelsStore() {
+    Alpine.store('panels', {
+      active: null, // 'menu' | 'search' | null
+      mounted: { menu: false, search: false },
+      _timers: { menu: null, search: null },
+
+      isOpen: function (name) { return this.active === name; },
+      isMounted: function (name) { return !!this.mounted[name]; },
+      anyMounted: function () { return this.mounted.menu || this.mounted.search; },
+
+      open: function (name) {
+        if (name !== 'menu' && name !== 'search') { return; }
+        if (this.active === name) { return; }
+
+        // Close the cart (separate store) so only one drawer shows.
+        var cart = Alpine.store('cart');
+        if (cart && typeof cart.closeDrawer === 'function') { cart.closeDrawer(); }
+
+        // Drop every other panel instantly (including one mid-close) so the
+        // incoming sheet slides in over the persistent backdrop and two sheets
+        // never occupy the space at once.
+        var self0 = this;
+        Object.keys(this.mounted).forEach(function (key) {
+          if (key !== name && self0.mounted[key]) {
+            if (self0._timers[key]) { clearTimeout(self0._timers[key]); self0._timers[key] = null; }
+            self0.mounted[key] = false;
+          }
+        });
+
+        if (this._timers[name]) { clearTimeout(this._timers[name]); this._timers[name] = null; }
+        this.mounted[name] = true;
+        this.active = null; // keep off-screen for the slide-in frame
+        lockScroll();
+
+        var self = this;
+        function applyOpen() { self.active = name; }
+        if (window.Alpine && typeof window.Alpine.nextTick === 'function') {
+          window.Alpine.nextTick(function () {
+            // Force a reflow so the open class triggers the transition,
+            // same trick assets/cart.js uses for the mini-cart.
+            var sheet = document.querySelector('.aico-panel--' + name);
+            if (sheet) { void sheet.offsetHeight; }
+            window.Alpine.nextTick(applyOpen);
+          });
+        } else {
+          requestAnimationFrame(function () { requestAnimationFrame(applyOpen); });
+        }
+      },
+
+      close: function () {
+        var previous = this.active;
+        if (!previous) { return; }
+        this.active = null;
+        unlockScroll();
+        this._scheduleUnmount(previous);
+      },
+
+      toggle: function (name) {
+        if (this.active === name) { this.close(); } else { this.open(name); }
+      },
+
+      _scheduleUnmount: function (name) {
+        var self = this;
+        if (this._timers[name]) { clearTimeout(this._timers[name]); }
+        this._timers[name] = setTimeout(function () {
+          self._timers[name] = null;
+          if (self.active !== name) { self.mounted[name] = false; }
+        }, ANIM_MS);
+      },
+    });
+  }
+
+  // ---- Search bootstrap config ------------------------------------
+
+  function readSearchConfig() {
+    var el = document.getElementById('aico-search-config');
+    if (!el) { return null; }
+    var cfg;
+    try {
+      cfg = JSON.parse(el.textContent);
+    } catch (e) {
+      return null;
+    }
+    if (!cfg || !cfg.meilisearch || !cfg.meilisearch.host || !cfg.meilisearch.searchKey || !cfg.meilisearch.indexName) {
+      return null;
+    }
+    return cfg;
+  }
+
+  // ---- Hit → card transform (port of assets/products-page.js) ------
+
+  function nonEmpty(s) {
+    if (typeof s !== 'string') { return null; }
+    var t = s.trim();
+    return t === '' ? null : t;
+  }
+
+  function pickTranslation(list, locale) {
+    if (!Array.isArray(list) || !list.length) { return null; }
+    var normalized = String(locale || '').replace(/-/g, '_');
+    for (var i = 0; i < list.length; i++) {
+      var row = list[i];
+      if (row && typeof row === 'object' && String(row.locale || '').replace(/-/g, '_') === normalized) {
+        return row;
+      }
+    }
+    for (var j = 0; j < list.length; j++) {
+      var row2 = list[j];
+      if (row2 && typeof row2 === 'object' && String(row2.locale || '').replace(/-/g, '_') === 'de_CH') {
+        return row2;
+      }
+    }
+    return list[0] || null;
+  }
+
+  function pickName(hit, locale) {
+    var list = hit.translations;
+    var primary = pickTranslation(list, locale) || {};
+    var fromPrimary = nonEmpty(primary.webName) || nonEmpty(primary.name);
+    if (fromPrimary) { return fromPrimary; }
+    if (Array.isArray(list)) {
+      for (var i = 0; i < list.length; i++) {
+        var row = list[i];
+        var n = nonEmpty(row && row.webName) || nonEmpty(row && row.name);
+        if (n) { return n; }
+      }
+    }
+    return nonEmpty(hit.sku) || '';
+  }
+
+  function pickImage(hit, locale) {
+    var list = hit.translations;
+    if (Array.isArray(list) && list.length) {
+      var primary = pickTranslation(list, locale) || {};
+      var fp = nonEmpty(primary.mainImage) || nonEmpty(primary.secondaryImage);
+      if (fp) { return fp; }
+      for (var i = 0; i < list.length; i++) {
+        var row = list[i];
+        var u = nonEmpty(row && row.mainImage) || nonEmpty(row && row.secondaryImage);
+        if (u) { return u; }
+      }
+    }
+    var top = nonEmpty(hit.mainImage);
+    if (top) { return top; }
+    var g = hit.imageGroup || {};
+    var gm = nonEmpty(g.mainImage);
+    if (gm) { return gm; }
+    if (Array.isArray(g.images)) {
+      for (var k = 0; k < g.images.length; k++) {
+        var img = nonEmpty(g.images[k]);
+        if (img) { return img; }
+      }
+    }
+    return null;
+  }
+
+  function toNumber(v) {
+    if (typeof v === 'number' && isFinite(v)) { return v; }
+    if (typeof v === 'string' && v.trim() !== '') {
+      var n = Number(v);
+      return isFinite(n) ? n : null;
+    }
+    return null;
+  }
+
+  function rowCurrencyName(row) {
+    var c = row && row.currency;
+    if (c && typeof c === 'object' && typeof c.name === 'string') {
+      var t = c.name.trim();
+      return t === '' ? null : t;
+    }
+    return null;
+  }
+
+  function pickBestRow(rows, preferredCurrency) {
+    var objectRows = (rows || []).filter(function (r) { return r && typeof r === 'object'; });
+    var hasSelling = function (row) { return toNumber(row.sellingPrice) !== null; };
+    if (preferredCurrency) {
+      var needle = preferredCurrency.toUpperCase();
+      for (var i = 0; i < objectRows.length; i++) {
+        var cn = rowCurrencyName(objectRows[i]);
+        if (cn && cn.toUpperCase() === needle && hasSelling(objectRows[i])) { return objectRows[i]; }
+      }
+    }
+    for (var j = 0; j < objectRows.length; j++) {
+      if (hasSelling(objectRows[j])) { return objectRows[j]; }
+    }
+    return null;
+  }
+
+  function tryPriceFromRows(entry, preferred) {
+    var rows = entry.priceListRows;
+    if (!Array.isArray(rows) || !rows.length) { return null; }
+    var row = pickBestRow(rows, preferred);
+    if (!row) { return null; }
+    var sp = toNumber(row.sellingPrice);
+    if (sp == null) { return null; }
+    var dp = toNumber(row.discountPrice) || 0;
+    var isOnSale = dp > 0 && dp < sp;
+    return { sellingPrice: sp, discountPrice: isOnSale ? dp : null, isOnSale: isOnSale, currencyCode: rowCurrencyName(row) };
+  }
+
+  function tryPriceFromGross(entry, preferred) {
+    var cur = typeof entry.currency === 'string' ? nonEmpty(entry.currency) : null;
+    var curU = cur ? cur.toUpperCase() : null;
+    if (preferred && curU && curU !== preferred.toUpperCase()) { return null; }
+    var dg = toNumber(entry.discountedGross);
+    var bg = toNumber(entry.gross);
+    if (dg != null && bg != null && dg < bg) {
+      return { sellingPrice: bg, discountPrice: dg, isOnSale: true, currencyCode: cur };
+    }
+    var useGross = dg != null ? dg : bg;
+    if (useGross == null) { return null; }
+    return { sellingPrice: useGross, discountPrice: null, isOnSale: false, currencyCode: cur };
+  }
+
+  function preferredKeys(debtor) {
+    if (!debtor || debtor.priceListId == null || !debtor.debtorName) { return []; }
+    var base = 'priceList' + debtor.priceListId + debtor.debtorName;
+    var code = debtor.currencyCode;
+    return code ? [base + code, base] : [base];
+  }
+
+  function orderedKeys(map, debtor) {
+    var keys = Object.keys(map).filter(function (k) { return k !== 'retailPriceList'; });
+    keys.sort();
+    var ordered = [];
+    var pref = preferredKeys(debtor);
+    for (var i = 0; i < pref.length; i++) {
+      if (map[pref[i]] != null && ordered.indexOf(pref[i]) === -1) { ordered.push(pref[i]); }
+    }
+    for (var j = 0; j < keys.length; j++) {
+      if (ordered.indexOf(keys[j]) === -1) { ordered.push(keys[j]); }
+    }
+    return ordered;
+  }
+
+  function extractPricing(hit, debtor) {
+    var lists = hit.priceLists;
+    if (!lists || typeof lists !== 'object') { return null; }
+    var preferred = debtor && debtor.currencyCode ? debtor.currencyCode : null;
+    var keys = orderedKeys(lists, debtor);
+    for (var i = 0; i < keys.length; i++) {
+      var entry = lists[keys[i]];
+      if (!entry || typeof entry !== 'object') { continue; }
+      var fromRows = tryPriceFromRows(entry, preferred);
+      if (fromRows) { return fromRows; }
+      var fromGross = tryPriceFromGross(entry, preferred);
+      if (fromGross) { return fromGross; }
+    }
+    return null;
+  }
+
+  var moneyCache = {};
+  function formatMoney(amount, currencyCode, locale) {
+    var lc = (locale || 'en').replace(/_/g, '-');
+    if (amount == null) { return null; }
+    if (!currencyCode || !/^[A-Z]{3}$/.test(currencyCode.toUpperCase())) {
+      return amount.toFixed(2);
+    }
+    var key = lc + '|' + currencyCode.toUpperCase();
+    if (!moneyCache[key]) {
+      try {
+        moneyCache[key] = new Intl.NumberFormat(lc, { style: 'currency', currency: currencyCode.toUpperCase() });
+      } catch (e) {
+        return amount.toFixed(2) + ' ' + currencyCode.toUpperCase();
+      }
+    }
+    return moneyCache[key].format(amount);
+  }
+
+  function discountPercentOf(p) {
+    if (!p || !p.isOnSale || p.discountPrice == null || p.sellingPrice <= 0 || p.discountPrice >= p.sellingPrice) {
+      return null;
+    }
+    var pct = Math.round(((p.sellingPrice - p.discountPrice) / p.sellingPrice) * 100);
+    return pct > 0 ? pct : null;
+  }
+
+  function mapHit(hit, cfg) {
+    var id = String(hit.productId != null ? hit.productId : (hit.id != null ? hit.id : (hit.urlHandle || '')));
+    var urlHandle = (typeof hit.urlHandle === 'string' && hit.urlHandle.trim()) ? hit.urlHandle.trim() : id;
+    var pricing = extractPricing(hit, cfg.debtor);
+    var displayed = pricing ? (pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice) : null;
+    var prefix = cfg.productUrlPrefix || '/products/';
+    var suffix = cfg.productUrlQuery || '';
+    return {
+      id: id,
+      title: pickName(hit, cfg.locale) || id,
+      url: prefix + encodeURIComponent(urlHandle) + suffix,
+      image: pickImage(hit, cfg.locale),
+      priceLabel: pricing ? formatMoney(displayed, pricing.currencyCode, cfg.locale) : null,
+      compareLabel: (pricing && pricing.isOnSale && pricing.discountPrice != null)
+        ? formatMoney(pricing.sellingPrice, pricing.currencyCode, cfg.locale)
+        : null,
+      discountPercent: discountPercentOf(pricing),
+      onSale: !!(pricing && pricing.isOnSale),
+      discontinued: !!hit.isDiscontinued,
+    };
+  }
+
+  // ---- Search Alpine component ------------------------------------
+
+  function registerSearchComponent() {
+    Alpine.data('aicoSearch', function () {
+      return {
+        query: '',
+        results: [],
+        loading: false,
+        searched: false,
+        error: false,
+        total: 0,
+        minChars: 2,
+        _debounce: null,
+        _seq: 0,
+        cfg: null,
+
+        init: function () {
+          this.cfg = readSearchConfig();
+        },
+
+        get configured() { return !!this.cfg; },
+
+        onInput: function () {
+          var q = (this.query || '').trim();
+          if (this._debounce) { clearTimeout(this._debounce); }
+          if (q.length < this.minChars) {
+            this.results = [];
+            this.searched = false;
+            this.loading = false;
+            this.error = false;
+            this.total = 0;
+            this._seq++; // cancel any in-flight response
+            return;
+          }
+          this.loading = true;
+          var self = this;
+          this._debounce = setTimeout(function () { self.run(q); }, 250);
+        },
+
+        run: function (q) {
+          var cfg = this.cfg;
+          if (!cfg) { this.loading = false; return; }
+          var seq = ++this._seq;
+          var self = this;
+          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions.name) || 'translations.name:asc';
+          var url = cfg.meilisearch.host + '/indexes/' + encodeURIComponent(cfg.meilisearch.indexName) + '/search';
+          var body = {
+            q: q,
+            limit: 8,
+            offset: 0,
+            filter: (cfg.scope && cfg.scope.filter) || '',
+            sort: [sortExpr],
+          };
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + cfg.meilisearch.searchKey,
+            },
+            body: JSON.stringify(body),
+          }).then(function (r) {
+            if (!r.ok) { throw new Error('meilisearch ' + r.status); }
+            return r.json();
+          }).then(function (data) {
+            if (seq !== self._seq) { return; } // a newer query superseded this one
+            var hits = (data && Array.isArray(data.hits)) ? data.hits : [];
+            self.results = hits.map(function (h) { return mapHit(h, cfg); });
+            self.total = (data && typeof data.estimatedTotalHits === 'number')
+              ? data.estimatedTotalHits
+              : self.results.length;
+            self.loading = false;
+            self.searched = true;
+            self.error = false;
+          }).catch(function () {
+            if (seq !== self._seq) { return; }
+            self.results = [];
+            self.total = 0;
+            self.loading = false;
+            self.searched = true;
+            self.error = true;
+          });
+        },
+
+        clear: function () {
+          if (this._debounce) { clearTimeout(this._debounce); }
+          this.query = '';
+          this.results = [];
+          this.searched = false;
+          this.loading = false;
+          this.error = false;
+          this.total = 0;
+          this._seq++;
+        },
+      };
+    });
+  }
+
+  // ---- Cross-exclusion: close menu/search when the cart opens ------
+  // Covers the cart's own open paths (header button, add-to-cart auto-open
+  // in assets/cart.js) without that file needing to know about panels.
+  function watchCart() {
+    if (!window.Alpine || typeof window.Alpine.effect !== 'function') { return; }
+    window.Alpine.effect(function () {
+      var cart = Alpine.store('cart');
+      var panels = Alpine.store('panels');
+      if (cart && cart.drawerOpen && panels && panels.active) {
+        panels.close();
+      }
+    });
+  }
+
+  document.addEventListener('alpine:init', function () {
+    registerPanelsStore();
+    registerSearchComponent();
+    watchCart();
+  });
+})();

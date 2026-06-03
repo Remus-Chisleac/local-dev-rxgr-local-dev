@@ -8,6 +8,17 @@
   "footer": {
     "tagline": "Powered by Aico Storefront"
   },
+  "general": {
+    "search": {
+      "search": "Search",
+      "close": "Close search",
+      "reset": "Clear search",
+      "hint": "Start typing to search products",
+      "searching": "Searching…",
+      "no_results": "No results for",
+      "sale": "Sale"
+    }
+  },
   "errors": {
     "not_found": "We couldn't find that page.",
     "back_home": "Return home"

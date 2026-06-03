@@ -8,6 +8,17 @@
   "footer": {
     "tagline": "Mit Aico Storefront betrieben"
   },
+  "general": {
+    "search": {
+      "search": "Suchen",
+      "close": "Suche schliessen",
+      "reset": "Suche zurücksetzen",
+      "hint": "Tippen, um Produkte zu suchen",
+      "searching": "Suche läuft…",
+      "no_results": "Keine Ergebnisse für",
+      "sale": "Sale"
+    }
+  },
   "errors": {
     "not_found": "Diese Seite wurde nicht gefunden.",
     "back_home": "Zurück zur Startseite"
