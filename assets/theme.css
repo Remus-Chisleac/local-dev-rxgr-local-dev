@@ -738,8 +738,8 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-search-result + .aico-search-result { border-top: 1px solid var(--aico-border, #f0f0f0); }
 .aico-search-result-link {
   display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  gap: 0.875rem;
+  grid-template-columns: 3.25rem auto 1fr;
+  gap: 0.75rem;
   align-items: center;
   padding: 0.625rem 1.25rem;
   text-decoration: none;
@@ -764,13 +764,19 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: var(--aico-fg, #1a1a1a); color: #fff;
 }
 .aico-search-result-brand {
-  position: absolute; top: 0.2rem; right: 0.2rem; z-index: 1;
-  width: 1.15rem; height: 1.15rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.5rem; height: 1.5rem; flex-shrink: 0;
+}
+.aico-search-result-brand img {
+  width: 100%; height: 100%;
   object-fit: contain;
-  padding: 1px;
+  border-radius: 0.2rem;
+}
+.aico-search-result-gender {
+  font-size: 0.6875rem;
+  text-transform: capitalize;
+  color: var(--aico-muted-fg, #6b7280);
+  line-height: 1.2;
 }
 .aico-search-result-info { min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .aico-search-result-title {

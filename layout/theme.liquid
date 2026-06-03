@@ -84,6 +84,7 @@
         Meilisearch directly from the browser; no separate search endpoint.
       {%- endcomment -%}
       <script id="aico-search-config" type="application/json">{{ aico_search_config.json }}</script>
+      <script>window.__AICO_SEARCH_I18N__ = { gender: { men: {{ 'product.gender.men' | t | json }}, women: {{ 'product.gender.women' | t | json }}, unisex: {{ 'product.gender.unisex' | t | json }} } };</script>
     {% endif %}
     {%- comment -%}
       cart.js must execute before Alpine so its `alpine:init` listener is
@@ -525,9 +526,12 @@
                         <template x-if="product.image"><img :src="product.image" :alt="product.title" loading="lazy"></template>
                         <template x-if="!product.image"><span class="aico-search-result-image-empty" aria-hidden="true"></span></template>
                         <template x-if="product.onSale"><span class="aico-search-result-badge">{{ 'general.search.sale' | t }}</span></template>
-                        <template x-if="product.brandLogo"><img class="aico-search-result-brand" :src="product.brandLogo" :alt="product.brandLabel || ''" loading="lazy"></template>
+                      </span>
+                      <span class="aico-search-result-brand" x-show="product.brandIcon" x-cloak>
+                        <img :src="product.brandIcon" :alt="product.brandLabel || ''" loading="lazy">
                       </span>
                       <span class="aico-search-result-info">
+                        <span class="aico-search-result-gender" x-show="product.gender" x-text="genderLabel(product.gender)"></span>
                         <span class="aico-search-result-title" x-text="product.title"></span>
                         <span class="aico-search-result-price" x-show="product.priceLabel">
                           <span class="aico-search-result-price-compare" x-show="product.compareLabel" x-text="product.compareLabel"></span>
