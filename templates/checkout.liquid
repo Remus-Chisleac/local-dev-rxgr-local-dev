@@ -254,12 +254,12 @@
         <h2 class="aico-checkout-summary-title">{{ 'checkout.summary.title' | t }}</h2>
 
         <ul class="aico-checkout-summary-items" x-show="cart && !cart.empty" x-cloak>
-          <template x-for="line in (cart && cart.items) || []" :key="line.id">
+          <template x-for="group in summaryGroups()" :key="group.key">
             <li class="aico-checkout-summary-item"
-                :class="{ 'aico-checkout-summary-item-invalid': line.aico_quantity_exceeds_stock || !line.aico_is_valid }">
-              <span class="aico-checkout-summary-item-qty" x-text="line.quantity + '×'"></span>
-              <span class="aico-checkout-summary-item-title" x-text="line.title"></span>
-              <span class="aico-checkout-summary-item-price" x-text="formatMoney(line.line_price)"></span>
+                :class="{ 'aico-checkout-summary-item-invalid': group.invalid }">
+              <span class="aico-checkout-summary-item-qty" x-text="group.quantity + '×'"></span>
+              <span class="aico-checkout-summary-item-title" x-text="group.title"></span>
+              <span class="aico-checkout-summary-item-price" x-text="formatMoney(group.line_price)"></span>
             </li>
           </template>
         </ul>

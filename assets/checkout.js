@@ -273,6 +273,34 @@
         return formatMoneyValue(value);
       },
 
+      // Collapse line items that share a product so the order summary shows
+      // each product name once with the summed quantity and line total.
+      summaryGroups: function () {
+        var items = (this.cart && this.cart.items) || [];
+        var groups = [];
+        var index = {};
+        items.forEach(function (line) {
+          var key = line.product_id ? ('p:' + line.product_id) : ('l:' + line.id);
+          if (!index[key]) {
+            index[key] = {
+              key: key,
+              title: line.title,
+              quantity: 0,
+              line_price: 0,
+              invalid: false,
+            };
+            groups.push(index[key]);
+          }
+          var group = index[key];
+          group.quantity += Number(line.quantity || 0);
+          group.line_price += Number(line.line_price || 0);
+          if (line.aico_quantity_exceeds_stock || !line.aico_is_valid) {
+            group.invalid = true;
+          }
+        });
+        return groups;
+      },
+
       submit: function () {
         var self = this;
         this.submitError = null;

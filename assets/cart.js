@@ -7,7 +7,7 @@
  *
  * Methods:
  *   refresh()       — GET /cart.js, update store
- *   add(items)      — POST /cart/add.js, refresh + open drawer + toast
+ *   add(items)      — POST /cart/add.js, refresh + toast
  *   update(id, qty) — POST /cart/change.js, refresh
  *   clear()         — POST /cart/clear (form post, triggers a reload)
  *   canCheckout()   — gate matching b2b-shop's checkout-button rules
@@ -185,7 +185,6 @@
           }
           this.data = await res.json();
           this.flash(translations.added || 'Item added to cart.', 'success');
-          this.openDrawer();
           return true;
         } catch (e) {
           this.flash(translations.add_error || 'Could not add to cart.', 'error');

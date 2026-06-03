@@ -82,11 +82,12 @@
       `$store.cart` global used by the header badge and mini-cart drawer.
       checkout.js must also load before Alpine on checkout routes so
       `x-data="aicoCheckout(...)"` is defined when Alpine.start() runs.
-      cart2.js must load before Alpine on /cart2 so `x-data="aicoCartGroupedPage"`
-      is registered when Alpine.start() runs.
+      cart2.js must load before Alpine on the grouped cart routes (/cart and
+      /cart2) so `x-data="aicoCartGroupedPage"` is registered when
+      Alpine.start() runs.
     {%- endcomment -%}
     <script src="{{ 'cart.js' | asset_url }}" defer></script>
-    {% if template.name == 'cart2' %}
+    {% if template.name == 'cart' or template.name == 'cart2' %}
       <script src="{{ 'cart2.js' | asset_url }}" defer></script>
     {% endif %}
     {% if template.name == 'checkout' or template.directory == 'checkout' %}

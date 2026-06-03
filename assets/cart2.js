@@ -57,6 +57,12 @@
           }, 0);
         },
 
+        groupTotalQuantity(group) {
+          return (group.lines || []).reduce(function (sum, line) {
+            return sum + Number(line.quantity || 0);
+          }, 0);
+        },
+
         groupHasInvalidLine(group) {
           var cart = Alpine.store('cart');
           return (group.lines || []).some(function (line) {
