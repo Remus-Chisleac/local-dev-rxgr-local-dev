@@ -5668,3 +5668,39 @@ button.aico-home-brand-card {
   max-width: 5rem;
   border-radius: 50%;
 }
+.page-builder .page-carousel {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.page-builder .page-carousel__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.page-builder .page-carousel__slide img {
+  width: 100%;
+  display: block;
+}
+.page-builder .content-type-product {
+  display: inline-block;
+}
+.page-builder .page-product {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+.page-builder .page-product__image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+.page-builder .page-product__title {
+  font-weight: 600;
+}
+.page-builder .page-product__price {
+  color: var(--aico-muted, #666);
+}

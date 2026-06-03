@@ -1,0 +1,6 @@
+{% comment %} Carousel — horizontal scroll-snap image strip (CSS only, no JS). {% endcomment %}
+<div class="page-carousel">
+  {%- for image in block.aico_data.images -%}
+    <div class="page-carousel__slide"><img src="{{ image.src }}" alt="{{ image.alt }}" loading="lazy"></div>
+  {%- endfor -%}
+</div>
