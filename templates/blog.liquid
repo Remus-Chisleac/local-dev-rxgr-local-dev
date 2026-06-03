@@ -16,15 +16,10 @@
   .aico-news--list { max-width: 1280px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
   .aico-news-header { margin-bottom: 1.5rem; }
   .aico-news-title { font-size: 2rem; font-weight: 700; margin: 0; }
-  .aico-news-filter { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
-  .aico-news-filter .btn { display: inline-block; border: 1px solid #d4d4d4; background: #fff;
-    border-radius: 999px; padding: .4rem 1rem; font-size: .9rem; line-height: 1.2;
-    text-decoration: none; color: #111; }
-  .aico-news-filter .btn.active { background: #111; color: #fff; border-color: #111; }
   .aico-news-grid { list-style: none; display: grid; gap: 1.5rem; padding: 0; margin: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .aico-news-card { display: flex; flex-direction: column; height: 100%; border: 1px solid #ececec;
-    border-radius: 12px; overflow: hidden; background: #fff; text-decoration: none; color: inherit;
+    border-radius: 0.125rem; overflow: hidden; background: #fff; text-decoration: none; color: inherit;
     transition: box-shadow .2s ease; }
   .aico-news-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); }
   .aico-news-card-image { aspect-ratio: 16 / 10; overflow: hidden; background: #f2f2f2; }
@@ -49,15 +44,6 @@
   <header class="aico-news-header">
     <h1 class="aico-news-title">News</h1>
   </header>
-
-  {%- if blog.aico_categories.size > 0 -%}
-    <nav class="aico-news-filter" aria-label="News categories">
-      <a href="{{ blog.aico_url }}" class="btn {% unless blog.aico_selected_category_id %}active{% endunless %}">{% if request.locale contains 'de' %}Alle Artikel{% else %}All articles{% endif %}</a>
-      {%- for category in blog.aico_categories -%}
-        <a href="{{ category.url }}" class="btn {% if category.selected %}active{% endif %}">{{ category.name }}</a>
-      {%- endfor -%}
-    </nav>
-  {%- endif -%}
 
   {%- if blog.size > 0 -%}
     <div class="aico-news-grid">
