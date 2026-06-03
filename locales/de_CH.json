@@ -139,10 +139,12 @@
     "about_product": "Über dieses Produkt",
     "specs": "Spezifikationen",
     "specs_label": {
+      "colors": "Farben",
       "gender": "Geschlecht",
       "material": "Material",
       "shoe_insole": "Schuheinlage",
       "shoe_last_width": "Schuhleistenbreite",
+      "shoe_sole": "Schuhsohle",
       "shoe_sole_category": "Schuhsohlenkategorie",
       "sku": "Artikelnummer",
       "hs_code": "Zolltarifnummer"

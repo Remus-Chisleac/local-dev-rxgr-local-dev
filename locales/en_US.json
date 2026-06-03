@@ -139,10 +139,12 @@
     "about_product": "About this product",
     "specs": "Specifications",
     "specs_label": {
+      "colors": "Colors",
       "gender": "Gender",
       "material": "Material",
       "shoe_insole": "Shoe Insole",
       "shoe_last_width": "Shoe Last Width",
+      "shoe_sole": "Shoe Sole",
       "shoe_sole_category": "Shoe Sole Category",
       "sku": "SKU",
       "hs_code": "HS code"
