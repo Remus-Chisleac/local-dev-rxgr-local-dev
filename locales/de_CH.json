@@ -1,6 +1,24 @@
 {
+  "pages": {
+    "placeholder": {
+      "title": "Über uns",
+      "body": "Ersetze diesen Inhalt im Editor."
+    }
+  },
   "footer": {
     "tagline": "Mit Aico Storefront betrieben"
+  },
+  "general": {
+    "search": {
+      "search": "Suchen",
+      "close": "Suche schliessen",
+      "reset": "Suche zurücksetzen",
+      "products": "Produkte",
+      "hint": "Tippen, um Produkte zu suchen",
+      "searching": "Suche läuft…",
+      "no_results": "Keine Ergebnisse für",
+      "sale": "Sale"
+    }
   },
   "errors": {
     "not_found": "Diese Seite wurde nicht gefunden.",
@@ -16,9 +34,9 @@
     "categories_aria": "Kategorien",
     "category_women": "Frauen",
     "category_men": "Männer",
+    "products_heading": "Unsere beliebtesten Modelle",
     "gender_women": "Damen",
     "gender_men": "Herren",
-    "products_heading": "Unsere beliebtesten Modelle",
     "news_heading": "Aktuelles",
     "badge_new": "NEU"
   },
@@ -46,9 +64,7 @@
     "menu_load_error": "Das Menü konnte nicht geladen werden. Standard wird angezeigt.",
     "fallback_shop": "Shop",
     "fallback_news": "Aktuelles",
-    "fallback_service": "Service",
-    "home": "Home",
-    "shop": "Shop"
+    "fallback_service": "Service"
   },
   "home_page": {
     "loading_status": "Shop-Inhalte werden geladen…",
@@ -63,30 +79,7 @@
       "contact": "Kontakt",
       "privacy": "Datenschutz",
       "imprint": "Impressum"
-    },
-    "hero_eyebrow": "Neue Saison",
-    "hero_title": "Essentials, mit Bedacht gemacht.",
-    "hero_body": "Eine kleine, sorgfältig kuratierte Auswahl an Alltagsstücken – gemacht, um zu bleiben und getragen zu werden.",
-    "hero_cta": "Kollektion entdecken",
-    "promise": {
-      "shipping_title": "Kostenloser Versand",
-      "shipping_body": "Bei jeder Bestellung, ohne Mindestwert.",
-      "quality_title": "Langlebig gemacht",
-      "quality_body": "Durchdachte Materialien und ehrliches Handwerk.",
-      "support_title": "Für Sie da",
-      "support_body": "Freundlicher Support, wann immer Sie ihn brauchen."
-    },
-    "shop_title": "Die Auswahl entdecken",
-    "shop_body": "Stöbern Sie durch die gesamte Kollektion.",
-    "shop_cta": "Alle ansehen",
-    "tiles": {
-      "new_title": "Neuheiten",
-      "best_title": "Bestseller",
-      "all_title": "Alle Produkte"
-    },
-    "cta_title": "Finden Sie Ihre Alltagsfavoriten",
-    "cta_body": "Kostenloser Versand und einfache Rückgabe bei jeder Bestellung.",
-    "cta_button": "Jetzt einkaufen"
+    }
   },
   "products": {
     "title": "Produkte",

@@ -1,6 +1,24 @@
 {
+  "pages": {
+    "placeholder": {
+      "title": "About us",
+      "body": "Replace this content from the editor."
+    }
+  },
   "footer": {
     "tagline": "Powered by Aico Storefront"
+  },
+  "general": {
+    "search": {
+      "search": "Search",
+      "close": "Close search",
+      "reset": "Clear search",
+      "products": "Products",
+      "hint": "Start typing to search products",
+      "searching": "Searching…",
+      "no_results": "No results for",
+      "sale": "Sale"
+    }
   },
   "errors": {
     "not_found": "We couldn't find that page.",
@@ -16,9 +34,9 @@
     "categories_aria": "Shop by category",
     "category_women": "Women",
     "category_men": "Men",
+    "products_heading": "Our most popular models",
     "gender_women": "Women",
     "gender_men": "Men",
-    "products_heading": "Our most popular models",
     "news_heading": "Latest news",
     "badge_new": "NEW"
   },
@@ -46,9 +64,7 @@
     "menu_load_error": "We couldn't load the menu. Showing defaults.",
     "fallback_shop": "Shop",
     "fallback_news": "News",
-    "fallback_service": "Service",
-    "home": "Home",
-    "shop": "Shop"
+    "fallback_service": "Service"
   },
   "home_page": {
     "loading_status": "Loading shop content…",
@@ -63,30 +79,7 @@
       "contact": "Contact",
       "privacy": "Privacy",
       "imprint": "Imprint"
-    },
-    "hero_eyebrow": "New season",
-    "hero_title": "Essentials, thoughtfully made.",
-    "hero_body": "A small, carefully edited collection of everyday pieces — built to last and made to be worn.",
-    "hero_cta": "Shop the collection",
-    "promise": {
-      "shipping_title": "Free shipping",
-      "shipping_body": "On every order, with no minimum.",
-      "quality_title": "Made to last",
-      "quality_body": "Considered materials and honest craftsmanship.",
-      "support_title": "Here to help",
-      "support_body": "Friendly support, whenever you need it."
-    },
-    "shop_title": "Shop the edit",
-    "shop_body": "Browse the full collection.",
-    "shop_cta": "View all",
-    "tiles": {
-      "new_title": "New arrivals",
-      "best_title": "Best sellers",
-      "all_title": "All products"
-    },
-    "cta_title": "Find your everyday favourites",
-    "cta_body": "Free shipping and easy returns on every order.",
-    "cta_button": "Start shopping"
+    }
   },
   "products": {
     "title": "Products",
