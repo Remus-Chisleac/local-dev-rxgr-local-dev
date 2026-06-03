@@ -470,7 +470,7 @@
              :class="{ 'aico-panel-open': $store.panels && $store.panels.isOpen('search') }"
              :hidden="!($store.panels && $store.panels.isMounted('search'))"
              :aria-hidden="!($store.panels && $store.panels.isOpen('search'))"
-             x-effect="if ($store.panels && $store.panels.isOpen('search')) { $nextTick(() => { if ($refs.searchInput) { $refs.searchInput.focus(); } }); }"
+             x-effect="if ($store.panels && $store.panels.isOpen('search')) { ensurePreloaded(); $nextTick(() => { if ($refs.searchInput) { $refs.searchInput.focus(); } }); }"
              role="dialog" aria-modal="true" aria-labelledby="aico-search-panel-title" tabindex="-1">
         <div class="aico-panel-head">
           <h2 id="aico-search-panel-title" class="aico-panel-title">{{ 'general.search.search' | t }}</h2>
@@ -507,45 +507,48 @@
         </div>
 
         <div class="aico-search-body">
-          {%- comment -%} Idle / not-yet-searched hint. {%- endcomment -%}
-          <template x-if="!loading && !searched">
-            <p class="aico-search-hint">{{ 'general.search.hint' | t }}</p>
-          </template>
-
           {%- comment -%} Loading spinner. {%- endcomment -%}
           <div class="aico-search-loading" x-show="loading" x-cloak>
             <span class="aico-search-spinner" aria-hidden="true"></span>
             <span class="aico-sr-only">{{ 'general.search.searching' | t }}</span>
           </div>
 
-          {%- comment -%} Results list. {%- endcomment -%}
+          {%- comment -%} Results — preloaded products on open, or typed-query matches. {%- endcomment -%}
           <template x-if="!loading && results.length > 0">
-            <ul class="aico-search-results">
-              <template x-for="product in results" :key="product.id">
-                <li class="aico-search-result">
-                  <a class="aico-search-result-link" :href="product.url">
-                    <span class="aico-search-result-image">
-                      <template x-if="product.image"><img :src="product.image" :alt="product.title" loading="lazy"></template>
-                      <template x-if="!product.image"><span class="aico-search-result-image-empty" aria-hidden="true"></span></template>
-                      <template x-if="product.onSale"><span class="aico-search-result-badge">{{ 'general.search.sale' | t }}</span></template>
-                    </span>
-                    <span class="aico-search-result-info">
-                      <span class="aico-search-result-title" x-text="product.title"></span>
-                      <span class="aico-search-result-price" x-show="product.priceLabel">
-                        <span class="aico-search-result-price-compare" x-show="product.compareLabel" x-text="product.compareLabel"></span>
-                        <span class="aico-search-result-price-current" x-text="product.priceLabel"></span>
-                        <span class="aico-search-result-discount" x-show="product.discountPercent" x-text="'−' + product.discountPercent + '%'"></span>
+            <div class="aico-search-results-wrap">
+              <p class="aico-search-results-heading">{{ 'general.search.products' | t }}</p>
+              <ul class="aico-search-results">
+                <template x-for="product in results" :key="product.id">
+                  <li class="aico-search-result">
+                    <a class="aico-search-result-link" :href="product.url">
+                      <span class="aico-search-result-image">
+                        <template x-if="product.image"><img :src="product.image" :alt="product.title" loading="lazy"></template>
+                        <template x-if="!product.image"><span class="aico-search-result-image-empty" aria-hidden="true"></span></template>
+                        <template x-if="product.onSale"><span class="aico-search-result-badge">{{ 'general.search.sale' | t }}</span></template>
                       </span>
-                    </span>
-                  </a>
-                </li>
-              </template>
-            </ul>
+                      <span class="aico-search-result-info">
+                        <span class="aico-search-result-title" x-text="product.title"></span>
+                        <span class="aico-search-result-price" x-show="product.priceLabel">
+                          <span class="aico-search-result-price-compare" x-show="product.compareLabel" x-text="product.compareLabel"></span>
+                          <span class="aico-search-result-price-current" x-text="product.priceLabel"></span>
+                          <span class="aico-search-result-discount" x-show="product.discountPercent" x-text="'−' + product.discountPercent + '%'"></span>
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                </template>
+              </ul>
+            </div>
           </template>
 
-          {%- comment -%} No-results state. {%- endcomment -%}
+          {%- comment -%} No-results state (typed query only). {%- endcomment -%}
           <template x-if="!loading && searched && results.length === 0">
             <p class="aico-search-empty">{{ 'general.search.no_results' | t }} <strong x-text="'“' + query + '”'"></strong></p>
+          </template>
+
+          {%- comment -%} Idle hint (nothing to preload, or search unavailable). {%- endcomment -%}
+          <template x-if="!loading && !searched && results.length === 0">
+            <p class="aico-search-hint">{{ 'general.search.hint' | t }}</p>
           </template>
         </div>
       </aside>

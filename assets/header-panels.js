@@ -333,18 +333,24 @@
 
   // ---- Search Alpine component ------------------------------------
 
+  var PRELOAD_LIMIT = 12;
+  var QUERY_LIMIT = 8;
+
   function registerSearchComponent() {
     Alpine.data('aicoSearch', function () {
       return {
         query: '',
         results: [],
         loading: false,
-        searched: false,
+        searched: false,   // a typed query has returned (drives the no-results state)
         error: false,
         total: 0,
+        isPreload: false,   // current results are the preloaded set, not a typed query
+        preloaded: false,   // preload fetch has been kicked off
         minChars: 2,
         _debounce: null,
         _seq: 0,
+        _preloadResults: null,
         cfg: null,
 
         init: function () {
@@ -353,37 +359,59 @@
 
         get configured() { return !!this.cfg; },
 
+        // Preload products the first time the drawer opens (empty query →
+        // newest products, like aico-commerce's search panel), cached so
+        // re-opening doesn't refetch.
+        ensurePreloaded: function () {
+          if (!this.cfg || this.preloaded) { return; }
+          this.preloaded = true;
+          this.runFetch('', true);
+        },
+
         onInput: function () {
           var q = (this.query || '').trim();
           if (this._debounce) { clearTimeout(this._debounce); }
           if (q.length < this.minChars) {
-            this.results = [];
+            // Below the threshold → fall back to the preloaded set.
+            this._seq++; // cancel any in-flight typed query
+            this.error = false;
             this.searched = false;
             this.loading = false;
-            this.error = false;
-            this.total = 0;
-            this._seq++; // cancel any in-flight response
+            if (this._preloadResults) {
+              this.results = this._preloadResults;
+              this.total = this._preloadResults.length;
+              this.isPreload = true;
+            } else {
+              this.results = [];
+              this.total = 0;
+              this.isPreload = false;
+              this.ensurePreloaded();
+            }
             return;
           }
           this.loading = true;
           var self = this;
-          this._debounce = setTimeout(function () { self.run(q); }, 250);
+          this._debounce = setTimeout(function () { self.runFetch(q, false); }, 250);
         },
 
-        run: function (q) {
+        runFetch: function (q, isPreload) {
           var cfg = this.cfg;
           if (!cfg) { this.loading = false; return; }
           var seq = ++this._seq;
           var self = this;
-          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions.name) || 'translations.name:asc';
+          // Typed queries order A→Z like the b2b-shop side search; the
+          // preload shows the newest products like aico-commerce.
+          var sortKey = isPreload ? '-date' : 'name';
+          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions[sortKey]) || 'translations.name:asc';
           var url = cfg.meilisearch.host + '/indexes/' + encodeURIComponent(cfg.meilisearch.indexName) + '/search';
           var body = {
             q: q,
-            limit: 8,
+            limit: isPreload ? PRELOAD_LIMIT : QUERY_LIMIT,
             offset: 0,
             filter: (cfg.scope && cfg.scope.filter) || '',
             sort: [sortExpr],
           };
+          this.loading = true;
           fetch(url, {
             method: 'POST',
             headers: {
@@ -397,32 +425,59 @@
           }).then(function (data) {
             if (seq !== self._seq) { return; } // a newer query superseded this one
             var hits = (data && Array.isArray(data.hits)) ? data.hits : [];
-            self.results = hits.map(function (h) { return mapHit(h, cfg); });
-            self.total = (data && typeof data.estimatedTotalHits === 'number')
+            var products = hits.map(function (h) { return mapHit(h, cfg); });
+            var estimated = (data && typeof data.estimatedTotalHits === 'number')
               ? data.estimatedTotalHits
-              : self.results.length;
+              : products.length;
+            if (isPreload) {
+              self._preloadResults = products;
+              // Only surface the preload if the user hasn't started typing.
+              if ((self.query || '').trim().length < self.minChars) {
+                self.results = products;
+                self.total = estimated;
+                self.isPreload = true;
+                self.searched = false;
+              }
+            } else {
+              self.results = products;
+              self.total = estimated;
+              self.isPreload = false;
+              self.searched = true;
+            }
             self.loading = false;
-            self.searched = true;
             self.error = false;
           }).catch(function () {
             if (seq !== self._seq) { return; }
-            self.results = [];
-            self.total = 0;
             self.loading = false;
-            self.searched = true;
             self.error = true;
+            if (isPreload) {
+              self.preloaded = false; // allow a retry on the next open
+            } else {
+              self.results = [];
+              self.total = 0;
+              self.searched = true;
+            }
           });
         },
 
         clear: function () {
           if (this._debounce) { clearTimeout(this._debounce); }
+          this._seq++;
           this.query = '';
-          this.results = [];
           this.searched = false;
           this.loading = false;
           this.error = false;
-          this.total = 0;
-          this._seq++;
+          // Restore the preloaded set rather than emptying the drawer.
+          if (this._preloadResults) {
+            this.results = this._preloadResults;
+            this.total = this._preloadResults.length;
+            this.isPreload = true;
+          } else {
+            this.results = [];
+            this.total = 0;
+            this.isPreload = false;
+            this.ensurePreloaded();
+          }
         },
       };
     });

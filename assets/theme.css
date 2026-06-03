@@ -699,6 +699,15 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-search-clear:hover { color: var(--aico-fg, #1a1a1a); }
 
 .aico-search-body { flex: 1; overflow-y: auto; padding: 0.5rem 0; }
+.aico-search-results-heading {
+  margin: 0;
+  padding: 0.5rem 1.25rem 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--aico-muted-fg, #6b7280);
+}
 .aico-search-hint,
 .aico-search-empty {
   margin: 0;
