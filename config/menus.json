@@ -4,7 +4,7 @@
     "links": [
       { "title": "Home", "url": "/" },
       { "title": "Products", "url": "/products" },
-      { "title": "Contact", "url": "/pages/contact" }
+      { "title": "Contact", "url": "/contact" }
     ]
   },
   "footer": {
@@ -13,7 +13,7 @@
     "links": [
       { "title_key": "home_page.footer.shipping_costs", "url": "/pages/versandkosten" },
       { "title_key": "home_page.footer.terms", "url": "https://files.kybunjoya.swiss/documents/b2b/kybunJoya_AGB_English.pdf", "aico_url_de_ch": "https://files.kybunjoya.swiss/documents/b2b/kybunJoya_AGB_Deutsch.pdf", "open_in_new_tab": true },
-      { "title_key": "home_page.footer.contact", "url": "/pages/contact" },
+      { "title_key": "home_page.footer.contact", "url": "/contact" },
       { "title_key": "home_page.footer.privacy", "url": "/pages/privacy" },
       { "title_key": "home_page.footer.imprint", "url": "/pages/imprint" }
     ]
