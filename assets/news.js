@@ -162,8 +162,27 @@ $(document).ready(function(){
       "Accept": "application/vnd.api+json",
     }
   };
-  $.ajax(settings).done(function (response) {
-    //console.log(response);    
+  // Prefer the server-embedded article payload (article page) so the detail
+  // renders with no network round-trip; fall back to the proxy fetch.
+  var inlineArticleEl = document.getElementById('aico-article-data');
+  var newsRequest;
+  if (inlineArticleEl && !is_listpage) {
+    var inlineResponse = null;
+    try {
+      var inlineAttrs = JSON.parse(inlineArticleEl.textContent);
+      if (inlineAttrs && typeof inlineAttrs === 'object') {
+        inlineResponse = { data: [ { attributes: inlineAttrs, id: inlineAttrs.id } ] };
+      }
+    } catch (e) { inlineResponse = null; }
+    newsRequest = inlineResponse
+      ? $.Deferred().resolve(inlineResponse).promise()
+      : $.ajax(settings);
+  } else {
+    newsRequest = $.ajax(settings);
+  }
+
+  newsRequest.done(function (response) {
+    //console.log(response);
     var totalData = response.data.length;
     var html = '';
         

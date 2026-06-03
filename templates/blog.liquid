@@ -1,16 +1,15 @@
 {%- comment -%}
   News feed (list) — Shopify blog convention at /blogs/news.
 
-  Rendered client-side by news.js (legacy AICO content) which delegates to
-  news-neo.js (window.NewsNeo) for articles authored in the new AICO Neo
-  content builder. Data comes from the same-origin proxy
-  /blogs/news/feed.js + /blogs/news/categories.js (shopper session auth).
+  Server-rendered: LiquidRendererService binds the `blog` drop (articles for
+  the requested ?page, category filter, pagination) via NewsLoader, so the
+  HTML arrives populated. No client fetch, no empty/loading state. Pagination
+  and the category filter are plain links (?page=N / ?category=ID), so the
+  page works without JavaScript.
 
-  The container ids/classes below are the mount points news.js writes into:
-    #news-container        — the rendered article cards
-    #filter-container      — category filter buttons
-    #news-pagination .pagination__list — pager
-    #status / #preloader / .page-wrapper — loading shell (faded/removed on load)
+  Articles authored in the AICO Neo content builder still render their full
+  body via news-neo.js on the article page — this list only needs the card
+  fields (image, date, title, excerpt), which are server-rendered here.
 {%- endcomment -%}
 
 <style>
@@ -18,60 +17,82 @@
   .aico-news-header { margin-bottom: 1.5rem; }
   .aico-news-title { font-size: 2rem; font-weight: 700; margin: 0; }
   .aico-news-filter { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
-  .aico-news-filter .btn { border: 1px solid #d4d4d4; background: #fff; border-radius: 999px;
-    padding: .4rem 1rem; font-size: .9rem; cursor: pointer; line-height: 1.2; }
+  .aico-news-filter .btn { display: inline-block; border: 1px solid #d4d4d4; background: #fff;
+    border-radius: 999px; padding: .4rem 1rem; font-size: .9rem; line-height: 1.2;
+    text-decoration: none; color: #111; }
   .aico-news-filter .btn.active { background: #111; color: #fff; border-color: #111; }
-  .aico-news .grid { list-style: none; display: grid; gap: 1.5rem; padding: 0; margin: 0;
+  .aico-news-grid { list-style: none; display: grid; gap: 1.5rem; padding: 0; margin: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .aico-news .grid__item { margin: 0; }
-  .aico-news .news-wrapper { display: flex; flex-direction: column; height: 100%;
-    border: 1px solid #ececec; border-radius: 12px; overflow: hidden; background: #fff;
+  .aico-news-card { display: flex; flex-direction: column; height: 100%; border: 1px solid #ececec;
+    border-radius: 12px; overflow: hidden; background: #fff; text-decoration: none; color: inherit;
     transition: box-shadow .2s ease; }
-  .aico-news .news-wrapper:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-  .aico-news .image-wrapper { aspect-ratio: 16 / 10; overflow: hidden; background: #f2f2f2; }
-  .aico-news .image-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .aico-news .content-wrapper { padding: 1rem 1.1rem 0; flex: 1 1 auto; }
-  .aico-news .newsblock__date { font-size: .8rem; color: #888; margin-bottom: .4rem; }
-  .aico-news .newsblock__title { font-size: 1.1rem; font-weight: 600; margin: 0 0 .5rem; line-height: 1.3; }
-  .aico-news .newsblock__details { font-size: .9rem; color: #555; line-height: 1.5; }
-  .aico-news .link-wrapper { padding: .75rem 1.1rem 1.1rem; }
-  .aico-news .block-btn { display: inline-flex; align-items: center; justify-content: center;
-    width: 2.25rem; height: 2.25rem; border-radius: 999px; background: #111; }
-  .aico-news .block-btn svg { width: 1rem; height: 1rem; fill: #fff; }
+  .aico-news-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+  .aico-news-card-image { aspect-ratio: 16 / 10; overflow: hidden; background: #f2f2f2; }
+  .aico-news-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .aico-news-card-body { padding: 1rem 1.1rem 1.25rem; flex: 1 1 auto; display: flex; flex-direction: column; }
+  .aico-news-card-meta { font-size: .8rem; color: #888; margin-bottom: .4rem; }
+  .aico-news-card-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 .5rem; line-height: 1.3; }
+  .aico-news-card-excerpt { font-size: .9rem; color: #555; line-height: 1.5; margin: 0; }
+  .aico-news-empty { color: #666; }
   .aico-news-pagination { margin-top: 2.5rem; }
-  .aico-news-pagination .pagination__list { display: flex; flex-wrap: wrap; gap: .4rem;
-    justify-content: center; list-style: none; padding: 0; align-items: center; }
-  .aico-news-pagination .pagination__item { display: inline-flex; min-width: 2.25rem; height: 2.25rem;
-    align-items: center; justify-content: center; padding: 0 .6rem; border: 1px solid #d4d4d4;
-    border-radius: 8px; text-decoration: none; color: #111; }
-  .aico-news-pagination .pagination__item--current,
-  .aico-news-pagination .pagination__item[aria-current="page"] { background: #111; color: #fff; border-color: #111; }
-  .aico-news .center { text-align: center; margin-top: 2rem; }
-  @media (max-width: 990px) { .aico-news .grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-  @media (max-width: 600px) { .aico-news .grid { grid-template-columns: 1fr; } }
+  .aico-news-pagination ul { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center;
+    list-style: none; padding: 0; align-items: center; }
+  .aico-news-pagination a, .aico-news-pagination span { display: inline-flex; min-width: 2.25rem;
+    height: 2.25rem; align-items: center; justify-content: center; padding: 0 .6rem;
+    border: 1px solid #d4d4d4; border-radius: 8px; text-decoration: none; color: #111; }
+  .aico-news-pagination .is-current { background: #111; color: #fff; border-color: #111; }
+  @media (max-width: 990px) { .aico-news-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 600px) { .aico-news-grid { grid-template-columns: 1fr; } }
 </style>
 
 <section class="aico-news aico-news--list" data-aico-news="list">
-  <div id="status" class="aico-news-status" aria-hidden="true"></div>
-  <div id="preloader" class="aico-news-preloader" aria-hidden="true"></div>
-  <div class="page-wrapper"></div>
-
   <header class="aico-news-header">
     <h1 class="aico-news-title">News</h1>
   </header>
 
-  <div id="filter-container" class="aico-news-filter"></div>
-  <div id="news-container" class="aico-news-grid"></div>
+  {%- if blog.aico_categories.size > 0 -%}
+    <nav class="aico-news-filter" aria-label="News categories">
+      <a href="{{ blog.aico_url }}" class="btn {% unless blog.aico_selected_category_id %}active{% endunless %}">{% if request.locale contains 'de' %}Alle Artikel{% else %}All articles{% endif %}</a>
+      {%- for category in blog.aico_categories -%}
+        <a href="{{ category.url }}" class="btn {% if category.selected %}active{% endif %}">{{ category.name }}</a>
+      {%- endfor -%}
+    </nav>
+  {%- endif -%}
 
-  <nav id="news-pagination" class="aico-news-pagination" aria-label="Pagination">
-    <ul class="pagination__list"></ul>
-  </nav>
+  {%- if blog.size > 0 -%}
+    <div class="aico-news-grid">
+      {%- for article in blog.articles -%}
+        <a class="aico-news-card" href="{{ article.url }}">
+          <div class="aico-news-card-image">
+            {%- if article.image -%}
+              <img src="{{ article.image }}" alt="{{ article.title | escape }}" loading="lazy" style="object-position: {{ article.aico_object_position }};">
+            {%- endif -%}
+          </div>
+          <div class="aico-news-card-body">
+            {%- if article.published_at -%}<div class="aico-news-card-meta">{{ article.published_at }}{% if article.aico_category_name %} · {{ article.aico_category_name }}{% endif %}</div>{%- endif -%}
+            <h2 class="aico-news-card-title">{{ article.title }}</h2>
+            {%- if article.excerpt -%}<p class="aico-news-card-excerpt">{{ article.excerpt }}</p>{%- endif -%}
+          </div>
+        </a>
+      {%- endfor -%}
+    </div>
+
+    {%- assign pagination = blog.aico_pagination -%}
+    {%- if pagination.pages > 1 -%}
+      <nav class="aico-news-pagination" aria-label="Pagination">
+        <ul>
+          {%- if pagination.previous -%}<li><a href="{{ pagination.previous.url }}" rel="prev">{{ pagination.previous.title }}</a></li>{%- endif -%}
+          {%- for part in pagination.parts -%}
+            <li>
+              {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>
+              {%- else -%}<span class="is-current" aria-current="page">{{ part.title }}</span>{%- endif -%}
+            </li>
+          {%- endfor -%}
+          {%- if pagination.next -%}<li><a href="{{ pagination.next.url }}" rel="next">{{ pagination.next.title }}</a></li>{%- endif -%}
+        </ul>
+      </nav>
+    {%- endif -%}
+  {%- else -%}
+    <p class="aico-news-empty">{% if request.locale contains 'de' %}Keine News verfügbar.{% else %}No news available.{% endif %}</p>
+  {%- endif -%}
 </section>
-
-{%- comment -%} jQuery + slick are dependencies of the ported news.js renderer. {%- endcomment -%}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css">
-<script src="https://code.jquery.com/jquery-3.6.4.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
-<script src="{{ 'news-neo.js' | asset_url }}" defer></script>
-<script src="{{ 'news.js' | asset_url }}" defer></script>

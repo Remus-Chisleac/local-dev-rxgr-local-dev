@@ -33,9 +33,17 @@
   </div>
 
   <p class="aico-news-back">
-    <a href="/blogs/news" class="aico-news-back-link">&larr; News</a>
+    <a href="{{ aico_news_url | default: '/blogs/news' }}" class="aico-news-back-link">&larr; News</a>
   </p>
 </section>
+
+{%- comment -%}
+  Server-embedded article payload — news.js reads this instead of fetching,
+  so the article body renders with no extra network round-trip.
+{%- endcomment -%}
+{%- if aico_article_data -%}
+  <script id="aico-article-data" type="application/json">{{ aico_article_data }}</script>
+{%- endif -%}
 
 {%- comment -%} jQuery + slick are dependencies of the ported news.js renderer. {%- endcomment -%}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css">
