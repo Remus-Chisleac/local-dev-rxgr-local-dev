@@ -427,7 +427,7 @@
     "address_change_warning": "Changing the address will reset your preorder cart."
   },
   "contact": {
-    "title": "Contact us",
+    "title": "Contact us anytime if you have any issues",
     "subject_label": "Subject",
     "subject_placeholder": "Type your subject here…",
     "message_label": "Message",
@@ -437,6 +437,7 @@
     "error": "Something went wrong. Please try again.",
     "contact_details": "Contact details",
     "phone": "Phone",
-    "email": "Email"
+    "email": "Email",
+    "whatsapp_chat": "open whatsapp chat"
   }
 }

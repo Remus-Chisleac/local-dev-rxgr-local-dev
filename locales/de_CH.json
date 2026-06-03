@@ -427,7 +427,7 @@
     "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
   },
   "contact": {
-    "title": "Kontakt",
+    "title": "Kontaktieren Sie uns jederzeit, wenn Sie Probleme haben",
     "subject_label": "Betreff",
     "subject_placeholder": "Geben Sie hier Ihren Betreff ein…",
     "message_label": "Nachricht",
@@ -437,6 +437,7 @@
     "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
     "contact_details": "Kontaktdaten",
     "phone": "Telefon",
-    "email": "E-Mail"
+    "email": "E-Mail",
+    "whatsapp_chat": "WhatsApp-Chat öffnen"
   }
 }
