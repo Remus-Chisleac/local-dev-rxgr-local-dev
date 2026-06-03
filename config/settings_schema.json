@@ -39,5 +39,16 @@
       { "id": "aico_preorder_mock_minutes", "type": "number", "label": "Mock countdown — minutes", "default": 10 },
       { "id": "aico_preorder_mock_seconds", "type": "number", "label": "Mock countdown — seconds", "default": 11 }
     ]
+  },
+  {
+    "name": "Brand pages",
+    "info": "Per-brand campaign content for /brand/<handle>. Keyed by the brand’s PIM url handle. Each entry sets the hero (image / heading / CTA) and pins up to four featured product SKUs. The “Aktuelles” strip pulls the latest news for the brand automatically — no config needed.",
+    "settings": [
+      {
+        "id": "aico_brand_campaigns",
+        "type": "paragraph",
+        "content": "Edited as JSON in config/settings_data.json under \"aico_brand_campaigns\": { \"<brand-handle>\": { \"hero_title\": \"…\", \"hero_cta_label\": \"…\", \"hero_cta_url\": \"/products/<handle>\", \"hero_image\": \"https://…\", \"featured_skus\": [\"SKU1\",\"SKU2\",\"SKU3\",\"SKU4\"] } }. Omit hero_image to fall back to the brand’s own image; omit a field to hide it."
+      }
+    ]
   }
 ]

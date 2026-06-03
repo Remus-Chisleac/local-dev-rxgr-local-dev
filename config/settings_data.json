@@ -7,5 +7,21 @@
   "aico_preorder_mock_days": 16,
   "aico_preorder_mock_hours": 0,
   "aico_preorder_mock_minutes": 10,
-  "aico_preorder_mock_seconds": 11
+  "aico_preorder_mock_seconds": 11,
+  "aico_brand_campaigns": {
+    "kybun-brand": {
+      "hero_title": "Der neue Burgdorf beige für den Frühling.",
+      "hero_cta_label": "Zum Burgdorf beige",
+      "hero_cta_url": "/products",
+      "hero_image": "",
+      "featured_skus": ["KY001A", "KY002A", "KY003A", "AF0005A"]
+    },
+    "joya-brand": {
+      "hero_title": "Joya – Schweizer Komfortschuhe.",
+      "hero_cta_label": "Zur Kollektion",
+      "hero_cta_url": "/products",
+      "hero_image": "",
+      "featured_skus": ["130biz", "505mar", "507mar", "510mar"]
+    }
+  }
 }

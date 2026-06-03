@@ -5355,3 +5355,197 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   font-weight: 600;
   color: #454545;
 }
+
+/* ───── Brand page — live sections (hero / gender / products / news) ───── */
+
+.aico-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Hero: campaign copy sits bottom-left over the photo (matches the KJ mock). */
+.aico-brand-hero-inner {
+  align-items: end;
+}
+@media (min-width: 768px) {
+  .aico-brand-hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.aico-brand-hero-copy {
+  align-self: end;
+}
+.aico-brand-hero-cta {
+  display: inline-flex;
+  margin-top: 0.75rem;
+}
+
+/* Gender selector — centered "Damen – Herren" links into the products listing. */
+.aico-brand-gender {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 1.75rem;
+  padding-bottom: 1.25rem;
+}
+.aico-brand-gender-link {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--aico-fg);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.aico-brand-gender-link:hover {
+  color: var(--color-accent, #f97316);
+}
+.aico-brand-gender-sep {
+  color: var(--aico-muted);
+}
+
+/* Featured products — real cards (override the skeleton card chrome). */
+.aico-brand-products {
+  padding-bottom: 2.5rem;
+}
+.aico-brand-products .aico-brand-product-card {
+  position: relative;
+  background: #ffffff;
+}
+.aico-brand-product-link {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.aico-brand-products .aico-brand-product-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f4f5;
+  overflow: hidden;
+}
+.aico-brand-products .aico-brand-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.aico-brand-product-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 2px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.aico-brand-product-badge-hidden {
+  background: transparent;
+  min-height: 1.1rem;
+}
+.aico-brand-product-stars {
+  color: #2563eb;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+.aico-brand-product-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+}
+.aico-brand-product-price {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+.aico-brand-product-rrp {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent, #f97316);
+}
+.aico-brand-product-cart {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--color-accent, #f97316);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+.aico-brand-product-cart:hover {
+  filter: brightness(0.95);
+}
+
+/* Aktuelles — latest 3 brand articles. */
+.aico-brand-news {
+  padding-bottom: 3.5rem;
+}
+.aico-brand-news-heading {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--aico-fg);
+}
+.aico-brand-news-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .aico-brand-news-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+.aico-brand-news-card {
+  border: 1px solid var(--aico-border);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.aico-brand-news-link {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+.aico-brand-news-image {
+  aspect-ratio: 16 / 10;
+  background: #f4f4f5;
+  overflow: hidden;
+}
+.aico-brand-news-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.aico-brand-news-title {
+  margin: 0;
+  padding: 0.75rem 0.875rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--aico-fg);
+}
