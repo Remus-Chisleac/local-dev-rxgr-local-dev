@@ -1051,5 +1051,7 @@
     OPTION_GROUP_ORDER: OPTION_GROUP_ORDER,
     CatalogController: CatalogController,
     productTitle: productTitle,
+    productPrice: productPrice,
+    productCurrency: productCurrency,
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -1,65 +1,46 @@
 /**
- * Preorder cart state, save, and status polling (b2b-shop parity).
+ * Preorder cart state + auto-save against the version-guarded backend.
+ *
+ * Backend contract (snake_case snapshot from PreorderCartLoader::toArray):
+ *   { id, version, status (DRAFT|SUBMITTED|ERROR|CLOSED), notes, empty,
+ *     list_count, item_count, total_quantity,
+ *     item_lists: [ { id, preorder_date, list_type (PRODUCT|FLYER), item_count,
+ *                     total_quantity,
+ *                     items: [ {id, product_id, variant_id, quantity, is_valid,
+ *                               committed_quantity} ] } ] }
+ *
+ * There are NO prices in the snapshot — checkout totals are computed client-side
+ * from the catalog (see preorder-page.js).
+ *
+ * Writes are auto-saved (no "Save Cart" button): each quantity change debounces
+ * then POSTs the absolute quantity to add.js / change.js. All writes are
+ * serialized through a single promise chain so the client never races its own
+ * optimistic version: each write reads `this.version` only after the previous
+ * one has settled and updated it. A 409 (version_conflict) refetches the fresh
+ * version and retries the write once; a 422 (committed_quantity) re-syncs from
+ * the returned cart and flags the floored line.
  */
 (function (global) {
   'use strict';
 
-  function mapCartToItemList(cart, sessionDates) {
-    var lists =
-      (cart &&
-        cart.preorderItemLists &&
-        cart.preorderItemLists.map(function (itemList) {
-          return {
-            id: itemList.id,
-            preorderDate: itemList.preorderDate,
-            shouldUpdate: false,
-            preorderItems: (itemList.preorderItems || []).map(function (item) {
-              return {
-                id: item.id,
-                quantity: item.quantity,
-                itemPrice: item.itemPrice,
-                shouldUpdate: false,
-                productId: item.product ? item.product.id : item.productId,
-                productVariantId: item.productVariant
-                  ? item.productVariant.id
-                  : item.productVariantId,
-                product: item.product,
-                productVariant: item.productVariant,
-              };
-            }),
-          };
-        })) ||
-      [];
+  var FLYER_MAX = 3;
 
-    var flyers = {
-      id: cart && cart.flyers ? cart.flyers.id : null,
-      preorderDate:
-        (cart && cart.flyers && cart.flyers.preorderDate) ||
-        (sessionDates && sessionDates[0]) ||
-        new Date().toISOString(),
-      preorderItems: ((cart && cart.flyers && cart.flyers.preorderItems) || []).map(
-        function (item) {
-          return {
-            id: item.id,
-            quantity: item.quantity,
-            shouldUpdate: false,
-            productId: item.product ? item.product.id : item.productId,
-            productVariantId: item.productVariant
-              ? item.productVariant.id
-              : item.productVariantId,
-          };
-        },
-      ),
-    };
+  function csrfToken() {
+    return (
+      (typeof global.__AICO_CSRF__ === 'string' && global.__AICO_CSRF__) ||
+      (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+      (document.querySelector('[data-aico-preorder] input[name="_token"]') || {}).value ||
+      ''
+    );
+  }
 
-    return {
-      shoppingCartId: (cart && cart.id) || null,
-      preorderSessionId: cart && cart.preorderSessionId,
-      debtorId: cart && cart.debtorId,
-      preorderItemLists: lists,
-      flyers: flyers,
-      totalPrice: cart && cart.totalPrice,
-    };
+  function uuid() {
+    try {
+      if (global.crypto && typeof global.crypto.randomUUID === 'function') {
+        return global.crypto.randomUUID();
+      }
+    } catch (_) {}
+    return 'idem-' + new Date().getTime() + '-' + Math.floor(Math.random() * 1e9);
   }
 
   function sameDate(a, b) {
@@ -70,41 +51,116 @@
     }
   }
 
-  function resolveItemPrice(product) {
-    if (!product) return 0;
-    if (product.price != null && product.price >= 0) return product.price;
-    if (product.priceList && product.priceList.price != null) {
-      return product.priceList.price;
+  /**
+   * Map the snake_case server snapshot to the camelCase "localCart" shape the
+   * catalog fallback (getCartState) and the reload-seeding code already expect.
+   */
+  function snapshotToLocalCart(snapshot) {
+    if (!snapshot) {
+      return { shoppingCartId: null, preorderItemLists: [], flyers: { id: null, preorderItems: [] } };
     }
-    if (product.variantPrice != null) return product.variantPrice;
-    return 0;
+    var lists = [];
+    var flyers = { id: null, preorderDate: null, preorderItems: [] };
+    (snapshot.item_lists || []).forEach(function (list) {
+      var items = (list.items || []).map(function (item) {
+        return {
+          id: item.id,
+          productId: item.product_id,
+          productVariantId: item.variant_id,
+          quantity: item.quantity,
+          committedQuantity: item.committed_quantity,
+          isValid: item.is_valid,
+        };
+      });
+      if (String(list.list_type).toUpperCase() === 'FLYER') {
+        flyers = { id: list.id, preorderDate: list.preorder_date, preorderItems: items };
+      } else {
+        lists.push({ id: list.id, preorderDate: list.preorder_date, preorderItems: items });
+      }
+    });
+    return {
+      shoppingCartId: snapshot.id || null,
+      preorderItemLists: lists,
+      flyers: flyers,
+    };
   }
 
   function CartController(config) {
     this.cartUrl = config.cartUrl;
-    this.statusUrl = config.statusUrl;
-    this.itemsUrl = config.itemsUrl;
+    this.addUrl = config.addUrl;
+    this.changeUrl = config.changeUrl;
+    this.clearUrl = config.clearUrl;
     this.submitUrl = config.submitUrl;
-    this.getBuyerAddressId = config.getBuyerAddressId;
-    this.getBillingAddressId = config.getBillingAddressId;
-    this.getDeliveryAddressId = config.getDeliveryAddressId;
-    this.getDebtorId = config.getDebtorId;
-    this.getPreorderSessionId = config.getPreorderSessionId;
+    this.getDeliveryAddressId = config.getDeliveryAddressId || function () { return null; };
+    this.getDebtorId = config.getDebtorId || function () { return null; };
+    this.getPreorderSessionId = config.getPreorderSessionId || function () { return null; };
     this.onCartUpdated = config.onCartUpdated || function () {};
     this.onDirtyChange = config.onDirtyChange || function () {};
+    this.onError = config.onError || function () {};
 
-    this.serverCart = null;
-    this.localCart = null;
-    this.pollTimer = null;
+    this.version = 0;
+    this.cartId = null;
+    this.status = null;
+    this.snapshot = null;
+    this.localCart = snapshotToLocalCart(null);
+
+    // serialization + debounce
     this.saving = false;
+    this._writeChain = Promise.resolve();
+    this._pendingWrites = 0;
+    this._debounceTimers = {};
+    // latest desired quantity per product/variant/date cell (absolute)
+    this._pendingCells = {};
   }
+
+  CartController.prototype._cellKey = function (productId, variantId, dateLabel) {
+    return [productId, variantId, dateLabel].join('|');
+  };
+
+  CartController.prototype._applySnapshot = function (snapshot) {
+    if (!snapshot) return;
+    this.snapshot = snapshot;
+    if (typeof snapshot.version === 'number') this.version = snapshot.version;
+    if (snapshot.id) this.cartId = snapshot.id;
+    this.status = snapshot.status || this.status;
+    this.localCart = snapshotToLocalCart(snapshot);
+    this.onCartUpdated(this.snapshot, this.localCart);
+  };
+
+  CartController.prototype._setSaving = function (saving) {
+    if (this.saving === saving) return;
+    this.saving = saving;
+    this.onDirtyChange(saving);
+  };
+
+  CartController.prototype._post = function (url, body) {
+    return fetch(new URL(url, window.location.origin).toString(), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: JSON.stringify(body),
+    });
+  };
+
+  /** Common request body fields every write needs. */
+  CartController.prototype._scope = function () {
+    return {
+      delivery_address_id: this.getDeliveryAddressId(),
+      debtor_id: this.getDebtorId(),
+    };
+  };
 
   CartController.prototype.fetchCart = function () {
     var self = this;
     var url = new URL(this.cartUrl, window.location.origin);
-    var buyer = this.getBuyerAddressId();
+    var delivery = this.getDeliveryAddressId();
     var debtor = this.getDebtorId();
-    if (buyer) url.searchParams.set('buyer_address_id', String(buyer));
+    if (delivery) url.searchParams.set('delivery_address_id', String(delivery));
     if (debtor) url.searchParams.set('debtor_id', String(debtor));
 
     return fetch(url.toString(), {
@@ -115,277 +171,215 @@
         if (!res.ok) throw new Error('cart_failed');
         return res.json();
       })
-      .then(function (json) {
-        self.serverCart = json.data || null;
-        self.localCart = mapCartToItemList(self.serverCart, []);
-        self.onCartUpdated(self.serverCart, self.localCart);
-        if (self.serverCart && self.serverCart.id) {
-          self.startStatusPoll(self.serverCart.id);
-        }
-        return self.serverCart;
+      .then(function (snapshot) {
+        self._applySnapshot(snapshot);
+        return snapshot;
       });
   };
 
-  CartController.prototype.startStatusPoll = function (cartId) {
+  /** Append work onto the serialized write chain; track saving state. */
+  CartController.prototype._enqueue = function (work) {
     var self = this;
-    this.stopStatusPoll();
-    var poll = function () {
-      var url = new URL(self.statusUrl, window.location.origin);
-      url.searchParams.set('cart_id', String(cartId));
-      fetch(url.toString(), {
-        credentials: 'same-origin',
-        headers: { Accept: 'application/json' },
-      })
-        .then(function (res) {
-          return res.json();
+    this._pendingWrites += 1;
+    this._setSaving(true);
+    var run = function () {
+      return Promise.resolve()
+        .then(work)
+        .catch(function (err) {
+          self.onError('write_failed', err);
         })
-        .then(function (json) {
-          var status = json.data && json.data.status;
-          if (status === 'SAVING') {
-            self.saving = true;
-          } else if (status === 'SAVED') {
-            self.saving = false;
-            self.fetchCart();
+        .then(function () {
+          self._pendingWrites -= 1;
+          if (self._pendingWrites <= 0) {
+            self._pendingWrites = 0;
+            self._setSaving(false);
           }
-        })
-        .catch(function () {});
+        });
     };
-    poll();
-    this.pollTimer = setInterval(poll, 3000);
+    this._writeChain = this._writeChain.then(run, run);
+    return this._writeChain;
   };
 
-  CartController.prototype.stopStatusPoll = function () {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
+  /**
+   * Handle a write response. 200 -> apply snapshot. 409 -> adopt fresh version
+   * and retry the write once. 422 (committed_quantity) -> re-sync + flag.
+   */
+  CartController.prototype._handleWrite = function (res, retry) {
+    var self = this;
+    if (res.ok) {
+      return res.json().then(function (snapshot) {
+        self._applySnapshot(snapshot);
+      });
     }
-  };
-
-  CartController.prototype.updateQuantity = function (
-    productId,
-    variantId,
-    dateLabel,
-    quantity,
-    product,
-  ) {
-    if (!this.localCart) {
-      this.localCart = mapCartToItemList(null, []);
-    }
-    var list = this.localCart.preorderItemLists.find(function (l) {
-      return sameDate(l.preorderDate, dateLabel) || String(l.preorderDate).indexOf(dateLabel) >= 0;
-    });
-    if (!list) {
-      list = {
-        id: null,
-        preorderDate: dateLabel,
-        shouldUpdate: true,
-        preorderItems: [],
-      };
-      this.localCart.preorderItemLists.push(list);
-    }
-    list.shouldUpdate = true;
-    var idx = list.preorderItems.findIndex(function (it) {
-      return it.productId === productId && it.productVariantId === variantId;
-    });
-    if (idx >= 0) {
-      list.preorderItems[idx].quantity = quantity;
-      list.preorderItems[idx].shouldUpdate = true;
-      if (!list.preorderItems[idx].itemPrice && product) {
-        list.preorderItems[idx].itemPrice = resolveItemPrice(product);
+    return res.json().then(function (payload) {
+      if (res.status === 409 && payload && payload.error === 'version_conflict') {
+        if (payload.cart) self._applySnapshot(payload.cart);
+        else if (typeof payload.current_version === 'number') self.version = payload.current_version;
+        if (retry) return retry();
+        return null;
       }
-    } else if (quantity > 0) {
-      list.preorderItems.push({
-        productId: productId,
-        productVariantId: variantId,
-        quantity: quantity,
-        itemPrice: resolveItemPrice(product),
-        shouldUpdate: true,
-        product: product,
-      });
-    }
-    if (global.AicoPreorderStock) {
-      global.AicoPreorderStock.adjustStock(productId, variantId, dateLabel, quantity);
-    }
-    this.onDirtyChange(this.hasDirty());
-    this.onCartUpdated(this.serverCart, this.localCart);
+      if (res.status === 422 && payload && payload.error === 'committed_quantity') {
+        if (payload.cart) self._applySnapshot(payload.cart);
+        self.onError('committed_quantity', payload);
+        return null;
+      }
+      if (payload && payload.cart) self._applySnapshot(payload.cart);
+      self.onError(payload && payload.error ? payload.error : 'write_failed', payload);
+      return null;
+    });
   };
 
-  CartController.prototype.hasDirty = function () {
-    if (!this.localCart) return false;
-    var dirty = this.localCart.preorderItemLists.some(function (list) {
-      if (!list.shouldUpdate) return false;
-      return list.preorderItems.some(function (it) {
-        return it.shouldUpdate;
+  /**
+   * Auto-save a product quantity change. `quantity` is absolute. Debounced per
+   * cell, then enqueued so writes are serialized against the live version.
+   */
+  CartController.prototype.updateQuantity = function (productId, variantId, dateLabel, quantity, product) {
+    var self = this;
+    var key = this._cellKey(productId, variantId, dateLabel);
+    this._pendingCells[key] = {
+      productId: productId,
+      variantId: variantId,
+      dateLabel: dateLabel,
+      quantity: quantity,
+    };
+    if (this._debounceTimers[key]) clearTimeout(this._debounceTimers[key]);
+    this._debounceTimers[key] = setTimeout(function () {
+      delete self._debounceTimers[key];
+      var cell = self._pendingCells[key];
+      if (!cell) return;
+      delete self._pendingCells[key];
+      self._enqueue(function () {
+        return self._saveProductCell(cell);
+      });
+    }, 300);
+  };
+
+  CartController.prototype._saveProductCell = function (cell, isRetry) {
+    var self = this;
+    var body = Object.assign(
+      {
+        product_id: cell.productId,
+        variant_id: cell.variantId || null,
+        quantity: cell.quantity,
+        preorder_date: cell.dateLabel,
+        list_type: 'PRODUCT',
+        version: this.version,
+      },
+      this._scope(),
+    );
+    return this._post(this.addUrl, body).then(function (res) {
+      return self._handleWrite(res, isRetry ? null : function () {
+        return self._saveProductCell(cell, true);
       });
     });
-    if (dirty) return true;
-    if (this.localCart.flyers && this.localCart.flyers.shouldUpdate) {
-      return (this.localCart.flyers.preorderItems || []).some(function (it) {
-        return it.shouldUpdate;
-      });
-    }
-    return false;
   };
 
   CartController.prototype.getFlyerQuantity = function (flyerId) {
-    if (!this.localCart || !this.localCart.flyers) return 0;
-    var item = (this.localCart.flyers.preorderItems || []).find(function (it) {
+    var items = (this.localCart && this.localCart.flyers && this.localCart.flyers.preorderItems) || [];
+    var item = items.find(function (it) {
       return it.productId === flyerId;
     });
     return item ? item.quantity || 0 : 0;
   };
 
+  /** Auto-save a flyer quantity (FLYER list; server derives the date). */
   CartController.prototype.updateFlyerQuantity = function (flyerId, quantity) {
-    if (!this.localCart) {
-      this.localCart = mapCartToItemList(null, []);
-    }
-    quantity = Math.max(0, Math.min(5, Math.floor(quantity) || 0));
-    if (!this.localCart.flyers) {
-      this.localCart.flyers = {
-        id: null,
-        preorderDate: new Date().toISOString(),
-        preorderItems: [],
-      };
-    }
-    this.localCart.flyers.shouldUpdate = true;
-    var items = this.localCart.flyers.preorderItems;
-    var idx = items.findIndex(function (it) {
-      return it.productId === flyerId;
-    });
-    if (idx >= 0) {
-      items[idx].quantity = quantity;
-      items[idx].shouldUpdate = true;
-    } else {
-      items.push({
-        productId: flyerId,
-        productVariantId: null,
-        quantity: quantity,
-        shouldUpdate: true,
-      });
-    }
-    this.onDirtyChange(this.hasDirty());
-    this.onCartUpdated(this.serverCart, this.localCart);
-  };
-
-  CartController.prototype.filterDirtyPayload = function () {
-    return {
-      shoppingCartId: this.localCart.shoppingCartId,
-      preorderItemLists: this.localCart.preorderItemLists
-        .filter(function (l) {
-          return l.shouldUpdate;
-        })
-        .map(function (l) {
-          return {
-            id: l.id,
-            preorderDate: l.preorderDate,
-            preorderItems: l.preorderItems.filter(function (it) {
-              return it.shouldUpdate;
-            }),
-          };
-        }),
-      flyers: this.localCart.flyers,
-    };
-  };
-
-  CartController.prototype.saveCart = function () {
     var self = this;
-    if (!this.itemsUrl || !this.localCart) return Promise.resolve();
-    var url = new URL(this.itemsUrl, window.location.origin);
-    var debtor = this.getDebtorId();
-    if (debtor) url.searchParams.set('debtor_id', String(debtor));
-
-    var body = {
-      data: Object.assign(this.filterDirtyPayload(), {
-        preorderSessionId: this.getPreorderSessionId(),
-        billingAddressId: this.getBillingAddressId(),
-        deliveryAddressId: this.getDeliveryAddressId(),
-      }),
-    };
-
-    return fetch(url.toString(), {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN':
-          (typeof window.__AICO_CSRF__ === 'string' && window.__AICO_CSRF__) ||
-          (document.querySelector('meta[name="csrf-token"]') || {}).content ||
-          (document.querySelector('[data-aico-preorder] input[name="_token"]') || {}).value ||
-          '',
-      },
-      body: JSON.stringify(body),
-    })
-      .then(function (res) {
-        if (!res.ok) throw new Error('save_failed');
-        return res.json();
-      })
-      .then(function () {
-        self.resetShouldUpdate();
-        if (self.serverCart && self.serverCart.id) {
-          self.startStatusPoll(self.serverCart.id);
-        }
-        return self.fetchCart();
-      });
+    quantity = Math.max(0, Math.min(FLYER_MAX, Math.floor(quantity) || 0));
+    this._enqueue(function () {
+      return self._saveFlyerCell(flyerId, quantity);
+    });
   };
 
-  CartController.prototype.resetShouldUpdate = function () {
-    if (!this.localCart) return;
-    this.localCart.preorderItemLists.forEach(function (list) {
-      list.shouldUpdate = false;
-      list.preorderItems.forEach(function (it) {
-        it.shouldUpdate = false;
+  CartController.prototype._saveFlyerCell = function (flyerId, quantity, isRetry) {
+    var self = this;
+    var body = Object.assign(
+      {
+        product_id: flyerId,
+        variant_id: null,
+        quantity: quantity,
+        list_type: 'FLYER',
+        version: this.version,
+      },
+      this._scope(),
+    );
+    return this._post(this.addUrl, body).then(function (res) {
+      return self._handleWrite(res, isRetry ? null : function () {
+        return self._saveFlyerCell(flyerId, quantity, true);
       });
     });
-    if (this.localCart.flyers) {
-      this.localCart.flyers.shouldUpdate = false;
-      (this.localCart.flyers.preorderItems || []).forEach(function (it) {
-        it.shouldUpdate = false;
-      });
-    }
-    this.onDirtyChange(false);
   };
 
+  /** Remove every line (keeps the cart). */
+  CartController.prototype.clearCart = function () {
+    var self = this;
+    return this._enqueue(function () {
+      var body = Object.assign({ version: self.version }, self._scope());
+      return self._post(self.clearUrl, body).then(function (res) {
+        return self._handleWrite(res, null);
+      });
+    });
+  };
+
+  /**
+   * Place the preorder: flush pending writes, POST submit.js, then poll cart.js
+   * until status leaves DRAFT. Resolves with the final snapshot on SUBMITTED,
+   * rejects on ERROR / conflict.
+   */
   CartController.prototype.submitPreorder = function (notes) {
     var self = this;
-    var url = new URL(this.submitUrl, window.location.origin);
-    var debtor = this.getDebtorId();
-    if (debtor) url.searchParams.set('debtor_id', String(debtor));
-
-    var body = {
-      data: {
-        shoppingCartId: this.localCart && this.localCart.shoppingCartId,
-        billingAddressId: this.getBillingAddressId(),
-        deliveryAddressId: this.getDeliveryAddressId(),
-        notes: notes || '',
-      },
-    };
-
-    return fetch(url.toString(), {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN':
-          (typeof window.__AICO_CSRF__ === 'string' && window.__AICO_CSRF__) ||
-          (document.querySelector('meta[name="csrf-token"]') || {}).content ||
-          (document.querySelector('[data-aico-preorder] input[name="_token"]') || {}).value ||
-          '',
-      },
-      body: JSON.stringify(body),
-    }).then(function (res) {
-      if (!res.ok) throw new Error('submit_failed');
-      return res.json();
+    var idempotencyKey = uuid();
+    // Chain the submit after every queued write so the version is final.
+    return this._enqueue(function () {
+      var body = Object.assign(
+        {
+          version: self.version,
+          idempotency_key: idempotencyKey,
+          notes: notes || '',
+        },
+        self._scope(),
+      );
+      return self._post(self.submitUrl, body).then(function (res) {
+        if (res.ok) {
+          return res.json().then(function (snapshot) {
+            self._applySnapshot(snapshot);
+          });
+        }
+        return res.json().then(function (payload) {
+          if (payload && payload.cart) self._applySnapshot(payload.cart);
+          var err = new Error(payload && payload.error ? payload.error : 'submit_failed');
+          err.payload = payload;
+          throw err;
+        });
+      });
+    }).then(function () {
+      return self.pollUntilSubmitted();
     });
   };
 
+  CartController.prototype.pollUntilSubmitted = function (attempts) {
+    var self = this;
+    attempts = attempts || 0;
+    var MAX_ATTEMPTS = 40; // ~60s at 1.5s
+    return this.fetchCart().then(function (snapshot) {
+      var status = snapshot && snapshot.status;
+      if (status === 'SUBMITTED') return snapshot;
+      if (status === 'ERROR') throw new Error('submit_error');
+      if (attempts >= MAX_ATTEMPTS) throw new Error('submit_timeout');
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 1500);
+      }).then(function () {
+        return self.pollUntilSubmitted(attempts + 1);
+      });
+    });
+  };
+
+  /** Best-effort quantity discount lookup, used by the client-side summary. */
   CartController.prototype.getDiscount = function (discounts, totalQty) {
     if (!discounts || !discounts.length) return 0;
     var applicable = discounts.filter(function (d) {
-      return d.from_quantity <= totalQty || d.fromQuantity <= totalQty;
+      var from = d.from_quantity != null ? d.from_quantity : d.fromQuantity;
+      return from != null && from <= totalQty;
     });
     if (!applicable.length) return 0;
     return applicable.reduce(function (prev, cur) {
@@ -395,7 +389,8 @@
   };
 
   global.AicoPreorderCart = {
-    mapCartToItemList: mapCartToItemList,
     CartController: CartController,
+    snapshotToLocalCart: snapshotToLocalCart,
+    sameDate: sameDate,
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -45,15 +45,16 @@
       data-aico-preorder-session-url="{{ routes.aico_preorder_session_url }}"
       data-aico-preorder-products-url="{{ routes.aico_preorder_products_url }}"
       data-aico-preorder-cart-url="{{ routes.aico_preorder_cart_url }}"
-      data-aico-preorder-cart-status-url="{{ routes.aico_preorder_cart_status_url }}"
-      data-aico-preorder-cart-items-url="{{ routes.aico_preorder_cart_items_url }}"
-      data-aico-preorder-submit-url="{{ routes.aico_preorder_submit_url }}"
+      data-aico-preorder-cart-add-url="{{ routes.aico_preorder_cart_add_url }}"
+      data-aico-preorder-cart-change-url="{{ routes.aico_preorder_cart_change_url }}"
+      data-aico-preorder-cart-clear-url="{{ routes.aico_preorder_cart_clear_url }}"
+      data-aico-preorder-cart-submit-url="{{ routes.aico_preorder_cart_submit_url }}"
       data-aico-preorder-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
       data-aico-preorder-addresses-url="{{ routes.aico_preorder_addresses_url }}"
       data-aico-preorder-b2bs-url="{{ routes.aico_preorder_b2bs_url }}"
       data-aico-preorder-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
       data-aico-preorder-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
-      data-aico-preorder-enable-cart="0"
+      data-aico-preorder-enable-cart="1"
       data-aico-preorder-copy-select-debtor="{{ 'aico_preorder.catalog.select_debtor' | t | escape }}"
       data-aico-preorder-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
       data-aico-preorder-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"
@@ -64,6 +65,9 @@
       data-aico-preorder-copy-discount="{{ 'aico_preorder.summary.discount' | t | escape }}"
       data-aico-preorder-copy-saving="{{ 'aico_preorder.summary.saving' | t | escape }}"
       data-aico-preorder-copy-saved="{{ 'aico_preorder.summary.saved' | t | escape }}"
+      data-aico-preorder-copy-submitting="{{ 'aico_preorder.summary.submitting' | t | escape }}"
+      data-aico-preorder-copy-submitted="{{ 'aico_preorder.summary.submitted' | t | escape }}"
+      data-aico-preorder-copy-committed="{{ 'aico_preorder.summary.committed_warning' | t | escape }}"
       data-aico-preorder-copy-products-heading="{{ 'aico_preorder.catalog.products_heading' | t | escape }}"
       data-aico-preorder-copy-row-total="{{ 'aico_preorder.catalog.row_total' | t | escape }}"
       data-aico-preorder-copy-product-total="{{ 'aico_preorder.catalog.product_total' | t | escape }}"
@@ -415,7 +419,6 @@
       {% endif %}
       <p class="aico-preorder-summary-status" data-aico-preorder-summary-status hidden></p>
       <div class="aico-preorder-checkout-actions">
-        <button type="button" class="aico-preorder-btn aico-preorder-btn-save" data-aico-preorder-save disabled>{{ 'aico_preorder.summary.save_cart' | t }}</button>
         <button type="button" class="aico-preorder-btn aico-preorder-btn-place" data-aico-preorder-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
       </div>
     </div>
