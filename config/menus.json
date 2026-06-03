@@ -9,13 +9,13 @@
   },
   "footer": {
     "title": "Footer",
-    "_comment": "TODO: real URLs land once /pages CMS exposes these. Placeholder hrefs render visually but resolve to /pages/* slugs that may 404 until content lands.",
+    "_comment": "Mirrors the legacy b2b-shop footer: four CMS /pages/* links plus the locale-aware Terms & Conditions PDF (opens in a new tab). aico_url_de_ch is a non-Shopify per-locale href override read by the footer in layout/theme.liquid.",
     "links": [
       { "title_key": "home_page.footer.shipping_costs", "url": "/pages/versandkosten" },
-      { "title_key": "home_page.footer.terms", "url": "/pages/agb" },
-      { "title_key": "home_page.footer.contact", "url": "/pages/kontakt" },
-      { "title_key": "home_page.footer.privacy", "url": "/pages/datenschutz" },
-      { "title_key": "home_page.footer.imprint", "url": "/pages/impressum" }
+      { "title_key": "home_page.footer.terms", "url": "https://files.kybunjoya.swiss/documents/b2b/kybunJoya_AGB_English.pdf", "aico_url_de_ch": "https://files.kybunjoya.swiss/documents/b2b/kybunJoya_AGB_Deutsch.pdf", "open_in_new_tab": true },
+      { "title_key": "home_page.footer.contact", "url": "/pages/contact" },
+      { "title_key": "home_page.footer.privacy", "url": "/pages/privacy" },
+      { "title_key": "home_page.footer.imprint", "url": "/pages/imprint" }
     ]
   }
 }
