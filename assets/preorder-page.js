@@ -756,6 +756,32 @@
       return total;
     }
 
+    // Seed the stock module from the persisted cart so reopened/edited carts (and
+    // writes the server rejected, e.g. the committed-quantity floor) show the
+    // authoritative quantities on the product grid. The server returns ISO dates
+    // ("2026-08-10") while the grid keys cells by the catalog's human label
+    // ("Aug 10, 2026"); normalizeDateKey parses those two forms to different UTC
+    // days in timezones ahead of UTC, so map each server date to its catalog label.
+    function seedStockFromCart() {
+      if (!cartCtrl || !cartCtrl.localCart || !window.AicoPreorderStock) return;
+      var catalogDates = (catalog && catalog.preorderDates) || [];
+      (cartCtrl.localCart.preorderItemLists || []).forEach(function (list) {
+        var label = catalogDates.find(function (d) {
+          return sameDateLabel(d, list.preorderDate);
+        }) || list.preorderDate;
+        (list.preorderItems || []).forEach(function (it) {
+          if (it.productId && it.productVariantId) {
+            window.AicoPreorderStock.adjustStock(
+              it.productId,
+              it.productVariantId,
+              label,
+              it.quantity,
+            );
+          }
+        });
+      });
+    }
+
     function getCurrency() {
       var currencyOf = window.AicoPreorderCatalog && window.AicoPreorderCatalog.productCurrency;
       if (currencyOf && catalog && catalog.products) {
@@ -1061,30 +1087,7 @@
           window.AicoPreorderStock.setSizeStockFromProducts(products);
         }
         renderDateSelect(dates);
-        // Seed the stock module from the persisted cart so reopened/edited
-        // carts show their saved quantities on the product grid. The server
-        // returns ISO dates ("2026-08-10") while the grid keys cells by the
-        // catalog's human label ("Aug 10, 2026"); normalizeDateKey parses those
-        // two forms to different UTC days in timezones ahead of UTC, so map each
-        // server date to its matching catalog label before seeding.
-        if (cartCtrl && cartCtrl.localCart && window.AicoPreorderStock) {
-          var catalogDates = (catalog && catalog.preorderDates) || dates || [];
-          (cartCtrl.localCart.preorderItemLists || []).forEach(function (list) {
-            var label = catalogDates.find(function (d) {
-              return sameDateLabel(d, list.preorderDate);
-            }) || list.preorderDate;
-            (list.preorderItems || []).forEach(function (it) {
-              if (it.productId && it.productVariantId) {
-                window.AicoPreorderStock.adjustStock(
-                  it.productId,
-                  it.productVariantId,
-                  label,
-                  it.quantity,
-                );
-              }
-            });
-          });
-        }
+        seedStockFromCart();
         // Recompute the checkout summary now that this batch's products (and
         // their prices) are in catalog.products — the cart fetch that first ran
         // updateSummary may have fired before the catalog finished loading.
@@ -1152,6 +1155,15 @@
           updateSummary();
         },
         onError: function (code, payload) {
+          // A rejected write (e.g. dropping a line below its committed floor) was
+          // rolled back server-side. The optimistic stock change still happened
+          // locally, so re-seed the grid from the authoritative cart snapshot so
+          // the floored cell snaps back to its committed quantity.
+          if (code === 'committed_quantity') {
+            seedStockFromCart();
+            if (catalog) catalog.render();
+            updateSummary();
+          }
           if (!summaryStatus) return;
           summaryStatus.hidden = false;
           if (code === 'committed_quantity') {
