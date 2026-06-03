@@ -1085,6 +1085,10 @@
             });
           });
         }
+        // Recompute the checkout summary now that this batch's products (and
+        // their prices) are in catalog.products — the cart fetch that first ran
+        // updateSummary may have fired before the catalog finished loading.
+        updateSummary();
       },
       onQuantityChange: function (productId, variantId, dateLabel, qty, product) {
         var session = sessionData || {};
