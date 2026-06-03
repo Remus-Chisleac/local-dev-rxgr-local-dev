@@ -1062,15 +1062,23 @@
         }
         renderDateSelect(dates);
         // Seed the stock module from the persisted cart so reopened/edited
-        // carts show their saved quantities on the product grid.
+        // carts show their saved quantities on the product grid. The server
+        // returns ISO dates ("2026-08-10") while the grid keys cells by the
+        // catalog's human label ("Aug 10, 2026"); normalizeDateKey parses those
+        // two forms to different UTC days in timezones ahead of UTC, so map each
+        // server date to its matching catalog label before seeding.
         if (cartCtrl && cartCtrl.localCart && window.AicoPreorderStock) {
+          var catalogDates = (catalog && catalog.preorderDates) || dates || [];
           (cartCtrl.localCart.preorderItemLists || []).forEach(function (list) {
+            var label = catalogDates.find(function (d) {
+              return sameDateLabel(d, list.preorderDate);
+            }) || list.preorderDate;
             (list.preorderItems || []).forEach(function (it) {
               if (it.productId && it.productVariantId) {
                 window.AicoPreorderStock.adjustStock(
                   it.productId,
                   it.productVariantId,
-                  list.preorderDate,
+                  label,
                   it.quantity,
                 );
               }
