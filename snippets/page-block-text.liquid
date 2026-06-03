@@ -1,4 +1,4 @@
 {% comment %} Text block — optional heading + rich-text body. {% endcomment %}
 {%- assign data = block.aico_data -%}
-{%- if data.title != blank -%}<h3>{{ data.title }}</h3>{%- endif -%}
+{%- if data.title != '' -%}<h3>{{ data.title }}</h3>{%- endif -%}
 {{ data.text_html }}

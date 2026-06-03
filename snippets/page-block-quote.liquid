@@ -2,5 +2,5 @@
 {%- assign data = block.aico_data -%}
 <blockquote class="page-quote">
   <p>{{ data.quote_html }}</p>
-  {%- if data.author != blank -%}<cite>{{ data.author }}</cite>{%- endif -%}
+  {%- if data.author != '' -%}<cite>{{ data.author }}</cite>{%- endif -%}
 </blockquote>
