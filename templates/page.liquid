@@ -45,4 +45,23 @@
       {%- endfor -%}
     </div>
   {%- endfor -%}
+
+  {%- comment -%} Brand news strip — latest articles for the page's brand. {%- endcomment -%}
+  {%- if page.aico_brand_news.size > 0 -%}
+    <section class="aico-brand-news" aria-labelledby="aico-page-news-heading">
+      <h2 id="aico-page-news-heading" class="aico-brand-news-heading">{{ 'brand_page.news_heading' | t }}</h2>
+      <ul class="aico-brand-news-grid" role="list">
+        {%- for article in page.aico_brand_news -%}
+          <li class="aico-brand-news-card">
+            <a class="aico-brand-news-link" href="{{ article.url }}">
+              <div class="aico-brand-news-image">
+                {%- if article.image -%}<img src="{{ article.image }}" alt="" loading="lazy" style="object-position: {{ article.aico_object_position }};">{%- endif -%}
+              </div>
+              <h3 class="aico-brand-news-title">{{ article.title }}</h3>
+            </a>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </section>
+  {%- endif -%}
 </article>

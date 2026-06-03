@@ -1,9 +1,24 @@
-{% comment %} Product card — grey media panel + title (+ optional price), linking to the PDP. {% endcomment %}
+{% comment %}
+  Product card — reuses the brand page's `aico-brand-product-card` markup so a
+  product block on a content page matches the brand storefront's card look.
+{% endcomment %}
 {%- assign data = block.aico_data -%}
-{%- if data.href != '' -%}<a class="page-product" href="{{ data.href }}">{%- else -%}<div class="page-product">{%- endif -%}
-  <span class="page-product__media">
-    {%- if data.image != '' -%}<img class="page-product__image" src="{{ data.image }}" alt="{{ data.title }}" loading="lazy">{%- endif -%}
-  </span>
-  {%- if data.title != '' -%}<span class="page-product__title">{{ data.title }}</span>{%- endif -%}
-  {%- if data.price != '' -%}<span class="page-product__price">{{ data.price }}</span>{%- endif -%}
-{%- if data.href != '' -%}</a>{%- else -%}</div>{%- endif -%}
+<div class="aico-brand-product-card">
+  <a class="aico-brand-product-link" href="{{ data.href }}">
+    <div class="aico-brand-product-card-top">
+      <span class="aico-brand-product-badge aico-brand-product-badge-hidden" aria-hidden="true"></span>
+      <span class="aico-brand-product-stars" aria-hidden="true">★★★★★</span>
+    </div>
+    <div class="aico-brand-product-image">
+      {%- if data.image != '' -%}<img src="{{ data.image }}" alt="{{ data.title }}" loading="lazy">{%- endif -%}
+    </div>
+    <div class="aico-brand-product-meta">
+      <span class="aico-brand-product-title">{{ data.title }}</span>
+      <div class="aico-brand-product-price-row">
+        {%- if data.price != '' -%}
+          <span class="aico-brand-product-price">{{ data.price }}</span>
+        {%- endif -%}
+      </div>
+    </div>
+  </a>
+</div>

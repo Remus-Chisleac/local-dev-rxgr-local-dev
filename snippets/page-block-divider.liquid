@@ -1,2 +1,11 @@
-{% comment %} Divider block. {% endcomment %}
-<hr>
+{% comment %}
+  Divider block — the legacy content-builder repurposes this as a Women / Men
+  category split. Reuses the brand page's `aico-brand-gender` markup so it
+  matches the brand storefront.
+{% endcomment %}
+{%- assign data = block.aico_data -%}
+<nav class="aico-brand-gender" aria-label="{{ 'brand_page.categories_aria' | t }}">
+  <a class="aico-brand-gender-link" href="{{ data.women_url }}">{{ 'brand_page.gender_women' | t }}</a>
+  <span class="aico-brand-gender-sep" aria-hidden="true">–</span>
+  <a class="aico-brand-gender-link" href="{{ data.men_url }}">{{ 'brand_page.gender_men' | t }}</a>
+</nav>
