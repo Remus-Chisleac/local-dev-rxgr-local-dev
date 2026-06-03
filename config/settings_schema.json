@@ -50,5 +50,17 @@
         "content": "Edited as JSON in config/settings_data.json under \"aico_brand_campaigns\": { \"<brand-handle>\": { \"hero_title\": \"…\", \"hero_cta_label\": \"…\", \"hero_cta_url\": \"/products/<handle>\", \"hero_image\": \"https://…\", \"featured_skus\": [\"SKU1\",\"SKU2\",\"SKU3\",\"SKU4\"] } }. Omit hero_image to fall back to the brand’s own image; omit a field to hide it."
       }
     ]
+  },
+  {
+    "name": "Search",
+    "settings": [
+      {
+        "id": "aico_search_brand_ids",
+        "type": "text",
+        "label": "Searchable brands",
+        "default": "3,6,7",
+        "info": "Comma-separated brand IDs (or names) the search drawer may return — e.g. \"3,6,7\" or \"kybun, Joya, kybunjoya\". Leave empty to allow every brand the shopper can access. Shoppers still only see brands they have access to."
+      }
+    ]
   }
 ]

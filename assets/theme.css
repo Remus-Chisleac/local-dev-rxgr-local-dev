@@ -5743,6 +5743,9 @@ button.aico-home-brand-card {
 
 /* ── Content pages (/pages/<handle>) — content-builder block layout ── */
 .page-builder {
+  /* Direct child of the flex-column shell; width:100% stops the auto margins
+     from shrink-wrapping it to content, so it fills the site container width. */
+  width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 2rem 1rem 4rem;

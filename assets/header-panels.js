@@ -316,8 +316,8 @@
     var displayed = pricing ? (pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice) : null;
     var prefix = cfg.productUrlPrefix || '/products/';
     var suffix = cfg.productUrlQuery || '';
-    // The hit carries only brandId; resolve the logo/label from the
-    // server-built accessible-brands map so each result shows its brand.
+    // The hit carries only brandId; resolve the small square brand icon +
+    // label from the server-built map so each result shows its brand.
     var brandId = (hit.brandId != null && isFinite(Number(hit.brandId))) ? Number(hit.brandId) : null;
     var brands = (cfg.brands && typeof cfg.brands === 'object') ? cfg.brands : {};
     var brandInfo = brandId != null ? brands[String(brandId)] : null;
@@ -334,8 +334,9 @@
       onSale: !!(pricing && pricing.isOnSale),
       discontinued: !!hit.isDiscontinued,
       brandId: brandId,
-      brandLogo: (brandInfo && brandInfo.logo) ? brandInfo.logo : null,
+      brandIcon: (brandInfo && brandInfo.icon) ? brandInfo.icon : null,
       brandLabel: (brandInfo && brandInfo.label) ? brandInfo.label : null,
+      gender: (typeof hit.gender === 'string' && hit.gender !== '') ? hit.gender : null,
     };
   }
 
@@ -360,12 +361,21 @@
         _seq: 0,
         _preloadResults: null,
         cfg: null,
+        i18n: null,
 
         init: function () {
           this.cfg = readSearchConfig();
+          this.i18n = (typeof window !== 'undefined' && window.__AICO_SEARCH_I18N__) || null;
         },
 
         get configured() { return !!this.cfg; },
+
+        // Localized gender label ('men' → 'Herren'); falls back to the raw value.
+        genderLabel: function (gender) {
+          if (!gender) { return ''; }
+          var map = (this.i18n && this.i18n.gender) || {};
+          return map[gender] || gender;
+        },
 
         // Preload products the first time the drawer opens (empty query →
         // newest products, like aico-commerce's search panel), cached so
