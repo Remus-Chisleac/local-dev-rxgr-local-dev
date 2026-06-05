@@ -6,7 +6,7 @@
     end date (`preorder_session.deadline_at`, server-rendered into
     `data-aico-preorder-deadline`, then refreshed from
     `preorder/session.js`). When no preorder session is active the
-    countdown stays at all zeros — there is no hardcoded/mock fallback.
+    countdown shows "--" placeholders — there is no hardcoded/mock fallback.
 
   Hero title:
     Falls back to `settings.aico_preorder_mock_title` only when no live
@@ -96,22 +96,22 @@
           <p class="aico-preorder-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</p>
           <div class="aico-preorder-countdown-bar" role="presentation">
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-days>0</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-days>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.days' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-hours>00</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-hours>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.hours' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>00</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.minutes' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>00</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>--</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.seconds' | t }}</span>
             </div>
           </div>

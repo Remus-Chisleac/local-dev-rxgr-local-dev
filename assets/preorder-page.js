@@ -205,7 +205,7 @@
     // date. It's server-rendered into data-aico-preorder-deadline when known,
     // and otherwise filled in on page load from preorder/session.js
     // (updateDeadline). When there is no active preorder session the countdown
-    // stays at zero — there is no hardcoded/mock fallback.
+    // shows "--" placeholders — there is no hardcoded/mock fallback.
     var serverDeadline = root.getAttribute('data-aico-preorder-deadline');
     var deadlineMs = serverDeadline ? Date.parse(serverDeadline) : NaN;
 
@@ -218,8 +218,15 @@
 
     function tick() {
       if (!slots.days || !slots.hours || !slots.minutes || !slots.seconds) return;
-      // No active session (deadline unknown) → render all zeros.
-      var remaining = isFinite(deadlineMs) ? Math.max(0, deadlineMs - Date.now()) : 0;
+      // No active session (deadline unknown) → show placeholders.
+      if (!isFinite(deadlineMs)) {
+        slots.days.textContent = '--';
+        slots.hours.textContent = '--';
+        slots.minutes.textContent = '--';
+        slots.seconds.textContent = '--';
+        return;
+      }
+      var remaining = Math.max(0, deadlineMs - Date.now());
       var totalSeconds = Math.floor(remaining / 1000);
       var days = Math.floor(totalSeconds / 86400);
       var hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -232,7 +239,7 @@
     }
 
     // Fill in the real countdown once the live session is fetched
-    // (preorder/session.js → endDate). Until then the countdown shows zeros.
+    // (preorder/session.js → endDate). Until then the countdown shows "--".
     function updateDeadline(iso) {
       if (!iso) return;
       var ms = Date.parse(iso);

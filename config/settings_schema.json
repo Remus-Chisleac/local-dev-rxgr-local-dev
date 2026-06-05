@@ -23,7 +23,7 @@
   },
   {
     "name": "Preorder",
-    "info": "Preorder landing fallbacks used only when no live PreorderSession is bound to the page. The countdown is always driven by the active session and shows zeros when none is active.",
+    "info": "Preorder landing fallbacks used only when no live PreorderSession is bound to the page. The countdown is always driven by the active session and shows \"--\" placeholders when none is active.",
     "settings": [
       {
         "id": "aico_preorder_hero_bg_asset",
