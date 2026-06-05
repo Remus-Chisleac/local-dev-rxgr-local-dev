@@ -371,8 +371,8 @@
     } else {
       rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
     }
-    // Wide enough for a 3-digit quantity (up to 999) plus the stepper column.
-    if (layout === 'qty') return '3.5rem';
+    // Wide enough for a 2-digit quantity (up to 99) plus the stepper column.
+    if (layout === 'qty') return '2.5rem';
     if (layout === 'header') return Math.min(4.25, Math.max(2.35, rem)) + 'rem';
     return Math.min(5.25, Math.max(layout === 'box' ? 3.25 : 3.25, rem)) + 'rem';
   }

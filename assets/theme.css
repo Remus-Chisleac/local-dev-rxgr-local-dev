@@ -4855,8 +4855,8 @@ button.aico-home-brand-card {
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;
   flex-direction: column;
-  flex: 0 0 15px;
-  width: 15px;
+  flex: 0 0 14px;
+  width: 14px;
   align-self: stretch;
   background: #f1f1f1;
 }
