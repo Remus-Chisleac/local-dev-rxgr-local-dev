@@ -789,6 +789,76 @@
     this.syncMatrixScrollPositions();
   };
 
+  // Update one product card's cell values, max/disabled state and totals in
+  // place — no DOM rebuild, no focus/scroll loss. Used for the eager per-change
+  // update and the idle reconcile so the grid stays snappy.
+  CatalogController.prototype.refreshProduct = function (productId) {
+    if (!this.catalogEl) return;
+    var card = this.catalogEl.querySelector(
+      '[data-aico-preorder-product-id="' + productId + '"]',
+    );
+    if (!card) return;
+    var self = this;
+    var session = this.getSession() || {};
+    var isStockRelevant = !!session.isStockRelevant;
+    var copy = this.getCopy();
+
+    card.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
+      var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
+      var dateLabel = input.getAttribute('data-date');
+      var qty = self.getQuantity(productId, variantId, dateLabel);
+      if (document.activeElement !== input) {
+        input.value = qty > 0 ? String(qty) : '';
+      }
+      var box = input.closest('.aico-preorder-qty-box');
+      var steps = box ? box.querySelectorAll('.aico-preorder-qty-box__step') : [];
+      var disabled = false;
+      if (isStockRelevant && global.AicoPreorderStock) {
+        if (global.AicoPreorderStock.getMaxQuantity) {
+          var max = global.AicoPreorderStock.getMaxQuantity(productId, variantId, dateLabel);
+          if (max >= 0 && max < 10000) input.setAttribute('max', String(max));
+          else input.removeAttribute('max');
+        }
+        if (global.AicoPreorderStock.isCellEnabled) {
+          disabled = !global.AicoPreorderStock.isCellEnabled(
+            productId,
+            variantId,
+            dateLabel,
+            true,
+          );
+        }
+      }
+      input.disabled = disabled;
+      for (var i = 0; i < steps.length; i++) steps[i].disabled = disabled;
+      if (box) {
+        box.classList.toggle('aico-preorder-qty-box--disabled', disabled);
+        box.classList.toggle('aico-preorder-qty-box--filled', qty > 0);
+      }
+    });
+
+    card.querySelectorAll('.aico-preorder-matrix-row').forEach(function (row) {
+      var dateEl = row.querySelector('.aico-preorder-matrix-date');
+      var totalEl = row.querySelector('.aico-preorder-matrix-row-total strong');
+      if (dateEl && totalEl) {
+        totalEl.textContent = rowTotalForDate(productId, dateEl.textContent.trim());
+      }
+    });
+
+    var totalStrong = card.querySelector('.aico-preorder-product-total strong');
+    if (totalStrong) {
+      totalStrong.textContent = productTotal(productId) + ' ' + (copy.pcs || 'STK');
+    }
+  };
+
+  CatalogController.prototype.refreshAll = function () {
+    var self = this;
+    (this.products || []).forEach(function (group) {
+      (group.items || []).forEach(function (p) {
+        self.refreshProduct(p.id);
+      });
+    });
+  };
+
   CatalogController.prototype.syncMatrixScrollPositions = function () {
     if (!this.catalogEl) return;
     this.catalogEl.querySelectorAll('[data-aico-preorder-group]').forEach(function (groupEl) {
@@ -1027,19 +1097,15 @@
       }
       var product = self.findProduct(productId);
       self.onQuantityChange(productId, variantId, dateLabel, qty, product);
-      if (
-        isStockRelevant &&
-        global.AicoPreorderStock &&
-        global.AicoPreorderStock.getQuantity
-      ) {
-        qty = global.AicoPreorderStock.getQuantity(
-          productId,
-          variantId,
-          dateLabel,
-        );
+      // Eager UI: update only this product's cells/totals in place (stock mode
+      // tracks quantities client-side, so we never wait for the backend). Other
+      // products are unaffected — the stock cap is per product+variant. Fall back
+      // to a full render when stock isn't tracked client-side.
+      if (isStockRelevant && self.refreshProduct) {
+        self.refreshProduct(productId);
+      } else {
+        self.render();
       }
-      input.value = qty > 0 ? String(qty) : '';
-      self.render();
     }
 
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {

@@ -1150,20 +1150,44 @@
           return sessionData && sessionData.id;
         },
         onCartUpdated: function () {
-          if (catalog) catalog.render();
+          // Stock-relevant sessions track quantities client-side and update the
+          // grid optimistically, so a routine save echo must NOT rebuild the grid
+          // (that is the "waiting for the backend" jank). The grid is reconciled
+          // in place once the user goes idle (onDirtyChange). Non-stock sessions
+          // have no client-side source of truth, so they still render from cart.
+          if (!(sessionData && sessionData.isStockRelevant)) {
+            if (catalog) catalog.render();
+          }
           renderFlyers(sessionData && sessionData.flyers);
           updateSummary();
         },
         onDirtyChange: function (dirty) {
           hasDirty = dirty;
+          // When every optimistic write has settled, silently reconcile the grid
+          // with the authoritative cart: reset the stock caps to pristine and
+          // re-seed from the saved cart, so removed/cleared cells re-enable and
+          // any drift is corrected — all in place, so it stays snappy.
+          if (
+            !dirty &&
+            catalog &&
+            sessionData && sessionData.isStockRelevant &&
+            cartCtrl && !cartCtrl.hasPendingWork() &&
+            window.AicoPreorderStock &&
+            catalog.products && catalog.products.length
+          ) {
+            window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
+            seedStockFromCart();
+            catalog.refreshAll();
+          }
           updateSummary();
         },
         onError: function (code, payload) {
           // A rejected write (e.g. dropping a line below its committed floor) was
           // rolled back server-side. The optimistic stock change still happened
-          // locally, so re-seed the grid from the authoritative cart snapshot so
-          // the floored cell snaps back to its committed quantity.
-          if (code === 'committed_quantity') {
+          // locally; snap the grid back to the authoritative cart snapshot.
+          // Stock-relevant grids reconcile in place once writes settle
+          // (onDirtyChange); non-stock grids re-render from the cart here.
+          if (code === 'committed_quantity' && !(sessionData && sessionData.isStockRelevant)) {
             seedStockFromCart();
             if (catalog) catalog.render();
             updateSummary();

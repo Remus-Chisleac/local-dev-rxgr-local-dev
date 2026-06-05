@@ -133,6 +133,24 @@
     this.onDirtyChange(saving);
   };
 
+  /**
+   * True while the client still has optimistic work the server hasn't caught up
+   * to: an in-flight write, a queued write, or a debounced/pending cell. While
+   * this is true the UI must stay optimistic and NOT reconcile from a (stale)
+   * server snapshot, or it would revert the user's latest edit.
+   */
+  CartController.prototype.hasPendingWork = function () {
+    if (this._pendingWrites > 0) return true;
+    var k;
+    for (k in this._debounceTimers) {
+      if (this._debounceTimers.hasOwnProperty(k)) return true;
+    }
+    for (k in this._pendingCells) {
+      if (this._pendingCells.hasOwnProperty(k)) return true;
+    }
+    return false;
+  };
+
   CartController.prototype._post = function (url, body) {
     return fetch(new URL(url, window.location.origin).toString(), {
       method: 'POST',
