@@ -1,14 +1,16 @@
 {% comment %}
   AICO preorder landing page — b2b-shop parity (catalog, cart, submit).
 
-  Mock data:
-    Title and countdown defaults live in theme settings
-    (`config/settings_data.json` → `aico_preorder_mock_*`) so a
-    merchant can override the demo session from the editor without
-    touching the live `PreorderSession` model. The JS controller
-    computes the deadline = now + (mock_weeks + mock_days + mock_hours
-    + mock_minutes + mock_seconds) on first visit and stores it in
-    sessionStorage so refreshes don't reset the countdown mid-session.
+  Countdown:
+    The countdown is driven solely by the active `PreorderSession`
+    end date (`preorder_session.deadline_at`, server-rendered into
+    `data-aico-preorder-deadline`, then refreshed from
+    `preorder/session.js`). When no preorder session is active the
+    countdown stays at all zeros — there is no hardcoded/mock fallback.
+
+  Hero title:
+    Falls back to `settings.aico_preorder_mock_title` only when no live
+    session title is bound to the page.
 
   Address loading:
     The billing + delivery dropdowns are hydrated by
@@ -31,12 +33,6 @@
 {%- assign hero_title = preorder_session.title -%}
 {%- if hero_title == blank -%}{%- assign hero_title = mock_title -%}{%- endif -%}
 {%- assign preorder_banner_asset = settings.aico_preorder_hero_bg_asset | default: 'preorder.png' -%}
-
-{%- assign mock_weeks = settings.aico_preorder_mock_weeks | default: 5 -%}
-{%- assign mock_days = settings.aico_preorder_mock_days | default: 16 -%}
-{%- assign mock_hours = settings.aico_preorder_mock_hours | default: 0 -%}
-{%- assign mock_minutes = settings.aico_preorder_mock_minutes | default: 10 -%}
-{%- assign mock_seconds = settings.aico_preorder_mock_seconds | default: 11 -%}
 
 <main class="aico-preorder" role="main"
       data-aico-preorder
@@ -78,12 +74,7 @@
       data-aico-preorder-copy-excl-vat="{{ 'aico_preorder.summary.excl_vat' | t | escape }}"
       data-aico-preorder-copy-subtotal="{{ 'aico_preorder.summary.subtotal' | t | escape }}"
       data-aico-preorder-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
-      {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}
-      data-aico-preorder-mock-weeks="{{ mock_weeks }}"
-      data-aico-preorder-mock-days="{{ mock_days }}"
-      data-aico-preorder-mock-hours="{{ mock_hours }}"
-      data-aico-preorder-mock-minutes="{{ mock_minutes }}"
-      data-aico-preorder-mock-seconds="{{ mock_seconds }}">
+      {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
 
   {%- comment -%} ── Hero band: banner asset + session title text + countdown (no full-width bg image). {%- endcomment -%}
   <section class="aico-preorder-hero" aria-labelledby="aico-preorder-hero-title">
@@ -105,22 +96,22 @@
           <p class="aico-preorder-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</p>
           <div class="aico-preorder-countdown-bar" role="presentation">
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-days>--</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-days>0</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.days' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-hours>--</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-hours>00</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.hours' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>--</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>00</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.minutes' | t }}</span>
             </div>
             <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
             <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>--</span>
+              <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>00</span>
               <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.seconds' | t }}</span>
             </div>
           </div>

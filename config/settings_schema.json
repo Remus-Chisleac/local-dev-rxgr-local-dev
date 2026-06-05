@@ -22,8 +22,8 @@
     ]
   },
   {
-    "name": "Preorder (mock)",
-    "info": "Demo values rendered when no live PreorderSession is bound to the page. Real sessions always override these.",
+    "name": "Preorder",
+    "info": "Preorder landing fallbacks used only when no live PreorderSession is bound to the page. The countdown is always driven by the active session and shows zeros when none is active.",
     "settings": [
       {
         "id": "aico_preorder_hero_bg_asset",
@@ -32,12 +32,7 @@
         "default": "preorder.png",
         "info": "Single decorative image beside the preorder title — not a full-bleed background. Place the file in theme assets (e.g. preorder.png)."
       },
-      { "id": "aico_preorder_mock_title", "type": "text", "label": "Mock preorder title", "default": "PreOrder Ramadan 2027" },
-      { "id": "aico_preorder_mock_weeks", "type": "number", "label": "Mock countdown — weeks", "default": 5 },
-      { "id": "aico_preorder_mock_days", "type": "number", "label": "Mock countdown — days", "default": 16 },
-      { "id": "aico_preorder_mock_hours", "type": "number", "label": "Mock countdown — hours", "default": 0 },
-      { "id": "aico_preorder_mock_minutes", "type": "number", "label": "Mock countdown — minutes", "default": 10 },
-      { "id": "aico_preorder_mock_seconds", "type": "number", "label": "Mock countdown — seconds", "default": 11 }
+      { "id": "aico_preorder_mock_title", "type": "text", "label": "Fallback preorder title", "default": "PreOrder Ramadan 2027" }
     ]
   },
   {
