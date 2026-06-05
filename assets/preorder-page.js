@@ -1149,6 +1149,11 @@
         getPreorderSessionId: function () {
           return sessionData && sessionData.id;
         },
+        slimWrites: function () {
+          // Optimistic (stock-relevant) flow only: ask the server for a slim
+          // write response and pull the full cart lazily on idle (see below).
+          return !!(sessionData && sessionData.isStockRelevant);
+        },
         onCartUpdated: function () {
           // Stock-relevant sessions track quantities client-side and update the
           // grid optimistically, so a routine save echo must NOT rebuild the grid
@@ -1163,10 +1168,11 @@
         },
         onDirtyChange: function (dirty) {
           hasDirty = dirty;
-          // When every optimistic write has settled, silently reconcile the grid
-          // with the authoritative cart: reset the stock caps to pristine and
-          // re-seed from the saved cart, so removed/cleared cells re-enable and
-          // any drift is corrected — all in place, so it stays snappy.
+          // When every optimistic write has settled, reconcile the grid with the
+          // authoritative cart: pull the full cart ONCE via cart.js (writes return
+          // a slim body, so this is the only time the full list crosses the wire
+          // per idle period), reset the stock caps to pristine and re-seed, so
+          // removed/cleared cells re-enable and any drift is corrected in place.
           if (
             !dirty &&
             catalog &&
@@ -1175,9 +1181,18 @@
             window.AicoPreorderStock &&
             catalog.products && catalog.products.length
           ) {
-            window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
-            seedStockFromCart();
-            catalog.refreshAll();
+            cartCtrl
+              .fetchCart()
+              .then(function () {
+                // The user may have resumed editing while the fetch was in
+                // flight; don't clobber newer optimistic edits.
+                if (cartCtrl.hasPendingWork()) return;
+                window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
+                seedStockFromCart();
+                catalog.refreshAll();
+                updateSummary();
+              })
+              .catch(function () {});
           }
           updateSummary();
         },

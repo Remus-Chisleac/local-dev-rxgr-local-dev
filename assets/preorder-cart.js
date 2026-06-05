@@ -97,6 +97,10 @@
     this.onCartUpdated = config.onCartUpdated || function () {};
     this.onDirtyChange = config.onDirtyChange || function () {};
     this.onError = config.onError || function () {};
+    // When true, writes ask the server for a slim response ({id,version,status})
+    // instead of the full cart; the client reconciles the full list via cart.js
+    // when idle. Enabled only for the optimistic (stock-relevant) flow.
+    this.slimWrites = config.slimWrites || function () { return false; };
 
     this.version = 0;
     this.cartId = null;
@@ -123,7 +127,12 @@
     if (typeof snapshot.version === 'number') this.version = snapshot.version;
     if (snapshot.id) this.cartId = snapshot.id;
     this.status = snapshot.status || this.status;
-    this.localCart = snapshotToLocalCart(snapshot);
+    // A slim write response carries no item_lists — adopt only the version/status
+    // and keep the existing localCart (the optimistic grid is the source of truth
+    // until the next full cart.js fetch).
+    if (Array.isArray(snapshot.item_lists)) {
+      this.localCart = snapshotToLocalCart(snapshot);
+    }
     this.onCartUpdated(this.snapshot, this.localCart);
   };
 
@@ -282,6 +291,7 @@
         preorder_date: cell.dateLabel,
         list_type: 'PRODUCT',
         version: this.version,
+        slim: this.slimWrites() ? 1 : 0,
       },
       this._scope(),
     );

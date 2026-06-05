@@ -118,25 +118,31 @@
   }
 
   function extractDatesFromProducts(groups) {
-    var set = new Set();
+    // Map each display label to its timestamp so the rows sort chronologically.
+    // (Sorting the formatted labels alphabetically gives Aug, Oct, Sep — wrong —
+    // and makes the cumulative stock cap look arbitrary.)
+    var timeByLabel = {};
     asArray(groups).forEach(function (group) {
       asArray(group && group.items).forEach(function (product) {
         (product.preorderStockData || []).forEach(function (row) {
           if (row.date) {
             try {
-              set.add(
-                new Date(row.date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                }),
-              );
+              var parsed = new Date(row.date);
+              if (isNaN(parsed.getTime())) return;
+              var label = parsed.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+              if (!(label in timeByLabel)) timeByLabel[label] = parsed.getTime();
             } catch (_) {}
           }
         });
       });
     });
-    return Array.from(set).sort();
+    return Object.keys(timeByLabel).sort(function (a, b) {
+      return timeByLabel[a] - timeByLabel[b];
+    });
   }
 
   function groupHasMorePages(entry) {
