@@ -1168,32 +1168,32 @@
         },
         onDirtyChange: function (dirty) {
           hasDirty = dirty;
-          // When every optimistic write has settled, reconcile the grid with the
-          // authoritative cart: pull the full cart ONCE via cart.js (writes return
-          // a slim body, so this is the only time the full list crosses the wire
-          // per idle period), reset the stock caps to pristine and re-seed, so
-          // removed/cleared cells re-enable and any drift is corrected in place.
-          if (
-            !dirty &&
-            catalog &&
-            sessionData && sessionData.isStockRelevant &&
-            cartCtrl && !cartCtrl.hasPendingWork() &&
-            window.AicoPreorderStock &&
-            catalog.products && catalog.products.length
-          ) {
-            cartCtrl
-              .fetchCart()
-              .then(function () {
-                // The user may have resumed editing while the fetch was in
-                // flight; don't clobber newer optimistic edits.
-                if (cartCtrl.hasPendingWork()) return;
-                window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
-                seedStockFromCart();
-                catalog.refreshAll();
-                updateSummary();
-              })
-              .catch(function () {});
-          }
+          // No idle full-cart reconcile. Stock-relevant grids stay optimistic and
+          // are corrected per-cell from each write's echoed quantity (see
+          // onProductCellSaved below); cart.js now runs only at initial load and
+          // during the submit poll.
+          updateSummary();
+        },
+        onProductCellSaved: function (cell, quantity) {
+          // The write settled with the server's authoritative quantity for this
+          // cell. If it differs from our optimistic value (a stock cap / committed
+          // floor clamp), adopt it and recompute the cross-cell caps in place —
+          // no full cart fetch needed.
+          if (!cell || !(sessionData && sessionData.isStockRelevant)) return;
+          if (!window.AicoPreorderStock || !window.AicoPreorderStock.getQuantity) return;
+          var current = window.AicoPreorderStock.getQuantity(
+            cell.productId,
+            cell.variantId,
+            cell.dateLabel,
+          );
+          if (current === quantity) return;
+          window.AicoPreorderStock.adjustStock(
+            cell.productId,
+            cell.variantId,
+            cell.dateLabel,
+            quantity,
+          );
+          if (catalog && catalog.refreshAll) catalog.refreshAll();
           updateSummary();
         },
         onError: function (code, payload) {

@@ -97,9 +97,14 @@
     this.onCartUpdated = config.onCartUpdated || function () {};
     this.onDirtyChange = config.onDirtyChange || function () {};
     this.onError = config.onError || function () {};
-    // When true, writes ask the server for a slim response ({id,version,status})
-    // instead of the full cart; the client reconciles the full list via cart.js
-    // when idle. Enabled only for the optimistic (stock-relevant) flow.
+    // Called after a product-cell write settles with the server's authoritative
+    // quantity for that cell, so the optimistic grid can correct a clamped value
+    // without pulling the full cart. Args: (cell, quantity).
+    this.onProductCellSaved = config.onProductCellSaved || function () {};
+    // When true, writes ask the server for a slim response
+    // ({id,version,status,quantity}) instead of the full cart; the client trusts
+    // the echoed per-cell quantity rather than reconciling via cart.js. Enabled
+    // only for the optimistic (stock-relevant) flow.
     this.slimWrites = config.slimWrites || function () { return false; };
 
     this.version = 0;
@@ -236,6 +241,7 @@
     if (res.ok) {
       return res.json().then(function (snapshot) {
         self._applySnapshot(snapshot);
+        return snapshot;
       });
     }
     return res.json().then(function (payload) {
@@ -299,6 +305,14 @@
       return self._handleWrite(res, isRetry ? null : function () {
         return self._saveProductCell(cell, true);
       });
+    }).then(function (snapshot) {
+      // Adopt the server's authoritative quantity for this cell (handles a
+      // server-side clamp), unless the user has already queued a newer edit for
+      // the same cell — then the optimistic value wins until that write settles.
+      if (!snapshot || typeof snapshot.quantity !== 'number') return;
+      var key = self._cellKey(cell.productId, cell.variantId, cell.dateLabel);
+      if (self._pendingCells[key] || self._debounceTimers[key]) return;
+      self.onProductCellSaved(cell, snapshot.quantity);
     });
   };
 
