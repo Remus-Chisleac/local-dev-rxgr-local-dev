@@ -4853,10 +4853,14 @@ button.aico-home-brand-card {
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;
   flex-direction: column;
-  flex: 0 0 18px;
-  width: 18px;
+  flex: 0 0 20px;
+  width: 20px;
+  align-self: stretch;
+  background: #f1f1f1;
   border-left: 1px solid #d8d8d8;
 }
+/* Two equal-height halves: the whole top half increments, the whole bottom
+   half decrements — no need to hit the chevron icon exactly. */
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step {
   flex: 1 1 50%;
   display: flex;
@@ -4865,24 +4869,24 @@ button.aico-home-brand-card {
   margin: 0;
   padding: 0;
   border: 0;
-  background: #fff;
-  color: #5a5a5a;
+  background: transparent;
+  color: #1f1f1f;
   cursor: pointer;
   line-height: 0;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step svg {
-  width: 10px;
-  height: 6px;
+  width: 11px;
+  height: 7px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: #e2e2e2;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:active:not(:disabled) {
+  background: #d4d4d4;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-}
-.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step + .aico-preorder-qty-box__step {
-  border-top: 1px solid #d8d8d8;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__inner .aico-preorder-qty-input {
   flex: 1 1 auto;
