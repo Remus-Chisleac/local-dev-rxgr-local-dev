@@ -4843,8 +4843,10 @@ button.aico-home-brand-card {
   box-sizing: border-box;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--filled .aico-preorder-qty-box__inner {
-  border-color: transparent;
-  box-shadow: 0 0 1px 2px #66b0bb;
+  /* Inset ring (not an outward shadow) so the selected outline is never clipped
+     by the matrix scroll container on the leftmost/edge cells. */
+  border-color: #66b0bb;
+  box-shadow: inset 0 0 0 1px #66b0bb;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--disabled .aico-preorder-qty-box__inner {
   background: #e0e0e0;
@@ -4853,11 +4855,10 @@ button.aico-home-brand-card {
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;
   flex-direction: column;
-  flex: 0 0 20px;
-  width: 20px;
+  flex: 0 0 15px;
+  width: 15px;
   align-self: stretch;
   background: #f1f1f1;
-  border-left: 1px solid #d8d8d8;
 }
 /* Two equal-height halves: the whole top half increments, the whole bottom
    half decrements — no need to hit the chevron icon exactly. */
@@ -4875,8 +4876,8 @@ button.aico-home-brand-card {
   line-height: 0;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step svg {
-  width: 11px;
-  height: 7px;
+  width: 9px;
+  height: 5px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:hover:not(:disabled) {
   background: #e2e2e2;
