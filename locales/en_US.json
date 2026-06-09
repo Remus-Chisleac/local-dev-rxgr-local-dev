@@ -138,6 +138,25 @@
       "submit": "Send reset link",
       "success": "If an account exists for that email, we've sent reset instructions.",
       "cancel": "Back to sign in"
+    },
+    "account": {
+      "greeting": "Hello,",
+      "document_language": "Document language",
+      "email_language": "Email language",
+      "weekly_exchange_email": "Weekly exchange-platform email",
+      "size_region": "Size range",
+      "customer_view": "End-customer view",
+      "on": "on",
+      "off": "off",
+      "contact_person_title": "Your contact person",
+      "billing_addresses_title": "Your billing addresses",
+      "delivery_addresses_title": "Your delivery addresses",
+      "no_addresses": "No addresses on file.",
+      "call_label": "Call",
+      "email_label": "Send email",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "save_error": "Couldn't save"
     }
   },
   "product": {

@@ -1,0 +1,178 @@
+{% comment %}
+  Customer profile page ("Mein Profil") — recreates the b2b-shop profile in
+  the Liquid theme. Two columns:
+
+    - Left sidebar: greeting + B2B preference dropdowns. Current values and
+      option lists come from the AICO-only `aico_account` drop
+      (AccountContextLoader). Each dropdown persists instantly via fetch()
+      (assets/account-page.js → StorefrontAccountController), reusing the
+      same backend services the v2 API uses. "Endkundenansicht" is
+      localStorage-only (no backend consumer yet, matching b2b-shop).
+
+    - Right column: contact person (KAM), billing addresses, delivery
+      addresses. All server-rendered via drops. Store-locator addresses are
+      intentionally excluded (AicoShopAddressService keeps them in a separate
+      bucket the profile page never reads).
+
+  Address + contact data are hydrated only for this template (see
+  LiquidRendererService::loadShopperContext) so other pages don't pay the cost.
+{% endcomment %}
+
+{%- assign account = aico_account -%}
+{%- assign contact = customer.aico_account_contact -%}
+
+<main class="aico-account" role="main"
+      data-aico-account
+      data-document-language-url="{{ routes.aico_account_document_language_url }}"
+      data-email-language-url="{{ routes.aico_account_email_language_url }}"
+      data-sizes-region-url="{{ routes.aico_account_sizes_region_url }}"
+      data-exchange-subscription-url="{{ routes.aico_account_exchange_subscription_url }}"
+      data-copy-saving="{{ 'customer.account.saving' | t | escape }}"
+      data-copy-saved="{{ 'customer.account.saved' | t | escape }}"
+      data-copy-error="{{ 'customer.account.save_error' | t | escape }}">
+
+  <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+  <div class="aico-page-container aico-account-grid">
+
+    {%- comment -%} ── Left: settings sidebar ───────────────────────────── {%- endcomment -%}
+    <aside class="aico-account-sidebar">
+      <div class="aico-account-greeting">
+        <p class="aico-account-greeting-hello">{{ 'customer.account.greeting' | t }}</p>
+        <p class="aico-account-greeting-name">{{ customer.name }}</p>
+        <p class="aico-account-greeting-email">{{ customer.email }}</p>
+      </div>
+
+      <div class="aico-account-settings">
+        <label class="aico-account-field">
+          <span class="aico-account-field-label">{{ 'customer.account.document_language' | t }}</span>
+          <select class="aico-account-select" data-aico-pref="document_language">
+            {% for option in account.language_options %}
+              <option value="{{ option.id }}"{% if option.id == account.document_language_id %} selected{% endif %}>{{ option.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="aico-account-field">
+          <span class="aico-account-field-label">{{ 'customer.account.email_language' | t }}</span>
+          <select class="aico-account-select" data-aico-pref="email_language">
+            {% for option in account.language_options %}
+              <option value="{{ option.id }}"{% if option.id == account.email_language_id %} selected{% endif %}>{{ option.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="aico-account-field">
+          <span class="aico-account-field-label">{{ 'customer.account.weekly_exchange_email' | t }}</span>
+          <select class="aico-account-select" data-aico-pref="exchange_subscription">
+            <option value="1"{% if account.exchange_email_subscribed %} selected{% endif %}>{{ 'customer.account.on' | t }}</option>
+            <option value="0"{% unless account.exchange_email_subscribed %} selected{% endunless %}>{{ 'customer.account.off' | t }}</option>
+          </select>
+        </label>
+
+        <label class="aico-account-field">
+          <span class="aico-account-field-label">{{ 'customer.account.size_region' | t }}</span>
+          <select class="aico-account-select" data-aico-pref="sizes_region">
+            {% for region in account.size_region_options %}
+              <option value="{{ region }}"{% if region == account.size_region %} selected{% endif %}>{{ region }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="aico-account-field">
+          <span class="aico-account-field-label">{{ 'customer.account.customer_view' | t }}</span>
+          <select class="aico-account-select" data-aico-pref="customer_view">
+            <option value="on">{{ 'customer.account.on' | t }}</option>
+            <option value="off" selected>{{ 'customer.account.off' | t }}</option>
+          </select>
+        </label>
+
+        <p class="aico-account-save-status" data-aico-account-status role="status" aria-live="polite"></p>
+      </div>
+    </aside>
+
+    {%- comment -%} ── Right: contact + addresses ───────────────────────── {%- endcomment -%}
+    <div class="aico-account-content">
+
+      {% if contact %}
+        <section class="aico-account-section">
+          <h2 class="aico-account-section-title">{{ 'customer.account.contact_person_title' | t }}</h2>
+          <div class="aico-account-card aico-account-contact-card">
+            {% if contact.photo_url %}
+              <img class="aico-account-contact-photo" src="{{ contact.photo_url }}" alt="{{ contact.full_name | escape }}" loading="lazy">
+            {% endif %}
+            <div class="aico-account-contact-body">
+              <p class="aico-account-contact-name">{{ contact.full_name }}</p>
+              {% if contact.job_title %}<p class="aico-account-contact-role">{{ contact.job_title }}</p>{% endif %}
+              <div class="aico-account-contact-lines">
+                {% if contact.phone %}
+                  <a class="aico-account-contact-line" href="tel:{{ contact.phone | replace: ' ', '' }}" aria-label="{{ 'customer.account.call_label' | t }}">
+                    <svg class="aico-account-contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"></path></svg>
+                    <span>{{ contact.phone }}</span>
+                  </a>
+                {% endif %}
+                {% if contact.email %}
+                  <a class="aico-account-contact-line" href="mailto:{{ contact.email }}" aria-label="{{ 'customer.account.email_label' | t }}">
+                    <svg class="aico-account-contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                    <span>{{ contact.email }}</span>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.account.billing_addresses_title' | t }}</h2>
+        {% if customer.aico_billing_addresses.size > 0 %}
+          <div class="aico-account-address-grid">
+            {% for address in customer.aico_billing_addresses %}
+              <div class="aico-account-card aico-account-address-card">
+                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
+                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
+                <div class="aico-account-address-block">
+                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
+                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
+                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
+                  {% if address.province != '' or address.country != '' %}
+                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="aico-account-empty">{{ 'customer.account.no_addresses' | t }}</p>
+        {% endif %}
+      </section>
+
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.account.delivery_addresses_title' | t }}</h2>
+        {% if customer.aico_delivery_addresses.size > 0 %}
+          <div class="aico-account-address-grid">
+            {% for address in customer.aico_delivery_addresses %}
+              <div class="aico-account-card aico-account-address-card">
+                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
+                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
+                <div class="aico-account-address-block">
+                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
+                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
+                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
+                  {% if address.province != '' or address.country != '' %}
+                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="aico-account-empty">{{ 'customer.account.no_addresses' | t }}</p>
+        {% endif %}
+      </section>
+
+    </div>
+  </div>
+
+  <script src="{{ 'account-page.js' | asset_url }}" defer></script>
+</main>

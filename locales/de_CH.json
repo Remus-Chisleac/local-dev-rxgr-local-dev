@@ -138,6 +138,25 @@
       "submit": "Reset-Link senden",
       "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
       "cancel": "Zurück zur Anmeldung"
+    },
+    "account": {
+      "greeting": "Guten Tag,",
+      "document_language": "Dokumentsprache",
+      "email_language": "E-Mail Sprache",
+      "weekly_exchange_email": "Wöchentliche Tauschplattform E-Mail",
+      "size_region": "Grössenbereich",
+      "customer_view": "Endkundenansicht",
+      "on": "ein",
+      "off": "aus",
+      "contact_person_title": "Ihre Ansprechperson",
+      "billing_addresses_title": "Ihre Rechnungsadressen",
+      "delivery_addresses_title": "Ihre Lieferadressen",
+      "no_addresses": "Keine Adressen hinterlegt.",
+      "call_label": "Anrufen",
+      "email_label": "E-Mail senden",
+      "saving": "Wird gespeichert…",
+      "saved": "Gespeichert",
+      "save_error": "Speichern fehlgeschlagen"
     }
   },
   "product": {

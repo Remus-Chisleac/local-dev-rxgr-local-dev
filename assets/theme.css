@@ -5663,3 +5663,99 @@ button.aico-home-brand-card {
 .aico-contact-whatsapp a {
   color: #2563eb;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Customer profile page (templates/customers/account.liquid)
+   ───────────────────────────────────────────────────────────────────────── */
+.aico-account {
+  --aico-account-accent: #2f6fd0;
+  padding: 2.5rem 0 4rem;
+  font-family: var(--aico-font-sans);
+  color: var(--aico-fg);
+}
+
+.aico-account-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .aico-account-grid {
+    grid-template-columns: minmax(220px, 18rem) 1fr;
+    gap: 3.5rem;
+  }
+}
+
+.aico-account-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.aico-account-greeting {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.aico-account-greeting-hello { font-weight: 600; font-size: 1.05rem; margin: 0; }
+.aico-account-greeting-name { font-weight: 700; font-size: 1.25rem; color: var(--aico-account-accent); margin: 0; }
+.aico-account-greeting-email { font-size: 0.85rem; color: var(--aico-muted-fg); margin: 0.25rem 0 0; word-break: break-word; }
+
+.aico-account-settings { display: flex; flex-direction: column; gap: 1.1rem; }
+.aico-account-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.aico-account-field-label { font-size: 0.8rem; color: var(--aico-muted-fg); }
+
+.aico-account-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: 0.6rem 2rem 0.6rem 0.75rem;
+  font: inherit;
+  color: var(--aico-fg);
+  background-color: var(--aico-card);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23756f64' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  cursor: pointer;
+}
+
+.aico-account-select:focus-visible { outline: 2px solid var(--aico-account-accent); outline-offset: 1px; }
+.aico-account-select:disabled { opacity: 0.6; cursor: progress; }
+
+.aico-account-save-status { min-height: 1.2em; margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--aico-muted-fg); }
+.aico-account-save-status[data-state="saved"] { color: #1f8a4c; }
+.aico-account-save-status[data-state="error"] { color: #c0392b; }
+
+.aico-account-content { display: flex; flex-direction: column; gap: 2.75rem; min-width: 0; }
+.aico-account-section-title { font-size: 1.25rem; font-weight: 500; color: var(--aico-muted-fg); margin: 0 0 1.1rem; }
+
+.aico-account-card {
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-card);
+  padding: 1.5rem;
+}
+
+.aico-account-contact-card { display: flex; gap: 1.5rem; align-items: flex-start; max-width: 34rem; }
+.aico-account-contact-photo { width: 6.5rem; height: 6.5rem; object-fit: cover; border-radius: 0.125rem; flex: 0 0 auto; }
+.aico-account-contact-body { min-width: 0; }
+.aico-account-contact-name { font-weight: 700; margin: 0 0 0.15rem; }
+.aico-account-contact-role { color: var(--aico-muted-fg); font-size: 0.9rem; margin: 0 0 1rem; }
+.aico-account-contact-lines { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-account-contact-line { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--aico-fg); text-decoration: none; font-size: 0.9rem; }
+.aico-account-contact-line:hover { color: var(--aico-account-accent); }
+.aico-account-contact-icon { color: var(--aico-muted-fg); flex: 0 0 auto; }
+
+.aico-account-address-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 640px) { .aico-account-address-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.aico-account-address-title { font-weight: 700; margin: 0 0 0.85rem; }
+.aico-account-address-block { margin-top: 0.85rem; }
+.aico-account-address-line { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--aico-fg); }
+.aico-account-empty { color: var(--aico-muted-fg); font-size: 0.9rem; margin: 0; }
