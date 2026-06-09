@@ -19,7 +19,7 @@
       return;
     }
 
-    var status = root.querySelector('[data-aico-account-status]');
+    var toast = root.querySelector('[data-aico-account-toast]');
     var tokenInput = root.querySelector('input[name="_token"]');
     var token = tokenInput ? tokenInput.value : '';
 
@@ -49,22 +49,25 @@
       }
     };
 
-    var statusTimer = null;
+    var toastTimer = null;
     function setStatus(message, state) {
-      if (!status) {
+      if (!toast) {
         return;
       }
-      if (statusTimer) {
-        window.clearTimeout(statusTimer);
-        statusTimer = null;
+      if (toastTimer) {
+        window.clearTimeout(toastTimer);
+        toastTimer = null;
       }
-      status.textContent = message;
-      status.setAttribute('data-state', state || '');
-      if (state === 'saved') {
-        statusTimer = window.setTimeout(function () {
-          status.textContent = '';
-          status.removeAttribute('data-state');
-        }, 2500);
+      toast.textContent = message;
+      toast.setAttribute('data-state', state || '');
+      toast.classList.add('is-visible');
+      toast.setAttribute('aria-hidden', 'false');
+      // "saving" stays until the request resolves; "saved"/"error" auto-dismiss.
+      if (state === 'saved' || state === 'error') {
+        toastTimer = window.setTimeout(function () {
+          toast.classList.remove('is-visible');
+          toast.setAttribute('aria-hidden', 'true');
+        }, 2600);
       }
     }
 
