@@ -96,6 +96,7 @@
       {% if contact %}
         <section class="aico-account-section">
           <h2 class="aico-account-section-title">{{ 'customer.account.contact_person_title' | t }}</h2>
+          <div class="aico-account-address-grid">
           <div class="aico-account-card aico-account-contact-card">
             {% if contact.photo_url %}
               <img class="aico-account-contact-photo" src="{{ contact.photo_url }}" alt="{{ contact.full_name | escape }}" loading="lazy">
@@ -118,6 +119,7 @@
                 {% endif %}
               </div>
             </div>
+          </div>
           </div>
         </section>
       {% endif %}

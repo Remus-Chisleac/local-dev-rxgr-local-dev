@@ -1,11 +1,22 @@
 <!doctype html>
 <html lang="{{ request.locale | default: shop.default_locale }}">
 <head>
+{%- comment -%}
+  The bare auth shell (no header/footer, no cart/search/Alpine scripts) is for
+  the unauthenticated customer pages only — login / recover / register.
+  Authenticated profile pages (customers/account, customers/addresses) render
+  inside the full site chrome, so they need the same head + scripts as the rest
+  of the site. Computed once here so both the head and body gate on it.
+{%- endcomment -%}
+{%- assign aico_is_auth_shell = false -%}
+{%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' -%}
+  {%- assign aico_is_auth_shell = true -%}
+{%- endif -%}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ shop.name }}</title>
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
-  {% if template.directory == 'customers' %}
+  {% if aico_is_auth_shell %}
     <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
   {% else %}
     {% comment %}
@@ -112,15 +123,6 @@
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
 </head>
-{%- comment -%}
-  The bare auth shell (no header/footer) is for the unauthenticated customer
-  pages only — login / recover / register. Authenticated profile pages
-  (customers/account, customers/addresses) render inside the full site chrome.
-{%- endcomment -%}
-{%- assign aico_is_auth_shell = false -%}
-{%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' -%}
-  {%- assign aico_is_auth_shell = true -%}
-{%- endif -%}
 <body class="{% if aico_is_auth_shell %}aico-template-customers{% endif %}">
   {% if aico_is_auth_shell %}
     <main class="aico-auth-main">

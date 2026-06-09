@@ -5667,6 +5667,7 @@ button.aico-home-brand-card {
 
 
 
+
 /* ─────────────────────────────────────────────────────────────────────────
    Customer profile page (templates/customers/account.liquid)
    ───────────────────────────────────────────────────────────────────────── */
@@ -5820,14 +5821,13 @@ button.aico-home-brand-card {
 /* Contact (KAM) card */
 .aico-account-contact-card {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.25rem;
   align-items: flex-start;
-  max-width: 34rem;
 }
 
 .aico-account-contact-photo {
-  width: 6.5rem;
-  height: 6.5rem;
+  width: 5rem;
+  height: 5rem;
   object-fit: cover;
   border-radius: 0.125rem;
   flex: 0 0 auto;
@@ -5853,12 +5853,13 @@ button.aico-home-brand-card {
 }
 
 .aico-account-contact-line {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--aico-fg);
   text-decoration: none;
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .aico-account-contact-line:hover { color: var(--aico-account-accent); }
