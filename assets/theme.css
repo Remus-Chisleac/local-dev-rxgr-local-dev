@@ -1675,6 +1675,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   justify-content: center;
   padding: 1.5rem 0;
 }
+/* Author `display:flex` above overrides the UA `[hidden]{display:none}`
+   rule, so the JS `el.hidden = true` toggle is inert without this guard.
+   Mirrors the other toggleable components (`.aico-drawer[hidden]`, …). */
+.aico-products-loader[hidden],
+.aico-products-end[hidden] { display: none; }
 .aico-products-spinner {
   width: 1.5rem;
   height: 1.5rem;
