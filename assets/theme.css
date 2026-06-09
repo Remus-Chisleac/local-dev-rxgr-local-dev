@@ -5666,6 +5666,7 @@ button.aico-home-brand-card {
 
 
 
+
 /* ─────────────────────────────────────────────────────────────────────────
    Customer profile page (templates/customers/account.liquid)
    ───────────────────────────────────────────────────────────────────────── */
@@ -5686,7 +5687,7 @@ button.aico-home-brand-card {
 
 @media (min-width: 900px) {
   .aico-account-grid {
-    grid-template-columns: minmax(220px, 18rem) 1fr;
+    grid-template-columns: minmax(260px, 22rem) 1fr;
     gap: 3.5rem;
   }
 }
@@ -5697,7 +5698,7 @@ button.aico-home-brand-card {
   flex-direction: column;
   gap: 1.75rem;
   background: #e9e9ec;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2.5rem 2rem 4rem;
 }
 
 .aico-account-greeting {
