@@ -159,6 +159,70 @@
       "saving": "Saving…",
       "saved": "Saved",
       "save_error": "Couldn't save"
+    },
+    "orders_page": {
+      "title": "Order history",
+      "description": "View your past orders and preorders.",
+      "empty": "You haven't placed any orders yet.",
+      "empty_filtered": "No orders match your filters.",
+      "error_loading": "We couldn't load your orders. Please try again.",
+      "loading": "Loading orders…",
+      "end_of_results": "You've reached the end.",
+      "filters": {
+        "type_label": "Type",
+        "type_all": "All orders",
+        "type_orders": "Orders",
+        "type_preorders": "PreOrders",
+        "period_label": "Period",
+        "period_all": "All time",
+        "period_30": "Last 30 days",
+        "period_ytd": "Year to date",
+        "period_custom": "Custom",
+        "from": "From",
+        "to": "To",
+        "search_label": "Search",
+        "search_placeholder": "Search by order no., product or SKU",
+        "reset": "Reset filters"
+      },
+      "card": {
+        "item_count_one": "{count} item",
+        "item_count_other": "{count} items",
+        "view_details": "View details",
+        "hide_details": "Hide details",
+        "copy_order_number": "Copy order number",
+        "copied": "Copied",
+        "product": "Product",
+        "sku": "SKU",
+        "size": "Size",
+        "quantity": "Qty",
+        "price": "Price",
+        "subtotal": "Subtotal",
+        "preorder_date": "Delivery date"
+      },
+      "shipping": {
+        "title": "Shipping & tracking",
+        "track": "Track",
+        "none": "No tracking yet."
+      },
+      "status": {
+        "cancelled": "Cancelled",
+        "in_progress": "In progress",
+        "self_pickup": "Self pickup",
+        "delivered": "Delivered",
+        "shipped": "Shipped",
+        "confirmed": "Confirmed"
+      },
+      "documents": {
+        "menu": "Documents",
+        "download_all": "Download all",
+        "none": "No documents available.",
+        "failed": "Could not download the document.",
+        "type_invoices": "Invoice",
+        "type_proforma": "Pro forma invoice",
+        "type_export": "Export invoice",
+        "type_preorder": "Preorder",
+        "type_order_confirmation": "Order confirmation"
+      }
     }
   },
   "product": {

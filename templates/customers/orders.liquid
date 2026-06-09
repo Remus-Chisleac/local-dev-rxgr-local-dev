@@ -1,0 +1,148 @@
+{% comment %}
+  Customer order-history page. Server-renders the page chrome (heading,
+  filter bar, table head, empty/loading states); the vanilla controller
+  in `assets/order-history.js` then fetches the paginated order + preorder
+  feed (`routes.aico_account_orders_feed_url`), renders accordion order
+  cards, and wires filters, infinite scroll, and document downloads.
+
+  This mirrors the b2b-shop /orders/history page but against the storefront
+  cookie session. There is no separate order-detail page — a card expands
+  inline to show line items + shipping/tracking, matching the original.
+{% endcomment %}
+
+<main
+  class="aico-orders"
+  role="main"
+  data-aico-orders
+  data-aico-orders-feed-url="{{ routes.aico_account_orders_feed_url }}"
+  data-aico-order-document-url-template="{{ routes.aico_account_order_document_download_url }}"
+  data-aico-page-size="10">
+  <div class="aico-page-container aico-orders-shell">
+    <header class="aico-orders-header">
+      <h1 class="aico-orders-title">{{ 'customer.orders_page.title' | t }}</h1>
+      <p class="aico-orders-subtitle">{{ 'customer.orders_page.description' | t }}</p>
+    </header>
+
+    <div class="aico-orders-filterbar" data-aico-orders-filters>
+      <label class="aico-orders-field">
+        <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.type_label' | t }}</span>
+        <select class="aico-orders-select" data-aico-filter="type">
+          <option value="all">{{ 'customer.orders_page.filters.type_all' | t }}</option>
+          <option value="order">{{ 'customer.orders_page.filters.type_orders' | t }}</option>
+          <option value="preorder">{{ 'customer.orders_page.filters.type_preorders' | t }}</option>
+        </select>
+      </label>
+
+      <label class="aico-orders-field">
+        <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.period_label' | t }}</span>
+        <select class="aico-orders-select" data-aico-filter="period">
+          <option value="all">{{ 'customer.orders_page.filters.period_all' | t }}</option>
+          <option value="last30">{{ 'customer.orders_page.filters.period_30' | t }}</option>
+          <option value="ytd">{{ 'customer.orders_page.filters.period_ytd' | t }}</option>
+          <option value="custom">{{ 'customer.orders_page.filters.period_custom' | t }}</option>
+        </select>
+      </label>
+
+      <div class="aico-orders-field aico-orders-custom-range" data-aico-custom-range hidden>
+        <label class="aico-orders-range-input">
+          <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.from' | t }}</span>
+          <input type="date" data-aico-filter="from">
+        </label>
+        <label class="aico-orders-range-input">
+          <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.to' | t }}</span>
+          <input type="date" data-aico-filter="to">
+        </label>
+      </div>
+
+      <label class="aico-orders-field aico-orders-search-field">
+        <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.search_label' | t }}</span>
+        <span class="aico-orders-search">
+          <svg class="aico-orders-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input
+            type="search"
+            class="aico-orders-search-input"
+            placeholder="{{ 'customer.orders_page.filters.search_placeholder' | t }}"
+            autocomplete="off"
+            data-aico-filter="search">
+        </span>
+      </label>
+
+      <button type="button" class="aico-orders-reset" data-aico-orders-reset hidden>
+        {{ 'customer.orders_page.filters.reset' | t }}
+      </button>
+    </div>
+
+    <p class="aico-orders-empty" role="status" data-aico-orders-empty hidden>
+      {{ 'customer.orders_page.empty' | t }}
+    </p>
+    <p class="aico-orders-error" role="alert" data-aico-orders-error hidden>
+      {{ 'customer.orders_page.error_loading' | t }}
+    </p>
+
+    <ul class="aico-orders-list" data-aico-orders-list aria-label="{{ 'customer.orders_page.title' | t }}"></ul>
+
+    <div class="aico-orders-loader" data-aico-orders-loader hidden>
+      <span class="aico-orders-spinner" aria-hidden="true"></span>
+      <span class="aico-sr-only">{{ 'customer.orders_page.loading' | t }}</span>
+    </div>
+
+    <div class="aico-orders-end" data-aico-orders-end hidden>
+      <span>{{ 'customer.orders_page.end_of_results' | t }}</span>
+    </div>
+
+    <div class="aico-orders-sentinel" data-aico-orders-sentinel aria-hidden="true"></div>
+  </div>
+
+  <script type="application/json" data-aico-orders-i18n>{
+    "locale": {{ request.locale | default: 'en' | json }},
+    "status": {
+      "cancelled": {{ 'customer.orders_page.status.cancelled' | t | json }},
+      "in_progress": {{ 'customer.orders_page.status.in_progress' | t | json }},
+      "self_pickup": {{ 'customer.orders_page.status.self_pickup' | t | json }},
+      "delivered": {{ 'customer.orders_page.status.delivered' | t | json }},
+      "shipped": {{ 'customer.orders_page.status.shipped' | t | json }},
+      "confirmed": {{ 'customer.orders_page.status.confirmed' | t | json }}
+    },
+    "type": {
+      "order": {{ 'customer.orders_page.filters.type_orders' | t | json }},
+      "preorder": {{ 'customer.orders_page.filters.type_preorders' | t | json }}
+    },
+    "card": {
+      "item_count_one": {{ 'customer.orders_page.card.item_count_one' | t | json }},
+      "item_count_other": {{ 'customer.orders_page.card.item_count_other' | t | json }},
+      "view_details": {{ 'customer.orders_page.card.view_details' | t | json }},
+      "hide_details": {{ 'customer.orders_page.card.hide_details' | t | json }},
+      "copy_order_number": {{ 'customer.orders_page.card.copy_order_number' | t | json }},
+      "copied": {{ 'customer.orders_page.card.copied' | t | json }},
+      "product": {{ 'customer.orders_page.card.product' | t | json }},
+      "sku": {{ 'customer.orders_page.card.sku' | t | json }},
+      "size": {{ 'customer.orders_page.card.size' | t | json }},
+      "quantity": {{ 'customer.orders_page.card.quantity' | t | json }},
+      "price": {{ 'customer.orders_page.card.price' | t | json }},
+      "subtotal": {{ 'customer.orders_page.card.subtotal' | t | json }},
+      "preorder_date": {{ 'customer.orders_page.card.preorder_date' | t | json }}
+    },
+    "shipping": {
+      "title": {{ 'customer.orders_page.shipping.title' | t | json }},
+      "track": {{ 'customer.orders_page.shipping.track' | t | json }},
+      "none": {{ 'customer.orders_page.shipping.none' | t | json }}
+    },
+    "documents": {
+      "menu": {{ 'customer.orders_page.documents.menu' | t | json }},
+      "download_all": {{ 'customer.orders_page.documents.download_all' | t | json }},
+      "none": {{ 'customer.orders_page.documents.none' | t | json }},
+      "failed": {{ 'customer.orders_page.documents.failed' | t | json }},
+      "type_invoices": {{ 'customer.orders_page.documents.type_invoices' | t | json }},
+      "type_proformaInvoices": {{ 'customer.orders_page.documents.type_proforma' | t | json }},
+      "type_exportInvoices": {{ 'customer.orders_page.documents.type_export' | t | json }},
+      "type_preorderDocuments": {{ 'customer.orders_page.documents.type_preorder' | t | json }},
+      "type_orderConfirmations": {{ 'customer.orders_page.documents.type_order_confirmation' | t | json }}
+    },
+    "loading_more": {{ 'customer.orders_page.loading' | t | json }},
+    "empty_filtered": {{ 'customer.orders_page.empty_filtered' | t | json }}
+  }</script>
+  <script src="{{ 'order-history.js' | asset_url }}" defer></script>
+</main>
