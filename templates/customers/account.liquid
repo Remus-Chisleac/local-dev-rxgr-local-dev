@@ -93,10 +93,10 @@
     {%- comment -%} ── Right: contact + addresses ───────────────────────── {%- endcomment -%}
     <div class="aico-account-content">
 
-      {% if contact %}
-        <section class="aico-account-section">
-          <h2 class="aico-account-section-title">{{ 'customer.account.contact_person_title' | t }}</h2>
-          <div class="aico-account-address-grid">
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.account.contact_person_title' | t }}</h2>
+        <div class="aico-account-address-grid">
+        {% if contact %}
           <div class="aico-account-card aico-account-contact-card">
             {% if contact.photo_url %}
               <img class="aico-account-contact-photo" src="{{ contact.photo_url }}" alt="{{ contact.full_name | escape }}" loading="lazy">
@@ -120,9 +120,24 @@
               </div>
             </div>
           </div>
+        {% else %}
+          {%- comment -%}
+            Placeholder card: the real KAM/Ansprechperson data source is not
+            wired up yet (the B2B main_contact relation is NOT it). Renders the
+            design slot with a neutral avatar + hint until the source is known.
+          {%- endcomment -%}
+          <div class="aico-account-card aico-account-contact-card aico-account-contact-card--placeholder">
+            <div class="aico-account-contact-photo aico-account-contact-photo--placeholder" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="aico-account-contact-body">
+              <p class="aico-account-contact-name">{{ 'customer.account.contact_placeholder_name' | t }}</p>
+              <p class="aico-account-contact-placeholder-hint">{{ 'customer.account.contact_placeholder_hint' | t }}</p>
+            </div>
           </div>
-        </section>
-      {% endif %}
+        {% endif %}
+        </div>
+      </section>
 
       <section class="aico-account-section">
         <h2 class="aico-account-section-title">{{ 'customer.account.billing_addresses_title' | t }}</h2>

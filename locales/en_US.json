@@ -149,6 +149,8 @@
       "on": "on",
       "off": "off",
       "contact_person_title": "Your contact person",
+      "contact_placeholder_name": "Your personal contact person",
+      "contact_placeholder_hint": "Their contact details will appear here shortly.",
       "billing_addresses_title": "Your billing addresses",
       "delivery_addresses_title": "Your delivery addresses",
       "no_addresses": "No addresses on file.",

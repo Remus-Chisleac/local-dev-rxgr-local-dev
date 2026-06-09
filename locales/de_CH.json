@@ -149,6 +149,8 @@
       "on": "ein",
       "off": "aus",
       "contact_person_title": "Ihre Ansprechperson",
+      "contact_placeholder_name": "Ihre persönliche Ansprechperson",
+      "contact_placeholder_hint": "Die Kontaktdaten werden in Kürze hier angezeigt.",
       "billing_addresses_title": "Ihre Rechnungsadressen",
       "delivery_addresses_title": "Ihre Lieferadressen",
       "no_addresses": "Keine Adressen hinterlegt.",

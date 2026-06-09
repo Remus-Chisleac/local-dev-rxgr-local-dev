@@ -5820,6 +5820,21 @@ button.aico-home-brand-card {
   flex: 0 0 auto;
 }
 
+/* Placeholder contact card — shown until the real KAM source is wired up. */
+.aico-account-contact-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--aico-muted, #e9e9ec);
+  color: var(--aico-muted-fg, #6b6b70);
+}
+
+.aico-account-contact-placeholder-hint {
+  color: var(--aico-muted-fg);
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0;
+}
+
 .aico-account-contact-body { min-width: 0; }
 
 .aico-account-contact-name {
