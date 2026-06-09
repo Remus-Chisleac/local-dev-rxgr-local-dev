@@ -119,6 +119,36 @@
     return node;
   }
 
+  // Inline SVG icons (Lucide-style strokes) — returned as a span so they
+  // sit inline with text. innerHTML is safe here: the markup is static.
+  var ICONS = {
+    chevron: '<path d="m9 18 6-6-6-6"></path>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
+    check: '<path d="M20 6 9 17l-5-5"></path>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line>'
+  };
+
+  function icon(name, className) {
+    var span = el('span', 'aico-icon' + (className ? ' ' + className : ''));
+    span.setAttribute('aria-hidden', 'true');
+    span.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || '') + '</svg>';
+    return span;
+  }
+
+  // Build an animated collapsible: an outer grid that transitions
+  // grid-template-rows 0fr -> 1fr (smooth height animation with no JS
+  // measuring), plus an overflow-hidden inner that holds the content.
+  function collapsible(innerClassName) {
+    var outer = el('div', 'aico-collapsible');
+    var inner = el('div', 'aico-collapsible-inner' + (innerClassName ? ' ' + innerClassName : ''));
+    outer.appendChild(inner);
+    return { outer: outer, inner: inner };
+  }
+
+  function setCollapsed(outer, open) {
+    outer.classList.toggle('aico-collapsible-open', open);
+  }
+
   function countItems(order) {
     var total = 0;
     var products = order.products || [];
@@ -290,11 +320,14 @@
     return badge;
   }
 
-  function buildSummary(order, expandBtn) {
+  function buildSummary(order) {
     var summary = el('div', 'aico-order-summary');
 
-    var left = el('div', 'aico-order-summary-main');
-    left.appendChild(el('span', 'aico-order-date', formatDate(order.createdAt)));
+    // Chevron indicator (rotates when the card opens) — left of the row.
+    summary.appendChild(icon('chevron', 'aico-order-chevron'));
+
+    var main = el('div', 'aico-order-summary-main');
+    main.appendChild(el('span', 'aico-order-date', formatDate(order.createdAt)));
 
     var numberRow = el('span', 'aico-order-number-row');
     var typeKey = order.type === 'preorder' ? 'preorder' : 'order';
@@ -305,62 +338,97 @@
       copyBtn.type = 'button';
       copyBtn.title = t('card.copy_order_number', 'Copy order number');
       copyBtn.setAttribute('aria-label', t('card.copy_order_number', 'Copy order number'));
-      copyBtn.textContent = '⧉';
+      copyBtn.appendChild(icon('copy'));
       copyBtn.addEventListener('click', function (event) {
         event.stopPropagation();
         copyText(order.orderNumber, copyBtn);
       });
       numberRow.appendChild(copyBtn);
     }
-    left.appendChild(numberRow);
+    main.appendChild(numberRow);
+    summary.appendChild(main);
 
-    var right = el('div', 'aico-order-summary-meta');
-    var count = countItems(order);
-    right.appendChild(el('span', 'aico-order-itemcount', itemCountLabel(count)));
-    right.appendChild(el('span', 'aico-order-total', formatMoney(order.totalPrice, order.currency)));
-    right.appendChild(buildStatusBadge(order));
-    right.appendChild(expandBtn);
+    // Fixed-width meta columns so item count / total / status line up
+    // across every card regardless of price width.
+    summary.appendChild(el('span', 'aico-order-itemcount', itemCountLabel(countItems(order))));
+    summary.appendChild(el('span', 'aico-order-total', formatMoney(order.totalPrice, order.currency)));
+    summary.appendChild(buildStatusBadge(order));
+    summary.appendChild(buildDocumentsControl(order));
 
-    summary.appendChild(left);
-    summary.appendChild(right);
     return summary;
   }
 
+  function productTotals(product) {
+    var items = product.items || [];
+    var qty = 0;
+    var sum = 0;
+    for (var i = 0; i < items.length; i++) {
+      var q = Number(items[i].quantity) || 0;
+      qty += q;
+      sum += (Number(items[i].price) || 0) * q;
+    }
+    return { qty: qty, sum: sum };
+  }
+
+  // Products list — each product is a collapsible group; its variant
+  // (size) rows are hidden until the product header is expanded.
   function buildProductsTable(order) {
     var wrap = el('div', 'aico-order-products');
-    var table = el('table', 'aico-order-products-table');
-    var thead = el('thead');
-    var headRow = el('tr');
-    headRow.appendChild(el('th', null, t('card.product', 'Product')));
-    headRow.appendChild(el('th', null, t('card.sku', 'SKU')));
-    headRow.appendChild(el('th', null, t('card.size', 'Size')));
-    headRow.appendChild(el('th', 'aico-order-cell-num', t('card.quantity', 'Qty')));
-    headRow.appendChild(el('th', 'aico-order-cell-num', t('card.price', 'Price')));
-    headRow.appendChild(el('th', 'aico-order-cell-num', t('card.subtotal', 'Subtotal')));
-    thead.appendChild(headRow);
-    table.appendChild(thead);
 
-    var tbody = el('tbody');
+    var header = el('div', 'aico-order-products-head');
+    header.appendChild(el('span', null, t('card.product', 'Product')));
+    header.appendChild(el('span', 'aico-order-cell-num', t('card.quantity', 'Qty')));
+    header.appendChild(el('span', 'aico-order-cell-num', t('card.subtotal', 'Subtotal')));
+    wrap.appendChild(header);
+
     var products = order.products || [];
     for (var i = 0; i < products.length; i++) {
-      var product = products[i];
-      var items = product.items || [];
-      for (var j = 0; j < items.length; j++) {
-        var item = items[j];
-        var row = el('tr');
-        row.appendChild(el('td', 'aico-order-cell-name', j === 0 ? (product.name || '') : ''));
-        row.appendChild(el('td', null, item.sku || product.sku || ''));
-        row.appendChild(el('td', null, item.size || ''));
-        row.appendChild(el('td', 'aico-order-cell-num', String(item.quantity != null ? item.quantity : '')));
-        row.appendChild(el('td', 'aico-order-cell-num', formatMoney(item.price, order.currency)));
-        var subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
-        row.appendChild(el('td', 'aico-order-cell-num', formatMoney(subtotal, order.currency)));
-        tbody.appendChild(row);
-      }
+      wrap.appendChild(buildProductGroup(products[i], order.currency));
     }
-    table.appendChild(tbody);
-    wrap.appendChild(table);
     return wrap;
+  }
+
+  function buildProductGroup(product, currency) {
+    var totals = productTotals(product);
+    var group = el('div', 'aico-order-product');
+
+    var head = el('button', 'aico-order-product-head');
+    head.type = 'button';
+    head.setAttribute('aria-expanded', 'false');
+    head.appendChild(icon('chevron', 'aico-order-product-chevron'));
+    var name = el('span', 'aico-order-product-name');
+    name.appendChild(document.createTextNode(product.name || product.sku || ''));
+    if (product.sku) {
+      name.appendChild(el('span', 'aico-order-product-sku', product.sku));
+    }
+    head.appendChild(name);
+    head.appendChild(el('span', 'aico-order-cell-num', String(totals.qty)));
+    head.appendChild(el('span', 'aico-order-cell-num', formatMoney(totals.sum, currency)));
+
+    var box = collapsible('aico-order-variants');
+    var items = product.items || [];
+    for (var j = 0; j < items.length; j++) {
+      var item = items[j];
+      var row = el('div', 'aico-order-variant');
+      row.appendChild(el('span', 'aico-order-variant-size', item.size || item.sku || '—'));
+      row.appendChild(el('span', 'aico-order-variant-sku', item.sku || ''));
+      row.appendChild(el('span', 'aico-order-cell-num', String(item.quantity != null ? item.quantity : '')));
+      row.appendChild(el('span', 'aico-order-cell-num', formatMoney(item.price, currency)));
+      var subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+      row.appendChild(el('span', 'aico-order-cell-num', formatMoney(subtotal, currency)));
+      box.inner.appendChild(row);
+    }
+
+    head.addEventListener('click', function () {
+      var open = head.getAttribute('aria-expanded') !== 'true';
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      group.classList.toggle('aico-order-product-open', open);
+      setCollapsed(box.outer, open);
+    });
+
+    group.appendChild(head);
+    group.appendChild(box.outer);
+    return group;
   }
 
   function buildTrackingPanel(order) {
@@ -400,55 +468,99 @@
     return panel;
   }
 
-  function buildDocumentsMenu(order) {
+  function triggerDownload(url) {
+    var anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }
+
+  // Summary-cell documents control. With no documents it renders a muted
+  // placeholder (keeps the grid column aligned). With one document the
+  // button downloads it directly; with several it opens an animated
+  // dropdown listing each PDF plus a "download all".
+  function buildDocumentsControl(order) {
     var docs = collectDocuments(order);
-    var wrap = el('div', 'aico-order-documents');
-    wrap.appendChild(el('h4', 'aico-order-documents-title', t('documents.menu', 'Documents')));
+    var cell = el('div', 'aico-order-docaction');
 
     if (!docs.length) {
-      wrap.appendChild(el('p', 'aico-order-documents-none', t('documents.none', 'No documents available.')));
-      return wrap;
+      cell.appendChild(el('span', 'aico-order-docaction-empty', '—'));
+      return cell;
     }
 
-    var listNode = el('ul', 'aico-order-documents-list');
+    var button = el('button', 'aico-order-docbtn');
+    button.type = 'button';
+    button.appendChild(icon('download'));
+    button.appendChild(el('span', null, t('documents.menu', 'Documents')));
+
+    if (docs.length === 1) {
+      button.addEventListener('click', function (event) {
+        event.stopPropagation();
+        triggerDownload(docs[0].url);
+      });
+      cell.appendChild(button);
+      return cell;
+    }
+
+    button.appendChild(icon('chevron', 'aico-order-docbtn-chevron'));
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+
+    var box = collapsible('aico-order-docmenu');
     for (var i = 0; i < docs.length; i++) {
-      var li = el('li', 'aico-order-documents-item');
-      var link = el('a', 'aico-order-documents-link', docs[i].number ? (docs[i].label + ' · ' + docs[i].number) : docs[i].label);
+      var link = el('a', 'aico-order-docmenu-link', docs[i].number ? (docs[i].label + ' · ' + docs[i].number) : docs[i].label);
       link.href = docs[i].url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      li.appendChild(link);
-      listNode.appendChild(li);
+      link.addEventListener('click', function (event) { event.stopPropagation(); });
+      box.inner.appendChild(link);
     }
-    wrap.appendChild(listNode);
+    var allBtn = el('button', 'aico-order-docmenu-all');
+    allBtn.type = 'button';
+    allBtn.textContent = t('documents.download_all', 'Download all');
+    allBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      downloadAll(docs);
+    });
+    box.inner.appendChild(allBtn);
 
-    if (docs.length > 1) {
-      var allBtn = el('button', 'aico-order-documents-all');
-      allBtn.type = 'button';
-      allBtn.textContent = t('documents.download_all', 'Download all');
-      allBtn.addEventListener('click', function () {
-        downloadAll(docs);
-      });
-      wrap.appendChild(allBtn);
+    function closeMenu() {
+      button.setAttribute('aria-expanded', 'false');
+      setCollapsed(box.outer, false);
+      document.removeEventListener('click', onDocOutside, true);
     }
+    function onDocOutside(event) {
+      if (!cell.contains(event.target)) {
+        closeMenu();
+      }
+    }
+    button.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      setCollapsed(box.outer, open);
+      if (open) {
+        document.addEventListener('click', onDocOutside, true);
+      } else {
+        document.removeEventListener('click', onDocOutside, true);
+      }
+    });
 
-    return wrap;
+    cell.appendChild(button);
+    cell.appendChild(box.outer);
+    return cell;
   }
 
   function buildDetail(order) {
-    var detail = el('div', 'aico-order-detail');
-    detail.hidden = true;
-
+    var box = collapsible('aico-order-detail');
     var grid = el('div', 'aico-order-detail-grid');
     grid.appendChild(buildProductsTable(order));
-
-    var side = el('div', 'aico-order-detail-side');
-    side.appendChild(buildTrackingPanel(order));
-    side.appendChild(buildDocumentsMenu(order));
-    grid.appendChild(side);
-
-    detail.appendChild(grid);
-    return detail;
+    grid.appendChild(buildTrackingPanel(order));
+    box.inner.appendChild(grid);
+    return box;
   }
 
   function buildCard(order) {
@@ -456,37 +568,40 @@
     li.setAttribute('data-aico-order-id', order.id);
     li.setAttribute('data-aico-order-type', order.type);
 
-    var expandBtn = el('button', 'aico-order-expand');
-    expandBtn.type = 'button';
-    expandBtn.setAttribute('aria-expanded', 'false');
-    expandBtn.textContent = t('card.view_details', 'View details');
+    var summary = buildSummary(order);
+    summary.setAttribute('role', 'button');
+    summary.setAttribute('tabindex', '0');
+    summary.setAttribute('aria-expanded', 'false');
 
-    var summary = buildSummary(order, expandBtn);
     var detail = buildDetail(order);
 
-    function toggle(event) {
-      if (event) {
-        event.stopPropagation();
-      }
-      var open = detail.hidden;
-      detail.hidden = !open;
-      expandBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      expandBtn.textContent = open ? t('card.hide_details', 'Hide details') : t('card.view_details', 'View details');
+    function toggle() {
+      var open = summary.getAttribute('aria-expanded') !== 'true';
+      summary.setAttribute('aria-expanded', open ? 'true' : 'false');
       li.classList.toggle('aico-order-card-open', open);
+      setCollapsed(detail.outer, open);
     }
 
-    expandBtn.addEventListener('click', toggle);
     summary.addEventListener('click', function (event) {
-      // Ignore clicks that originate on the copy button or a link.
-      var tag = event.target.closest('button, a');
-      if (tag && tag !== summary) {
+      // Ignore clicks that originate on an interactive child (copy,
+      // documents button/menu, links).
+      if (event.target.closest('button, a')) {
         return;
       }
-      toggle(event);
+      toggle();
+    });
+    summary.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (event.target.closest('button, a')) {
+          return;
+        }
+        event.preventDefault();
+        toggle();
+      }
     });
 
     li.appendChild(summary);
-    li.appendChild(detail);
+    li.appendChild(detail.outer);
     return li;
   }
 
@@ -494,11 +609,10 @@
 
   function copyText(text, button) {
     function flash() {
-      var original = button.textContent;
-      button.textContent = '✓';
+      button.replaceChildren(icon('check'));
       button.classList.add('aico-order-copied');
       setTimeout(function () {
-        button.textContent = original;
+        button.replaceChildren(icon('copy'));
         button.classList.remove('aico-order-copied');
       }, 1200);
     }

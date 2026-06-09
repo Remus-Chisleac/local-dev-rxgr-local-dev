@@ -26,7 +26,7 @@
     <div class="aico-orders-filterbar" data-aico-orders-filters>
       <label class="aico-orders-field">
         <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.type_label' | t }}</span>
-        <select class="aico-orders-select" data-aico-filter="type">
+        <select class="aico-orders-select" name="aico_orders_type" data-aico-filter="type">
           <option value="all">{{ 'customer.orders_page.filters.type_all' | t }}</option>
           <option value="order">{{ 'customer.orders_page.filters.type_orders' | t }}</option>
           <option value="preorder">{{ 'customer.orders_page.filters.type_preorders' | t }}</option>
@@ -35,7 +35,7 @@
 
       <label class="aico-orders-field">
         <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.period_label' | t }}</span>
-        <select class="aico-orders-select" data-aico-filter="period">
+        <select class="aico-orders-select" name="aico_orders_period" data-aico-filter="period">
           <option value="all">{{ 'customer.orders_page.filters.period_all' | t }}</option>
           <option value="last30">{{ 'customer.orders_page.filters.period_30' | t }}</option>
           <option value="ytd">{{ 'customer.orders_page.filters.period_ytd' | t }}</option>
@@ -46,11 +46,11 @@
       <div class="aico-orders-field aico-orders-custom-range" data-aico-custom-range hidden>
         <label class="aico-orders-range-input">
           <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.from' | t }}</span>
-          <input type="date" data-aico-filter="from">
+          <input type="date" name="aico_orders_from" data-aico-filter="from">
         </label>
         <label class="aico-orders-range-input">
           <span class="aico-orders-field-label">{{ 'customer.orders_page.filters.to' | t }}</span>
-          <input type="date" data-aico-filter="to">
+          <input type="date" name="aico_orders_to" data-aico-filter="to">
         </label>
       </div>
 
@@ -66,6 +66,7 @@
             class="aico-orders-search-input"
             placeholder="{{ 'customer.orders_page.filters.search_placeholder' | t }}"
             autocomplete="off"
+            name="aico_orders_search"
             data-aico-filter="search">
         </span>
       </label>

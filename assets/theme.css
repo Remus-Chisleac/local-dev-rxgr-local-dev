@@ -5904,21 +5904,16 @@ button.aico-home-brand-card {
 }
 
 
+
 /* ---------------------------------------------------------------------------
    Customer order history (templates/customers/orders.liquid)
-   Rendered by assets/order-history.js. Card list with inline accordion
-   detail (line items + tracking + documents). Inspired by aico-commerce.
+   Rendered by assets/order-history.js. Card list with a left chevron,
+   aligned meta columns, a summary documents/PDF control, and an animated
+   accordion whose product rows expand to reveal variant lines.
 --------------------------------------------------------------------------- */
-.aico-orders {
-  min-height: 60vh;
-}
-.aico-orders-shell {
-  padding-top: 2rem;
-  padding-bottom: 4rem;
-}
-.aico-orders-header {
-  margin-bottom: 1.5rem;
-}
+.aico-orders { min-height: 60vh; }
+.aico-orders-shell { padding-top: 2rem; padding-bottom: 4rem; }
+.aico-orders-header { margin-bottom: 1.5rem; }
 .aico-orders-title {
   font-family: var(--aico-font-display);
   font-size: 1.875rem;
@@ -5926,11 +5921,20 @@ button.aico-home-brand-card {
   margin: 0 0 0.25rem;
   color: var(--aico-fg);
 }
-.aico-orders-subtitle {
-  margin: 0;
-  color: var(--aico-muted-fg);
-  font-size: 0.9375rem;
+.aico-orders-subtitle { margin: 0; color: var(--aico-muted-fg); font-size: 0.9375rem; }
+
+/* Shared inline icon */
+.aico-icon { display: inline-flex; align-items: center; justify-content: center; }
+.aico-icon svg { display: block; }
+
+/* Generic animated collapsible: grid-rows 0fr -> 1fr */
+.aico-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
 }
+.aico-collapsible-open { grid-template-rows: 1fr; }
+.aico-collapsible-inner { overflow: hidden; min-height: 0; }
 
 /* Filter bar */
 .aico-orders-filterbar {
@@ -5944,11 +5948,7 @@ button.aico-home-brand-card {
   border-radius: 0.5rem;
   background: var(--aico-card);
 }
-.aico-orders-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+.aico-orders-field { display: flex; flex-direction: column; gap: 0.25rem; }
 .aico-orders-field-label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -5975,22 +5975,10 @@ button.aico-home-brand-card {
   outline-offset: 1px;
   border-color: var(--color-accent);
 }
-.aico-orders-custom-range {
-  flex-direction: row;
-  gap: 0.75rem;
-}
-.aico-orders-range-input {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.aico-orders-search-field {
-  flex: 1 1 16rem;
-}
-.aico-orders-search {
-  position: relative;
-  display: block;
-}
+.aico-orders-custom-range { flex-direction: row; gap: 0.75rem; }
+.aico-orders-range-input { display: flex; flex-direction: column; gap: 0.25rem; }
+.aico-orders-search-field { flex: 1 1 16rem; }
+.aico-orders-search { position: relative; display: block; }
 .aico-orders-search-icon {
   position: absolute;
   left: 0.625rem;
@@ -5999,10 +5987,7 @@ button.aico-home-brand-card {
   color: var(--aico-muted-fg);
   pointer-events: none;
 }
-.aico-orders-search-input {
-  width: 100%;
-  padding-left: 2.25rem;
-}
+.aico-orders-search-input { width: 100%; padding-left: 2.25rem; }
 .aico-orders-reset {
   height: 2.5rem;
   padding: 0 0.875rem;
@@ -6014,20 +5999,12 @@ button.aico-home-brand-card {
   font-size: 0.8125rem;
   cursor: pointer;
 }
-.aico-orders-reset:hover {
-  background: var(--aico-muted-strong);
-}
+.aico-orders-reset:hover { background: var(--aico-muted-strong); }
 
 /* States */
 .aico-orders-empty,
-.aico-orders-error {
-  padding: 2.5rem 1rem;
-  text-align: center;
-  color: var(--aico-muted-fg);
-}
-.aico-orders-error {
-  color: #c62828;
-}
+.aico-orders-error { padding: 2.5rem 1rem; text-align: center; color: var(--aico-muted-fg); }
+.aico-orders-error { color: #c62828; }
 
 /* Card list */
 .aico-orders-list {
@@ -6042,39 +6019,30 @@ button.aico-home-brand-card {
   border: 1px solid var(--aico-border);
   border-radius: 0.5rem;
   background: var(--aico-card);
-  overflow: hidden;
 }
-.aico-order-card-open {
-  border-color: var(--color-accent);
-}
+.aico-order-card-open { border-color: var(--color-accent); }
+
+/* Summary row — fixed grid columns so meta lines up across cards */
 .aico-order-summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1.25rem minmax(11rem, 1fr) 6rem 7.5rem 9.5rem 9rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-  padding: 1rem 1.25rem;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
   cursor: pointer;
+  user-select: none;
 }
-.aico-order-summary-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  min-width: 12rem;
-}
-.aico-order-date {
-  font-size: 0.8125rem;
+.aico-order-summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.aico-order-chevron {
   color: var(--aico-muted-fg);
+  transition: transform 0.2s ease;
 }
-.aico-order-number-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.aico-order-number {
-  font-weight: 600;
-  color: var(--aico-fg);
-}
+.aico-order-card-open .aico-order-chevron { transform: rotate(90deg); }
+
+.aico-order-summary-main { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.aico-order-date { font-size: 0.8125rem; color: var(--aico-muted-fg); }
+.aico-order-number-row { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.aico-order-number { font-weight: 600; color: var(--aico-fg); }
 .aico-order-type-chip {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -6084,42 +6052,24 @@ button.aico-home-brand-card {
   border-radius: 999px;
   background: var(--aico-muted);
   color: var(--aico-muted-fg);
+  white-space: nowrap;
 }
-.aico-order-type-preorder {
-  background: #ede7f6;
-  color: #5e35b1;
-}
+.aico-order-type-preorder { background: #ede7f6; color: #5e35b1; }
 .aico-order-copy {
+  display: inline-flex;
+  align-items: center;
   border: none;
   background: transparent;
   color: var(--aico-muted-fg);
   cursor: pointer;
-  font-size: 0.9375rem;
-  line-height: 1;
-  padding: 0.125rem 0.25rem;
+  padding: 0.125rem;
   border-radius: 0.25rem;
 }
-.aico-order-copy:hover {
-  background: var(--aico-muted);
-  color: var(--aico-fg);
-}
-.aico-order-copied {
-  color: #2e7d32;
-}
-.aico-order-summary-meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.aico-order-itemcount {
-  font-size: 0.8125rem;
-  color: var(--aico-muted-fg);
-}
-.aico-order-total {
-  font-weight: 600;
-  color: var(--aico-fg);
-}
+.aico-order-copy:hover { background: var(--aico-muted); color: var(--aico-fg); }
+.aico-order-copied { color: #2e7d32; }
+
+.aico-order-itemcount { font-size: 0.8125rem; color: var(--aico-muted-fg); white-space: nowrap; }
+.aico-order-total { font-weight: 600; color: var(--aico-fg); white-space: nowrap; }
 
 /* Status badge */
 .aico-order-status {
@@ -6132,21 +6082,23 @@ button.aico-home-brand-card {
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
+  justify-self: start;
 }
-.aico-order-status-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: currentColor;
-}
-.aico-order-status-cancelled  { color: #c62828; }
+.aico-order-status-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+.aico-order-status-cancelled   { color: #c62828; }
 .aico-order-status-in_progress { color: #039be5; }
 .aico-order-status-self_pickup { color: #616161; }
-.aico-order-status-delivered  { color: #2e7d32; }
-.aico-order-status-shipped    { color: #0d47a1; }
-.aico-order-status-confirmed  { color: #616161; }
+.aico-order-status-delivered   { color: #2e7d32; }
+.aico-order-status-shipped     { color: #0d47a1; }
+.aico-order-status-confirmed   { color: #616161; }
 
-.aico-order-expand {
+/* Documents control in the summary */
+.aico-order-docaction { position: relative; justify-self: end; }
+.aico-order-docaction-empty { color: var(--aico-muted-fg); }
+.aico-order-docbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   border: 1px solid var(--aico-border);
   background: var(--aico-bg);
   color: var(--aico-fg);
@@ -6155,110 +6107,114 @@ button.aico-home-brand-card {
   padding: 0.4rem 0.75rem;
   border-radius: 0.375rem;
   cursor: pointer;
+  white-space: nowrap;
 }
-.aico-order-expand:hover {
-  background: var(--aico-muted);
+.aico-order-docbtn:hover { background: var(--aico-muted); }
+.aico-order-docbtn-chevron { transition: transform 0.2s ease; }
+.aico-order-docbtn[aria-expanded="true"] .aico-order-docbtn-chevron { transform: rotate(90deg); }
+.aico-order-docmenu {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 20;
+  min-width: 14rem;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 32px rgba(33, 31, 27, 0.14);
 }
+.aico-order-docmenu .aico-collapsible-inner { display: flex; flex-direction: column; }
+.aico-order-docmenu-link {
+  padding: 0.55rem 0.875rem;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  text-decoration: none;
+  border-bottom: 1px solid var(--aico-border);
+}
+.aico-order-docmenu-link:hover { background: var(--aico-muted); }
+.aico-order-docmenu-all {
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.55rem 0.875rem;
+  cursor: pointer;
+}
+.aico-order-docmenu-all:hover { background: var(--aico-muted); }
 
 /* Accordion detail */
-.aico-order-detail {
-  border-top: 1px solid var(--aico-border);
-  padding: 1.25rem;
-  background: var(--color-bg);
-}
+.aico-order-detail { border-top: 1px solid transparent; }
+.aico-order-card-open .aico-order-detail { border-top-color: var(--aico-border); }
 .aico-order-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18rem;
   gap: 1.5rem;
+  padding: 1.25rem;
+  background: var(--color-bg);
 }
-.aico-order-products {
-  overflow-x: auto;
+
+/* Products list with collapsible variant groups */
+.aico-order-products { display: flex; flex-direction: column; }
+.aico-order-products-head,
+.aico-order-product-head,
+.aico-order-variant {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr) 4rem 7rem;
+  align-items: center;
+  gap: 0.75rem;
 }
-.aico-order-products-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-.aico-order-products-table th {
-  text-align: left;
+.aico-order-products-head {
+  grid-template-columns: minmax(0, 1fr) 4rem 7rem;
+  padding: 0.4rem 0.5rem;
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--aico-muted-fg);
-  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--aico-border);
 }
-.aico-order-products-table td {
-  padding: 0.5rem 0.5rem;
-  border-bottom: 1px solid var(--aico-border);
+.aico-order-product { border-bottom: 1px solid var(--aico-border); }
+.aico-order-product-head {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
   color: var(--aico-fg);
-  vertical-align: top;
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  cursor: pointer;
 }
-.aico-order-cell-num {
-  text-align: right;
-  white-space: nowrap;
+.aico-order-product-head:hover { background: var(--aico-muted); }
+.aico-order-product-chevron { color: var(--aico-muted-fg); transition: transform 0.2s ease; }
+.aico-order-product-open .aico-order-product-chevron { transform: rotate(90deg); }
+.aico-order-product-name { display: flex; flex-direction: column; min-width: 0; font-weight: 500; }
+.aico-order-product-sku { font-size: 0.75rem; font-weight: 400; color: var(--aico-muted-fg); }
+.aico-order-variant {
+  padding: 0.4rem 0.5rem 0.4rem 1.85rem;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  border-top: 1px dashed var(--aico-border);
 }
-.aico-order-cell-name {
-  font-weight: 500;
-}
+.aico-order-variant-size { font-weight: 500; }
+.aico-order-variant-sku { color: var(--aico-muted-fg); }
+.aico-order-cell-num { text-align: right; white-space: nowrap; }
 
-.aico-order-detail-side {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-.aico-order-tracking-title,
-.aico-order-documents-title {
+/* Tracking panel */
+.aico-order-tracking-title {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--aico-muted-fg);
   margin: 0 0 0.5rem;
 }
-.aico-order-tracking-list,
-.aico-order-documents-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-.aico-order-tracking-link,
-.aico-order-documents-link {
-  color: var(--color-accent);
-  text-decoration: underline;
-  font-size: 0.875rem;
-  word-break: break-word;
-}
-.aico-order-tracking-none,
-.aico-order-documents-none {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--aico-muted-fg);
-}
-.aico-order-documents-all {
-  margin-top: 0.625rem;
-  border: 1px solid var(--aico-border);
-  background: var(--aico-bg);
-  color: var(--aico-fg);
-  font: inherit;
-  font-size: 0.8125rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-}
-.aico-order-documents-all:hover {
-  background: var(--aico-muted);
-}
+.aico-order-tracking-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.375rem; }
+.aico-order-tracking-link { color: var(--color-accent); text-decoration: underline; font-size: 0.875rem; word-break: break-word; }
+.aico-order-tracking-none { margin: 0; font-size: 0.8125rem; color: var(--aico-muted-fg); }
 
 /* Loader + end */
-.aico-orders-loader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-}
+.aico-orders-loader { display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
 .aico-orders-spinner {
   width: 1.5rem;
   height: 1.5rem;
@@ -6267,27 +6223,20 @@ button.aico-home-brand-card {
   border-radius: 50%;
   animation: aico-orders-spin 0.7s linear infinite;
 }
-@keyframes aico-orders-spin {
-  to { transform: rotate(360deg); }
-}
-.aico-orders-end {
-  padding: 1.5rem;
-  text-align: center;
-  font-size: 0.8125rem;
-  color: var(--aico-muted-fg);
-}
-.aico-orders-sentinel {
-  height: 1px;
-}
+@keyframes aico-orders-spin { to { transform: rotate(360deg); } }
+.aico-orders-end { padding: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--aico-muted-fg); }
+.aico-orders-sentinel { height: 1px; }
 
-@media (max-width: 48rem) {
-  .aico-order-detail-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+@media (max-width: 52rem) {
   .aico-order-summary {
-    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.875rem;
+    row-gap: 0.5rem;
   }
-  .aico-orders-search-field {
-    flex-basis: 100%;
-  }
+  .aico-order-chevron { align-self: flex-start; margin-top: 0.25rem; }
+  .aico-order-summary-main { flex: 1 1 60%; }
+  .aico-order-docaction { margin-left: auto; }
+  .aico-order-detail-grid { grid-template-columns: minmax(0, 1fr); }
 }
