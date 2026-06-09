@@ -59,14 +59,17 @@
         toastTimer = null;
       }
       toast.textContent = message;
-      toast.setAttribute('data-state', state || '');
+      // Standard site toast: neutral (saving) = default dark, saved = success,
+      // error = error. Position/appearance come from .aico-toast-wrap/.aico-toast.
+      var kind = state === 'saved' ? ' aico-toast-success'
+        : state === 'error' ? ' aico-toast-error'
+        : '';
+      toast.className = 'aico-toast aico-account-toast' + kind;
       toast.classList.add('is-visible');
-      toast.setAttribute('aria-hidden', 'false');
       // "saving" stays until the request resolves; "saved"/"error" auto-dismiss.
       if (state === 'saved' || state === 'error') {
         toastTimer = window.setTimeout(function () {
           toast.classList.remove('is-visible');
-          toast.setAttribute('aria-hidden', 'true');
         }, 2600);
       }
     }

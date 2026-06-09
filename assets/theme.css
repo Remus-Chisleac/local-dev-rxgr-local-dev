@@ -5668,6 +5668,7 @@ button.aico-home-brand-card {
 
 
 
+
 /* ─────────────────────────────────────────────────────────────────────────
    Customer profile page (templates/customers/account.liquid)
    ───────────────────────────────────────────────────────────────────────── */
@@ -5772,28 +5773,14 @@ button.aico-home-brand-card {
   cursor: progress;
 }
 
-/* Save toast (floating, bottom-right) */
+/* Save toast — uses the standard site toast (.aico-toast-wrap / .aico-toast,
+   bottom-center). Only the show/hide fade is added here because the profile
+   toast is driven by vanilla JS rather than Alpine's x-transition. */
 .aico-account-toast {
-  position: fixed;
-  right: 1.5rem;
-  bottom: 1.5rem;
-  z-index: 1000;
-  max-width: 22rem;
-  padding: 0.75rem 1.1rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #fff;
-  background: #211f1b;
-  box-shadow: 0 12px 32px rgba(33, 31, 27, 0.24);
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-  pointer-events: none;
+  transition: opacity 0.18s ease;
 }
-.aico-account-toast.is-visible { opacity: 1; transform: translateY(0); }
-.aico-account-toast[data-state="saved"] { background: #1f8a4c; }
-.aico-account-toast[data-state="error"] { background: #c0392b; }
+.aico-account-toast.is-visible { opacity: 1; }
 
 /* Content column */
 .aico-account-content {

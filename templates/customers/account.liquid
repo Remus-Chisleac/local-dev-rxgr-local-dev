@@ -175,7 +175,10 @@
     </div>
   </div>
 
-  <div class="aico-account-toast" data-aico-account-toast role="status" aria-live="polite" aria-hidden="true"></div>
+  {%- comment -%} Standard site toast (shared .aico-toast-wrap / .aico-toast, bottom-center). {%- endcomment -%}
+  <div class="aico-toast-wrap" aria-live="polite" aria-atomic="true">
+    <div class="aico-toast aico-account-toast" data-aico-account-toast></div>
+  </div>
 
   <script src="{{ 'account-page.js' | asset_url }}" defer></script>
 </main>
