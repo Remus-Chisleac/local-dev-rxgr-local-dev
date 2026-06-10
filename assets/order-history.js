@@ -605,15 +605,27 @@
     toInput.setAttribute('aria-label', t('filters.to', 'To'));
 
     function onDateChange() {
-      state.filters.from = fromInput.value || null;
-      state.filters.to = toInput.value || null;
-      if (state.filters.from || state.filters.to) {
+      var from = fromInput.value || null;
+      var to = toInput.value || null;
+
+      // Apply only once we have a complete, valid range (both dates,
+      // from <= to). A single date alone does nothing yet.
+      if (from && to && from <= to) {
+        state.filters.from = from;
+        state.filters.to = to;
         state.filters.period = 'custom';
-      } else {
+        refresh();
+        resetAndReload();
+      } else if (!from && !to) {
+        // Both cleared → revert to "all time".
+        state.filters.from = null;
+        state.filters.to = null;
         state.filters.period = 'all';
+        refresh();
+        resetAndReload();
       }
-      refresh();
-      resetAndReload();
+      // Otherwise (partial or invalid range): keep the typed values but
+      // don't apply — wait for a valid second date.
     }
     fromInput.addEventListener('change', onDateChange);
     toInput.addEventListener('change', onDateChange);
