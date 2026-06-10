@@ -274,17 +274,7 @@
                         data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
                         data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
                       >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
-                      <div class="aico-pdp-stepper" data-aico-stepper>
-                        <button
-                          type="button"
-                          class="aico-pdp-stepper-btn aico-pdp-stepper-dec"
-                          data-aico-step="-1"
-                          tabindex="-1"
-                          aria-label="{{ 'product.size_matrix.decrease' | t }}"
-                          {% unless variant.available? %}disabled{% endunless %}
-                        >
-                          <svg class="aico-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg>
-                        </button>
+                      <span class="aico-pdp-qty-box" data-aico-stepper>
                         <input
                           type="number"
                           class="aico-pdp-size-cell-input"
@@ -301,17 +291,15 @@
                           aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
                           {% unless variant.available? %}disabled{% endunless %}
                         >
-                        <button
-                          type="button"
-                          class="aico-pdp-stepper-btn aico-pdp-stepper-inc"
-                          data-aico-step="1"
-                          tabindex="-1"
-                          aria-label="{{ 'product.size_matrix.increase' | t }}"
-                          {% unless variant.available? %}disabled{% endunless %}
-                        >
-                          <svg class="aico-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-                        </button>
-                      </div>
+                        <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
+                          <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}"{% unless variant.available? %} disabled{% endunless %}>
+                            <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                          <button type="button" class="aico-pdp-qty-box__step" data-aico-step="-1" tabindex="-1" aria-label="{{ 'product.size_matrix.decrease' | t }}"{% unless variant.available? %} disabled{% endunless %}>
+                            <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                        </span>
+                      </span>
                       <span class="aico-pdp-size-cell-stock aico-sr-only">
                         {% if variant.aico_stock_amount > 0 %}
                           {{ variant.aico_stock_amount }}
@@ -348,16 +336,7 @@
 
             <label class="aico-pdp-option-row">
               <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
-              <div class="aico-pdp-stepper aico-pdp-stepper-lg" data-aico-stepper>
-                <button
-                  type="button"
-                  class="aico-pdp-stepper-btn aico-pdp-stepper-dec"
-                  data-aico-step="-1"
-                  tabindex="-1"
-                  aria-label="{{ 'product.size_matrix.decrease' | t }}"
-                >
-                  <svg class="aico-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg>
-                </button>
+              <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
                 <input
                   type="number"
                   class="aico-pdp-qty-input"
@@ -368,16 +347,15 @@
                   inputmode="numeric"
                   data-aico-qty-input
                 >
-                <button
-                  type="button"
-                  class="aico-pdp-stepper-btn aico-pdp-stepper-inc"
-                  data-aico-step="1"
-                  tabindex="-1"
-                  aria-label="{{ 'product.size_matrix.increase' | t }}"
-                >
-                  <svg class="aico-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-                </button>
-              </div>
+                <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
+                  <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}">
+                    <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button type="button" class="aico-pdp-qty-box__step" data-aico-step="-1" tabindex="-1" aria-label="{{ 'product.size_matrix.decrease' | t }}">
+                    <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </span>
+              </span>
             </label>
 
             {% comment %}
