@@ -789,10 +789,17 @@
         if (!url) { continue; }
         var label = t('documents.type_' + keys[k], keys[k]);
         var number = rows[i].documentNumber || '';
+        var date = formatShortDate(rows[i].createdAt);
+        // Preorder PDFs carry no createdAt; derive the date from the
+        // YYYY-MM-DD prefix of their filename, like b2b-shop does.
+        if (!date && number) {
+          var m = number.match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (m) { date = formatShortDate(m[1] + '-' + m[2] + '-' + m[3]); }
+        }
         collected.push({
           url: url,
           name: number ? (label + ' · ' + number) : label,
-          date: formatShortDate(rows[i].createdAt),
+          date: date,
         });
       }
     }
