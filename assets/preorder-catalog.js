@@ -292,18 +292,13 @@
   }
 
   function formatSizeLabel(label) {
-    return String(label)
-      .replace(/ 1\/3/g, ' \u2153')
-      .replace(/ 2\/3/g, ' \u2154');
+    // Traditional fraction writing \u2014 keep "35 1/3" / "37 2/3" as plain text
+    // instead of the custom \u2153/\u2154 superscript glyphs.
+    return String(label).trim();
   }
 
   function formatSizeLabelHtml(label) {
-    var formatted = formatSizeLabel(label);
-    var parts = formatted.match(/^(\d+(?:[.,]\d+)?)\s*([\u2153\u2154])?$/);
-    if (!parts) return escapeHtml(formatted);
-    var whole = escapeHtml(parts[1]);
-    if (!parts[2]) return whole;
-    return whole + '<span class="aico-preorder-size-frac">' + parts[2] + '</span>';
+    return escapeHtml(formatSizeLabel(label));
   }
 
   function normalizeShoeSizeCharts(charts) {

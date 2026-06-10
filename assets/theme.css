@@ -2535,19 +2535,15 @@ button.aico-home-brand-card {
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--aico-border);
-  background-color: #f9fafb;
-}
-
-/* Full-bleed vertical gradient from the session's two colors. The section already
-   spans the full viewport width (only its inner .aico-page-container is
-   constrained), so the gradient covers the whole screen behind the image+title.
-   When the session has no colors this class is absent and the flat band shows. */
-.aico-preorder-hero--gradient {
-  background-color: var(--aico-preorder-grad-from, #f9fafb);
+  /* Full-bleed vertical gradient spanning the whole viewport width (only the
+     inner .aico-page-container is constrained). Defaults to a subtle gray when
+     the session has no colors set; the session's colors are applied by
+     preorder-page.js as --aico-preorder-grad-from/to and override the gray. */
+  background-color: var(--aico-preorder-grad-from, #e9ebee);
   background-image: linear-gradient(
     180deg,
-    var(--aico-preorder-grad-from, #f9fafb) 0%,
-    var(--aico-preorder-grad-to, #f9fafb) 100%
+    var(--aico-preorder-grad-from, #eceef1) 0%,
+    var(--aico-preorder-grad-to, #d4d8dc) 100%
   );
 }
 
@@ -2567,26 +2563,19 @@ button.aico-home-brand-card {
   }
 }
 
+/* Title sits alone on the far left, vertically centred in the band. */
 .aico-preorder-hero-left {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
   min-width: 0;
 }
-@media (min-width: 768px) {
-  .aico-preorder-hero-left {
-    flex-direction: row;
-    align-items: center;
-    gap: 1.25rem;
-  }
-}
 
+/* Banner image lives on the right, just left of the countdown (see hero-side). */
 .aico-preorder-banner-img {
   display: block;
-  max-height: 5.5rem;
+  max-height: 6rem;
   width: auto;
-  max-width: min(100%, 18rem);
+  max-width: min(38vw, 16rem);
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -5024,6 +5013,7 @@ html.aico-preorder-gallery-open {
   box-sizing: border-box;
   border-radius: 0.125rem;
   background: rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-size-head .aico-preorder-size-frac {
   font-size: 9px;

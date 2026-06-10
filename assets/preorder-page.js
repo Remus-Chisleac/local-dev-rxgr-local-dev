@@ -1060,16 +1060,17 @@
         }
       }
       if (heroEl) {
+        // The band always shows a gradient; the CSS default is gray. Apply the
+        // session's colors when both are set, otherwise clear the vars so the
+        // gray default shows through.
         var from = session && session.gradientColorStart;
         var to = session && session.gradientColorEnd;
         if (from && to) {
           heroEl.style.setProperty('--aico-preorder-grad-from', from);
           heroEl.style.setProperty('--aico-preorder-grad-to', to);
-          heroEl.classList.add('aico-preorder-hero--gradient');
         } else {
           heroEl.style.removeProperty('--aico-preorder-grad-from');
           heroEl.style.removeProperty('--aico-preorder-grad-to');
-          heroEl.classList.remove('aico-preorder-hero--gradient');
         }
       }
     }
