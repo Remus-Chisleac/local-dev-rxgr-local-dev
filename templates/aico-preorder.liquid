@@ -29,18 +29,12 @@
 {% endcomment %}
 
 {%- assign preorder_session = aico_preorder.session -%}
-{%- assign mock_title = settings.aico_preorder_mock_title | default: 'PreOrder Ramadan 2027' -%}
-{%- assign hero_title = preorder_session.title -%}
-{%- if hero_title == blank -%}{%- assign hero_title = mock_title -%}{%- endif -%}
-{%- comment -%} Hero banner image + vertical gradient come from the live session
-   (set in the admin), never from a hardcoded theme asset. When the session has
-   no image we render the title alone over the gradient; with no gradient colors
-   the band stays flat. {%- endcomment -%}
-{%- assign hero_image_url = preorder_session.hero_image_url -%}
-{%- assign hero_grad_from = preorder_session.gradient_color_start -%}
-{%- assign hero_grad_to = preorder_session.gradient_color_end -%}
-{%- assign hero_has_gradient = false -%}
-{%- if hero_grad_from != blank and hero_grad_to != blank -%}{%- assign hero_has_gradient = true -%}{%- endif -%}
+{%- comment -%} The active session (title, banner image, gradient colors, deadline)
+   is resolved per buyer/debtor and hydrated CLIENT-SIDE from
+   `preorder/session.js` — it is not bound to the Liquid drop at first render
+   (same as the countdown). The hero is therefore a shell that `preorder-page.js`
+   fills in: title from `welcomeMessage`, image from `collectionImage`, and the
+   full-bleed vertical gradient from `gradientColorStart/End`. No hardcoded asset. {%- endcomment -%}
 
 <main class="aico-preorder" role="main"
       data-aico-preorder
@@ -86,21 +80,21 @@
       {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
 
   {%- comment -%} ── Hero band: full-bleed vertical gradient (session colors) behind the
-       session banner image + title text, with the countdown on the side. {%- endcomment -%}
-  <section class="aico-preorder-hero{% if hero_has_gradient %} aico-preorder-hero--gradient{% endif %}"
-           aria-labelledby="aico-preorder-hero-title"
-           {%- if hero_has_gradient %} style="--aico-preorder-grad-from:{{ hero_grad_from | escape }};--aico-preorder-grad-to:{{ hero_grad_to | escape }};"{% endif %}>
+       session banner image + title text, with the countdown on the side. The
+       image/title/gradient are filled in by preorder-page.js once the session
+       resolves (data hooks below); empty shell until then. {%- endcomment -%}
+  <section class="aico-preorder-hero" data-aico-preorder-hero aria-labelledby="aico-preorder-hero-title">
     <div class="aico-page-container aico-preorder-hero-inner">
       <div class="aico-preorder-hero-left">
-        {%- if hero_image_url != blank -%}
         <img
           class="aico-preorder-banner-img"
-          src="{{ hero_image_url }}"
+          data-aico-preorder-hero-img
+          src=""
           alt=""
           loading="eager"
-          decoding="async">
-        {%- endif -%}
-        <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title">{{ hero_title }}</h1>
+          decoding="async"
+          hidden>
+        <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title" data-aico-preorder-hero-title></h1>
       </div>
 
       <div class="aico-preorder-hero-side">

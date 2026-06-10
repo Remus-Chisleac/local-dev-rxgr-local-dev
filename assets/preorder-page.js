@@ -399,6 +399,9 @@
     var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
     var filtersWrapEl = root.querySelector('[data-aico-preorder-filters-wrap]');
     var resolvingEl = root.querySelector('[data-aico-preorder-resolving]');
+    var heroEl = root.querySelector('[data-aico-preorder-hero]');
+    var heroImgEl = root.querySelector('[data-aico-preorder-hero-img]');
+    var heroTitleEl = root.querySelector('[data-aico-preorder-hero-title]');
     // True while the cart is being fetched to discover a pre-existing preorder.
     // Everything below the hero stays hidden (spinner only) until it resolves.
     var cartResolving = false;
@@ -1034,9 +1037,41 @@
           if (sessionData && opts.updateDeadline) {
             opts.updateDeadline(sessionData.endDate || sessionData.deadlineAt);
           }
+          applyHero(sessionData);
           renderFlyers(sessionData && sessionData.flyers);
         })
         .catch(function () {});
+    }
+
+    // Fill the hero shell from the resolved session: title (welcomeMessage),
+    // banner image (collectionImage, hidden when none), and the full-bleed
+    // vertical gradient (gradientColorStart/End → flat band when either is unset).
+    function applyHero(session) {
+      var title = (session && (session.welcomeMessage || session.title)) || '';
+      if (heroTitleEl) heroTitleEl.textContent = title;
+      if (heroImgEl) {
+        var img = session && (session.collectionImage || session.heroImageUrl);
+        if (img) {
+          heroImgEl.src = img;
+          heroImgEl.hidden = false;
+        } else {
+          heroImgEl.removeAttribute('src');
+          heroImgEl.hidden = true;
+        }
+      }
+      if (heroEl) {
+        var from = session && session.gradientColorStart;
+        var to = session && session.gradientColorEnd;
+        if (from && to) {
+          heroEl.style.setProperty('--aico-preorder-grad-from', from);
+          heroEl.style.setProperty('--aico-preorder-grad-to', to);
+          heroEl.classList.add('aico-preorder-hero--gradient');
+        } else {
+          heroEl.style.removeProperty('--aico-preorder-grad-from');
+          heroEl.style.removeProperty('--aico-preorder-grad-to');
+          heroEl.classList.remove('aico-preorder-hero--gradient');
+        }
+      }
     }
 
     var PCS_PER_FLYER = 25;
