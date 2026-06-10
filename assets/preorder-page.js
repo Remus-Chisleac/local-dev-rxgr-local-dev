@@ -966,10 +966,12 @@
           '</span></span>';
       }
 
-      var termsOk = !termsCheckbox || termsCheckbox.checked;
       var saving = cartCtrl && cartCtrl.saving;
-      if (submitBtn) {
-        submitBtn.disabled = !termsOk || saving || totalQty <= 0;
+      if (submitBtn && !submitBtn.classList.contains('aico-preorder-btn--saving')) {
+        // Terms are NOT gated here: the button stays clickable so we can flag the
+        // unchecked checkbox on click (see the submit handler) instead of leaving
+        // a silently-disabled button. Only an empty cart / in-flight save disable.
+        submitBtn.disabled = saving || totalQty <= 0;
       }
       updateCheckoutVisibility();
     }
@@ -1314,28 +1316,80 @@
       });
     });
 
+    var submitDefaultHtml = submitBtn ? submitBtn.innerHTML : '';
+
+    // Swap the submit button for a spinner + "Saving cart…" while the preorder
+    // is being placed; restore the label afterwards.
+    function setSubmitSaving(isSaving) {
+      if (!submitBtn) return;
+      if (isSaving) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('aico-preorder-btn--saving');
+        submitBtn.setAttribute('aria-busy', 'true');
+        var savingCopy =
+          root.getAttribute('data-aico-preorder-copy-saving') || 'Saving cart…';
+        submitBtn.innerHTML =
+          '<span class="aico-preorder-btn-spinner" aria-hidden="true"></span>' +
+          '<span>' + escapeHtml(savingCopy) + '</span>';
+      } else {
+        submitBtn.classList.remove('aico-preorder-btn--saving');
+        submitBtn.removeAttribute('aria-busy');
+        submitBtn.innerHTML = submitDefaultHtml;
+        updateSummary();
+      }
+    }
+
+    // Draw attention to the (unchecked) terms checkbox instead of leaving the
+    // submit button silently disabled.
+    function flagTermsRequired() {
+      var wrap = termsCheckbox
+        ? termsCheckbox.closest('.aico-preorder-terms')
+        : null;
+      if (wrap) {
+        wrap.classList.add('aico-preorder-terms--required');
+        // restart the shake animation on each click
+        wrap.classList.remove('aico-preorder-terms--shake');
+        void wrap.offsetWidth;
+        wrap.classList.add('aico-preorder-terms--shake');
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (termsCheckbox) {
+        try {
+          termsCheckbox.focus({ preventScroll: true });
+        } catch (_) {
+          termsCheckbox.focus();
+        }
+      }
+    }
+
     if (cartEnabled && submitBtn) {
       submitBtn.addEventListener('click', function () {
-        if (submitBtn.disabled) return;
-        submitBtn.disabled = true;
-        if (summaryStatus) {
-          summaryStatus.hidden = false;
-          summaryStatus.textContent =
-            root.getAttribute('data-aico-preorder-copy-submitting') || 'Placing preorder…';
+        // Terms gate: let the click through, but if the AGB box isn't ticked,
+        // flag it and stop — don't submit.
+        if (termsCheckbox && !termsCheckbox.checked) {
+          flagTermsRequired();
+          return;
         }
+        if (submitBtn.disabled) return;
+        if (summaryStatus) summaryStatus.hidden = true;
+        setSubmitSaving(true);
         cartCtrl
           .submitPreorder(notesEl ? notesEl.value : '')
           .then(function () {
             var thankYou = root.getAttribute('data-aico-preorder-thank-you-url');
             if (thankYou) {
               window.location.href = thankYou;
-            } else if (summaryStatus) {
-              summaryStatus.textContent =
-                root.getAttribute('data-aico-preorder-copy-submitted') || 'Preorder placed';
+            } else {
+              setSubmitSaving(false);
+              if (summaryStatus) {
+                summaryStatus.hidden = false;
+                summaryStatus.textContent =
+                  root.getAttribute('data-aico-preorder-copy-submitted') || 'Preorder placed';
+              }
             }
           })
           .catch(function () {
-            submitBtn.disabled = false;
+            setSubmitSaving(false);
             if (summaryStatus) {
               summaryStatus.hidden = false;
               summaryStatus.textContent =
@@ -1346,7 +1400,18 @@
     }
 
     if (termsCheckbox) {
-      termsCheckbox.addEventListener('change', updateSummary);
+      termsCheckbox.addEventListener('change', function () {
+        if (termsCheckbox.checked) {
+          var wrap = termsCheckbox.closest('.aico-preorder-terms');
+          if (wrap) {
+            wrap.classList.remove(
+              'aico-preorder-terms--required',
+              'aico-preorder-terms--shake',
+            );
+          }
+        }
+        updateSummary();
+      });
     }
 
     if (reopenAckBtn) {

@@ -5262,6 +5262,40 @@ button.aico-home-brand-card {
 .aico-preorder-terms a {
   color: #007b8e;
 }
+
+/* Unaccepted-terms attention state (flagged when submit is clicked unchecked) */
+.aico-preorder-terms--required {
+  padding: 0.6rem 0.75rem;
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  border: 1px solid #e8702d;
+  border-radius: 4px;
+  background: #fff5ef;
+  color: #b5481b;
+}
+
+.aico-preorder-terms--required a {
+  color: #b5481b;
+  text-decoration: underline;
+}
+
+.aico-preorder-terms--required input[type='checkbox'] {
+  outline: 2px solid #e8702d;
+  outline-offset: 2px;
+  accent-color: #e8702d;
+}
+
+.aico-preorder-terms--shake {
+  animation: aico-preorder-shake 0.4s ease;
+}
+
+@keyframes aico-preorder-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
 .aico-preorder-checkout-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -5288,6 +5322,23 @@ button.aico-home-brand-card {
 .aico-preorder-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Submit button "saving" state: spinner + label, not faded like :disabled */
+.aico-preorder-btn--saving:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.aico-preorder-btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  flex: none;
 }
 .aico-preorder-btn-save {
   background: #e4e4e4;
