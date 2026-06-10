@@ -328,7 +328,23 @@
 
   // ---- Toolbar dropdowns ------------------------------------------
 
+  // Floating popups (filter dropdowns + per-order document menus) are
+  // rendered at the document body as fixed overlays so they can never be
+  // clipped or stacked behind the order cards. They pop into existence
+  // (no animation) and are dismissed via a shared transparent backdrop.
+
   var openDropdown = null;
+  var sharedBackdrop = null;
+
+  function ensureBackdrop() {
+    if (!sharedBackdrop) {
+      sharedBackdrop = el('div', 'aico-orders-backdrop');
+      sharedBackdrop.style.display = 'none';
+      sharedBackdrop.addEventListener('click', closeOpenDropdown);
+      document.body.appendChild(sharedBackdrop);
+    }
+    return sharedBackdrop;
+  }
 
   function closeOpenDropdown() {
     if (openDropdown) {
@@ -337,19 +353,65 @@
     }
   }
 
-  document.addEventListener('click', function (event) {
-    if (openDropdown && !openDropdown.root.contains(event.target)) {
-      closeOpenDropdown();
-    }
-  }, true);
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-      closeOpenDropdown();
-    }
+    if (event.key === 'Escape') { closeOpenDropdown(); }
   });
+  // Close on page scroll (a fixed popup would otherwise detach from its
+  // button), but ignore scrolling inside the popup itself (e.g. the user list).
+  window.addEventListener('scroll', function (event) {
+    var target = event.target;
+    if (target && target.nodeType === 1 && target.closest && target.closest('.aico-orders-popup')) {
+      return;
+    }
+    closeOpenDropdown();
+  }, true);
 
-  // A labelled dropdown button with an absolutely-positioned animated panel.
-  function createDropdown(initialLabel) {
+  function positionPopup(popup, anchor, align) {
+    var r = anchor.getBoundingClientRect();
+    popup.style.display = 'block';
+    var pw = popup.offsetWidth;
+    var ph = popup.offsetHeight;
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+    var left = align === 'right' ? (r.right - pw) : r.left;
+    left = Math.max(8, Math.min(left, vw - pw - 8));
+    var top = r.bottom + 6;
+    if (top + ph > vh - 8 && r.top - ph - 6 > 8) { top = r.top - ph - 6; }
+    popup.style.left = Math.round(left) + 'px';
+    popup.style.top = Math.round(top) + 'px';
+  }
+
+  // Wire a trigger button to a popup element: body-appended, fixed, toggled
+  // with the shared backdrop. Returns { close }.
+  function floatingPopup(button, popup, align) {
+    popup.classList.add('aico-orders-popup');
+    popup.style.display = 'none';
+    document.body.appendChild(popup);
+    popup.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    function close() {
+      popup.style.display = 'none';
+      button.setAttribute('aria-expanded', 'false');
+      if (sharedBackdrop) { sharedBackdrop.style.display = 'none'; }
+    }
+    function open() {
+      closeOpenDropdown();
+      ensureBackdrop().style.display = 'block';
+      positionPopup(popup, button, align);
+      button.setAttribute('aria-expanded', 'true');
+      openDropdown = api;
+    }
+    button.addEventListener('click', function (event) {
+      event.stopPropagation();
+      if (button.getAttribute('aria-expanded') === 'true') { close(); openDropdown = null; }
+      else { open(); }
+    });
+    var api = { close: close };
+    return api;
+  }
+
+  // A labelled filter dropdown whose panel pops at the body.
+  function createDropdown(initialLabel, align) {
     var root = el('div', 'aico-orders-dropdown');
     var button = el('button', 'aico-orders-dropdown-btn');
     button.type = 'button';
@@ -358,40 +420,18 @@
     var labelEl = el('span', 'aico-orders-dropdown-label', initialLabel);
     button.appendChild(labelEl);
     button.appendChild(icon('chevronDown', 'aico-orders-dropdown-chevron'));
-
-    var box = collapsible('aico-orders-panel');
-
-    function close() {
-      button.setAttribute('aria-expanded', 'false');
-      setCollapsed(box.outer, false);
-    }
-    function open() {
-      closeOpenDropdown();
-      button.setAttribute('aria-expanded', 'true');
-      setCollapsed(box.outer, true);
-      openDropdown = api;
-    }
-    button.addEventListener('click', function (event) {
-      event.stopPropagation();
-      if (button.getAttribute('aria-expanded') === 'true') {
-        close();
-        openDropdown = null;
-      } else {
-        open();
-      }
-    });
-
     root.appendChild(button);
-    root.appendChild(box.outer);
 
-    var api = {
+    var popup = el('div');
+    var fp = floatingPopup(button, popup, align || 'left');
+
+    return {
       root: root,
-      panel: box.inner,
-      close: close,
+      panel: popup,
+      close: fp.close,
       setLabel: function (text) { labelEl.textContent = text; },
       setActive: function (active) { root.classList.toggle('aico-orders-dropdown-active', !!active); }
     };
-    return api;
   }
 
   function typeLabel(value) {
@@ -439,7 +479,7 @@
   }
 
   function buildPeriodDropdown() {
-    var dd = createDropdown(periodButtonLabel());
+    var dd = createDropdown(periodButtonLabel(), 'right');
     dd.panel.classList.add('aico-orders-period-panel');
 
     var presetButtons = [];
@@ -532,7 +572,7 @@
   }
 
   function buildCreatedByDropdown() {
-    var dd = createDropdown(createdByLabel());
+    var dd = createDropdown(createdByLabel(), 'right');
     dd.panel.classList.add('aico-orders-createdby-panel');
 
     var searchWrap = el('div', 'aico-orders-createdby-search');
@@ -701,10 +741,14 @@
     metaRow.appendChild(buildStatusBadge(order));
     right.appendChild(metaRow);
 
+    // Always reserve the documents row so every card header is the same
+    // height; the button is only rendered when the order has documents.
+    var docSlot = el('div', 'aico-order-docaction');
     if (!isCancelled) {
-      var docs = buildDocumentsButton(order);
-      if (docs) { right.appendChild(docs); }
+      var docBtn = buildDocumentsButton(order);
+      if (docBtn) { docSlot.appendChild(docBtn); }
     }
+    right.appendChild(docSlot);
     summary.appendChild(right);
 
     return summary;
@@ -748,56 +792,40 @@
     var docs = collectDocuments(order);
     if (!docs.length) { return null; }
 
-    var wrap = el('div', 'aico-order-docaction');
     var button = el('button', 'aico-order-docbtn');
     button.type = 'button';
     button.appendChild(el('span', null, t('documents.menu', 'Documents')));
 
+    // Single document → download directly, no menu.
     if (docs.length === 1) {
       button.addEventListener('click', function (event) {
         event.stopPropagation();
         triggerDownload(docs[0].url);
       });
-      wrap.appendChild(button);
-      return wrap;
+      return button;
     }
 
+    // Several documents → a body-level popup menu (never clipped by cards).
     button.appendChild(icon('chevronDown', 'aico-order-docbtn-chevron'));
+    button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
-    var box = collapsible('aico-order-docmenu');
+
+    var menu = el('div', 'aico-order-docmenu');
     docs.forEach(function (d) {
       var link = el('a', 'aico-order-docmenu-link', d.number ? (d.label + ' · ' + d.number) : d.label);
       link.href = d.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.addEventListener('click', function (e) { e.stopPropagation(); });
-      box.inner.appendChild(link);
+      menu.appendChild(link);
     });
     var allBtn = el('button', 'aico-order-docmenu-all');
     allBtn.type = 'button';
     allBtn.textContent = t('documents.download_all', 'Download all');
-    allBtn.addEventListener('click', function (event) { event.stopPropagation(); downloadAll(docs); });
-    box.inner.appendChild(allBtn);
+    allBtn.addEventListener('click', function (event) { event.stopPropagation(); downloadAll(docs); closeOpenDropdown(); });
+    menu.appendChild(allBtn);
 
-    var docOutside;
-    function closeMenu() {
-      button.setAttribute('aria-expanded', 'false');
-      setCollapsed(box.outer, false);
-      document.removeEventListener('click', docOutside, true);
-    }
-    docOutside = function (event) { if (!wrap.contains(event.target)) { closeMenu(); } };
-    button.addEventListener('click', function (event) {
-      event.stopPropagation();
-      var open = button.getAttribute('aria-expanded') !== 'true';
-      button.setAttribute('aria-expanded', open ? 'true' : 'false');
-      setCollapsed(box.outer, open);
-      if (open) { document.addEventListener('click', docOutside, true); }
-      else { document.removeEventListener('click', docOutside, true); }
-    });
-
-    wrap.appendChild(button);
-    wrap.appendChild(box.outer);
-    return wrap;
+    floatingPopup(button, menu, 'right');
+    return button;
   }
 
   // ---- Card: expanded products table ------------------------------

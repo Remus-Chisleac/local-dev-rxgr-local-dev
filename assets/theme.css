@@ -5906,6 +5906,7 @@ button.aico-home-brand-card {
 
 
 
+
 /* ---------------------------------------------------------------------------
    Customer order history (templates/customers/orders.liquid)
    Rendered by assets/order-history.js. Recreates the b2b-shop order-history
@@ -5914,8 +5915,9 @@ button.aico-home-brand-card {
    Palette mirrors the b2b-shop constants (greys + status colours + orange
    active accent) rather than the theme tokens, to match the original.
 --------------------------------------------------------------------------- */
-.aico-orders {
-  min-height: 60vh;
+/* Order-history palette — on :root so the body-level filter / document
+   popups (rendered outside .aico-orders) pick the variables up too. */
+:root {
   --aico-oh-border: #e0e0e0;
   --aico-oh-hover: #f3f3f3;
   --aico-oh-strip: #f5f5f5;
@@ -5924,6 +5926,7 @@ button.aico-home-brand-card {
   --aico-oh-fg: #211f1b;
   --aico-oh-muted: #757575;
 }
+.aico-orders { min-height: 60vh; }
 /* [hidden] must beat the explicit display on toggled elements. */
 .aico-orders [hidden] { display: none !important; }
 .aico-orders-shell { padding-top: 1.75rem; padding-bottom: 4rem; }
@@ -6009,25 +6012,18 @@ button.aico-home-brand-card {
 .aico-orders-dropdown-active .aico-orders-dropdown-btn,
 .aico-orders-dropdown-active .aico-orders-dropdown-label { color: var(--aico-oh-active); font-weight: 600; }
 
-/* Dropdown panel (animated). The collapsible OUTER is the positioned
-   wrapper; the INNER carries the visual box. */
-.aico-orders-dropdown > .aico-collapsible {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  left: 0;
-  z-index: 1300;
-}
-.aico-orders-panel {
+/* Body-level popups (filter panels + document menus). Fixed + high z-index
+   so they pop into existence above everything and are never clipped. */
+.aico-orders-backdrop { position: fixed; inset: 0; z-index: 2000; background: transparent; }
+.aico-orders-popup {
+  position: fixed;
+  z-index: 2010;
   min-width: 12rem;
   background: #fff;
   border: 1px solid var(--aico-oh-border);
   border-radius: 8px;
-  box-shadow: 0 12px 32px rgba(33, 31, 27, 0.16);
+  box-shadow: 0 14px 38px rgba(33, 31, 27, 0.2);
 }
-/* Wider Period / Created-by panels sit on right-hand dropdowns — anchor them
-   to the button's right edge so they don't overflow the toolbar. */
-.aico-orders-dropdown:nth-of-type(2) > .aico-collapsible,
-.aico-orders-dropdown:nth-of-type(3) > .aico-collapsible { left: auto; right: 0; }
 
 /* Type options */
 .aico-orders-option {
@@ -6246,8 +6242,9 @@ button.aico-home-brand-card {
 .aico-order-status-shipped     { color: #0d47a1; }
 .aico-order-status-confirmed   { color: #616161; }
 
-/* Documents button (below status) */
-.aico-order-docaction { position: relative; }
+/* Documents row — height reserved on every card so headers stay uniform
+   whether or not the order has documents. */
+.aico-order-docaction { display: flex; align-items: center; justify-content: flex-end; min-height: 2.25rem; }
 .aico-order-docbtn {
   display: inline-flex;
   align-items: center;
@@ -6267,18 +6264,8 @@ button.aico-home-brand-card {
 .aico-order-docbtn:hover { border-color: #000; background: var(--aico-oh-hover); }
 .aico-order-docbtn-chevron { transition: transform 0.2s ease; }
 .aico-order-docbtn[aria-expanded="true"] .aico-order-docbtn-chevron { transform: rotate(180deg); }
-.aico-order-docmenu {
-  position: absolute;
-  top: calc(100% + 0.375rem);
-  right: 0;
-  z-index: 20;
-  min-width: 14rem;
-  background: #fff;
-  border: 1px solid var(--aico-oh-border);
-  border-radius: 6px;
-  box-shadow: 0 12px 32px rgba(33, 31, 27, 0.14);
-}
-.aico-order-docmenu .aico-collapsible-inner { display: flex; flex-direction: column; }
+/* The menu is a body-level .aico-orders-popup; only its layout lives here. */
+.aico-order-docmenu { display: flex; flex-direction: column; min-width: 15rem; }
 .aico-order-docmenu-link { padding: 0.55rem 0.875rem; font-size: 0.8125rem; color: var(--aico-oh-fg); text-decoration: none; border-bottom: 1px solid var(--aico-oh-divider); }
 .aico-order-docmenu-link:hover { background: var(--aico-oh-hover); }
 .aico-order-docmenu-all { border: none; background: transparent; color: var(--aico-oh-active); font: inherit; font-size: 0.8125rem; font-weight: 600; text-align: left; padding: 0.55rem 0.875rem; cursor: pointer; }
