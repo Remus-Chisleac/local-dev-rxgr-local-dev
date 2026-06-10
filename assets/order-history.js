@@ -197,14 +197,69 @@
     return btn;
   }
 
-  function triggerDownload(url) {
-    var anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+  // Bottom-centre site toast (reuses the .aico-toast-wrap / .aico-toast
+  // styles). Created lazily and reused.
+  var toastEl = null;
+  var toastTimer = null;
+  function showToast(message, kind) {
+    if (!toastEl) {
+      var wrap = el('div', 'aico-toast-wrap');
+      toastEl = el('div', 'aico-toast aico-orders-toast');
+      wrap.appendChild(toastEl);
+      document.body.appendChild(wrap);
+    }
+    toastEl.className = 'aico-toast aico-orders-toast'
+      + (kind === 'error' ? ' aico-toast-error' : kind === 'success' ? ' aico-toast-success' : '');
+    toastEl.textContent = message;
+    void toastEl.offsetWidth; // reflow so the transition runs
+    toastEl.classList.add('is-visible');
+    if (toastTimer) { clearTimeout(toastTimer); }
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-visible'); }, 3200);
+  }
+
+  function isSameOrigin(url) {
+    try { return new URL(url, location.href).origin === location.origin; } catch (e) { return false; }
+  }
+
+  function filenameFromDisposition(header, fallback) {
+    if (!header) { return fallback; }
+    var star = header.match(/filename\*=(?:UTF-8'')?([^;]+)/i);
+    if (star && star[1]) {
+      try { return decodeURIComponent(star[1].trim().replace(/^"|"$/g, '')); } catch (e) {}
+    }
+    var plain = header.match(/filename="?([^";]+)"?/i);
+    return plain && plain[1] ? plain[1].trim() : fallback;
+  }
+
+  // Download a document without navigating away: fetch it as a blob and
+  // trigger a save. On any failure, show an error toast (matching b2b-shop).
+  // Cross-origin URLs (rare preorder PDFs) can't be force-downloaded, so
+  // they open in a new tab instead.
+  function downloadDocument(url, fallbackName) {
+    if (!isSameOrigin(url)) {
+      window.open(url, '_blank', 'noopener');
+      return;
+    }
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (res) {
+        if (!res.ok) { throw new Error('status ' + res.status); }
+        var name = filenameFromDisposition(res.headers.get('Content-Disposition'), fallbackName || 'document.pdf');
+        return res.blob().then(function (blob) { return { blob: blob, name: name }; });
+      })
+      .then(function (out) {
+        var objectUrl = URL.createObjectURL(out.blob);
+        var anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = out.name;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 1500);
+      })
+      .catch(function (err) {
+        console.warn('aico-orders: document download failed', err);
+        showToast(t('documents.failed', 'Could not download the document.'), 'error');
+      });
   }
 
   // ---- Status -----------------------------------------------------
@@ -810,9 +865,9 @@
     var index = 0;
     (function next() {
       if (index >= docs.length) { return; }
-      triggerDownload(docs[index].url);
+      downloadDocument(docs[index].url, docs[index].name);
       index++;
-      setTimeout(next, 250);
+      setTimeout(next, 400);
     })();
   }
 
@@ -833,11 +888,16 @@
     var list = el('div', 'aico-order-docmenu-list');
     docs.forEach(function (d) {
       var link = el('a', 'aico-order-docmenu-link');
-      link.href = d.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
+      link.href = d.url; // kept for right-click / accessibility
       link.appendChild(el('span', 'aico-order-docmenu-name', d.name));
       if (d.date) { link.appendChild(el('span', 'aico-order-docmenu-date', d.date)); }
+      // Download in place rather than navigating to the PDF URL.
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        downloadDocument(d.url, d.name);
+        closeOpenDropdown();
+      });
       list.appendChild(link);
     });
     menu.appendChild(list);
@@ -959,6 +1019,34 @@
 
   // ---- Card: shipping / tracking panel ----------------------------
 
+  // Tracking URLs from the backend may arrive without a scheme (e.g.
+  // "www.post.ch/...") and with stray whitespace, which makes the browser
+  // treat them as relative paths. Normalise to an absolute https URL.
+  function normalizeTrackingUrl(raw) {
+    if (!raw) { return ''; }
+    var s = String(raw).trim().replace(/\s+/g, '');
+    if (!/^https?:\/\//i.test(s)) { s = 'https://' + s.replace(/^\/+/, ''); }
+    return s;
+  }
+
+  // Carrier favicon (Swiss Post, DHL, …) via Google's favicon service,
+  // mirroring b2b-shop's CarrierIcon. Falls back to the grid glyph if the
+  // host can't be resolved or the favicon fails to load.
+  function carrierIcon(url) {
+    var host = '';
+    try { host = new URL(url).hostname; } catch (e) { host = ''; }
+    if (!host) { return icon('grid', 'aico-order-tracking-icon'); }
+    var img = document.createElement('img');
+    img.className = 'aico-order-carrier-favicon';
+    img.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=64';
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    img.addEventListener('error', function () {
+      if (img.parentNode) { img.parentNode.replaceChild(icon('grid', 'aico-order-tracking-icon'), img); }
+    });
+    return img;
+  }
+
   function buildTrackingPanel(order) {
     var panel = el('aside', 'aico-order-tracking');
     panel.appendChild(el('h4', 'aico-order-tracking-title', t('shipping.title', 'Shipping & tracking')));
@@ -977,14 +1065,15 @@
     tracking.forEach(function (entry) {
       var tn = entry.trackingNumber || {};
       var label = ((IS_DE ? tn.de_CH : tn.en) || tn.en || tn.de_CH || '').trim();
-      var url = entry.trackingUrl;
+      var url = normalizeTrackingUrl(entry.trackingUrl);
       var item = el('div', 'aico-order-tracking-item');
       if (url) {
-        var link = el('a', 'aico-order-tracking-link', label || t('shipping.track', 'Track'));
+        var link = el('a', 'aico-order-tracking-link');
         link.href = url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.prepend(icon('grid', 'aico-order-tracking-icon'));
+        link.appendChild(carrierIcon(url));
+        link.appendChild(el('span', null, label || t('shipping.track', 'Track')));
         link.appendChild(icon('chevronRight', 'aico-order-tracking-chevron'));
         item.appendChild(link);
       } else {

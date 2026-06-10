@@ -6165,6 +6165,7 @@ html.aico-preorder-gallery-open {
 
 
 
+
 /* ---------------------------------------------------------------------------
    Customer order history (templates/customers/orders.liquid)
    Rendered by assets/order-history.js. Recreates the b2b-shop order-history
@@ -6577,6 +6578,11 @@ html.aico-preorder-gallery-open {
 .aico-order-tracking-link .aico-order-tracking-icon { color: #0d47a1; }
 .aico-order-tracking-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aico-order-tracking-chevron { color: #0d47a1; flex-shrink: 0; margin-left: auto; }
+.aico-order-carrier-favicon { width: 18px; height: 18px; flex-shrink: 0; border-radius: 3px; object-fit: contain; }
+
+/* Order-history toast (reuses .aico-toast-wrap / .aico-toast) — fade only. */
+.aico-orders-toast { opacity: 0; transition: opacity 0.18s ease; }
+.aico-orders-toast.is-visible { opacity: 1; }
 
 /* Products table (CSS grid rows) */
 .aico-order-prow {
