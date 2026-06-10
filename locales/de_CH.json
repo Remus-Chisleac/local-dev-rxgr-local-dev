@@ -161,48 +161,46 @@
       "save_error": "Speichern fehlgeschlagen"
     },
     "orders_page": {
-      "title": "Bestellverlauf",
-      "description": "Sehen Sie Ihre bisherigen Bestellungen und Vorbestellungen.",
+      "title": "Meine Bestellungen",
       "empty": "Sie haben noch keine Bestellungen aufgegeben.",
       "empty_filtered": "Keine Bestellungen entsprechen Ihren Filtern.",
       "error_loading": "Ihre Bestellungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "loading": "Bestellungen werden geladen…",
       "end_of_results": "Sie haben das Ende erreicht.",
       "filters": {
-        "type_label": "Typ",
         "type_all": "Alle Bestellungen",
         "type_orders": "Bestellungen",
         "type_preorders": "Vorbestellungen",
-        "period_label": "Zeitraum",
-        "period_all": "Gesamte Zeit",
+        "period_all": "Gesamter Zeitraum",
         "period_30": "Letzte 30 Tage",
-        "period_ytd": "Seit Jahresbeginn",
-        "period_custom": "Benutzerdefiniert",
+        "period_ytd": "Jahr bis heute",
+        "period_custom_label": "Benutzerdefiniert",
         "from": "Von",
         "to": "Bis",
+        "created_by_all": "Alle Benutzer",
+        "created_by_count": "{count} Benutzer",
+        "search_users": "Benutzer suchen",
+        "unassigned": "Nicht zugeordnet",
         "search_label": "Suche",
-        "search_placeholder": "Nach Bestell-Nr., Produkt oder SKU suchen",
+        "search_placeholder": "Suche nach Bestellnr., Produktname oder Grössen-SKU",
         "reset": "Filter zurücksetzen"
       },
       "card": {
-        "item_count_one": "{count} Artikel",
-        "item_count_other": "{count} Artikel",
-        "view_details": "Details anzeigen",
-        "hide_details": "Details ausblenden",
+        "item_count": "{count} Produkte",
         "copy_order_number": "Bestellnummer kopieren",
+        "copy_sku": "SKU kopieren",
         "copied": "Kopiert",
         "product": "Produkt",
         "sku": "SKU",
         "size": "Grösse",
         "quantity": "Menge",
         "price": "Preis",
-        "subtotal": "Zwischensumme",
-        "preorder_date": "Liefertermin"
+        "subtotal": "Zwischensumme"
       },
       "shipping": {
-        "title": "Versand & Sendungsverfolgung",
-        "track": "Verfolgen",
-        "none": "Noch keine Sendungsverfolgung."
+        "title": "Versand & Tracking",
+        "link_unavailable": "Link nicht verfügbar",
+        "track": "Verfolgen"
       },
       "status": {
         "cancelled": "Storniert",
