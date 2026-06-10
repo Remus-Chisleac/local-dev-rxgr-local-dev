@@ -4767,6 +4767,13 @@ button.aico-home-brand-card {
   border-color: #e8702d;
 }
 
+.aico-preorder-gallery-thumb--skeleton {
+  border-color: transparent;
+  background: #e4e4e7;
+  cursor: default;
+  animation: aicoSkelPulse 1.2s ease-in-out infinite;
+}
+
 html.aico-preorder-gallery-open {
   overflow: hidden;
 }

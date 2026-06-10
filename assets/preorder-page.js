@@ -1454,15 +1454,20 @@
           });
       }
 
-      function galRender(data) {
+      function galRender(data, fallbackImg, fallbackTitle) {
         galImages = (data && data.images) || [];
-        galTitle.textContent = (data && data.title) || '';
+        // Keep showing the grid's main image if the gallery came back empty.
+        if (!galImages.length && fallbackImg) {
+          galImages = [{ url: fallbackImg, alt: fallbackTitle || '' }];
+        }
+        galTitle.textContent = (data && data.title) || fallbackTitle || '';
         galThumbs.innerHTML = '';
         if (!galImages.length) {
           galMainImg.hidden = true;
           galEmpty.hidden = false;
           galPrev.hidden = true;
           galNext.hidden = true;
+          galThumbs.hidden = true;
           return;
         }
         galMainImg.hidden = false;
@@ -1483,16 +1488,33 @@
         galShow(0);
       }
 
-      function galOpen(productId) {
+      function galOpen(productId, placeholderImg, placeholderTitle) {
         if (!productImagesUrl) return;
         galleryEl.hidden = false;
         document.documentElement.classList.add('aico-preorder-gallery-open');
         galImages = [];
-        galTitle.textContent = '';
-        galThumbs.innerHTML = '';
-        galMainImg.removeAttribute('src');
-        galMainImg.hidden = false;
         galEmpty.hidden = true;
+        galPrev.hidden = true;
+        galNext.hidden = true;
+        // Show the grid's main image + title immediately (already loaded), with
+        // skeleton thumbnails, while the full gallery is fetched.
+        galTitle.textContent = placeholderTitle || '';
+        if (placeholderImg) {
+          galMainImg.hidden = false;
+          galMainImg.src = placeholderImg;
+          galMainImg.alt = placeholderTitle || '';
+        } else {
+          galMainImg.hidden = true;
+          galMainImg.removeAttribute('src');
+        }
+        galThumbs.hidden = false;
+        galThumbs.innerHTML = '';
+        for (var s = 0; s < 5; s++) {
+          var skeleton = document.createElement('span');
+          skeleton.className =
+            'aico-preorder-gallery-thumb aico-preorder-gallery-thumb--skeleton';
+          galThumbs.appendChild(skeleton);
+        }
         var reqId = ++galReqId;
         var url = new URL(productImagesUrl, window.location.origin);
         url.searchParams.set('product_id', String(productId));
@@ -1505,11 +1527,11 @@
           })
           .then(function (json) {
             if (reqId !== galReqId) return;
-            galRender(json.data || json);
+            galRender(json.data || json, placeholderImg, placeholderTitle);
           })
           .catch(function () {
             if (reqId !== galReqId) return;
-            galRender({ images: [] });
+            galRender({ images: [] }, placeholderImg, placeholderTitle);
           });
       }
 
@@ -1526,7 +1548,13 @@
         var card = media.closest('[data-aico-preorder-product-id]');
         if (!card) return;
         event.preventDefault();
-        galOpen(card.getAttribute('data-aico-preorder-product-id'));
+        var mediaImg = media.querySelector('img');
+        var titleEl = card.querySelector('.aico-preorder-product-title');
+        galOpen(
+          card.getAttribute('data-aico-preorder-product-id'),
+          mediaImg ? mediaImg.getAttribute('src') : '',
+          titleEl ? titleEl.textContent.trim() : '',
+        );
       });
 
       galleryEl
