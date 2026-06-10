@@ -719,6 +719,10 @@
 
         setLoading(false);
         updateChrome(listEl.children.length);
+        // Keep filling until the sentinel is pushed off-screen. An
+        // IntersectionObserver alone won't re-fire while the sentinel
+        // stays continuously in view, so drive loading from here too.
+        maybeLoadMore();
       })
       .catch(function (err) {
         if (requestId !== state.requestId) {
@@ -729,6 +733,21 @@
         state.done = true;
         showError();
       });
+  }
+
+  // True when the sentinel is within the prefetch margin of the viewport.
+  function sentinelInView() {
+    if (!sentinelEl) {
+      return false;
+    }
+    var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    return sentinelEl.getBoundingClientRect().top <= viewportHeight + 400;
+  }
+
+  function maybeLoadMore() {
+    if (sentinelInView()) {
+      loadNextPage();
+    }
   }
 
   function resetAndReload() {
@@ -802,7 +821,11 @@
     });
   }
 
-  // Infinite scroll
+  // Infinite scroll. The IntersectionObserver catches the sentinel
+  // entering view; the scroll/resize listeners (and the post-load
+  // maybeLoadMore) cover the cases the observer misses — chiefly when the
+  // sentinel stays continuously intersecting after a page is appended, so
+  // no new intersection event fires. loadNextPage guards re-entry.
   if (sentinelEl && 'IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function (entries) {
       for (var i = 0; i < entries.length; i++) {
@@ -813,6 +836,8 @@
     }, { rootMargin: '400px 0px' });
     observer.observe(sentinelEl);
   }
+  window.addEventListener('scroll', maybeLoadMore, { passive: true });
+  window.addEventListener('resize', maybeLoadMore, { passive: true });
 
   // Initial load
   loadNextPage();
