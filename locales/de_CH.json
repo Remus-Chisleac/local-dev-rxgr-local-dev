@@ -231,6 +231,7 @@
     "quantity": "Menge",
     "choose": "Auswählen…",
     "add_to_cart": "In den Warenkorb",
+    "update_cart": "Warenkorb aktualisieren",
     "restricted": "Eingeschränkt",
     "shipping_blocked_hint": "Versand ist für Ihr Konto gesperrt — Sie können keine Artikel in den Warenkorb legen.",
     "info_tabs_aria": "Produktinformationen",
@@ -272,6 +273,8 @@
     "size_matrix": {
       "aria": "Grössenraster",
       "qty_aria": "Menge für diese Grösse",
+      "decrease": "Menge verringern",
+      "increase": "Menge erhöhen",
       "total": "Gesamt"
     },
     "size_region": {

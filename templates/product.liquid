@@ -152,7 +152,7 @@
         <form
           class="aico-pdp-buy"
           method="post"
-          action="{{ routes.cart_add_url }}"
+          action="{% if product.aico_has_size_matrix? %}{{ routes.cart_update_url }}{% else %}{{ routes.cart_add_url }}{% endif %}"
           data-aico-pdp-buy
           data-aico-cart-add
           data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
@@ -247,8 +247,23 @@
               <div class="aico-pdp-size-grid">
                 {% for variant in product.variants %}
                   {% if variant.aico_size_value %}
+                    {%- comment -%}
+                      Pre-fill each cell with the quantity already in the
+                      cart for this variant, so the matrix mirrors the cart
+                      on every visit (set-absolute semantics — see
+                      routes.cart_update_url). `data-aico-initial` lets the
+                      script tell "no change" from "zeroed to remove".
+                    {%- endcomment -%}
+                    {%- assign cart_qty = 0 -%}
+                    {%- if cart -%}
+                      {%- for line in cart.items -%}
+                        {%- if line.variant_id == variant.id -%}
+                          {%- assign cart_qty = line.quantity -%}
+                        {%- endif -%}
+                      {%- endfor -%}
+                    {%- endif -%}
                     <label
-                      class="aico-pdp-size-cell{% if variant.available? and variant.aico_stock_amount > 0 %} aico-pdp-size-cell-in-stock{% elsif variant.available? %} aico-pdp-size-cell-available{% else %} aico-pdp-size-cell-out{% endif %}"
+                      class="aico-pdp-size-cell{% if variant.available? and variant.aico_stock_amount > 0 %} aico-pdp-size-cell-in-stock{% elsif variant.available? %} aico-pdp-size-cell-available{% else %} aico-pdp-size-cell-out{% endif %}{% if cart_qty > 0 %} aico-pdp-size-cell-in-cart{% endif %}"
                       data-aico-size-cell
                     >
                       <span
@@ -259,21 +274,44 @@
                         data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
                         data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
                       >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
-                      <input
-                        type="number"
-                        class="aico-pdp-size-cell-input"
-                        name="items[{{ variant.id }}][quantity]"
-                        min="0"
-                        max="{{ variant.aico_stock_amount }}"
-                        step="1"
-                        value="0"
-                        inputmode="numeric"
-                        data-aico-size-qty
-                        data-aico-variant-id="{{ variant.id }}"
-                        data-aico-variant-stock="{{ variant.aico_stock_amount }}"
-                        aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
-                        {% unless variant.available? %}disabled{% endunless %}
-                      >
+                      <div class="aico-pdp-stepper" data-aico-stepper>
+                        <button
+                          type="button"
+                          class="aico-pdp-stepper-btn aico-pdp-stepper-dec"
+                          data-aico-step="-1"
+                          tabindex="-1"
+                          aria-label="{{ 'product.size_matrix.decrease' | t }}"
+                          {% unless variant.available? %}disabled{% endunless %}
+                        >
+                          <svg class="aico-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg>
+                        </button>
+                        <input
+                          type="number"
+                          class="aico-pdp-size-cell-input"
+                          name="updates[{{ variant.id }}]"
+                          min="0"
+                          max="{{ variant.aico_stock_amount }}"
+                          step="1"
+                          value="{{ cart_qty }}"
+                          inputmode="numeric"
+                          data-aico-size-qty
+                          data-aico-variant-id="{{ variant.id }}"
+                          data-aico-variant-stock="{{ variant.aico_stock_amount }}"
+                          data-aico-initial="{{ cart_qty }}"
+                          aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
+                          {% unless variant.available? %}disabled{% endunless %}
+                        >
+                        <button
+                          type="button"
+                          class="aico-pdp-stepper-btn aico-pdp-stepper-inc"
+                          data-aico-step="1"
+                          tabindex="-1"
+                          aria-label="{{ 'product.size_matrix.increase' | t }}"
+                          {% unless variant.available? %}disabled{% endunless %}
+                        >
+                          <svg class="aico-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                        </button>
+                      </div>
                       <span class="aico-pdp-size-cell-stock aico-sr-only">
                         {% if variant.aico_stock_amount > 0 %}
                           {{ variant.aico_stock_amount }}
@@ -281,7 +319,6 @@
                           —
                         {% endif %}
                       </span>
-                      <input type="hidden" name="items[{{ variant.id }}][id]" value="{{ variant.id }}">
                     </label>
                   {% endif %}
                 {% endfor %}
@@ -311,16 +348,36 @@
 
             <label class="aico-pdp-option-row">
               <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
-              <input
-                type="number"
-                class="aico-pdp-qty-input"
-                name="quantity"
-                min="1"
-                step="1"
-                value="1"
-                inputmode="numeric"
-                data-aico-qty-input
-              >
+              <div class="aico-pdp-stepper aico-pdp-stepper-lg" data-aico-stepper>
+                <button
+                  type="button"
+                  class="aico-pdp-stepper-btn aico-pdp-stepper-dec"
+                  data-aico-step="-1"
+                  tabindex="-1"
+                  aria-label="{{ 'product.size_matrix.decrease' | t }}"
+                >
+                  <svg class="aico-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg>
+                </button>
+                <input
+                  type="number"
+                  class="aico-pdp-qty-input"
+                  name="quantity"
+                  min="1"
+                  step="1"
+                  value="1"
+                  inputmode="numeric"
+                  data-aico-qty-input
+                >
+                <button
+                  type="button"
+                  class="aico-pdp-stepper-btn aico-pdp-stepper-inc"
+                  data-aico-step="1"
+                  tabindex="-1"
+                  aria-label="{{ 'product.size_matrix.increase' | t }}"
+                >
+                  <svg class="aico-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                </button>
+              </div>
             </label>
 
             {% comment %}
@@ -346,6 +403,8 @@
               <span>
                 {% if product.aico_shipping_blocked? %}
                   {{ 'product.restricted' | t }}
+                {% elsif product.aico_has_size_matrix? %}
+                  {{ 'product.update_cart' | t }}
                 {% else %}
                   {{ 'product.add_to_cart' | t }}
                 {% endif %}

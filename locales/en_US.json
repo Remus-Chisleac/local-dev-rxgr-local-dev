@@ -231,6 +231,7 @@
     "quantity": "Quantity",
     "choose": "Choose…",
     "add_to_cart": "Add to cart",
+    "update_cart": "Update cart",
     "restricted": "Restricted",
     "shipping_blocked_hint": "Shipping is blocked for your account — you cannot add items to the cart.",
     "info_tabs_aria": "Product information",
@@ -272,6 +273,8 @@
     "size_matrix": {
       "aria": "Size matrix",
       "qty_aria": "Quantity for this size",
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity",
       "total": "Total"
     },
     "size_region": {

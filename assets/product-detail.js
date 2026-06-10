@@ -262,6 +262,57 @@
     refresh();
   })();
 
+  // -------- Quantity steppers (− / +) -----------------------------------
+  //
+  // Wire the −/+ buttons that wrap every quantity input — the size-matrix
+  // cells and the legacy single-quantity field. Each step clamps to the
+  // input's own min/max (max = warehouse stock) and dispatches
+  // input+change so the matrix total recomputes via setupMatrixTotal.
+
+  (function setupSteppers() {
+    var steppers = Array.prototype.slice.call(form.querySelectorAll('[data-aico-stepper]'));
+    if (steppers.length === 0) {
+      return;
+    }
+    steppers.forEach(function (stepper) {
+      var input = stepper.querySelector('input[type="number"]');
+      if (!input) {
+        return;
+      }
+      var buttons = Array.prototype.slice.call(stepper.querySelectorAll('[data-aico-step]'));
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          if (input.disabled) {
+            return;
+          }
+          var step = parseInt(button.getAttribute('data-aico-step'), 10);
+          if (isNaN(step)) {
+            return;
+          }
+          var min = parseInt(input.getAttribute('min'), 10);
+          var max = parseInt(input.getAttribute('max'), 10);
+          var current = parseInt(input.value, 10);
+          if (isNaN(current)) {
+            current = isNaN(min) ? 0 : min;
+          }
+          var next = current + step;
+          if (!isNaN(min) && next < min) {
+            next = min;
+          }
+          if (!isNaN(max) && next > max) {
+            next = max;
+          }
+          if (next === current) {
+            return;
+          }
+          input.value = String(next);
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+    });
+  })();
+
   // -------- Add-to-cart submit ------------------------------------------
 
   form.addEventListener('submit', function (event) {
@@ -270,14 +321,24 @@
     // native required-field handling covers some of this, but matrix
     // mode is too dynamic for plain HTML constraints.
     if (hasMatrix) {
-      var anySelected = Array.prototype.some.call(
-        form.querySelectorAll('[data-aico-size-qty]'),
-        function (input) {
-          var n = parseInt(input.value, 10);
-          return !isNaN(n) && n > 0;
-        }
-      );
-      if (!anySelected) {
+      // Matrix posts set ABSOLUTE quantities (mirror-cart semantics). Allow
+      // the submit when something is selected OR when the shopper changed a
+      // cell away from its prefilled cart value — including zeroing a size
+      // out to remove it. Only block when nothing is selected and nothing
+      // changed (empty cart, no picks).
+      var sizeInputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
+      var anySelected = sizeInputs.some(function (input) {
+        var n = parseInt(input.value, 10);
+        return !isNaN(n) && n > 0;
+      });
+      var anyChanged = sizeInputs.some(function (input) {
+        var n = parseInt(input.value, 10);
+        var initial = parseInt(input.getAttribute('data-aico-initial'), 10);
+        if (isNaN(n)) { n = 0; }
+        if (isNaN(initial)) { initial = 0; }
+        return n !== initial;
+      });
+      if (!anySelected && !anyChanged) {
         event.preventDefault();
         renderError('select_quantity');
         return;
@@ -332,7 +393,7 @@
 
   function renderSuccess() {
     var hint = form.querySelector('[data-aico-pdp-message]') || createMessage();
-    hint.textContent = messageFor('saved');
+    hint.textContent = messageFor(hasMatrix ? 'updated' : 'saved');
     hint.dataset.kind = 'ok';
   }
 
@@ -352,6 +413,9 @@
   function messageFor(kind) {
     if (kind === 'saved') {
       return getLocaleHint('items_saved', 'Items saved to cart.');
+    }
+    if (kind === 'updated') {
+      return getLocaleHint('cart_updated', 'Cart updated.');
     }
     if (kind === 'not_implemented') {
       return getLocaleHint('not_implemented', 'Add-to-cart is not connected yet.');
