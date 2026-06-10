@@ -1,19 +1,22 @@
 /**
- * Preorder stock caps — per-date stock with upward "rolling".
+ * Preorder stock caps — per-date cumulative available with upward "rolling".
  *
- * Each shoe size (variant) has its OWN stock per delivery date. Unused stock of
- * an EARLIER date rolls up to LATER dates, so for dates sorted chronologically
- * the available pool at date i is the cumulative own-stock up to i minus the
- * cumulative quantity entered up to i:
+ * The backend sends, per (variant, date), the CUMULATIVE available stock — how
+ * much is orderable by that date (current stock + scheduled arrivals up to it).
+ * It is non-decreasing across dates, so an earlier date's unused stock naturally
+ * "rolls up" to later dates. The pool at date i is that value S[i] used directly;
+ * the remaining is S[i] minus the quantity entered for dates 0..i:
  *
- *     remaining[i] = (Σ ownStock[0..i]) − (Σ qty[0..i])
+ *     remaining[i] = S[i] − (Σ qty[0..i])
  *
- * Example — own stock 5 / 10 / 15 for date0 / date1 / date2:
+ * Example — own stock 5 / 10 / 15 arriving across date0 / date1 / date2 means the
+ * backend's cumulative available is 5 / 15 / 30:
  *     remaining (nothing entered) = 5 / 15 / 30
  *     enter 2 on date0            → 3 / 13 / 28
  *     then enter 13 on date1      → 3 / 0  / 15
  * A later date's quantity never affects an earlier date; an earlier date's
- * quantity reduces every later date's pool.
+ * quantity reduces every later date's pool. (When the backend sends the same
+ * value for every date — no scheduled arrivals — this reduces to one shared pool.)
  *
  * The most a single cell can hold (its input cap) is bounded by EVERY date from
  * it onward (raising it must not push any later date's remaining below 0):
@@ -172,8 +175,8 @@
     if (!hasStock(pid, vid)) return null;
     var stock = state.stockByDate[pid][vid];
     var qtys = (state.qty[pid] && state.qty[pid][vid]) || {};
-    // Every date the product offers (a zero-own-stock date still receives rolled
-    // stock from earlier dates, so it must take part in the cumulative maths).
+    // Every date the product offers participates (a date with no stock entry
+    // carries the previous date's cumulative available forward).
     var dateSet = {};
     Object.keys(state.productDates[pid] || {}).forEach(function (dk) { dateSet[dk] = true; });
     Object.keys(stock).forEach(function (dk) { dateSet[dk] = true; });
@@ -181,15 +184,21 @@
       return (state.dateTs[a] || 0) - (state.dateTs[b] || 0);
     });
 
+    // The backend already sends the per-date CUMULATIVE available stock — the
+    // amount orderable by that date (current stock + scheduled arrivals up to it,
+    // capped so a later commitment isn't oversold). It is non-decreasing across
+    // dates, so date i's pool S[i] is that value used directly (NOT a running sum
+    // of per-date values — that would double-count). remaining[i] = S[i] minus
+    // the quantity entered for dates 0..i.
     var rows = [];
     var cumStock = 0;
     var cumQty = 0;
     keys.forEach(function (dk) {
-      cumStock += stock[dk] != null ? stock[dk] : 0;
+      if (stock[dk] != null) cumStock = stock[dk];
       cumQty += qtys[dk] || 0;
       rows.push({
         dateKey: dk,
-        ownStock: stock[dk] != null ? stock[dk] : 0,
+        cumStock: cumStock,
         qty: qtys[dk] || 0,
         remaining: cumStock - cumQty,
       });
