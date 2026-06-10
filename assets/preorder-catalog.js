@@ -11,6 +11,25 @@
     'Men Sandals',
   ];
 
+  function groupOrderIndex(name) {
+    var i = OPTION_GROUP_ORDER.indexOf(name);
+    return i < 0 ? OPTION_GROUP_ORDER.length : i;
+  }
+
+  // Render the sections in the fixed OPTION_GROUP_ORDER regardless of which
+  // group's products arrive first, so the catalog order is always consistent.
+  // Unknown groups keep their relative arrival order, after the known ones.
+  function sortGroupsByOrder(products) {
+    return asArray(products)
+      .map(function (group, index) { return { group: group, index: index }; })
+      .sort(function (a, b) {
+        var diff = groupOrderIndex(a.group && a.group.optionGroupName) -
+          groupOrderIndex(b.group && b.group.optionGroupName);
+        return diff !== 0 ? diff : a.index - b.index;
+      })
+      .map(function (entry) { return entry.group; });
+  }
+
   var PAGE_SIZE = 15;
 
   function renderQtyInput(opts) {
@@ -761,7 +780,7 @@
     this.catalogEl.style.setProperty('--aico-preorder-total-w', '6.75rem');
     this.catalogEl.style.setProperty('--aico-preorder-grid-gap', '0.35rem');
 
-    this.products.forEach(function (group) {
+    sortGroupsByOrder(this.products).forEach(function (group) {
       var items = self.filterItems(asArray(group && group.items));
       if (!items.length) return;
 
