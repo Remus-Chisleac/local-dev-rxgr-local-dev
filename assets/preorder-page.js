@@ -397,6 +397,11 @@
     var mainEl = root.querySelector('[data-aico-preorder-main]');
     var checkoutEl = root.querySelector('[data-aico-preorder-checkout]');
     var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
+    var filtersWrapEl = root.querySelector('[data-aico-preorder-filters-wrap]');
+    var resolvingEl = root.querySelector('[data-aico-preorder-resolving]');
+    // True while the cart is being fetched to discover a pre-existing preorder.
+    // Everything below the hero stays hidden (spinner only) until it resolves.
+    var cartResolving = false;
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
     var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
     var reopenNoticeEl = root.querySelector('[data-aico-preorder-reopen-notice]');
@@ -524,10 +529,32 @@
       return addressesReady() && !reopenAcked && cartHasPlacedPreorder();
     }
 
-    // Decide catalog vs reopen-notice visibility. While addresses are ready but
-    // the cart hasn't resolved yet (cartResolved=false), keep the catalog hidden
-    // so we never flash it before discovering a placed preorder.
+    // While the cart is being fetched (to discover a pre-existing preorder),
+    // hide everything below the hero and show only the spinner — so the
+    // address/filter row never flashes before we know the state.
+    function applyResolvingVisibility() {
+      if (resolvingEl) resolvingEl.hidden = !cartResolving;
+      if (!cartResolving) return;
+      if (filtersWrapEl) filtersWrapEl.hidden = true;
+      if (promptEl) promptEl.hidden = true;
+      if (mainEl) mainEl.hidden = true;
+      if (checkoutEl) checkoutEl.hidden = true;
+      if (reopenNoticeEl) reopenNoticeEl.hidden = true;
+    }
+
+    // Decide catalog vs reopen-notice visibility once the cart has resolved.
+    // While `cartResolving` is true we defer entirely to the spinner state.
     function applyReopenVisibility(cartResolved) {
+      if (cartResolving) {
+        applyResolvingVisibility();
+        return;
+      }
+      if (resolvingEl) resolvingEl.hidden = true;
+      // Reveal the normal page chrome (filters/address row + tools), then let the
+      // reopen gate decide notice-vs-catalog.
+      if (filtersWrapEl) filtersWrapEl.hidden = false;
+      if (catalogToolsEl) catalogToolsEl.hidden = false;
+      updatePrompt();
       var addressesOk = addressesReady();
       var pending = reopenPending();
       if (reopenNoticeEl) reopenNoticeEl.hidden = !pending;
@@ -552,15 +579,11 @@
     function updateFlowState() {
       var addressesOk = addressesReady();
       var productsOk = !shouldSkipProducts();
-      updatePrompt();
-      // Filter dropdowns (search / dates / size) stay visible from the start;
-      // only the product grid waits for addresses.
-      if (catalogToolsEl) catalogToolsEl.hidden = false;
       if (!productsOk) {
         clearCatalog();
       } else {
-        // Always (pre)load products — even while the reopen notice is up — so
-        // the catalog is ready to reveal the instant the user acknowledges.
+        // Always (pre)load products — even while the reopen notice / spinner is up
+        // — so the catalog is ready to reveal the instant the cart resolves.
         scheduleCatalogReload();
       }
       if (addressesOk && cartEnabled && cartCtrl) {
@@ -569,13 +592,16 @@
           reopenAcked = false;
           lastCartContextKey = key;
         }
-        // Hide the catalog until the cart resolves, then re-evaluate the gate.
-        applyReopenVisibility(false);
+        // Enter the resolving state: hide everything below the hero and show only
+        // the spinner until the cart fetch reveals whether a preorder exists.
+        cartResolving = true;
+        applyResolvingVisibility();
         cartCtrl
           .fetchCart()
-          .then(function () { applyReopenVisibility(true); })
-          .catch(function () { applyReopenVisibility(true); });
+          .then(function () { cartResolving = false; applyReopenVisibility(true); })
+          .catch(function () { cartResolving = false; applyReopenVisibility(true); });
       } else {
+        cartResolving = false;
         applyReopenVisibility(true);
       }
     }

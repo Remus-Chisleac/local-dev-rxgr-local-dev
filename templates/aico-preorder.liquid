@@ -32,7 +32,15 @@
 {%- assign mock_title = settings.aico_preorder_mock_title | default: 'PreOrder Ramadan 2027' -%}
 {%- assign hero_title = preorder_session.title -%}
 {%- if hero_title == blank -%}{%- assign hero_title = mock_title -%}{%- endif -%}
-{%- assign preorder_banner_asset = settings.aico_preorder_hero_bg_asset | default: 'preorder.png' -%}
+{%- comment -%} Hero banner image + vertical gradient come from the live session
+   (set in the admin), never from a hardcoded theme asset. When the session has
+   no image we render the title alone over the gradient; with no gradient colors
+   the band stays flat. {%- endcomment -%}
+{%- assign hero_image_url = preorder_session.hero_image_url -%}
+{%- assign hero_grad_from = preorder_session.gradient_color_start -%}
+{%- assign hero_grad_to = preorder_session.gradient_color_end -%}
+{%- assign hero_has_gradient = false -%}
+{%- if hero_grad_from != blank and hero_grad_to != blank -%}{%- assign hero_has_gradient = true -%}{%- endif -%}
 
 <main class="aico-preorder" role="main"
       data-aico-preorder
@@ -77,16 +85,21 @@
       data-aico-preorder-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
       {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
 
-  {%- comment -%} ── Hero band: banner asset + session title text + countdown (no full-width bg image). {%- endcomment -%}
-  <section class="aico-preorder-hero" aria-labelledby="aico-preorder-hero-title">
+  {%- comment -%} ── Hero band: full-bleed vertical gradient (session colors) behind the
+       session banner image + title text, with the countdown on the side. {%- endcomment -%}
+  <section class="aico-preorder-hero{% if hero_has_gradient %} aico-preorder-hero--gradient{% endif %}"
+           aria-labelledby="aico-preorder-hero-title"
+           {%- if hero_has_gradient %} style="--aico-preorder-grad-from:{{ hero_grad_from | escape }};--aico-preorder-grad-to:{{ hero_grad_to | escape }};"{% endif %}>
     <div class="aico-page-container aico-preorder-hero-inner">
       <div class="aico-preorder-hero-left">
+        {%- if hero_image_url != blank -%}
         <img
           class="aico-preorder-banner-img"
-          src="{{ preorder_banner_asset | asset_url }}"
+          src="{{ hero_image_url }}"
           alt=""
           loading="eager"
           decoding="async">
+        {%- endif -%}
         <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title">{{ hero_title }}</h1>
       </div>
 
@@ -121,8 +134,16 @@
     </div>
   </section>
 
+  {%- comment -%} ── Resolving spinner: shown while the cart is being fetched to
+       discover whether a preorder was already placed. Everything below the hero
+       stays hidden until that resolves, so the address/filter row never flashes. {%- endcomment -%}
+  <section class="aico-preorder-resolving aico-page-container" data-aico-preorder-resolving hidden aria-live="polite" role="status">
+    <span class="aico-preorder-resolving-spinner" aria-hidden="true"></span>
+    <span class="aico-preorder-resolving-text">{{ 'aico_preorder.catalog.loading' | t }}</span>
+  </section>
+
   {%- comment -%} ── Compact filter row ── {%- endcomment -%}
-  <section class="aico-preorder-filters-wrap" aria-labelledby="aico-preorder-filters-title">
+  <section class="aico-preorder-filters-wrap" aria-labelledby="aico-preorder-filters-title" data-aico-preorder-filters-wrap>
     <div class="aico-page-container">
       <h2 id="aico-preorder-filters-title" class="aico-sr-only">{{ 'aico_preorder.filters.section_aria' | t }}</h2>
 
