@@ -710,7 +710,13 @@
             if (idx >= 0) {
               if (selectedDates.length > 1) selectedDates.splice(idx, 1);
             } else {
+              // Re-add in chronological order: `dates` is already sorted by
+              // timestamp, so rederive selectedDates as its selected subset
+              // instead of appending (which would drop the date at the end).
               selectedDates.push(val);
+              selectedDates = dates.filter(function (d) {
+                return selectedDates.indexOf(d) >= 0;
+              });
             }
           }
           renderDateSelect(dates);
