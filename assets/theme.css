@@ -4681,7 +4681,15 @@ button.aico-home-brand-card {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-group-header-row {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    calc(
+      var(--aico-preorder-aside-w, 8.25rem) + var(--aico-preorder-grid-gap, 0.35rem) +
+        var(--aico-preorder-date-w, 4.5rem)
+    )
+    minmax(0, 1fr)
+    var(--aico-preorder-total-w, 6.75rem);
+  column-gap: var(--aico-preorder-grid-gap, 0.35rem);
   align-items: center;
   padding: 0.5rem 0.75rem;
 }
@@ -4743,7 +4751,7 @@ button.aico-home-brand-card {
   flex-wrap: nowrap;
   align-items: stretch;
   gap: 0.25rem;
-  padding: 0 0 0.15rem;
+  padding: 0;
   width: max-content;
   box-sizing: border-box;
 }
@@ -4798,7 +4806,7 @@ button.aico-home-brand-card {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.2rem;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-media {
   margin-bottom: 0.5rem;

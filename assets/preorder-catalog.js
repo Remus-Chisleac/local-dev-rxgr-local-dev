@@ -29,9 +29,6 @@
       filledClass +
       disabledClass +
       '">' +
-      '<span class="aico-preorder-qty-box__size" aria-hidden="true">' +
-      sizeLabelHtml +
-      '</span>' +
       '<span class="aico-preorder-qty-box__inner">' +
       '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
       displayVal +
@@ -372,7 +369,7 @@
       rem = Math.max(2.25, 1.35 + wholeLen * 0.4 + (hasFrac ? 0.9 : 0));
     }
     // Wide enough for a 3-digit quantity (up to 999) plus the stepper column.
-    if (layout === 'qty') return '3.25rem';
+    if (layout === 'qty') return '2.75rem';
     if (layout === 'header') return Math.min(4.25, Math.max(2.35, rem)) + 'rem';
     return Math.min(5.25, Math.max(layout === 'box' ? 3.25 : 3.25, rem)) + 'rem';
   }
@@ -403,7 +400,7 @@
     );
     var qtyW = parseRemValue(estimateSizeCellWidthRem('', 'qty'));
     var w = Math.max(labelW, qtyW, 2.5);
-    return Math.min(4.5, w) + 'rem';
+    return Math.min(3.25, w) + 'rem';
   }
 
   function escapeHtml(s) {
@@ -772,6 +769,23 @@
         '<h3 class="aico-preorder-group-title">' +
         escapeHtml(group.optionGroupName) +
         '</h3>';
+      // Size labels live once in the group header, aligned with the box columns
+      // and scroll-synced with the per-product matrices (scrollbar hidden here).
+      html +=
+        '<div class="aico-preorder-matrix-scroll aico-preorder-matrix-scroll--header" data-aico-preorder-matrix-scroll aria-hidden="true">' +
+        '<div class="aico-preorder-matrix-track">';
+      sizeValues.forEach(function (optVal) {
+        var headLabel = getCountryLabel(charts, group.optionGroupName, region, optVal);
+        html +=
+          '<span class="aico-preorder-size-head">' +
+          formatSizeLabelHtml(headLabel) +
+          '</span>';
+      });
+      html += '</div></div>';
+      html +=
+        '<div class="aico-preorder-matrix-total-head">' +
+        escapeHtml(copy.productTotal || 'Total') +
+        '</div>';
       html += '</div></header>';
 
       items.forEach(function (product) {
@@ -1022,9 +1036,7 @@
       html += '</div></div>';
       var rowTotal = rowTotalForDate(product.id, dateLabel);
       html +=
-        '<div class="aico-preorder-matrix-row-total">' +
-        escapeHtml(copy.rowTotal || 'Total Input') +
-        ': <strong>' +
+        '<div class="aico-preorder-matrix-row-total"><strong>' +
         rowTotal +
         '</strong></div>';
       html += '</div>';
