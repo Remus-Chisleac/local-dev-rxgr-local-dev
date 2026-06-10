@@ -402,6 +402,7 @@
     var heroEl = root.querySelector('[data-aico-preorder-hero]');
     var heroImgEl = root.querySelector('[data-aico-preorder-hero-img]');
     var heroTitleEl = root.querySelector('[data-aico-preorder-hero-title]');
+    var noSessionEl = root.querySelector('[data-aico-preorder-no-session]');
     // True while the cart is being fetched to discover a pre-existing preorder.
     // Everything below the hero stays hidden (spinner only) until it resolves.
     var cartResolving = false;
@@ -540,10 +541,39 @@
       return addressesReady() && !reopenAcked && cartHasPlacedPreorder();
     }
 
+    // No active preorder session resolved for this shop/customer: show only the
+    // countdown ("clock") and a "no active preorder" notice; hide the hero
+    // title/image and everything below the hero (filters, prompt, catalog,
+    // checkout, reopen notice, spinner). The countdown lives in its own hero
+    // column, so it stays visible.
+    function noActiveSession() {
+      return !sessionData;
+    }
+
+    function applyNoSessionVisibility() {
+      if (noSessionEl) noSessionEl.hidden = false;
+      if (heroTitleEl) heroTitleEl.hidden = true;
+      if (heroImgEl) {
+        heroImgEl.hidden = true;
+        heroImgEl.removeAttribute('src');
+      }
+      if (filtersWrapEl) filtersWrapEl.hidden = true;
+      if (promptEl) promptEl.hidden = true;
+      if (mainEl) mainEl.hidden = true;
+      if (checkoutEl) checkoutEl.hidden = true;
+      if (reopenNoticeEl) reopenNoticeEl.hidden = true;
+      if (resolvingEl) resolvingEl.hidden = true;
+      clearCatalog();
+    }
+
     // While the cart is being fetched (to discover a pre-existing preorder),
     // hide everything below the hero and show only the spinner — so the
     // address/filter row never flashes before we know the state.
     function applyResolvingVisibility() {
+      if (noActiveSession()) {
+        applyNoSessionVisibility();
+        return;
+      }
       if (resolvingEl) resolvingEl.hidden = !cartResolving;
       if (!cartResolving) return;
       if (filtersWrapEl) filtersWrapEl.hidden = true;
@@ -556,6 +586,10 @@
     // Decide catalog vs reopen-notice visibility once the cart has resolved.
     // While `cartResolving` is true we defer entirely to the spinner state.
     function applyReopenVisibility(cartResolved) {
+      if (noActiveSession()) {
+        applyNoSessionVisibility();
+        return;
+      }
       if (cartResolving) {
         applyResolvingVisibility();
         return;
@@ -588,6 +622,10 @@
     }
 
     function updateFlowState() {
+      if (noActiveSession()) {
+        applyNoSessionVisibility();
+        return;
+      }
       var addressesOk = addressesReady();
       var productsOk = !shouldSkipProducts();
       if (!productsOk) {
@@ -1095,6 +1133,9 @@
     // banner image (collectionImage, hidden when none), and the full-bleed
     // vertical gradient (gradientColorStart/End → flat band when either is unset).
     function applyHero(session) {
+      // Toggle the no-active-session notice vs the normal hero title.
+      if (noSessionEl) noSessionEl.hidden = !!session;
+      if (heroTitleEl) heroTitleEl.hidden = !session;
       var title = (session && (session.welcomeMessage || session.title)) || '';
       if (heroTitleEl) heroTitleEl.textContent = title;
       if (heroImgEl) {
