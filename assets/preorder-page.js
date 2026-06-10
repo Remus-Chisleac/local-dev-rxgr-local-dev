@@ -636,6 +636,32 @@
       }
     }
 
+    // Force the already-placed-preorder check to re-run from scratch on the next
+    // flow update — called whenever the buyer changes B2B / debtor / address, so
+    // a stale acknowledgement never hides a different context's existing preorder.
+    function resetReopenCheck() {
+      reopenAcked = false;
+      lastCartContextKey = null;
+    }
+
+    // Toggle the B2B selector's loading state (spinner instead of the disabled
+    // "deny" cursor) while its list is being fetched.
+    function setB2bLoading(isLoading) {
+      var field = root.querySelector('[data-aico-preorder-b2b-field]');
+      if (field) field.classList.toggle('aico-preorder-field--loading', !!isLoading);
+    }
+
+    // When a select resolves to exactly one option, auto-select it (and sync the
+    // custom-select UI) so the user doesn't have to pick the only choice.
+    function preselectSingle(name, rows) {
+      if (!rows || rows.length !== 1) return;
+      var select = root.querySelector('[data-aico-preorder-select="' + name + '"]');
+      if (!select) return;
+      select.value = String(rows[0].id);
+      var wrapper = select.closest('[data-aico-custom-select]');
+      if (wrapper) syncCustomSelect(wrapper);
+    }
+
     function reloadAddresses(debtorIdValue) {
       if (!addressesUrl) return Promise.resolve();
       var url = new URL(addressesUrl, window.location.origin);
@@ -651,7 +677,17 @@
           var data = json.data || {};
           repopulateAddressSelect('billing_address_id', data.billingAddresses);
           repopulateAddressSelect('delivery_address_id', data.deliveryAddresses);
-          updateFlowState();
+          // Auto-select billing/delivery when there's only one option (2.1).
+          preselectSingle('billing_address_id', data.billingAddresses);
+          preselectSingle('delivery_address_id', data.deliveryAddresses);
+          // New buyer/debtor context — clear and re-run the existing-preorder
+          // check (fetch the session + cart for the new context).
+          resetReopenCheck();
+          if (addressesReady()) {
+            fetchSession().then(function () { updateFlowState(); });
+          } else {
+            updateFlowState();
+          }
         })
         .catch(function () {});
     }
@@ -662,6 +698,8 @@
     }
 
     function applyB2bSelection() {
+      // Changing the B2B org invalidates the existing-preorder check.
+      resetReopenCheck();
       var b2bId = getSelectValue(root, 'b2b_id');
       var debtorField = root.querySelector('[data-aico-preorder-debtor-field]');
       var match = null;
@@ -702,6 +740,7 @@
     // `filter[searchTerm]` (same endpoint/service the old shop calls).
     function loadB2bs(searchTerm, keepOpen) {
       if (!isManager || !b2bsUrl) return;
+      setB2bLoading(true);
       var url = new URL(b2bsUrl, window.location.origin);
       // Pagination is 0-based (matches b2b-shop's currentPage default of 0):
       // page 0 is the first page; sending 1 skips the first 100 B2Bs and
@@ -735,7 +774,8 @@
             if (input) input.focus();
           }
         })
-        .catch(function () {});
+        .catch(function () {})
+        .finally(function () { setB2bLoading(false); });
     }
 
     // Multi-select date filter: "All" + each delivery date as toggleable rows
@@ -1370,6 +1410,8 @@
           return;
         }
         if (key === 'billing_address_id' || key === 'delivery_address_id') {
+          // Address changed → re-run the existing-preorder check for the new context.
+          resetReopenCheck();
           if (addressesReady()) {
             fetchSession().then(function () {
               updateFlowState();

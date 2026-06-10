@@ -3455,6 +3455,26 @@ button.aico-home-brand-card {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* While the B2B list is loading, show a spinner in place of the chevron and a
+   "progress" cursor instead of the disabled "deny" look. */
+.aico-preorder-field--loading .aico-preorder-custom-select-trigger[disabled] {
+  cursor: progress;
+  opacity: 1;
+}
+.aico-preorder-field--loading .aico-preorder-custom-select-chevron {
+  display: none;
+}
+.aico-preorder-field--loading .aico-preorder-custom-select-trigger::after {
+  content: "";
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--color-accent, #2563eb);
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+}
 .aico-preorder-custom-select-label {
   flex: 1 1 auto;
   min-width: 0;
