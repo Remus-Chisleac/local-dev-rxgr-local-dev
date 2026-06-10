@@ -5912,6 +5912,10 @@ button.aico-home-brand-card {
    accordion whose product rows expand to reveal variant lines.
 --------------------------------------------------------------------------- */
 .aico-orders { min-height: 60vh; }
+/* The [hidden] attribute must win over the explicit `display` we set on
+   toggled elements (loader/custom-range/reset); class specificity ties
+   with [hidden] otherwise and the element stays visible. */
+.aico-orders [hidden] { display: none !important; }
 .aico-orders-shell { padding-top: 2rem; padding-bottom: 4rem; }
 .aico-orders-header { margin-bottom: 1.5rem; }
 .aico-orders-title {
