@@ -385,16 +385,6 @@
         if (res.ok) {
           return res.json().then(function (snapshot) {
             self._applySnapshot(snapshot);
-            // The submit POST returns as soon as the order is ACCEPTED (the
-            // umbrella preorder is created synchronously; per-line inserts + PDF
-            // + email finish in the background on the queue). Surface an immediate
-            // synchronous failure; otherwise resolve right away so the client can
-            // go straight to the thank-you screen instead of polling the heavy
-            // job to completion (which made a new preorder take ~tens of seconds).
-            if (self.status === 'ERROR') {
-              throw new Error('submit_error');
-            }
-            return self.snapshot;
           });
         }
         return res.json().then(function (payload) {
@@ -404,6 +394,12 @@
           throw err;
         });
       });
+    }).then(function () {
+      // Confirm the submit actually completed: poll the cart until it leaves
+      // DRAFT. Only resolve (→ thank-you) on SUBMITTED; ERROR/timeout reject so a
+      // failed submit surfaces instead of a false success. The checkout is kept
+      // visible meanwhile via the isSubmitting guard in preorder-page.js.
+      return self.pollUntilSubmitted();
     });
   };
 
