@@ -842,6 +842,18 @@
               label,
               it.quantity,
             );
+            // Seed the committed floor (the already-confirmed quantity for a
+            // reopened/submitted cart) so the cell's decrement is disabled at it,
+            // `min` is set to it, and it renders in the committed (gray, no-border)
+            // style until the user raises it (6.2 / 2.2).
+            if (window.AicoPreorderStock.setCommitted) {
+              window.AicoPreorderStock.setCommitted(
+                it.productId,
+                it.productVariantId,
+                label,
+                it.committedQuantity,
+              );
+            }
           }
         });
       });

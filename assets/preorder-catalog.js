@@ -16,28 +16,39 @@
   function renderQtyInput(opts) {
     var ariaLabel = opts.ariaLabel || '';
     var qty = opts.qty || 0;
-    var disabled = !!opts.disabled;
+    // boxDisabled: empty cell with no remaining stock -> whole box grayed.
+    // incrementDisabled / decrementDisabled: per-button (a cell that has a qty
+    // stays editable even when the pool is exhausted — only the increment is off).
+    var boxDisabled = !!opts.boxDisabled;
+    var incDisabled = boxDisabled || !!opts.incrementDisabled;
+    var decDisabled = boxDisabled || !!opts.decrementDisabled;
+    var committedStyle = !!opts.committedStyle;
+    var filled = !!opts.filled;
     var attrs = opts.attrs || '';
     var maxAttr = opts.maxAttr || '';
+    var minAttr = opts.minAttr || ' min="0"';
     var sizeLabelHtml = opts.sizeLabelHtml || '';
     var displayVal = qty > 0 ? String(qty) : '';
-    var disabledAttr = disabled ? ' disabled' : '';
-    var filledClass = qty > 0 ? ' aico-preorder-qty-box--filled' : '';
-    var disabledClass = disabled ? ' aico-preorder-qty-box--disabled' : '';
+    var inputDisabledAttr = boxDisabled ? ' disabled' : '';
+    var classes = 'aico-preorder-qty-box';
+    if (filled) classes += ' aico-preorder-qty-box--filled';
+    if (committedStyle) classes += ' aico-preorder-qty-box--committed';
+    if (boxDisabled) classes += ' aico-preorder-qty-box--disabled';
     return (
-      '<span class="aico-preorder-qty-box' +
-      filledClass +
-      disabledClass +
+      '<span class="' +
+      classes +
       '">' +
       '<span class="aico-preorder-qty-box__size" aria-hidden="true">' +
       sizeLabelHtml +
       '</span>' +
       '<span class="aico-preorder-qty-box__inner">' +
-      '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
+      '<input type="number" class="aico-preorder-qty-input" step="1"' +
+      minAttr +
+      ' value="' +
       displayVal +
       '"' +
       maxAttr +
-      disabledAttr +
+      inputDisabledAttr +
       ' data-aico-preorder-qty ' +
       attrs +
       ' aria-label="' +
@@ -45,12 +56,12 @@
       '">' +
       '<span class="aico-preorder-qty-box__spinners">' +
       '<button type="button" class="aico-preorder-qty-box__step" data-aico-preorder-qty-step="1" tabindex="-1"' +
-      disabledAttr +
+      (incDisabled ? ' disabled' : '') +
       ' aria-label="Increase quantity">' +
       '<svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</button>' +
       '<button type="button" class="aico-preorder-qty-box__step" data-aico-preorder-qty-step="-1" tabindex="-1"' +
-      disabledAttr +
+      (decDisabled ? ' disabled' : '') +
       ' aria-label="Decrease quantity">' +
       '<svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       '</button>' +
@@ -829,33 +840,29 @@
     card.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
       var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
       var dateLabel = input.getAttribute('data-date');
-      var qty = self.getQuantity(productId, variantId, dateLabel);
+      var cell = self.cellState(productId, variantId, dateLabel, isStockRelevant);
       if (document.activeElement !== input) {
-        input.value = qty > 0 ? String(qty) : '';
+        input.value = cell.qty > 0 ? String(cell.qty) : '';
       }
       var box = input.closest('.aico-preorder-qty-box');
-      var steps = box ? box.querySelectorAll('.aico-preorder-qty-box__step') : [];
-      var disabled = false;
-      if (isStockRelevant && global.AicoPreorderStock) {
-        if (global.AicoPreorderStock.getMaxQuantity) {
-          var max = global.AicoPreorderStock.getMaxQuantity(productId, variantId, dateLabel);
-          if (max >= 0 && max < 10000) input.setAttribute('max', String(max));
-          else input.removeAttribute('max');
-        }
-        if (global.AicoPreorderStock.isCellEnabled) {
-          disabled = !global.AicoPreorderStock.isCellEnabled(
-            productId,
-            variantId,
-            dateLabel,
-            true,
-          );
-        }
+      var incBtn = box ? box.querySelector('[data-aico-preorder-qty-step="1"]') : null;
+      var decBtn = box ? box.querySelector('[data-aico-preorder-qty-step="-1"]') : null;
+
+      if (isStockRelevant && cell.max >= 0 && cell.max < 10000) {
+        input.setAttribute('max', String(cell.max));
+      } else {
+        input.removeAttribute('max');
       }
-      input.disabled = disabled;
-      for (var i = 0; i < steps.length; i++) steps[i].disabled = disabled;
+      if (cell.committed > 0) input.setAttribute('min', String(cell.committed));
+      else input.setAttribute('min', '0');
+
+      input.disabled = cell.boxDisabled;
+      if (incBtn) incBtn.disabled = cell.boxDisabled || cell.incrementDisabled;
+      if (decBtn) decBtn.disabled = cell.boxDisabled || cell.decrementDisabled;
       if (box) {
-        box.classList.toggle('aico-preorder-qty-box--disabled', disabled);
-        box.classList.toggle('aico-preorder-qty-box--filled', qty > 0);
+        box.classList.toggle('aico-preorder-qty-box--disabled', cell.boxDisabled);
+        box.classList.toggle('aico-preorder-qty-box--filled', cell.filled);
+        box.classList.toggle('aico-preorder-qty-box--committed', cell.committedStyle);
       }
     });
 
@@ -999,32 +1006,23 @@
             '<span class="aico-preorder-qty-box__dash">-</span></span>';
           return;
         }
-        var qty = self.getQuantity(product.id, variant.id, dateLabel);
+        var cell = self.cellState(product.id, variant.id, dateLabel, isStockRelevant);
         var maxAttr = '';
-        var disabled = false;
-        if (isStockRelevant && global.AicoPreorderStock) {
-          if (global.AicoPreorderStock.isCellEnabled) {
-            disabled = !global.AicoPreorderStock.isCellEnabled(
-              product.id,
-              variant.id,
-              dateLabel,
-              true,
-            );
-          }
-          if (global.AicoPreorderStock.getMaxQuantity) {
-            var max = global.AicoPreorderStock.getMaxQuantity(
-              product.id,
-              variant.id,
-              dateLabel,
-            );
-            if (max >= 0 && max < 10000) maxAttr = ' max="' + max + '"';
-          }
+        var minAttr = '';
+        if (isStockRelevant && cell.max >= 0 && cell.max < 10000) {
+          maxAttr = ' max="' + cell.max + '"';
         }
+        if (cell.committed > 0) minAttr = ' min="' + cell.committed + '"';
         html += renderQtyInput({
           ariaLabel: label + ' ' + dateLabel,
-          qty: qty,
-          disabled: disabled,
+          qty: cell.qty,
+          boxDisabled: cell.boxDisabled,
+          incrementDisabled: cell.incrementDisabled,
+          decrementDisabled: cell.decrementDisabled,
+          committedStyle: cell.committedStyle,
+          filled: cell.filled,
           maxAttr: maxAttr,
+          minAttr: minAttr,
           sizeLabelHtml: formatSizeLabelHtml(label),
           attrs:
             'data-product-id="' +
@@ -1087,6 +1085,32 @@
     return item ? item.quantity || 0 : 0;
   };
 
+  // Normalized cell descriptor for rendering/refresh. Delegates to the stock
+  // module's getCellState; falls back to a plain qty-only state when stock isn't
+  // tracked client-side (non-stock sessions, or module not loaded).
+  CatalogController.prototype.cellState = function (productId, variantId, dateLabel, isStockRelevant) {
+    if (global.AicoPreorderStock && global.AicoPreorderStock.getCellState) {
+      return global.AicoPreorderStock.getCellState(
+        productId,
+        variantId,
+        dateLabel,
+        !!isStockRelevant,
+      );
+    }
+    var qty = this.getQuantity(productId, variantId, dateLabel);
+    return {
+      qty: qty,
+      committed: 0,
+      max: 10000,
+      remaining: Infinity,
+      boxDisabled: false,
+      incrementDisabled: false,
+      decrementDisabled: qty <= 0,
+      committedStyle: false,
+      filled: qty > 0,
+    };
+  };
+
   CatalogController.prototype.findProduct = function (productId) {
     for (var g = 0; g < this.products.length; g++) {
       var items = this.products[g].items || [];
@@ -1100,29 +1124,43 @@
   CatalogController.prototype.bindQuantityInputs = function () {
     var self = this;
 
-    function applyInputChange(input) {
+    function clampFor(productId, variantId, dateLabel, raw, isStockRelevant, enforceFloor) {
+      if (global.AicoPreorderStock && global.AicoPreorderStock.clampCell) {
+        return global.AicoPreorderStock.clampCell(
+          productId,
+          variantId,
+          dateLabel,
+          raw,
+          isStockRelevant,
+          enforceFloor,
+        );
+      }
+      var n = Math.floor(Number(raw));
+      if (isNaN(n) || n < 0) n = 0;
+      return Math.min(10000, n);
+    }
+
+    // Apply a value to a cell. enforceFloor=false during live typing (so the
+    // user can clear/lower a box without it snapping to the committed floor);
+    // enforceFloor=true on commit (change/blur) and step clicks. The upper bound
+    // (cross-date pool cap) is always enforced — that's the live clamp (6.3).
+    function apply(input, value, enforceFloor) {
       var productId = parseInt(input.getAttribute('data-product-id'), 10);
       var variantId = parseInt(input.getAttribute('data-variant-id'), 10);
       var dateLabel = input.getAttribute('data-date');
       var session = self.getSession() || {};
       var isStockRelevant = !!session.isStockRelevant;
-      var raw = input.value === '' ? 0 : parseInt(input.value, 10);
-      var max = input.max ? parseInt(input.max, 10) : null;
-      var qty = raw;
-      if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
-        qty = global.AicoPreorderStock.clampQuantity(raw, max, isStockRelevant);
-      } else {
-        if (isNaN(qty) || qty < 0) qty = 0;
-        if (!isNaN(max) && qty > max) qty = max;
-        qty = Math.min(10000, qty);
-      }
-      input.value = qty > 0 ? String(qty) : '';
+      var raw = value == null ? (input.value === '' ? 0 : parseInt(input.value, 10)) : value;
+      var qty = clampFor(productId, variantId, dateLabel, raw, isStockRelevant, enforceFloor);
+      var display = qty > 0 ? String(qty) : '';
+      if (input.value !== display) input.value = display;
       var product = self.findProduct(productId);
       self.onQuantityChange(productId, variantId, dateLabel, qty, product);
       // Eager UI: update only this product's cells/totals in place (stock mode
-      // tracks quantities client-side, so we never wait for the backend). Other
-      // products are unaffected — the stock cap is per product+variant. Fall back
-      // to a full render when stock isn't tracked client-side.
+      // tracks quantities client-side, so we never wait for the backend). The
+      // focused input keeps its own caret — refreshProduct only rewrites the
+      // value of non-focused inputs. Fall back to a full render when stock isn't
+      // tracked client-side.
       if (isStockRelevant && self.refreshProduct) {
         self.refreshProduct(productId);
       } else {
@@ -1131,8 +1169,14 @@
     }
 
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
+      // Live clamp while typing — no Enter/blur needed (6.3). Floor is NOT
+      // enforced here so the user can still clear the field mid-edit.
+      input.addEventListener('input', function () {
+        apply(input, null, false);
+      });
+      // Commit on blur/Enter — now enforce the committed floor (6.2).
       input.addEventListener('change', function () {
-        applyInputChange(input);
+        apply(input, null, true);
       });
       input.addEventListener('wheel', function (e) {
         e.preventDefault();
@@ -1143,22 +1187,13 @@
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty-step]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.preventDefault();
+        if (btn.disabled) return;
         var control = btn.closest('.aico-preorder-qty-box__inner');
         var input = control && control.querySelector('[data-aico-preorder-qty]');
         if (!input || input.disabled) return;
         var step = parseInt(btn.getAttribute('data-aico-preorder-qty-step'), 10) || 0;
-        var session = self.getSession() || {};
-        var isStockRelevant = !!session.isStockRelevant;
-        var qty = parseInt(input.value, 10) || 0;
-        var max = input.max ? parseInt(input.max, 10) : null;
-        qty = qty + step;
-        if (global.AicoPreorderStock && global.AicoPreorderStock.clampQuantity) {
-          qty = global.AicoPreorderStock.clampQuantity(qty, max, isStockRelevant);
-        } else {
-          qty = Math.max(0, Math.min(isNaN(max) ? 10000 : max, qty));
-        }
-        input.value = qty > 0 ? String(qty) : '';
-        applyInputChange(input);
+        var current = parseInt(input.value, 10) || 0;
+        apply(input, current + step, true);
       });
     });
   };

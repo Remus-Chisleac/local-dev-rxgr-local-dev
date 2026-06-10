@@ -5069,6 +5069,19 @@ html.aico-preorder-gallery-open {
   background: #e0e0e0;
   border-color: #c8c8c8;
 }
+
+/* Already-confirmed (committed) quantity on a reopened preorder: render gray,
+   placeholder-style, with no border — until the user raises it, when it flips to
+   the blue --filled look (2.2). --committed and --filled are mutually exclusive. */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-box__inner {
+  border-color: transparent;
+  box-shadow: none;
+  background: #fff;
+}
+
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-input {
+  color: var(--aico-muted-fg, #9d9d9d);
+}
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;
   flex-direction: column;
