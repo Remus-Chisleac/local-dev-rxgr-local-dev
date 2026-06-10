@@ -561,8 +561,6 @@
     this.preorderDates = [];
     this.searchQuery = '';
     this.autoLoadMore = config.autoLoadMore === true;
-    // Collapsed state per category (optionGroupName), preserved across re-renders.
-    this.collapsedGroups = {};
   }
 
   CatalogController.prototype.setSearchQuery = function (q) {
@@ -773,70 +771,53 @@
       return;
     }
 
+    var html = '<div class="aico-preorder-products-heading">' +
+      escapeHtml(copy.productsHeading || 'Products') +
+      '</div>';
+
     this.catalogEl.style.setProperty('--aico-preorder-aside-w', '8.25rem');
     this.catalogEl.style.setProperty('--aico-preorder-date-w', '5.5rem');
     this.catalogEl.style.setProperty('--aico-preorder-total-w', '3.5rem');
     this.catalogEl.style.setProperty('--aico-preorder-grid-gap', '0.35rem');
 
-    var searching = !!this.searchQuery;
-    var groupsHtml = '';
-    var matchedCount = 0;
-    var totalCount = 0;
-
     sortGroupsByOrder(this.products).forEach(function (group) {
-      var all = asArray(group && group.items);
-      totalCount += all.length;
-      var items = self.filterItems(all);
+      var items = self.filterItems(asArray(group && group.items));
       if (!items.length) return;
-      matchedCount += items.length;
 
-      var collapsed = !!self.collapsedGroups[group.optionGroupName];
       var sizeValues = collectGroupSizeValues(items);
       var cellW = computeGroupMatrixCellWidthRem(group, charts, region);
 
-      groupsHtml +=
-        '<section class="aico-preorder-group' +
-        (collapsed ? ' aico-preorder-group-collapsed' : '') +
-        '" data-aico-preorder-group style="--aico-preorder-cell-w:' +
+      html +=
+        '<section class="aico-preorder-group" data-aico-preorder-group style="--aico-preorder-cell-w:' +
         cellW +
         '">';
-      groupsHtml += '<header class="aico-preorder-group-head">';
-      groupsHtml += '<div class="aico-preorder-group-header-row">';
-      // The title is a toggle button so the whole category can be collapsed; the
-      // count badge makes a search visibly change the header even when the
-      // remaining cards look alike.
-      groupsHtml +=
+      html += '<header class="aico-preorder-group-head">';
+      html += '<div class="aico-preorder-group-header-row">';
+      html +=
         '<h3 class="aico-preorder-group-title">' +
-        '<button type="button" class="aico-preorder-group-toggle" data-aico-preorder-group-toggle ' +
-        'data-group-name="' + escapeHtml(group.optionGroupName) + '" aria-expanded="' +
-        (collapsed ? 'false' : 'true') + '">' +
-        '<svg class="aico-preorder-group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
-        '<span class="aico-preorder-group-name">' + escapeHtml(group.optionGroupName) + '</span>' +
-        '<span class="aico-preorder-group-count' + (searching ? ' aico-preorder-group-count--searching' : '') +
-        '">' + items.length + (searching ? '/' + all.length : '') + '</span>' +
-        '</button>' +
+        escapeHtml(group.optionGroupName) +
         '</h3>';
       // Size labels live once in the group header, aligned with the box columns
       // and scroll-synced with the per-product matrices (scrollbar hidden here).
-      groupsHtml +=
+      html +=
         '<div class="aico-preorder-matrix-scroll aico-preorder-matrix-scroll--header" data-aico-preorder-matrix-scroll aria-hidden="true">' +
         '<div class="aico-preorder-matrix-track">';
       sizeValues.forEach(function (optVal) {
         var headLabel = getCountryLabel(charts, group.optionGroupName, region, optVal);
-        groupsHtml +=
+        html +=
           '<span class="aico-preorder-size-head">' +
           formatSizeLabelHtml(headLabel) +
           '</span>';
       });
-      groupsHtml += '</div></div>';
-      groupsHtml +=
+      html += '</div></div>';
+      html +=
         '<div class="aico-preorder-matrix-total-head">' +
         escapeHtml(copy.productTotal || 'Total') +
         '</div>';
-      groupsHtml += '</div></header>';
+      html += '</div></header>';
 
       items.forEach(function (product) {
-        groupsHtml += self.renderProductCard(
+        html += self.renderProductCard(
           product,
           group.optionGroupName,
           dates,
@@ -847,56 +828,13 @@
           copy,
         );
       });
-      groupsHtml += '</section>';
+      html += '</section>';
     });
-
-    var countBadge = searching
-      ? '<span class="aico-preorder-products-count" data-aico-preorder-products-count>' +
-        matchedCount + '/' + totalCount + '</span>'
-      : '';
-    var html =
-      '<div class="aico-preorder-products-heading">' +
-      escapeHtml(copy.productsHeading || 'Products') +
-      countBadge +
-      '</div>';
-
-    if (!groupsHtml && searching) {
-      // A search that matches nothing must say so — otherwise the blank area
-      // reads as "the search didn't run".
-      html +=
-        '<p class="aico-preorder-catalog-empty aico-preorder-no-matches">' +
-        escapeHtml(copy.empty || 'No products.') +
-        ' “' + escapeHtml(this.searchQuery) + '”</p>';
-    } else {
-      html += groupsHtml;
-    }
 
     this.catalogEl.innerHTML = html;
     this.bindQuantityInputs();
-    this.bindGroupToggles();
     this.bindMatrixScrollSync();
     this.syncMatrixScrollPositions();
-  };
-
-  // Collapse/expand a category in place (no re-render, so quantity inputs keep
-  // their values and focus). The collapsed set persists across renders.
-  CatalogController.prototype.bindGroupToggles = function () {
-    var self = this;
-    if (!this.catalogEl) return;
-    this.catalogEl
-      .querySelectorAll('[data-aico-preorder-group-toggle]')
-      .forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var name = btn.getAttribute('data-group-name');
-          var section = btn.closest('[data-aico-preorder-group]');
-          var collapsed = !self.collapsedGroups[name];
-          self.collapsedGroups[name] = collapsed;
-          if (section) {
-            section.classList.toggle('aico-preorder-group-collapsed', collapsed);
-          }
-          btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        });
-      });
   };
 
   // Update one product card's cell values, max/disabled state and totals in

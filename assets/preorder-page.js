@@ -1352,31 +1352,11 @@
     });
 
     if (searchInput) {
-      // The catalog search is instant client-side filtering, so add a visible
-      // "searching" spinner in the field that stays up a short minimum time —
-      // otherwise a fast filter (or one that leaves similar-looking results)
-      // gives no sign anything happened.
-      var searchSpinner = document.createElement('span');
-      searchSpinner.className = 'aico-preorder-search-spinner';
-      searchSpinner.setAttribute('aria-hidden', 'true');
-      searchSpinner.hidden = true;
-      var searchControl =
-        searchInput.closest('.aico-preorder-field-control') || searchInput.parentElement;
-      if (searchControl) {
-        searchControl.classList.add('aico-preorder-field-control--searchable');
-        searchControl.appendChild(searchSpinner);
-      }
       var searchTimer;
-      var spinnerHideTimer;
       searchInput.addEventListener('input', function () {
-        searchSpinner.hidden = false;
         clearTimeout(searchTimer);
-        clearTimeout(spinnerHideTimer);
         searchTimer = setTimeout(function () {
           if (catalog) catalog.setSearchQuery(searchInput.value);
-          spinnerHideTimer = setTimeout(function () {
-            searchSpinner.hidden = true;
-          }, 250);
         }, 200);
       });
     }

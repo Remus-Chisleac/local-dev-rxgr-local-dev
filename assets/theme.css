@@ -4996,96 +4996,11 @@ html.aico-preorder-gallery-open {
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-group-title {
   margin: 0;
-  padding: 0;
+  padding: 0 0.25rem;
   font-size: 1.125rem;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
-}
-
-/* Category title is a collapse toggle. */
-.aico-preorder-group-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.15rem 0.25rem;
-  margin: 0;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.aico-preorder-group-toggle:hover { background: rgba(255, 255, 255, 0.15); }
-.aico-preorder-group-toggle:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 1px;
-}
-.aico-preorder-group-chevron {
-  flex: 0 0 auto;
-  transition: transform 0.15s ease;
-}
-.aico-preorder-group-collapsed .aico-preorder-group-chevron {
-  transform: rotate(-90deg);
-}
-.aico-preorder-group-count {
-  flex: 0 0 auto;
-  min-width: 1.25rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-align: center;
-}
-/* When a search is active, make the per-category count pop so it's obvious the
-   list was filtered even if the remaining shoes look similar. */
-.aico-preorder-group-count--searching {
-  background: #ffd54a;
-  color: #4a3500;
-}
-
-/* Collapsed: keep only the title bar. */
-.aico-preorder-group-collapsed .aico-preorder-matrix-scroll--header,
-.aico-preorder-group-collapsed .aico-preorder-matrix-total-head,
-.aico-preorder-group-collapsed .aico-preorder-product-card {
-  display: none;
-}
-
-/* Overall result count next to the "Products" heading while searching. */
-.aico-preorder-products-count {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: #ffd54a;
-  color: #4a3500;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  vertical-align: middle;
-}
-.aico-preorder-no-matches { font-style: italic; }
-
-/* Instant-search "searching" spinner inside the search field. */
-.aico-preorder-field-control--searchable { position: relative; }
-.aico-preorder-search-spinner {
-  position: absolute;
-  top: 50%;
-  right: 0.6rem;
-  width: 1rem;
-  height: 1rem;
-  margin-top: -0.5rem;
-  border: 2px solid rgba(0, 0, 0, 0.18);
-  border-top-color: #66b0bb;
-  border-radius: 50%;
-  animation: aico-preorder-spin 0.6s linear infinite;
-  pointer-events: none;
-}
-@keyframes aico-preorder-spin {
-  to { transform: rotate(360deg); }
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-total-head {
   text-align: right;
