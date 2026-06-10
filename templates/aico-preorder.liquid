@@ -40,6 +40,7 @@
       data-aico-preorder-context-url="{{ routes.aico_account_preorder_context_url }}"
       data-aico-preorder-session-url="{{ routes.aico_preorder_session_url }}"
       data-aico-preorder-products-url="{{ routes.aico_preorder_products_url }}"
+      data-aico-preorder-product-images-url="{{ routes.aico_preorder_product_images_url }}"
       data-aico-preorder-cart-url="{{ routes.aico_preorder_cart_url }}"
       data-aico-preorder-cart-add-url="{{ routes.aico_preorder_cart_add_url }}"
       data-aico-preorder-cart-change-url="{{ routes.aico_preorder_cart_change_url }}"
@@ -422,6 +423,23 @@
       </div>
     </div>
   </section>
+
+  <div class="aico-preorder-gallery" data-aico-preorder-gallery hidden role="dialog" aria-modal="true" aria-labelledby="aico-preorder-gallery-title">
+    <div class="aico-preorder-gallery-backdrop" data-aico-preorder-gallery-close></div>
+    <div class="aico-preorder-gallery-dialog" role="document">
+      <button type="button" class="aico-preorder-gallery-close" data-aico-preorder-gallery-close aria-label="{{ 'general.close' | t | default: 'Schliessen' }}">&times;</button>
+      <h3 class="aico-preorder-gallery-title" id="aico-preorder-gallery-title" data-aico-preorder-gallery-title></h3>
+      <div class="aico-preorder-gallery-stage">
+        <button type="button" class="aico-preorder-gallery-nav aico-preorder-gallery-prev" data-aico-preorder-gallery-prev aria-label="Zurück" hidden>&lsaquo;</button>
+        <div class="aico-preorder-gallery-main">
+          <img class="aico-preorder-gallery-main-img" data-aico-preorder-gallery-main alt="" decoding="async">
+          <p class="aico-preorder-gallery-empty" data-aico-preorder-gallery-empty hidden>{{ 'aico_preorder.catalog.error' | t }}</p>
+        </div>
+        <button type="button" class="aico-preorder-gallery-nav aico-preorder-gallery-next" data-aico-preorder-gallery-next aria-label="Weiter" hidden>&rsaquo;</button>
+      </div>
+      <div class="aico-preorder-gallery-thumbs" data-aico-preorder-gallery-thumbs></div>
+    </div>
+  </div>
 
   <script src="{{ 'preorder-catalog.js' | asset_url }}" defer></script>
   <script src="{{ 'preorder-stock.js' | asset_url }}" defer></script>
