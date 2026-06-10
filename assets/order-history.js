@@ -368,7 +368,9 @@
 
   function positionPopup(popup, anchor, align) {
     var r = anchor.getBoundingClientRect();
-    popup.style.display = 'block';
+    // Revert to the stylesheet display (block for filter panels, flex for the
+    // document menu) rather than forcing 'block', which would flatten the menu.
+    popup.style.display = '';
     var pw = popup.offsetWidth;
     var ph = popup.offsetHeight;
     var vw = document.documentElement.clientWidth;

@@ -5907,6 +5907,7 @@ button.aico-home-brand-card {
 
 
 
+
 /* ---------------------------------------------------------------------------
    Customer order history (templates/customers/orders.liquid)
    Rendered by assets/order-history.js. Recreates the b2b-shop order-history
@@ -6265,8 +6266,8 @@ button.aico-home-brand-card {
 .aico-order-docbtn-chevron { transition: transform 0.2s ease; }
 .aico-order-docbtn[aria-expanded="true"] .aico-order-docbtn-chevron { transform: rotate(180deg); }
 /* The menu is a body-level .aico-orders-popup; only its layout lives here. */
-.aico-order-docmenu { display: flex; flex-direction: column; min-width: 15rem; }
-.aico-order-docmenu-link { padding: 0.55rem 0.875rem; font-size: 0.8125rem; color: var(--aico-oh-fg); text-decoration: none; border-bottom: 1px solid var(--aico-oh-divider); }
+.aico-order-docmenu { display: flex; flex-direction: column; min-width: 14rem; max-width: 20rem; }
+.aico-order-docmenu-link { padding: 0.55rem 0.875rem; font-size: 0.8125rem; color: var(--aico-oh-fg); text-decoration: none; border-bottom: 1px solid var(--aico-oh-divider); word-break: break-word; }
 .aico-order-docmenu-link:hover { background: var(--aico-oh-hover); }
 .aico-order-docmenu-all { border: none; background: transparent; color: var(--aico-oh-active); font: inherit; font-size: 0.8125rem; font-weight: 600; text-align: left; padding: 0.55rem 0.875rem; cursor: pointer; }
 .aico-order-docmenu-all:hover { background: var(--aico-oh-hover); }
