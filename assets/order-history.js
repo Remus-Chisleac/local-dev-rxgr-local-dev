@@ -117,6 +117,19 @@
     }
   }
 
+  // Short date for document rows, e.g. "18. Feb. 2025" / "18 Feb 2025".
+  function formatShortDate(raw) {
+    var d = parseDate(raw);
+    if (!d) {
+      return '';
+    }
+    try {
+      return d.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) {
@@ -774,7 +787,13 @@
       for (var i = 0; i < rows.length; i++) {
         var url = documentUrlFor(rows[i]);
         if (!url) { continue; }
-        collected.push({ url: url, label: t('documents.type_' + keys[k], keys[k]), number: rows[i].documentNumber || '' });
+        var label = t('documents.type_' + keys[k], keys[k]);
+        var number = rows[i].documentNumber || '';
+        collected.push({
+          url: url,
+          name: number ? (label + ' · ' + number) : label,
+          date: formatShortDate(rows[i].createdAt),
+        });
       }
     }
     return collected;
@@ -794,37 +813,37 @@
     var docs = collectDocuments(order);
     if (!docs.length) { return null; }
 
+    // Always a menu (matching b2b-shop) — body-level popup so it's never
+    // clipped by the cards. Each entry is two lines: name + date.
     var button = el('button', 'aico-order-docbtn');
     button.type = 'button';
     button.appendChild(el('span', null, t('documents.menu', 'Documents')));
-
-    // Single document → download directly, no menu.
-    if (docs.length === 1) {
-      button.addEventListener('click', function (event) {
-        event.stopPropagation();
-        triggerDownload(docs[0].url);
-      });
-      return button;
-    }
-
-    // Several documents → a body-level popup menu (never clipped by cards).
     button.appendChild(icon('chevronDown', 'aico-order-docbtn-chevron'));
     button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
 
     var menu = el('div', 'aico-order-docmenu');
+    var list = el('div', 'aico-order-docmenu-list');
     docs.forEach(function (d) {
-      var link = el('a', 'aico-order-docmenu-link', d.number ? (d.label + ' · ' + d.number) : d.label);
+      var link = el('a', 'aico-order-docmenu-link');
       link.href = d.url;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      menu.appendChild(link);
+      link.appendChild(el('span', 'aico-order-docmenu-name', d.name));
+      if (d.date) { link.appendChild(el('span', 'aico-order-docmenu-date', d.date)); }
+      list.appendChild(link);
     });
-    var allBtn = el('button', 'aico-order-docmenu-all');
-    allBtn.type = 'button';
-    allBtn.textContent = t('documents.download_all', 'Download all');
-    allBtn.addEventListener('click', function (event) { event.stopPropagation(); downloadAll(docs); closeOpenDropdown(); });
-    menu.appendChild(allBtn);
+    menu.appendChild(list);
+
+    if (docs.length > 1) {
+      var allWrap = el('div', 'aico-order-docmenu-allwrap');
+      var allBtn = el('button', 'aico-order-docmenu-all');
+      allBtn.type = 'button';
+      allBtn.textContent = t('documents.download_all', 'Download all');
+      allBtn.addEventListener('click', function (event) { event.stopPropagation(); downloadAll(docs); closeOpenDropdown(); });
+      allWrap.appendChild(allBtn);
+      menu.appendChild(allWrap);
+    }
 
     floatingPopup(button, menu, 'right');
     return button;
