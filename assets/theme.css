@@ -2589,16 +2589,20 @@ button.aico-home-brand-card {
   color: #0f172a;
 }
 
+/* Image + countdown sit side by side on the right (image just left of the
+   countdown), no wrap on desktop. */
 .aico-preorder-hero-side {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 1rem 1.5rem;
+  gap: 1.5rem;
   min-width: 0;
 }
 
+@media (max-width: 767px) {
   .aico-preorder-hero-side {
+    flex-wrap: wrap;
     justify-content: flex-start;
     width: 100%;
   }
