@@ -29,6 +29,9 @@
       filledClass +
       disabledClass +
       '">' +
+      '<span class="aico-preorder-qty-box__size" aria-hidden="true">' +
+      sizeLabelHtml +
+      '</span>' +
       '<span class="aico-preorder-qty-box__inner">' +
       '<input type="number" class="aico-preorder-qty-input" min="0" step="1" value="' +
       displayVal +
