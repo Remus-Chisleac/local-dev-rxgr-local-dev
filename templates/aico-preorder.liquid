@@ -415,7 +415,10 @@
           <div class="aico-preorder-checkout-grand-total" data-aico-preorder-summary-total></div>
         </div>
       </div>
-      <p class="aico-preorder-checkout-alert" data-aico-preorder-stock-warning>{{ 'aico_preorder.summary.stock_warning' | t }}</p>
+      <p class="aico-preorder-checkout-alert" data-aico-preorder-stock-warning>
+        <svg class="aico-preorder-checkout-alert__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.3a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4ZM8 4.1a.95.95 0 1 0 0 1.9.95.95 0 0 0 0-1.9Zm-.8 3.05V11.9h1.6V7.15H7.2Z"/></svg>
+        <span class="aico-preorder-checkout-alert__text">{{ 'aico_preorder.summary.stock_warning' | t }}</span>
+      </p>
       <label class="aico-preorder-notes">
         <span class="aico-preorder-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
         <textarea name="notes" rows="3" data-aico-preorder-notes></textarea>

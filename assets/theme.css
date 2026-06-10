@@ -4981,7 +4981,7 @@ html.aico-preorder-gallery-open {
         var(--aico-preorder-date-w, 4.5rem)
     )
     minmax(0, 1fr)
-    var(--aico-preorder-total-w, 6.75rem);
+    var(--aico-preorder-total-w, 3.5rem);
   column-gap: var(--aico-preorder-grid-gap, 0.35rem);
   align-items: center;
   padding: 0.5rem 0.75rem;
@@ -5135,7 +5135,7 @@ html.aico-preorder-gallery-open {
   grid-template-columns:
     var(--aico-preorder-date-w, 4.5rem)
     minmax(0, 1fr)
-    var(--aico-preorder-total-w, 6.75rem);
+    var(--aico-preorder-total-w, 3.5rem);
   column-gap: var(--aico-preorder-grid-gap, 0.35rem);
   align-items: center;
 }
@@ -5550,13 +5550,23 @@ html.aico-preorder-gallery-open {
   font-weight: 600;
 }
 .aico-preorder-checkout-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin: 1rem 0 0;
   padding: 0.65rem 0.85rem;
   font-size: 0.8125rem;
-  background: #fff8e6;
-  border: 1px solid #f1d592;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 2px;
-  color: #7a5c00;
+  color: #1e40af;
+}
+.aico-preorder-checkout-alert__icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.05rem;
+  color: #2563eb;
 }
 .aico-preorder-notes textarea {
   width: 100%;

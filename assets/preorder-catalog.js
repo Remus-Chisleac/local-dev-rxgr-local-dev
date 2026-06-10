@@ -777,7 +777,7 @@
 
     this.catalogEl.style.setProperty('--aico-preorder-aside-w', '8.25rem');
     this.catalogEl.style.setProperty('--aico-preorder-date-w', '5.5rem');
-    this.catalogEl.style.setProperty('--aico-preorder-total-w', '6.75rem');
+    this.catalogEl.style.setProperty('--aico-preorder-total-w', '3.5rem');
     this.catalogEl.style.setProperty('--aico-preorder-grid-gap', '0.35rem');
 
     sortGroupsByOrder(this.products).forEach(function (group) {
