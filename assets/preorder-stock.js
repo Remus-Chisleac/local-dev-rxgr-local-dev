@@ -1,16 +1,27 @@
 /**
- * Preorder stock caps — per-size (variant) pool model.
+ * Preorder stock caps — per-date stock with upward "rolling".
  *
- * Each shoe size has a single stock pool S, shared across ALL delivery dates:
- *   sum(qty over every date for that variant) <= S.
- * The "remaining" pool for a variant is S - sum(all dates' qty); a single cell's
- * cap is therefore qty(cell) + remaining = S - sum(OTHER dates' qty). Reducing
- * any date's qty frees the pool again on every date. This replaces the old
- * cross-date "spillover" accumulation, which was buggy.
+ * Each shoe size (variant) has its OWN stock per delivery date. Unused stock of
+ * an EARLIER date rolls up to LATER dates, so for dates sorted chronologically
+ * the available pool at date i is the cumulative own-stock up to i minus the
+ * cumulative quantity entered up to i:
+ *
+ *     remaining[i] = (Σ ownStock[0..i]) − (Σ qty[0..i])
+ *
+ * Example — own stock 5 / 10 / 15 for date0 / date1 / date2:
+ *     remaining (nothing entered) = 5 / 15 / 30
+ *     enter 2 on date0            → 3 / 13 / 28
+ *     then enter 13 on date1      → 3 / 0  / 15
+ * A later date's quantity never affects an earlier date; an earlier date's
+ * quantity reduces every later date's pool.
+ *
+ * The most a single cell can hold (its input cap) is bounded by EVERY date from
+ * it onward (raising it must not push any later date's remaining below 0):
+ *
+ *     cap[i] = qty[i] + min( remaining[j] for all j ≥ i )
  *
  * Committed floors: a reopened/submitted cart carries a committed_quantity per
- * line (the add-only floor). A cell can never drop below its committed floor;
- * its decrement is disabled there and `min` is set to it.
+ * line (the add-only floor). A cell can never drop below its committed floor.
  */
 (function (global) {
   'use strict';
@@ -18,8 +29,12 @@
   var MAX_QUANTITY = 10000;
 
   var state = {
-    // sizeStock[productId][variantId] = S (single pool across dates)
-    sizeStock: {},
+    // stockByDate[productId][variantId][dateKey] = own stock for that date
+    stockByDate: {},
+    // productDates[productId] = { dateKey: true } — every date the product offers
+    productDates: {},
+    // dateTs[dateKey] = epoch ms, so dates sort chronologically
+    dateTs: {},
     // qty[productId][variantId][dateKey] = current quantity in that cell
     qty: {},
     // committed[productId][variantId][dateKey] = add-only floor (>0 only)
@@ -30,11 +45,30 @@
     return id == null ? '' : String(id);
   }
 
-  // Cells are always addressed by the catalog's human date label (e.g.
-  // "Aug 10, 2026"); the page maps server ISO dates to that same label before
-  // seeding, so a plain trimmed string is a stable, timezone-safe key.
+  // Cells are addressed by the catalog's human date label (e.g. "Aug 10, 2026");
+  // the stock data's raw date is normalised to the SAME label below so a plain
+  // trimmed string is a stable, timezone-safe key shared by stock and quantities.
   function dateKey(dateLabel) {
     return String(dateLabel == null ? '' : dateLabel).trim();
+  }
+
+  // Match the catalog's date label exactly (extractDatesFromProducts) so the
+  // stock keys line up with the rendered cells' data-date.
+  function dateLabelFromRaw(rawDate) {
+    try {
+      var parsed = new Date(rawDate);
+      if (isNaN(parsed.getTime())) return null;
+      return {
+        label: parsed.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+        ts: parsed.getTime(),
+      };
+    } catch (_) {
+      return null;
+    }
   }
 
   function asArray(value) {
@@ -64,29 +98,33 @@
     return [];
   }
 
-  // Build the per-variant pool from each product's preorderStockData. The
-  // payload lists an available amount per (date, warehouse, variant); the cap is
-  // per size, so we collapse to ONE pool per variant by taking the max available
-  // amount seen across dates/warehouses (they are the same warehouse figure in
-  // practice; max is the safe choice if they ever differ).
+  // Build the per-(variant, date) own stock from each product's
+  // preorderStockData. The payload lists an available amount per
+  // (date, warehouse, variant); we keep it per date (not collapsed to a pool)
+  // and take the max across warehouses for the same (variant, date).
   function setSizeStockFromProducts(productGroups) {
     asArray(productGroups).forEach(function (group) {
       asArray(group && group.items).forEach(function (product) {
         var pid = idKey(product.id);
         if (!pid) return;
-        if (!state.sizeStock[pid]) state.sizeStock[pid] = {};
+        if (!state.stockByDate[pid]) state.stockByDate[pid] = {};
+        if (!state.productDates[pid]) state.productDates[pid] = {};
         asArray(product.preorderStockData).forEach(function (dateRow) {
+          var info = dateLabelFromRaw(dateRow.date);
+          if (!info) return;
+          var dk = info.label;
+          state.productDates[pid][dk] = true;
+          state.dateTs[dk] = info.ts;
           warehouseDataList(dateRow.data).forEach(function (dataRow) {
             stocksList(dataRow.stocks).forEach(function (stock) {
               var vid = idKey(stock.variantId || stock.variant_id);
               if (!vid) return;
               var amount = stock.overallAvailableAmount;
               amount = amount >= 0 ? Math.floor(amount) : 0;
-              if (
-                state.sizeStock[pid][vid] == null ||
-                amount > state.sizeStock[pid][vid]
-              ) {
-                state.sizeStock[pid][vid] = amount;
+              if (!state.stockByDate[pid][vid]) state.stockByDate[pid][vid] = {};
+              var existing = state.stockByDate[pid][vid][dk];
+              if (existing == null || amount > existing) {
+                state.stockByDate[pid][vid][dk] = amount;
               }
             });
           });
@@ -99,20 +137,8 @@
     state.committed = {};
   }
 
-  function poolFor(pid, vid) {
-    var byProduct = state.sizeStock[pid];
-    if (!byProduct || byProduct[vid] == null) return null; // unknown => unlimited
-    return byProduct[vid];
-  }
-
-  function usedFor(pid, vid) {
-    var byVariant = state.qty[pid] && state.qty[pid][vid];
-    if (!byVariant) return 0;
-    var total = 0;
-    Object.keys(byVariant).forEach(function (dk) {
-      total += byVariant[dk] || 0;
-    });
-    return total;
+  function hasStock(pid, vid) {
+    return !!(state.stockByDate[pid] && state.stockByDate[pid][vid]);
   }
 
   function getQuantity(productId, variantId, dateLabel) {
@@ -139,15 +165,63 @@
     return 0;
   }
 
-  // The most this single cell could hold = S - sum(other dates' qty for the
-  // variant). Returns MAX_QUANTITY when the variant has no known pool.
+  // Chronologically-ordered rows for a variant with the rolling pool maths.
+  // Returns null when the variant has no known stock (treated as unlimited).
+  // Each row: { dateKey, ownStock, qty, remaining, suffixMinRemaining }.
+  function variantRows(pid, vid) {
+    if (!hasStock(pid, vid)) return null;
+    var stock = state.stockByDate[pid][vid];
+    var qtys = (state.qty[pid] && state.qty[pid][vid]) || {};
+    // Every date the product offers (a zero-own-stock date still receives rolled
+    // stock from earlier dates, so it must take part in the cumulative maths).
+    var dateSet = {};
+    Object.keys(state.productDates[pid] || {}).forEach(function (dk) { dateSet[dk] = true; });
+    Object.keys(stock).forEach(function (dk) { dateSet[dk] = true; });
+    var keys = Object.keys(dateSet).sort(function (a, b) {
+      return (state.dateTs[a] || 0) - (state.dateTs[b] || 0);
+    });
+
+    var rows = [];
+    var cumStock = 0;
+    var cumQty = 0;
+    keys.forEach(function (dk) {
+      cumStock += stock[dk] != null ? stock[dk] : 0;
+      cumQty += qtys[dk] || 0;
+      rows.push({
+        dateKey: dk,
+        ownStock: stock[dk] != null ? stock[dk] : 0,
+        qty: qtys[dk] || 0,
+        remaining: cumStock - cumQty,
+      });
+    });
+    // Suffix-min of remaining: the cap on raising any one date is bounded by it
+    // and every later date.
+    var suffixMin = Infinity;
+    for (var i = rows.length - 1; i >= 0; i--) {
+      suffixMin = Math.min(suffixMin, rows[i].remaining);
+      rows[i].suffixMinRemaining = suffixMin;
+    }
+    return rows;
+  }
+
+  function rowFor(pid, vid, dk) {
+    var rows = variantRows(pid, vid);
+    if (!rows) return null;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].dateKey === dk) return rows[i];
+    }
+    return null;
+  }
+
+  // The most this single cell can hold: qty[i] + min(remaining[j], j ≥ i).
+  // MAX_QUANTITY when the variant has no known stock.
   function capForCell(productId, variantId, dateLabel) {
     var pid = idKey(productId);
     var vid = idKey(variantId);
-    var S = poolFor(pid, vid);
-    if (S == null) return MAX_QUANTITY;
-    var usedOthers = usedFor(pid, vid) - getQuantity(productId, variantId, dateLabel);
-    return Math.max(0, S - usedOthers);
+    if (!hasStock(pid, vid)) return MAX_QUANTITY;
+    var row = rowFor(pid, vid, dateKey(dateLabel));
+    if (!row) return MAX_QUANTITY;
+    return Math.max(0, row.qty + row.suffixMinRemaining);
   }
 
   function setQuantity(productId, variantId, dateLabel, quantity) {
@@ -181,11 +255,13 @@
   }
 
   // One call describes everything the UI needs to paint a cell.
-  //  - boxDisabled: empty cell with no remaining pool -> full gray box.
-  //  - incrementDisabled: pool exhausted -> can't add more on this (or any) date.
+  //  - max: the cell's input cap (rolling cumulative bound).
+  //  - remaining: cumulative stock − cumulative qty up to this date (display).
+  //  - boxDisabled: empty cell whose cap is 0 -> full gray box.
+  //  - incrementDisabled: cap reached for this date -> can't add more.
   //  - decrementDisabled: at/below the committed floor (0 for new cells).
   //  - committedStyle: value equals a committed floor and hasn't been raised ->
-  //    gray placeholder, no border (2.2). Raising it flips to `filled` (blue).
+  //    gray placeholder, bordered (locked minimum). Raising it flips to `filled`.
   function getCellState(productId, variantId, dateLabel, isStockRelevant) {
     var qty = getQuantity(productId, variantId, dateLabel);
     var committed = getCommitted(productId, variantId, dateLabel);
@@ -205,21 +281,21 @@
 
     var pid = idKey(productId);
     var vid = idKey(variantId);
-    var S = poolFor(pid, vid);
-    if (S == null) return base; // unknown pool => treat as unlimited
+    if (!hasStock(pid, vid)) return base; // unknown stock => unlimited
+    var row = rowFor(pid, vid, dateKey(dateLabel));
+    if (!row) return base;
 
-    var remaining = S - usedFor(pid, vid); // pool left across all dates
-    base.remaining = remaining;
-    base.max = qty + Math.max(0, remaining); // == S - sum(other dates)
-    base.boxDisabled = qty <= 0 && remaining <= 0;
-    base.incrementDisabled = remaining <= 0;
+    var cap = Math.max(0, row.qty + row.suffixMinRemaining);
+    base.max = cap;
+    base.remaining = row.remaining;
+    base.boxDisabled = qty <= 0 && cap <= 0;
+    base.incrementDisabled = cap <= qty;
     return base;
   }
 
   // Clamp a raw value for a cell to [floor, cap].
   //  - upper bound = capForCell (only when stock is relevant);
-  //  - lower bound = committed floor, but only when enforceFloor is set
-  //    (used on commit/blur, not on every keystroke, so typing stays free).
+  //  - lower bound = committed floor, but only when enforceFloor is set.
   function clampCell(productId, variantId, dateLabel, raw, isStockRelevant, enforceFloor) {
     var n = Math.floor(Number(raw));
     if (isNaN(n) || n < 0) n = 0;
@@ -252,8 +328,8 @@
   }
 
   // True when the whole box is interactable (not the full-gray empty+exhausted
-  // state). A cell that already has a qty stays enabled even when the pool is
-  // exhausted — only its increment is then disabled (see getCellState).
+  // state). A cell that already has a qty stays enabled even when its cap is
+  // reached — only its increment is then disabled (see getCellState).
   function isCellEnabled(productId, variantId, dateLabel, isStockRelevant) {
     if (!isStockRelevant) return true;
     return !getCellState(productId, variantId, dateLabel, true).boxDisabled;
@@ -277,7 +353,10 @@
     if (!byVariant) return 0;
     var total = 0;
     Object.keys(byVariant).forEach(function (vid) {
-      total += usedFor(pid, vid);
+      var byDate = byVariant[vid];
+      Object.keys(byDate).forEach(function (dk) {
+        total += byDate[dk] || 0;
+      });
     });
     return total;
   }
