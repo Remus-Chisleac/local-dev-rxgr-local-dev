@@ -63,7 +63,7 @@
   </div>
 
   <script type="application/json" data-aico-orders-i18n>{
-    "locale": {{ request.locale | default: 'en' | json }},
+    "locale": {{ request.locale | default: shop.default_locale | json }},
     "status": {
       "cancelled": {{ 'customer.orders_page.status.cancelled' | t | json }},
       "in_progress": {{ 'customer.orders_page.status.in_progress' | t | json }},

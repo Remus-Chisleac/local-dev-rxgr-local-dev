@@ -235,8 +235,17 @@
 
   // ---- Product helpers --------------------------------------------
 
+  // Total quantity across all variant items, matching b2b-shop's "Produkte".
   function countProducts(order) {
-    return (order.products || []).length;
+    var products = order.products || [];
+    var total = 0;
+    for (var i = 0; i < products.length; i++) {
+      var items = products[i].items || [];
+      for (var j = 0; j < items.length; j++) {
+        total += Number(items[j].quantity) || 0;
+      }
+    }
+    return total;
   }
 
   function productTotals(product) {
