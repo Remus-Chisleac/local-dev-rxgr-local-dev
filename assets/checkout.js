@@ -339,7 +339,15 @@
                 window.location = data.hosted_page_url;
                 return;
               }
-              if (data.status === 'SAVING' && data.order_id) {
+              // Route by payment type, mirroring the legacy b2b-shop: only
+              // credit-card orders wait on the processing page (they need the
+              // Adyen round-trip / async payment confirmation). Every other
+              // payment condition goes straight to the thank-you page — the
+              // order keeps saving in the background and does not block the
+              // shopper on a spinner.
+              var selectedMethod = self.selectedPaymentMethod;
+              var isCreditCardPayment = !!(selectedMethod && selectedMethod.is_credit_card);
+              if (isCreditCardPayment && data.order_id) {
                 var processing = routes.processingUrl || '/checkout/processing';
                 window.location = processing + '?order_id=' + encodeURIComponent(String(data.order_id));
                 return;
