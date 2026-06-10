@@ -1169,12 +1169,13 @@
     }
 
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
-      // Live clamp while typing — no Enter/blur needed (6.3). Floor is NOT
-      // enforced here so the user can still clear the field mid-edit.
+      // Aggressive live clamp: run the FULL clamp (upper cap + committed floor) on
+      // every interaction — as soon as the user types, not on blur/Enter. Typing
+      // above the cross-date cap snaps down to it; typing below a committed min
+      // snaps up to it; both happen immediately on the `input` event (6.3 / 6.2).
       input.addEventListener('input', function () {
-        apply(input, null, false);
+        apply(input, null, true);
       });
-      // Commit on blur/Enter — now enforce the committed floor (6.2).
       input.addEventListener('change', function () {
         apply(input, null, true);
       });

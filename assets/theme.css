@@ -5070,12 +5070,13 @@ html.aico-preorder-gallery-open {
   border-color: #c8c8c8;
 }
 
-/* Already-confirmed (committed) quantity on a reopened preorder: render gray,
-   placeholder-style, with no border — until the user raises it, when it flips to
-   the blue --filled look (2.2). --committed and --filled are mutually exclusive. */
+/* Already-confirmed (committed) quantity (the locked minimum) on a reopened
+   preorder: gray, placeholder-style text but WITH a visible border so the min
+   value reads as a real, bordered cell. Raising it flips to the blue --filled
+   look (2.2). --committed and --filled are mutually exclusive. */
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-box__inner {
-  border-color: transparent;
-  box-shadow: none;
+  border-color: #b0b0b0;
+  box-shadow: inset 0 0 0 1px #b0b0b0;
   background: #fff;
 }
 
