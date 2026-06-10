@@ -399,6 +399,13 @@
     var catalogToolsEl = root.querySelector('[data-aico-preorder-catalog-tools]');
     var promptEl = root.querySelector('[data-aico-preorder-prompt]');
     var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
+    var reopenNoticeEl = root.querySelector('[data-aico-preorder-reopen-notice]');
+    var reopenAckBtn = root.querySelector('[data-aico-preorder-reopen-ack]');
+    // Already-placed preorder gate: when a submitted preorder exists for the
+    // current (debtor, billing, delivery) context, show the notice panel and
+    // keep the catalog hidden until the user acknowledges. Reset per context.
+    var reopenAcked = false;
+    var lastCartContextKey = null;
     var addressesUrl = root.getAttribute('data-aico-preorder-addresses-url');
     var contextUrl = opts.contextUrl;
     var tokenInput = opts.tokenInput;
@@ -490,8 +497,44 @@
       // just shows zeros until items are added, and the Submit button stays
       // disabled until there's a quantity + accepted terms (see updateSummary).
       // Gating on quantity made the whole bottom section look "missing" before
-      // anything was added.
-      checkoutEl.hidden = !cartEnabled || !addressesReady();
+      // anything was added. Hidden while the reopen notice is pending.
+      checkoutEl.hidden = !cartEnabled || !addressesReady() || reopenPending();
+    }
+
+    function cartContextKey() {
+      return [billingId(), buyerId(), debtorId()].join('|');
+    }
+
+    // True when the loaded cart represents an already-placed preorder: the
+    // server marked it SUBMITTED, or any line carries a committed quantity
+    // (the add-only floor set when a preorder was submitted).
+    function cartHasPlacedPreorder() {
+      if (!cartCtrl) return false;
+      if (cartCtrl.status === 'SUBMITTED') return true;
+      var lc = cartCtrl.localCart;
+      if (!lc || !lc.preorderItemLists) return false;
+      return lc.preorderItemLists.some(function (list) {
+        return (list.preorderItems || []).some(function (it) {
+          return (it.committedQuantity || 0) > 0;
+        });
+      });
+    }
+
+    function reopenPending() {
+      return addressesReady() && !reopenAcked && cartHasPlacedPreorder();
+    }
+
+    // Decide catalog vs reopen-notice visibility. While addresses are ready but
+    // the cart hasn't resolved yet (cartResolved=false), keep the catalog hidden
+    // so we never flash it before discovering a placed preorder.
+    function applyReopenVisibility(cartResolved) {
+      var addressesOk = addressesReady();
+      var pending = reopenPending();
+      if (reopenNoticeEl) reopenNoticeEl.hidden = !pending;
+      if (mainEl) {
+        mainEl.hidden = !addressesOk || pending || (addressesOk && cartEnabled && !cartResolved);
+      }
+      updateCheckoutVisibility();
     }
 
     function clearCatalog() {
@@ -513,15 +556,27 @@
       // Filter dropdowns (search / dates / size) stay visible from the start;
       // only the product grid waits for addresses.
       if (catalogToolsEl) catalogToolsEl.hidden = false;
-      if (mainEl) mainEl.hidden = !addressesOk;
-      updateCheckoutVisibility();
       if (!productsOk) {
         clearCatalog();
       } else {
+        // Always (pre)load products — even while the reopen notice is up — so
+        // the catalog is ready to reveal the instant the user acknowledges.
         scheduleCatalogReload();
       }
       if (addressesOk && cartEnabled && cartCtrl) {
-        cartCtrl.fetchCart().catch(function () {});
+        var key = cartContextKey();
+        if (key !== lastCartContextKey) {
+          reopenAcked = false;
+          lastCartContextKey = key;
+        }
+        // Hide the catalog until the cart resolves, then re-evaluate the gate.
+        applyReopenVisibility(false);
+        cartCtrl
+          .fetchCart()
+          .then(function () { applyReopenVisibility(true); })
+          .catch(function () { applyReopenVisibility(true); });
+      } else {
+        applyReopenVisibility(true);
       }
     }
 
@@ -1292,6 +1347,13 @@
 
     if (termsCheckbox) {
       termsCheckbox.addEventListener('change', updateSummary);
+    }
+
+    if (reopenAckBtn) {
+      reopenAckBtn.addEventListener('click', function () {
+        reopenAcked = true;
+        applyReopenVisibility(true);
+      });
     }
 
     window.addEventListener('beforeunload', function (event) {

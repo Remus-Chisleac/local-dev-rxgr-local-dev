@@ -354,6 +354,14 @@
     <h2 class="aico-preorder-prompt-title">{{ 'aico_preorder.catalog.select_addresses' | t }}</h2>
   </section>
 
+  <section class="aico-preorder-reopen-notice aico-page-container" data-aico-preorder-reopen-notice hidden aria-live="polite" role="status">
+    <div class="aico-preorder-reopen-notice-inner">
+      <h2 class="aico-preorder-reopen-notice-title">{{ 'aico_preorder.reopen_notice.title' | t }}</h2>
+      <p class="aico-preorder-reopen-notice-body">{{ 'aico_preorder.reopen_notice.body' | t }}</p>
+      <button type="button" class="aico-preorder-reopen-notice-btn" data-aico-preorder-reopen-ack>{{ 'aico_preorder.reopen_notice.acknowledge' | t }}</button>
+    </div>
+  </section>
+
   <section class="aico-preorder-main-wrap aico-page-container" aria-labelledby="aico-preorder-main-title" hidden data-aico-preorder-main>
     <h2 id="aico-preorder-main-title" class="aico-sr-only">{{ 'aico_preorder.catalog.section_aria' | t }}</h2>
     <p class="aico-preorder-catalog-loading" data-aico-preorder-loading hidden>{{ 'aico_preorder.catalog.loading' | t }}</p>

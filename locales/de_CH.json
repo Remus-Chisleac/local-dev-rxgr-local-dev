@@ -473,6 +473,11 @@
       "product_total": "Gesamt",
       "pcs": "STK"
     },
+    "reopen_notice": {
+      "title": "Sie haben für diese Adresse bereits eine PreOrder aufgegeben",
+      "body": "Ihre bestehende Bestellung wird geöffnet. Bereits bestellte Mengen können nicht mehr reduziert werden – Sie können jedoch jederzeit weitere Paare hinzufügen.",
+      "acknowledge": "Bestätigen"
+    },
     "flyers": {
       "section_aria": "Flyer",
       "title": "Wählen Sie Ihre Flyer aus",

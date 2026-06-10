@@ -473,6 +473,11 @@
       "product_total": "Total",
       "pcs": "STK"
     },
+    "reopen_notice": {
+      "title": "You've already placed a preorder for this address",
+      "body": "Your existing order will be opened. Quantities you've already ordered can't be reduced — but you can add more pairs at any time.",
+      "acknowledge": "Acknowledge"
+    },
     "flyers": {
       "section_aria": "Flyers",
       "title": "Choose your flyers",

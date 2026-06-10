@@ -4573,6 +4573,59 @@ button.aico-home-brand-card {
   font-weight: 700;
   color: #272727;
 }
+
+/* Already-placed preorder notice (shown before the catalog on reopen) */
+.aico-preorder-reopen-notice[hidden] {
+  display: none;
+}
+
+.aico-preorder-reopen-notice {
+  margin: 2rem auto;
+}
+
+.aico-preorder-reopen-notice-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 2.25rem;
+  background: #fff;
+  border: 1px solid var(--aico-border);
+  border-left: 4px solid #e8702d;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.aico-preorder-reopen-notice-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #272727;
+}
+
+.aico-preorder-reopen-notice-body {
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--aico-muted-fg);
+}
+
+.aico-preorder-reopen-notice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: 2px;
+  background: #e8702d;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aico-preorder-reopen-notice-btn:hover {
+  background: #d5631f;
+}
 .aico-preorder-catalog-loading,
 .aico-preorder-catalog-error {
   margin: 1rem 0;
