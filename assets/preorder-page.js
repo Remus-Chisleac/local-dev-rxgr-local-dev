@@ -424,6 +424,10 @@
     var catalogEl = root.querySelector('[data-aico-preorder-catalog]');
     var dateSelectEl = root.querySelector('[data-aico-preorder-date-select]');
     var submitBtn = root.querySelector('[data-aico-preorder-submit]');
+    // True between the submit click and the thank-you redirect, so the cart
+    // flipping to SUBMITTED mid-submit doesn't hide the checkout (see
+    // updateCheckoutVisibility).
+    var isSubmitting = false;
     var summaryLines = root.querySelector('[data-aico-preorder-summary-lines]');
     var summaryTotal = root.querySelector('[data-aico-preorder-summary-total]');
     var summarySubtotalRow = root.querySelector('[data-aico-preorder-summary-subtotal-row]');
@@ -505,8 +509,12 @@
       // just shows zeros until items are added, and the Submit button stays
       // disabled until there's a quantity + accepted terms (see updateSummary).
       // Gating on quantity made the whole bottom section look "missing" before
-      // anything was added. Hidden while the reopen notice is pending.
-      checkoutEl.hidden = !cartEnabled || !addressesReady() || reopenPending();
+      // anything was added. Hidden while the reopen notice is pending — but NOT
+      // while we're submitting: the cart flips to SUBMITTED mid-submit, which
+      // would otherwise yank the checkout out from under the user before the
+      // thank-you redirect.
+      checkoutEl.hidden =
+        !cartEnabled || !addressesReady() || (reopenPending() && !isSubmitting);
     }
 
     function cartContextKey() {
@@ -1488,6 +1496,7 @@
         }
         if (submitBtn.disabled) return;
         if (summaryStatus) summaryStatus.hidden = true;
+        isSubmitting = true;
         setSubmitSaving(true);
         cartCtrl
           .submitPreorder(notesEl ? notesEl.value : '')
@@ -1496,6 +1505,7 @@
             if (thankYou) {
               window.location.href = thankYou;
             } else {
+              isSubmitting = false;
               setSubmitSaving(false);
               if (summaryStatus) {
                 summaryStatus.hidden = false;
@@ -1505,6 +1515,7 @@
             }
           })
           .catch(function () {
+            isSubmitting = false;
             setSubmitSaving(false);
             if (summaryStatus) {
               summaryStatus.hidden = false;
