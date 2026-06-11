@@ -5112,6 +5112,11 @@ html.aico-preorder-gallery-open {
   to { transform: rotate(360deg); }
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-total-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: 1.25;
   text-align: right;
   font-size: 0.6875rem;
   font-weight: 600;
