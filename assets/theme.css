@@ -5070,11 +5070,6 @@ html.aico-preorder-gallery-open {
   opacity: 0;
   transition: opacity 0.18s ease;
 }
-/* Hide the "Gesamt" label while collapsed but keep the ordered count visible. */
-.aico-preorder-group-collapsed .aico-preorder-matrix-total-head-label {
-  opacity: 0;
-  transition: opacity 0.18s ease;
-}
 .aico-preorder-group-ordered-total {
   font-weight: 700;
   white-space: nowrap;
