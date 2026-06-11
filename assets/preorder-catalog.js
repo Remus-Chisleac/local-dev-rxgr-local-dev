@@ -822,9 +822,11 @@
         'data-group-name="' + escapeHtml(group.optionGroupName) + '" aria-expanded="' +
         (collapsed ? 'false' : 'true') + '">' +
         '<svg class="aico-preorder-group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+        '<span class="aico-preorder-group-titlewrap">' +
         '<span class="aico-preorder-group-name">' + escapeHtml(group.optionGroupName) + '</span>' +
         '<span class="aico-preorder-group-count' + (searching ? ' aico-preorder-group-count--searching' : '') +
         '">' + items.length + (searching ? '/' + all.length : '') + '</span>' +
+        '</span>' +
         '</button>' +
         '</h3>';
       // Size labels live once in the group header, aligned with the box columns

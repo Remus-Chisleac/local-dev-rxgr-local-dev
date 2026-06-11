@@ -5010,7 +5010,7 @@ html.aico-preorder-gallery-open {
 /* Category title is a collapse toggle. */
 .aico-preorder-group-toggle {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
   padding: 0.15rem 0.25rem;
   margin: 0;
@@ -5021,18 +5021,35 @@ html.aico-preorder-gallery-open {
   font-weight: 700;
   cursor: pointer;
   border-radius: 4px;
+  text-align: left;
 }
 .aico-preorder-group-toggle:hover { background: rgba(255, 255, 255, 0.15); }
 .aico-preorder-group-toggle:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 1px;
 }
+/* Name on top, count badge beneath it — gives long category names the full
+   title width instead of sharing the line with the count. */
+.aico-preorder-group-titlewrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+}
 .aico-preorder-group-chevron {
   flex: 0 0 auto;
+  margin-top: 0.2rem;
   transition: transform 0.15s ease;
 }
 .aico-preorder-group-collapsed .aico-preorder-group-chevron {
   transform: rotate(-90deg);
+}
+/* Long category names wrap within the title column instead of being clipped. */
+.aico-preorder-group-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 .aico-preorder-group-count {
   flex: 0 0 auto;
