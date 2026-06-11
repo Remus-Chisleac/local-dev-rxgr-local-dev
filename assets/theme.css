@@ -4983,13 +4983,17 @@ html.aico-preorder-gallery-open {
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-group-header-row {
   display: grid;
+  /* Last track holds the "Gesamt <count> STK" summary. It grows to fit that
+     label (which is wider than a bare per-product total number) but never
+     shrinks below the per-number total width, so it still right-aligns over the
+     product totals; the size-label track (1fr) absorbs the difference. */
   grid-template-columns:
     calc(
       var(--aico-preorder-aside-w, 8.25rem) + var(--aico-preorder-grid-gap, 0.35rem) +
         var(--aico-preorder-date-w, 4.5rem)
     )
     minmax(0, 1fr)
-    var(--aico-preorder-total-w, 3.5rem);
+    minmax(var(--aico-preorder-total-w, 3.5rem), max-content);
   column-gap: var(--aico-preorder-grid-gap, 0.35rem);
   align-items: center;
   padding: 0.5rem 0.75rem;
