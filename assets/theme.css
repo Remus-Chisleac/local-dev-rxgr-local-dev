@@ -5062,12 +5062,22 @@ html.aico-preorder-gallery-open {
 .aico-preorder-group-collapsed .aico-preorder-group-body {
   grid-template-rows: 0fr;
 }
-/* The size-label row + total head live in the sticky header (outside the body
-   wrapper), so fade them out in step with the slide. */
-.aico-preorder-group-collapsed .aico-preorder-matrix-scroll--header,
-.aico-preorder-group-collapsed .aico-preorder-matrix-total-head {
+/* The size-label row lives in the sticky header (outside the body wrapper), so
+   fade it out in step with the slide. The "Gesamt" total head stays visible —
+   it carries the per-section ordered-quantity count, which must remain readable
+   when the category is collapsed. */
+.aico-preorder-group-collapsed .aico-preorder-matrix-scroll--header {
   opacity: 0;
   transition: opacity 0.18s ease;
+}
+/* Hide the "Gesamt" label while collapsed but keep the ordered count visible. */
+.aico-preorder-group-collapsed .aico-preorder-matrix-total-head-label {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.aico-preorder-group-ordered-total {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Overall result count next to the "Products" heading while searching. */
@@ -5333,6 +5343,17 @@ html.aico-preorder-gallery-open {
 
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-input {
   color: var(--aico-muted-fg, #9d9d9d);
+}
+
+/* Editing state: while the cell is focused, an orange border marks the
+   in-progress edit (no floor clamp yet). Declared after --filled/--committed so
+   it wins over their resting borders until blur restores the proper colour. */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--editing .aico-preorder-qty-box__inner {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px #f59e0b;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--editing .aico-preorder-qty-input {
+  color: inherit;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;

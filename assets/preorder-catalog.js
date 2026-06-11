@@ -518,6 +518,17 @@
     return global.AicoPreorderStock.getTotalPerProduct(productId) || 0;
   }
 
+  // Sum of ordered quantities across every product in a category section.
+  // Drives the "Gesamt" count in the section header, which stays visible even
+  // when the section is collapsed.
+  function groupOrderedTotal(items) {
+    var sum = 0;
+    asArray(items).forEach(function (product) {
+      sum += productTotal(product && product.id);
+    });
+    return sum;
+  }
+
   function CatalogController(config) {
     this.root = config.root;
     this.productsUrl = config.productsUrl;
@@ -829,9 +840,16 @@
           '</span>';
       });
       groupsHtml += '</div></div>';
+      // "Gesamt" head also carries the section's ordered-quantity total so the
+      // shopper sees a per-category count; it stays visible when collapsed.
       groupsHtml +=
         '<div class="aico-preorder-matrix-total-head">' +
+        '<span class="aico-preorder-matrix-total-head-label">' +
         escapeHtml(copy.productTotal || 'Total') +
+        '</span> ' +
+        '<span class="aico-preorder-group-ordered-total" data-aico-preorder-group-ordered-total>' +
+        groupOrderedTotal(items) + ' ' + escapeHtml(copy.pcs || 'STK') +
+        '</span>' +
         '</div>';
       groupsHtml += '</div></header>';
 
@@ -958,6 +976,23 @@
     if (totalStrong) {
       totalStrong.textContent = productTotal(productId) + ' ' + (copy.pcs || 'STK');
     }
+
+    // Keep the section's "Gesamt" count in step with this card's new total.
+    this.refreshGroupOrderedTotal(card.closest('[data-aico-preorder-group]'));
+  };
+
+  // Recompute one section's ordered-quantity total from its product cards. Cards
+  // stay in the DOM when collapsed, so the count is correct in either state.
+  CatalogController.prototype.refreshGroupOrderedTotal = function (sectionEl) {
+    if (!sectionEl) return;
+    var totalEl = sectionEl.querySelector('[data-aico-preorder-group-ordered-total]');
+    if (!totalEl) return;
+    var copy = this.getCopy();
+    var sum = 0;
+    sectionEl.querySelectorAll('[data-aico-preorder-product-id]').forEach(function (card) {
+      sum += productTotal(parseInt(card.getAttribute('data-aico-preorder-product-id'), 10));
+    });
+    totalEl.textContent = sum + ' ' + (copy.pcs || 'STK');
   };
 
   CatalogController.prototype.refreshAll = function () {
@@ -1249,15 +1284,30 @@
     }
 
     this.catalogEl.querySelectorAll('[data-aico-preorder-qty]').forEach(function (input) {
-      // Aggressive live clamp: run the FULL clamp (upper cap + committed floor) on
-      // every interaction — as soon as the user types, not on blur/Enter. Typing
-      // above the cross-date cap snaps down to it; typing below a committed min
-      // snaps up to it; both happen immediately on the `input` event (6.3 / 6.2).
+      // Editing model:
+      //  - While the box is FOCUSED only the upper (cross-date pool) cap is
+      //    enforced live — the committed floor (low bound) is NOT — so the
+      //    shopper can freely clear or lower a cell mid-edit. The box wears an
+      //    orange border to mark the in-progress edit.
+      //  - On BLUR (clicking out / Enter) the full clamp runs (low bound +
+      //    high bound), the quantity/totals adjust, and the orange border is
+      //    replaced by the resting border via refreshProduct: blue when the
+      //    cell holds a new value, gray when it sits at the committed min.
+      input.addEventListener('focus', function () {
+        var box = input.closest('.aico-preorder-qty-box');
+        if (box) box.classList.add('aico-preorder-qty-box--editing');
+      });
       input.addEventListener('input', function () {
+        apply(input, null, false);
+      });
+      input.addEventListener('blur', function () {
+        var box = input.closest('.aico-preorder-qty-box');
+        if (box) box.classList.remove('aico-preorder-qty-box--editing');
         apply(input, null, true);
       });
-      input.addEventListener('change', function () {
-        apply(input, null, true);
+      // Enter commits the edit just like clicking out.
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') input.blur();
       });
       input.addEventListener('wheel', function (e) {
         e.preventDefault();
