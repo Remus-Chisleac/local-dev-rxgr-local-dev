@@ -175,13 +175,6 @@
     });
   }
 
-  function groupHasMorePages(entry) {
-    if (!entry || !entry.meta) return false;
-    var lastPage = Number(entry.meta.lastPage) || 1;
-    var currentPage = Number(entry.currentPage) || 1;
-    return currentPage < lastPage;
-  }
-
   function buildProductsUrl(baseUrl, params) {
     var url = new URL(baseUrl, window.location.origin);
     if (params.buyerAddressId) {
@@ -535,7 +528,6 @@
     this.catalogEl = config.catalogEl;
     this.loadingEl = config.loadingEl;
     this.errorEl = config.errorEl;
-    this.loadMoreEl = config.loadMoreEl;
     this.onProductsLoaded = config.onProductsLoaded || function () {};
     this.getBuyerAddressId = config.getBuyerAddressId || function () {
       return null;
@@ -567,11 +559,8 @@
     this.groupPagination = {};
     this.loadGeneration = 0;
     this.loading = false;
-    this.loadingMore = false;
-    this.hasMore = true;
     this.preorderDates = [];
     this.searchQuery = '';
-    this.autoLoadMore = config.autoLoadMore === true;
     // Collapsed state per category (optionGroupName), preserved across re-renders.
     this.collapsedGroups = {};
   }
@@ -595,14 +584,20 @@
     var generation = this.loadGeneration;
     this.products = [];
     this.groupPagination = {};
-    this.hasMore = false;
     this.loading = true;
     this.showLoading(true);
     this.showError(false);
 
     var failures = 0;
-    var completed = 0;
-    var totalGroups = OPTION_GROUP_ORDER.length;
+    var pending = 0;
+    // The whole catalog ALWAYS loads — page 1 of every section is requested
+    // up front (in parallel), and as soon as a section's page 1 reveals its
+    // page count, every remaining page is requested immediately, also in
+    // parallel. There is no lazy/on-scroll mode. Because parallel responses
+    // can land out of order, each section's pages are buffered and merged in
+    // page order so the server's (alphabetical) ordering is preserved.
+    var pageBuffer = {};
+    var nextPageToMerge = {};
 
     function hasAnyItems() {
       return self.products.some(function (g) {
@@ -620,126 +615,99 @@
       }
     }
 
-    function finishGroup() {
-      completed += 1;
+    var FAILED_PAGE = '__aico_failed_page__';
+
+    function mergeReadyPages(groupName) {
+      var merged = false;
+      while (pageBuffer[groupName][nextPageToMerge[groupName]] !== undefined) {
+        var page = nextPageToMerge[groupName];
+        var entry = pageBuffer[groupName][page];
+        delete pageBuffer[groupName][page];
+        nextPageToMerge[groupName] = page + 1;
+        if (entry === FAILED_PAGE) continue; // skip the hole, keep merging
+        self.products = mergeGroupedProducts(self.products, entry);
+        self.groupPagination[groupName].currentPage = page;
+        merged = true;
+      }
+      if (merged) {
+        self.preorderDates = extractDatesFromProducts(self.products);
+        displayCatalog();
+      }
+    }
+
+    function requestDone() {
       if (generation !== self.loadGeneration) return;
+      pending -= 1;
       if (hasAnyItems()) {
         self.showError(false);
         self.showLoading(false);
       }
-      if (completed < totalGroups) return;
+      if (pending > 0) return;
       self.loading = false;
       if (!hasAnyItems()) {
         self.showError(failures > 0);
       }
-      self.hasMore =
-        self.autoLoadMore &&
-        OPTION_GROUP_ORDER.some(function (name) {
-          return groupHasMorePages(self.groupPagination[name]);
-        });
-      if (self.autoLoadMore && self.hasMore) {
-        self.loadMore();
-      }
     }
 
-    OPTION_GROUP_ORDER.forEach(function (groupName) {
+    function fetchGroupPage(groupName, pageNumber) {
+      pending += 1;
       fetchProductsJson(
         buildProductsUrl(self.productsUrl, {
           buyerAddressId: buyerAddressId,
           debtorId: debtorId,
-          pageNumber: 1,
+          pageNumber: pageNumber,
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
         }),
       )
         .then(function (result) {
           if (generation !== self.loadGeneration) return;
-          self.products = mergeGroupedProducts(self.products, result);
-          self.groupPagination[groupName] = {
-            currentPage: 1,
-            meta: result.meta || null,
-          };
-          self.preorderDates = extractDatesFromProducts(self.products);
-          displayCatalog();
-          finishGroup();
+          if (pageNumber === 1) {
+            self.groupPagination[groupName] = {
+              currentPage: 0,
+              meta: result.meta || null,
+            };
+            var meta = result.meta || {};
+            var lastPage = parseInt(
+              meta.lastPage != null ? meta.lastPage : meta.last_page,
+              10,
+            );
+            for (var p = 2; p <= (lastPage || 1); p++) {
+              fetchGroupPage(groupName, p);
+            }
+          }
+          pageBuffer[groupName][pageNumber] = result;
+          mergeReadyPages(groupName);
+          requestDone();
         })
         .catch(function (err) {
           if (generation !== self.loadGeneration) return;
           failures += 1;
-          console.warn('preorder catalog: group fetch failed', groupName, err);
-          self.groupPagination[groupName] = { currentPage: 1, meta: null };
-          finishGroup();
+          console.warn(
+            'preorder catalog: group fetch failed',
+            groupName,
+            'page',
+            pageNumber,
+            err,
+          );
+          if (!self.groupPagination[groupName]) {
+            self.groupPagination[groupName] = { currentPage: 0, meta: null };
+          }
+          // Mark the failed page so later buffered pages still merge — a hole
+          // is better than silently freezing the rest of the section.
+          pageBuffer[groupName][pageNumber] = FAILED_PAGE;
+          mergeReadyPages(groupName);
+          requestDone();
         });
+    }
+
+    OPTION_GROUP_ORDER.forEach(function (groupName) {
+      pageBuffer[groupName] = {};
+      nextPageToMerge[groupName] = 1;
+      fetchGroupPage(groupName, 1);
     });
 
     return Promise.resolve();
-  };
-
-  CatalogController.prototype.loadMore = function () {
-    var self = this;
-    if (this.loadingMore || !this.hasMore || this.loading) return Promise.resolve();
-
-    if (this.shouldSkipProducts()) return Promise.resolve();
-
-    var buyerAddressId = this.getBuyerAddressId();
-    var debtorId = this.getDebtorId();
-
-    var groupName = null;
-    for (var i = 0; i < OPTION_GROUP_ORDER.length; i++) {
-      var g = this.groupPagination[OPTION_GROUP_ORDER[i]];
-      if (groupHasMorePages(g)) {
-        groupName = OPTION_GROUP_ORDER[i];
-        break;
-      }
-    }
-    if (!groupName) {
-      this.hasMore = false;
-      return Promise.resolve();
-    }
-
-    var generation = this.loadGeneration;
-    this.loadingMore = true;
-    this.showLoadMore(true);
-
-    var g = this.groupPagination[groupName];
-    var nextPage = g.currentPage + 1;
-
-    return fetchProductsJson(
-      buildProductsUrl(this.productsUrl, {
-        buyerAddressId: buyerAddressId,
-        debtorId: debtorId,
-        pageNumber: nextPage,
-        pageSize: PAGE_SIZE,
-        optionGroupName: groupName,
-      }),
-    )
-      .then(function (result) {
-        if (generation !== self.loadGeneration) return;
-        self.products = mergeGroupedProducts(self.products, result);
-        self.groupPagination[groupName] = {
-          currentPage: nextPage,
-          meta: result.meta || null,
-        };
-        self.preorderDates = extractDatesFromProducts(self.products);
-        self.hasMore = self.autoLoadMore && OPTION_GROUP_ORDER.some(function (name) {
-          return groupHasMorePages(self.groupPagination[name]);
-        });
-        try {
-          self.onProductsLoaded(self.products, self.preorderDates);
-          self.render();
-        } catch (err) {
-          console.error('preorder catalog: loadMore render', err);
-        }
-      })
-      .catch(function (err) {
-        console.warn('preorder catalog: loadMore failed', err);
-      })
-      .finally(function () {
-        if (generation === self.loadGeneration) {
-          self.loadingMore = false;
-          self.showLoadMore(false);
-        }
-      });
   };
 
   CatalogController.prototype.showLoading = function (on) {
@@ -748,10 +716,6 @@
 
   CatalogController.prototype.showError = function (on) {
     if (this.errorEl) this.errorEl.hidden = !on;
-  };
-
-  CatalogController.prototype.showLoadMore = function (on) {
-    if (this.loadMoreEl) this.loadMoreEl.hidden = !on;
   };
 
   CatalogController.prototype.filterItems = function (items) {

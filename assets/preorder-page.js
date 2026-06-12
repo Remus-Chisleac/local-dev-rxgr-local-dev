@@ -421,7 +421,6 @@
     var storageKey = opts.storageKey;
     var loadingEl = root.querySelector('[data-aico-preorder-loading]');
     var errorEl = root.querySelector('[data-aico-preorder-error]');
-    var loadMoreEl = root.querySelector('[data-aico-preorder-load-more]');
     var catalogEl = root.querySelector('[data-aico-preorder-catalog]');
     var dateSelectEl = root.querySelector('[data-aico-preorder-date-select]');
     var submitBtn = root.querySelector('[data-aico-preorder-submit]');
@@ -1380,7 +1379,6 @@
       catalogEl: catalogEl,
       loadingEl: loadingEl,
       errorEl: errorEl,
-      loadMoreEl: loadMoreEl,
       getCopy: function () {
         return {
           empty: root.getAttribute('data-aico-preorder-copy-empty'),
