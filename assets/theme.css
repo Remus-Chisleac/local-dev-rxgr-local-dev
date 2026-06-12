@@ -4932,15 +4932,6 @@ html.aico-preorder-gallery-open {
   margin: 1rem 0;
   font-size: 0.9375rem;
 }
-/* Spinner-only catalog loading state (no copy) — mirrors .aico-preorder-resolving */
-.aico-preorder-catalog-loading {
-  display: flex;
-  justify-content: center;
-  margin: 3.5rem auto;
-}
-.aico-preorder-catalog-loading[hidden] {
-  display: none;
-}
 .aico-preorder-catalog-error { color: #b91c1c; }
 .aico-preorder-date-filter {
   display: flex;
