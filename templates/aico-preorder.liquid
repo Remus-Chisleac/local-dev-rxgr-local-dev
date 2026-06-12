@@ -130,15 +130,6 @@
     </div>
   </section>
 
-  {%- comment -%} ── Resolving spinner: shown while the cart is being fetched to
-       discover whether a preorder was already placed. The content below the
-       filter row stays hidden until that resolves; the address/filter row itself
-       remains visible whenever there is an active session. Spinner only — no
-       loading copy. {%- endcomment -%}
-  <section class="aico-preorder-resolving aico-page-container" data-aico-preorder-resolving hidden aria-live="polite" role="status" aria-label="{{ 'aico_preorder.catalog.loading' | t }}">
-    <span class="aico-preorder-resolving-spinner" aria-hidden="true"></span>
-  </section>
-
   {%- comment -%} ── Compact filter row ── {%- endcomment -%}
   <section class="aico-preorder-filters-wrap" aria-labelledby="aico-preorder-filters-title" data-aico-preorder-filters-wrap>
     <div class="aico-page-container">

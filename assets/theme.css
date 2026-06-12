@@ -4692,31 +4692,6 @@ button.aico-home-brand-card {
 /* Cart-resolving spinner: the only thing shown below the hero while we fetch the
    cart to find out whether a preorder was already placed (avoids the address-row
    flash). */
-.aico-preorder-resolving[hidden] {
-  display: none;
-}
-
-.aico-preorder-resolving {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin: 3.5rem auto;
-  color: var(--aico-muted-fg, #6b7280);
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.aico-preorder-resolving-spinner {
-  display: inline-block;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-  border-top-color: var(--color-accent, #2563eb);
-  border-radius: 50%;
-  animation: aico-spin 0.7s linear infinite;
-  flex: none;
-}
 .aico-preorder-prompt-title {
   margin: 0;
   font-size: 1.75rem;
