@@ -1819,7 +1819,10 @@
     // not the session — the session only feeds render-time stock relevance,
     // flyers and discounts, which we re-apply below once it arrives. Previously
     // the catalog waited for fetchSession() to resolve (~2-3s) before firing.
-    updateFlowState();
+    // NOTE: call scheduleCatalogReload() directly — updateFlowState() can't start
+    // the catalog here because it early-returns on noActiveSession() while
+    // sessionData is still null (and would flash the no-session notice).
+    if (!shouldSkipProducts()) scheduleCatalogReload();
     fetchSession().then(function () {
       // The catalog inputs are unchanged, so updateFlowState()'s scheduleCatalogReload()
       // is a no-op (input-key guard) — no second products fetch. Instead, re-apply the
