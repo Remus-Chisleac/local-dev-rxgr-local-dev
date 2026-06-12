@@ -441,9 +441,21 @@
     var notesEl = root.querySelector('[data-aico-preorder-notes]');
     var hasDirty = false;
     var catalogReloadTimer = null;
+    // Tracks the (address/debtor/region) inputs the catalog was last loaded for,
+    // so a redundant reload for the SAME inputs is skipped. This lets us kick off
+    // the catalog in parallel with session.js at init without the post-session
+    // updateFlowState() triggering a second, identical products fetch.
+    var lastCatalogKey = null;
 
-    function scheduleCatalogReload() {
+    function catalogInputKey() {
+      return [buyerId(), billingId(), debtorId(), sizeRegion()].join('|');
+    }
+
+    function scheduleCatalogReload(force) {
       if (!catalog) return;
+      var key = catalogInputKey();
+      if (!force && key === lastCatalogKey) return;
+      lastCatalogKey = key;
       clearTimeout(catalogReloadTimer);
       catalogReloadTimer = setTimeout(function () {
         catalog.reload();
@@ -617,6 +629,9 @@
         catalog.showError(false);
         catalog.showLoading(false);
       }
+      // Drop the cached input key so re-entering a loadable state re-fetches even
+      // if the addresses happen to match what was loaded before the clear.
+      lastCatalogKey = null;
       if (errorEl) errorEl.hidden = true;
       if (loadingEl) loadingEl.hidden = true;
     }
@@ -792,7 +807,11 @@
       // page 0 is the first page; sending 1 skips the first 100 B2Bs and
       // drops single search hits that live on page 0.
       url.searchParams.set('page[number]', '0');
-      url.searchParams.set('page[size]', '100');
+      // Only seed the dropdown with the first handful of B2Bs (the list is a
+      // searchable select — the manager types to filter SERVER-SIDE for the
+      // rest). Loading 100 eagerly serialized ~64KB on every page view and
+      // competed for a PHP worker with session.js/products.js at load time.
+      url.searchParams.set('page[size]', '10');
       if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
       fetch(url.toString(), {
         credentials: 'same-origin',
@@ -1795,8 +1814,26 @@
 
     renderDateSelect([]);
     loadB2bs();
+    // Kick off the product catalog immediately, in parallel with session.js.
+    // products.js only needs the addresses + debtor (already SSR-selected here),
+    // not the session — the session only feeds render-time stock relevance,
+    // flyers and discounts, which we re-apply below once it arrives. Previously
+    // the catalog waited for fetchSession() to resolve (~2-3s) before firing.
+    updateFlowState();
     fetchSession().then(function () {
+      // The catalog inputs are unchanged, so updateFlowState()'s scheduleCatalogReload()
+      // is a no-op (input-key guard) — no second products fetch. Instead, re-apply the
+      // now-known session to the already-loaded grid: reset stock from products, re-seed
+      // from the cart and refresh in place (the same reconcile the idle path uses).
       updateFlowState();
+      if (catalog && catalog.products && catalog.products.length) {
+        if (window.AicoPreorderStock) {
+          window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
+        }
+        seedStockFromCart();
+        catalog.refreshAll();
+        updateSummary();
+      }
     });
   }
 
