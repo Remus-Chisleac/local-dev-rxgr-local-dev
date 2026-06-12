@@ -1124,14 +1124,33 @@
           return res.json();
         })
         .then(function (json) {
-          sessionData = json.data || null;
-          if (sessionData && opts.updateDeadline) {
-            opts.updateDeadline(sessionData.endDate || sessionData.deadlineAt);
-          }
-          applyHero(sessionData);
-          renderFlyers(sessionData && sessionData.flyers);
+          applySessionData(json.data);
         })
         .catch(function () {});
+    }
+
+    function applySessionData(data) {
+      sessionData = data || null;
+      if (sessionData && opts.updateDeadline) {
+        opts.updateDeadline(sessionData.endDate || sessionData.deadlineAt);
+      }
+      applyHero(sessionData);
+      renderFlyers(sessionData && sessionData.flyers);
+    }
+
+    // SSR-embedded session payload — the same shape session.js returns in
+    // `data`, serialised into the page by the backend so the first paint can
+    // hydrate without a session round-trip. Returns null when the embed is
+    // absent, null, or unparseable — callers then fall back to fetchSession().
+    function readEmbeddedSession() {
+      var el = document.querySelector('[data-aico-preorder-session-json]');
+      if (!el) return null;
+      try {
+        var parsed = JSON.parse(el.textContent);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch (_) {
+        return null;
+      }
     }
 
     // Fill the hero shell from the resolved session: title (welcomeMessage),
@@ -1800,9 +1819,19 @@
 
     renderDateSelect([]);
     loadB2bs();
-    fetchSession().then(function () {
+    // The session is resolved server-side and embedded in the page, so the
+    // page hydrates immediately and the cart check starts without waiting a
+    // session round-trip. session.js stays as the fallback when the embed is
+    // absent (older backend) or empty.
+    var embeddedSession = readEmbeddedSession();
+    if (embeddedSession) {
+      applySessionData(embeddedSession);
       updateFlowState();
-    });
+    } else {
+      fetchSession().then(function () {
+        updateFlowState();
+      });
+    }
   }
 
   if (document.readyState === 'loading') {

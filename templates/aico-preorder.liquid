@@ -79,6 +79,11 @@
       data-aico-preorder-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
       {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
 
+  {%- comment -%} SSR-embedded session payload — the exact shape preorder/session.js
+       returns in `data`. preorder-page.js hydrates from this at first paint and only
+       falls back to fetching session.js when it is null/absent. {%- endcomment -%}
+  <script type="application/json" data-aico-preorder-session-json>{{ aico_preorder.session_payload | json }}</script>
+
   {%- comment -%} ── Hero band: full-bleed vertical gradient (session colors) behind the
        session banner image + title text, with the countdown on the side. The
        image/title/gradient are filled in by preorder-page.js once the session
