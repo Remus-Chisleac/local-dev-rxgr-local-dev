@@ -270,7 +270,7 @@
                       {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
                 <option value="">{{ 'aico_preorder.filters.delivery_placeholder' | t }}</option>
                 {% for address in aico_preorder.delivery_addresses %}
-                  <option value="{{ address.id }}">{{ address.label }}</option>
+                  <option value="{{ address.id }}" data-country="{{ address.country }}">{{ address.label }}</option>
                 {% endfor %}
               </select>
               <button type="button"

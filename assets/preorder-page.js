@@ -441,13 +441,64 @@
     var notesEl = root.querySelector('[data-aico-preorder-notes]');
     var hasDirty = false;
     var catalogReloadTimer = null;
+    // Pricing inputs the products.js payload actually depends on. The delivery
+    // address feeds it ONLY through its country (the country resolves the
+    // currency, which picks the price-list rows) — so two addresses in the
+    // same country yield a byte-identical catalog and the refetch is skipped;
+    // the new address's cart quantities are re-seeded instead (see
+    // reseedCatalogIfPending). A cross-country switch still refetches: prices
+    // and currency legitimately change.
+    var lastCatalogPricingKey = null;
+    var pendingCatalogReseed = false;
+
+    function buyerCountry() {
+      var select = root.querySelector('[data-aico-preorder-select="delivery_address_id"]');
+      var opt = select && select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
+      var country = opt && opt.dataset ? opt.dataset.country : null;
+      return country && String(country).trim() !== '' ? String(country).trim() : null;
+    }
+
+    function catalogPricingKey() {
+      var country = buyerCountry();
+      // Unknown country (no selection / option without the attribute) →
+      // return null so the caller never skips the reload.
+      if (!country) return null;
+      return [debtorId() || '', country, sizeRegion()].join('|');
+    }
 
     function scheduleCatalogReload() {
       if (!catalog) return;
+      var key = catalogPricingKey();
+      if (
+        key !== null &&
+        key === lastCatalogPricingKey &&
+        catalog.products &&
+        catalog.products.length
+      ) {
+        pendingCatalogReseed = true;
+        return;
+      }
+      lastCatalogPricingKey = key;
       clearTimeout(catalogReloadTimer);
       catalogReloadTimer = setTimeout(function () {
         catalog.reload();
       }, 150);
+    }
+
+    // After a skipped reload, re-apply the (unchanged) catalog to the new
+    // context once the cart has resolved: reset stock caps from the loaded
+    // products, re-seed quantities from the new cart and refresh in place —
+    // the same reconcile the idle path uses.
+    function reseedCatalogIfPending() {
+      if (!pendingCatalogReseed) return;
+      pendingCatalogReseed = false;
+      if (!catalog || !catalog.products || !catalog.products.length) return;
+      if (window.AicoPreorderStock) {
+        window.AicoPreorderStock.setSizeStockFromProducts(catalog.products);
+      }
+      seedStockFromCart();
+      catalog.refreshAll();
+      updateSummary();
     }
 
     function buyerId() {
@@ -611,6 +662,8 @@
     }
 
     function clearCatalog() {
+      lastCatalogPricingKey = null;
+      pendingCatalogReseed = false;
       if (catalog) {
         catalog.products = [];
         catalog.preorderDates = [];
@@ -648,11 +701,12 @@
         applyResolvingVisibility();
         cartCtrl
           .fetchCart()
-          .then(function () { cartResolving = false; applyReopenVisibility(true); })
-          .catch(function () { cartResolving = false; applyReopenVisibility(true); });
+          .then(function () { cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); })
+          .catch(function () { cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); });
       } else {
         cartResolving = false;
         applyReopenVisibility(true);
+        reseedCatalogIfPending();
       }
     }
 
@@ -670,6 +724,7 @@
         var opt = document.createElement('option');
         opt.value = String(row.id);
         opt.textContent = row.label || '';
+        if (row.country) opt.dataset.country = row.country;
         select.appendChild(opt);
       });
       select.value = '';
