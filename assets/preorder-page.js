@@ -567,8 +567,9 @@
     }
 
     // While the cart is being fetched (to discover a pre-existing preorder),
-    // hide everything below the hero and show only the spinner — so the
-    // address/filter row never flashes before we know the state.
+    // hide the content below the filter row and show only the spinner. The
+    // address/filter row itself stays visible the whole time — with an active
+    // session it must never blink out (only no-session hides it).
     function applyResolvingVisibility() {
       if (noActiveSession()) {
         applyNoSessionVisibility();
@@ -576,7 +577,7 @@
       }
       if (resolvingEl) resolvingEl.hidden = !cartResolving;
       if (!cartResolving) return;
-      if (filtersWrapEl) filtersWrapEl.hidden = true;
+      if (filtersWrapEl) filtersWrapEl.hidden = false;
       if (promptEl) promptEl.hidden = true;
       if (mainEl) mainEl.hidden = true;
       if (checkoutEl) checkoutEl.hidden = true;
