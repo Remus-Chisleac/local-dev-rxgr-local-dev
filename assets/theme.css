@@ -4718,6 +4718,27 @@ button.aico-home-brand-card {
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   text-align: center;
+  /* Entrance: drop in from above like an incoming notification. Replays on
+     every reveal (the section toggles [hidden], so display none -> block
+     restarts the animation). */
+  animation: aico-preorder-notice-drop 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes aico-preorder-notice-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-preorder-reopen-notice-inner {
+    animation: none;
+  }
 }
 
 .aico-preorder-reopen-notice-title {
