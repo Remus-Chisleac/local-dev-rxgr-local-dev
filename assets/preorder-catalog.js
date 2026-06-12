@@ -1042,7 +1042,7 @@
       html +=
         '<div class="aico-preorder-product-media"><img src="' +
         escapeHtml(img) +
-        '" alt="" loading="lazy" decoding="async" width="96" height="96"></div>';
+        '" alt="" loading="eager" decoding="async" width="96" height="48"></div>';
     }
     html += '<div class="aico-preorder-product-info">';
     html += '<h4 class="aico-preorder-product-title">' + escapeHtml(title) + '</h4>';

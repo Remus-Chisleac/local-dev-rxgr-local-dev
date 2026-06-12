@@ -5318,12 +5318,18 @@ html.aico-preorder-gallery-open {
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-media {
   margin-bottom: 0.5rem;
+  /* Fixed media box: the card's height must not depend on when (or whether)
+     the image loads, and product photos come in many aspect ratios — the
+     image is contained inside a constant 96x48 box instead. */
+  width: 96px;
+  height: 48px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-media img {
   display: block;
-  width: 96px;
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
   border-radius: 2px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-product-title {
