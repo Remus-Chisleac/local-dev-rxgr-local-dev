@@ -612,7 +612,10 @@
       if (promptEl) promptEl.hidden = true;
       if (mainEl) mainEl.hidden = true;
       if (checkoutEl) checkoutEl.hidden = true;
-      if (reopenNoticeEl) reopenNoticeEl.hidden = true;
+      if (reopenNoticeEl) {
+        reopenNoticeEl.hidden = true;
+        reopenNoticeEl.classList.remove('aico-preorder-reopen-notice-loading');
+      }
       if (resolvingEl) resolvingEl.hidden = true;
       clearCatalog();
     }
@@ -632,7 +635,15 @@
       if (promptEl) promptEl.hidden = true;
       if (mainEl) mainEl.hidden = true;
       if (checkoutEl) checkoutEl.hidden = true;
-      if (reopenNoticeEl) reopenNoticeEl.hidden = true;
+      // While the cart resolves, the notice card shows as a skeleton (shimmer
+      // bars, neutral accent). If a preorder exists it morphs in place into
+      // the warning (applyReopenVisibility drops the loading class without
+      // re-toggling [hidden], so the drop-in entrance plays only once);
+      // otherwise the card hides and the catalog reveals.
+      if (reopenNoticeEl) {
+        reopenNoticeEl.classList.add('aico-preorder-reopen-notice-loading');
+        reopenNoticeEl.hidden = false;
+      }
     }
 
     // Decide catalog vs reopen-notice visibility once the cart has resolved.
@@ -647,6 +658,7 @@
         return;
       }
       if (resolvingEl) resolvingEl.hidden = true;
+      if (reopenNoticeEl) reopenNoticeEl.classList.remove('aico-preorder-reopen-notice-loading');
       // Reveal the normal page chrome (filters/address row + tools), then let the
       // reopen gate decide notice-vs-catalog.
       if (filtersWrapEl) filtersWrapEl.hidden = false;
