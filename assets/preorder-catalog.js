@@ -813,9 +813,7 @@
         '">';
       groupsHtml += '<header class="aico-preorder-group-head">';
       groupsHtml += '<div class="aico-preorder-group-header-row">';
-      // The title is a toggle button so the whole category can be collapsed; the
-      // count badge makes a search visibly change the header even when the
-      // remaining cards look alike.
+      // The title is a toggle button so the whole category can be collapsed.
       groupsHtml +=
         '<h3 class="aico-preorder-group-title">' +
         '<button type="button" class="aico-preorder-group-toggle" data-aico-preorder-group-toggle ' +
@@ -823,8 +821,6 @@
         (collapsed ? 'false' : 'true') + '">' +
         '<svg class="aico-preorder-group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
         '<span class="aico-preorder-group-name">' + escapeHtml(group.optionGroupName) + '</span>' +
-        '<span class="aico-preorder-group-count' + (searching ? ' aico-preorder-group-count--searching' : '') +
-        '">' + items.length + (searching ? '/' + all.length : '') + '</span>' +
         '</button>' +
         '</h3>';
       // Size labels live once in the group header, aligned with the box columns
