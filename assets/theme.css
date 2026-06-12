@@ -4806,6 +4806,30 @@ button.aico-home-brand-card {
   }
 }
 
+/* Exit: acknowledged notice lifts back up and fades (reverse of entrance).
+   The JS adds the leaving class, waits for animationend (400ms fallback),
+   then hides the section and reveals the catalog. */
+.aico-preorder-reopen-notice-leaving .aico-preorder-reopen-notice-inner {
+  animation: aico-preorder-notice-leave 0.3s cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+
+@keyframes aico-preorder-notice-leave {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-preorder-reopen-notice-leaving .aico-preorder-reopen-notice-inner {
+    animation: none;
+  }
+}
+
 /* Content crossfade when the skeleton morphs into the real warning. */
 .aico-preorder-reopen-notice:not(.aico-preorder-reopen-notice-loading) .aico-preorder-reopen-notice-title,
 .aico-preorder-reopen-notice:not(.aico-preorder-reopen-notice-loading) .aico-preorder-reopen-notice-body,

@@ -1696,7 +1696,25 @@
     if (reopenAckBtn) {
       reopenAckBtn.addEventListener('click', function () {
         reopenAcked = true;
-        applyReopenVisibility(true);
+        // Play the exit animation (back up + fade, the reverse of the
+        // entrance) before the catalog reveal. The class is removed after so
+        // the next reveal starts clean; animationend is the trigger with a
+        // timeout fallback in case animations are disabled (reduced motion).
+        var noticeEl = reopenNoticeEl;
+        if (!noticeEl || noticeEl.hidden) {
+          applyReopenVisibility(true);
+          return;
+        }
+        var done = false;
+        var finish = function () {
+          if (done) return;
+          done = true;
+          noticeEl.classList.remove('aico-preorder-reopen-notice-leaving');
+          applyReopenVisibility(true);
+        };
+        noticeEl.classList.add('aico-preorder-reopen-notice-leaving');
+        noticeEl.addEventListener('animationend', finish, { once: true });
+        setTimeout(finish, 400);
       });
     }
 
