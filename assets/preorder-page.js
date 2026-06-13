@@ -1568,15 +1568,13 @@
           return;
         }
         if (key === 'billing_address_id' || key === 'delivery_address_id') {
-          // Address changed → re-run the existing-preorder check for the new context.
+          // Address changed → re-run the existing-preorder check + catalog for the
+          // new context. The active session is shop/debtor-scoped (NOT address-scoped)
+          // and is already in memory (SSR embed / initial load), so DON'T refetch it
+          // here — updateFlowState() re-runs the cart/reopen check and the catalog,
+          // which is all an address change needs.
           resetReopenCheck();
-          if (addressesReady()) {
-            fetchSession().then(function () {
-              updateFlowState();
-            });
-          } else {
-            updateFlowState();
-          }
+          updateFlowState();
           return;
         }
         if (key === 'size_region') {
