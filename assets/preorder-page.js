@@ -710,10 +710,13 @@
         // the spinner until the cart fetch reveals whether a preorder exists.
         cartResolving = true;
         applyResolvingVisibility();
+        // Guard the cart resolution against a B2B/debtor switch landing mid-fetch:
+        // a stale cart response must not flip the reveal for the new context.
+        var cartGen = contextGeneration;
         cartCtrl
           .fetchCart()
-          .then(function () { cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); })
-          .catch(function () { cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); });
+          .then(function () { if (cartGen !== contextGeneration) return; cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); })
+          .catch(function () { if (cartGen !== contextGeneration) return; cartResolving = false; applyReopenVisibility(true); reseedCatalogIfPending(); });
       } else {
         cartResolving = false;
         applyReopenVisibility(true);
@@ -764,6 +767,36 @@
       if (field) field.classList.toggle('aico-preorder-field--loading', !!isLoading);
     }
 
+    // Same spinner on the billing + delivery address fields, shown while a new
+    // B2B/debtor's addresses are being fetched.
+    function setAddressLoading(isLoading) {
+      ['billing_address_id', 'delivery_address_id'].forEach(function (name) {
+        var select = root.querySelector('[data-aico-preorder-select="' + name + '"]');
+        var field = select && select.closest('.aico-preorder-field');
+        if (field) field.classList.toggle('aico-preorder-field--loading', !!isLoading);
+      });
+    }
+
+    // A B2B/debtor switch invalidates everything loaded for the previous context.
+    // Bump the generation (so any in-flight address/session/cart response that
+    // resolves late is ignored), abort the address request we own, and clear the
+    // now-stale addresses so the user sees a change is in progress and never acts
+    // on the previous B2B's data. Catalog product requests are aborted separately
+    // by CatalogController.reload().
+    var contextGeneration = 0;
+    var addressRequestAbort = null;
+
+    function beginContextChange() {
+      contextGeneration += 1;
+      if (addressRequestAbort) {
+        try { addressRequestAbort.abort(); } catch (_) {}
+      }
+      addressRequestAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      repopulateAddressSelect('billing_address_id', []);
+      repopulateAddressSelect('delivery_address_id', []);
+      return contextGeneration;
+    }
+
     // When a select resolves to exactly one option, auto-select it (and sync the
     // custom-select UI) so the user doesn't have to pick the only choice.
     function preselectSingle(name, rows) {
@@ -777,42 +810,61 @@
 
     function reloadAddresses(debtorIdValue) {
       if (!addressesUrl) return Promise.resolve();
+      // Capture the generation/signal for THIS context so a response that arrives
+      // after the user has already switched again is ignored (and the request is
+      // aborted on the next switch).
+      var gen = contextGeneration;
+      var signal = addressRequestAbort ? addressRequestAbort.signal : undefined;
       var url = new URL(addressesUrl, window.location.origin);
       if (debtorIdValue) url.searchParams.set('debtor_id', String(debtorIdValue));
       return fetch(url.toString(), {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
+        signal: signal,
       })
         .then(function (res) {
           return res.json();
         })
         .then(function (json) {
+          if (gen !== contextGeneration) return;
           var data = json.data || {};
           repopulateAddressSelect('billing_address_id', data.billingAddresses);
           repopulateAddressSelect('delivery_address_id', data.deliveryAddresses);
           // Auto-select billing/delivery when there's only one option (2.1).
           preselectSingle('billing_address_id', data.billingAddresses);
           preselectSingle('delivery_address_id', data.deliveryAddresses);
+          setAddressLoading(false);
           // New buyer/debtor context — clear and re-run the existing-preorder
-          // check (fetch the session + cart for the new context).
+          // check (fetch the session + cart for the new context). The session is
+          // debtor-scoped, so it IS refetched here (unlike a plain address change).
           resetReopenCheck();
           if (addressesReady()) {
-            fetchSession().then(function () { updateFlowState(); });
+            fetchSession(signal).then(function () {
+              if (gen === contextGeneration) updateFlowState();
+            });
           } else {
             updateFlowState();
           }
         })
-        .catch(function () {});
+        .catch(function () {
+          if (gen === contextGeneration) setAddressLoading(false);
+        });
     }
 
     function setDebtor(value) {
       currentDebtorId = value ? String(value) : '';
+      // A debtor switch is a new context too (cancel the previous one, clear
+      // addresses), then show the spinner while this debtor's addresses load.
+      beginContextChange();
+      setAddressLoading(true);
       reloadAddresses(currentDebtorId);
     }
 
     function applyB2bSelection() {
-      // Changing the B2B org invalidates the existing-preorder check.
+      // Changing the B2B org invalidates the existing-preorder check and every
+      // request in flight for the previous B2B (addresses/session/cart/products).
       resetReopenCheck();
+      beginContextChange();
       var b2bId = getSelectValue(root, 'b2b_id');
       var debtorField = root.querySelector('[data-aico-preorder-debtor-field]');
       var match = null;
@@ -1174,7 +1226,7 @@
       updateCheckoutVisibility();
     }
 
-    function fetchSession() {
+    function fetchSession(signal) {
       var url = root.getAttribute('data-aico-preorder-session-url');
       if (!url) return Promise.resolve();
       var u = new URL(url, window.location.origin);
@@ -1185,6 +1237,7 @@
       return fetch(u.toString(), {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
+        signal: signal,
       })
         .then(function (res) {
           return res.json();

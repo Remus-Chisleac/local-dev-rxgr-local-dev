@@ -191,10 +191,11 @@
     return url.toString();
   }
 
-  function fetchProductsJson(url) {
+  function fetchProductsJson(url, signal) {
     return fetch(url, {
       credentials: 'same-origin',
       cache: 'no-store',
+      signal: signal,
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     }).then(function (res) {
       return res.text().then(function (text) {
@@ -558,6 +559,7 @@
     this.products = [];
     this.groupPagination = {};
     this.loadGeneration = 0;
+    this.abortController = null;
     this.loading = false;
     this.preorderDates = [];
     this.searchQuery = '';
@@ -579,6 +581,15 @@
     }
     var buyerAddressId = this.getBuyerAddressId();
     var debtorId = this.getDebtorId();
+
+    // Cancel any still-in-flight product requests from a previous reload (e.g. a
+    // rapid B2B/address switch) so the server isn't left serving 4+ stale pages
+    // and late responses can't bleed into the new context.
+    if (this.abortController) {
+      try { this.abortController.abort(); } catch (_) {}
+    }
+    this.abortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var reloadSignal = this.abortController ? this.abortController.signal : undefined;
 
     this.loadGeneration += 1;
     var generation = this.loadGeneration;
@@ -659,6 +670,7 @@
           pageSize: PAGE_SIZE,
           optionGroupName: groupName,
         }),
+        reloadSignal,
       )
         .then(function (result) {
           if (generation !== self.loadGeneration) return;
@@ -682,6 +694,8 @@
         })
         .catch(function (err) {
           if (generation !== self.loadGeneration) return;
+          // An aborted request (superseded reload) is expected — not a failure.
+          if (err && err.name === 'AbortError') return;
           failures += 1;
           console.warn(
             'preorder catalog: group fetch failed',
