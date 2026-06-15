@@ -1304,6 +1304,10 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   gap: 0.5rem;
 }
 @media (min-width: 640px) { .aico-product-card-price { font-size: 1rem; } }
+.aico-product-card-price-on-request {
+  font-weight: 500;
+  color: var(--aico-muted-fg);
+}
 .aico-product-card-price-list {
   color: var(--aico-muted-fg);
   text-decoration: line-through;

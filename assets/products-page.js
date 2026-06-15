@@ -501,6 +501,9 @@
     var objectRows = (rows || []).filter(function (r) { return r && typeof r === 'object'; });
     var hasSelling = function (row) { return toNumber(row.sellingPrice) !== null; };
     if (preferredCurrency) {
+      // Strict currency match — never cross-fall-back to a foreign
+      // currency row (mirrors ProductPriceResolver::pickBestRow + the
+      // b2b-shop contract). No matching row → null → "price on request".
       var needle = preferredCurrency.toUpperCase();
       for (var i = 0; i < objectRows.length; i++) {
         var cn = rowCurrencyName(objectRows[i]);
@@ -508,7 +511,10 @@
           return objectRows[i];
         }
       }
+      return null;
     }
+    // Only when no debtor currency was resolved (logged-out preview) do
+    // we fall back to the first priced row.
     for (var j = 0; j < objectRows.length; j++) {
       if (hasSelling(objectRows[j])) {
         return objectRows[j];
@@ -543,7 +549,11 @@
   function tryPriceFromGross(entry, preferred) {
     var cur = typeof entry.currency === 'string' ? nonEmpty(entry.currency) : null;
     var curU = cur ? cur.toUpperCase() : null;
-    if (preferred && curU && curU !== preferred.toUpperCase()) {
+    // Strict currency match: when we know the debtor currency, the gross
+    // entry must positively carry the same code. A mismatched OR an
+    // unknown-currency gross is rejected (→ "price on request") rather
+    // than mislabelled with the debtor's symbol.
+    if (preferred && curU !== preferred.toUpperCase()) {
       return null;
     }
     var dg = toNumber(entry.discountedGross);
@@ -639,6 +649,7 @@
   var configLabels = (config && config.labels) || {};
   var labelSale = configLabels.sale || 'Sale';
   var labelDiscontinued = configLabels.discontinued || '';
+  var labelPriceOnRequest = configLabels.priceOnRequest || 'Price on request';
 
   // Add an `aico-img-pending` class while an `<img>` is still being
   // fetched, then strip it on load — the card's existing opacity
@@ -733,6 +744,13 @@
         p.appendChild(pp);
       }
       body.appendChild(p);
+    } else {
+      // No row in the debtor's currency → "price on request" (mirrors the
+      // server-rendered first page's templates/products.liquid else branch).
+      var pr = document.createElement('p');
+      pr.className = 'aico-product-card-price aico-product-card-price-on-request';
+      pr.textContent = labelPriceOnRequest;
+      body.appendChild(pr);
     }
     var h3 = document.createElement('h3');
     h3.className = 'aico-product-card-title';

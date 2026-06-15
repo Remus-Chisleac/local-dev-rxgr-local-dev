@@ -207,6 +207,10 @@
                       <span class="aico-product-card-discount">−{{ product.aico_discount_percent }}%</span>
                     {% endif %}
                   </p>
+                {% else %}
+                  <p class="aico-product-card-price aico-product-card-price-on-request">
+                    {{ 'product.price_on_request' | t }}
+                  </p>
                 {% endif %}
                 <h3 class="aico-product-card-title">{{ product.title }}</h3>
               </div>
