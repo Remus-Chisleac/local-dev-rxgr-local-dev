@@ -225,6 +225,40 @@
         }
       },
 
+      // Set ABSOLUTE per-variant quantities in one POST (the PDP size
+      // matrix). `updatesMap` is `{ variantId: absoluteQty }` — a 0
+      // removes that line. POSTs `updates[<variantId>]=<qty>` to
+      // /cart/update.js (postUpdateJson), which returns the same
+      // CartDrop snapshot add()/update() apply. Mirrors add(): refreshes
+      // the snapshot, flashes on failure, returns true/false. (No
+      // drawer-open here — like add() in this theme, the toast carries
+      // the feedback and the badge updates reactively.)
+      async bulkUpdate(updatesMap) {
+        if (!updatesMap || typeof updatesMap !== 'object') return false;
+        var body = {};
+        Object.keys(updatesMap).forEach(function (variantId) {
+          body['updates[' + variantId + ']'] = updatesMap[variantId];
+        });
+        if (Object.keys(body).length === 0) return false;
+        try {
+          var res = await fetch(routes.updateJsonUrl || '/cart/update.js', {
+            method: 'POST',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+            body: formEncoded(body),
+          });
+          if (!res.ok) {
+            this.flash(translations.update_error || 'Could not update cart.', 'error');
+            return false;
+          }
+          this.data = await res.json();
+          return true;
+        } catch (e) {
+          this.flash(translations.update_error || 'Could not update cart.', 'error');
+          return false;
+        }
+      },
+
       openDrawer() {
         if (this.drawerOpen) {
           return;

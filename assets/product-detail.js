@@ -318,32 +318,13 @@
 
   // -------- Add-to-cart / update-cart submit ----------------------------
 
-  // Parse the buy form into the `add()` payload the cart store expects:
-  // a single `{ id, quantity }` (legacy mode) or an array of them
-  // (matrix mode). Mirrors the FormData parsing in `cart.js`'s global
-  // `[data-aico-cart-add]` delegate so both add paths agree.
+  // Parse the LEGACY (non-matrix) buy form into the `add()` payload the
+  // cart store expects: a single `{ id, quantity }`. Matrix posts use
+  // buildMatrixUpdates() instead (absolute-quantity semantics). Mirrors
+  // the FormData parsing in `cart.js`'s global `[data-aico-cart-add]`
+  // delegate so both add paths agree.
   function buildAddPayload() {
     var data = new FormData(form);
-    var batch = {};
-    data.forEach(function (value, key) {
-      var match = key.match(/^items\[(\d+)\]\[(id|quantity)\]$/);
-      if (match) {
-        var bucket = batch[match[1]] || (batch[match[1]] = {});
-        bucket[match[2]] = value;
-      }
-    });
-    var indices = Object.keys(batch);
-    if (indices.length > 0) {
-      var items = [];
-      indices.forEach(function (idx) {
-        var row = batch[idx];
-        var qty = Number(row.quantity);
-        if (row.id && qty > 0) {
-          items.push({ id: Number(row.id), quantity: qty });
-        }
-      });
-      return items.length > 0 ? items : null;
-    }
     if (data.has('id') && data.has('quantity')) {
       var id = data.get('id');
       var quantity = Number(data.get('quantity'));
@@ -352,6 +333,32 @@
       }
     }
     return null;
+  }
+
+  // Parse the size-matrix cells into `{ variantId: absoluteQty }` for
+  // store.bulkUpdate() → /cart/update.js (postUpdateJson). The matrix
+  // posts ABSOLUTE line quantities, so zeros are INCLUDED — a 0 removes
+  // that variant's line. The variant id comes from each cell's
+  // `data-aico-variant-id` (the cell's `name` is `updates[<variantId>]`
+  // for the no-JS `/cart/update` fallback; bulkUpdate keys by variant id).
+  function buildMatrixUpdates() {
+    var updates = {};
+    Array.prototype.forEach.call(
+      form.querySelectorAll('[data-aico-size-qty]'),
+      function (input) {
+        var variantId = input.getAttribute('data-aico-variant-id');
+        if (!variantId) {
+          return;
+        }
+        var qty = parseInt(input.value, 10);
+        if (isNaN(qty) || qty < 0) {
+          qty = 0;
+        }
+        // Absolute semantics: keep zeros so a cleared size removes its line.
+        updates[variantId] = qty;
+      }
+    );
+    return updates;
   }
 
   form.addEventListener('submit', function (event) {
@@ -384,37 +391,48 @@
       }
     }
 
-    // Progressive enhancement: route the add/update through the shared
-    // cart store so the single source of truth (`Alpine.store('cart')`)
-    // mutates — header badge, mini-cart contents, toast and drawer all
-    // update reactively, with no page navigation. If Alpine/the store
-    // is absent, fall through to the native form POST to
-    // `routes.cart_add_url` (`/cart/add`, 302) so no-JS still works.
+    // Progressive enhancement: route through the shared cart store so the
+    // single source of truth (`Alpine.store('cart')`) mutates — header
+    // badge, mini-cart contents, toast and drawer all update reactively,
+    // with no page navigation. Matrix mode sets ABSOLUTE line quantities
+    // via store.bulkUpdate() (/cart/update.js); legacy mode ADDS via
+    // store.add() (/cart/add.js). If Alpine/the store is absent, fall
+    // through to the native form POST (302) so no-JS still works.
     var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
-    if (!store || typeof store.add !== 'function') {
+    var storeMethod = hasMatrix ? 'bulkUpdate' : 'add';
+    if (!store || typeof store[storeMethod] !== 'function') {
       return; // let the browser submit the form normally
     }
 
     event.preventDefault();
-
-    var payload = buildAddPayload();
-    if (!payload) {
-      // Nothing addable parsed (e.g. legacy variant not yet resolved):
-      // surface the same "select a size/option" hint, no network call.
-      renderError('select_quantity');
-      return;
-    }
 
     var button = form.querySelector('[data-aico-buy-button]');
     if (button) {
       button.setAttribute('disabled', 'disabled');
     }
 
-    Promise.resolve(store.add(payload)).then(function (ok) {
-      // The store flashes its own success toast (cart.added) and opens
-      // the drawer. For matrix mode we override with cart.updated so
-      // the toast reads "Warenkorb aktualisiert" (the update-cart
-      // path) rather than the single-item "added" copy.
+    var result;
+    if (hasMatrix) {
+      // Absolute update: { variantId: qty }, zeros included (0 removes).
+      result = store.bulkUpdate(buildMatrixUpdates());
+    } else {
+      var payload = buildAddPayload();
+      if (!payload) {
+        // Nothing addable parsed (e.g. legacy variant not yet resolved):
+        // surface the same "select a size/option" hint, no network call.
+        if (button) {
+          button.removeAttribute('disabled');
+        }
+        renderError('select_quantity');
+        return;
+      }
+      result = store.add(payload);
+    }
+
+    Promise.resolve(result).then(function (ok) {
+      // The add() path flashes its own cart.added toast. The matrix
+      // bulkUpdate() path does not, so flash cart.updated ("Warenkorb
+      // aktualisiert") here on success.
       if (ok !== false && hasMatrix && typeof store.flash === 'function') {
         var cartT = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
         store.flash(cartT.updated || 'Cart updated.', 'success');
@@ -422,7 +440,7 @@
       // Clear any stale inline pre-flight message.
       clearMessage();
     }).catch(function () {
-      // Store.add() resolves rather than rejects on failure, but guard
+      // The store methods resolve rather than reject on failure, but guard
       // against unexpected throws so the button never stays disabled.
       renderError('error');
     }).then(function () {
