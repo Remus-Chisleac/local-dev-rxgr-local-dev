@@ -322,6 +322,7 @@
     "item_count_one": "1 item",
     "item_count_other": "{count} items",
     "view_cart": "View cart",
+    "load_more": "Show more",
     "clear": "Clear cart",
     "checkout_cta": "Proceed to checkout",
     "continue_shopping": "Continue shopping",

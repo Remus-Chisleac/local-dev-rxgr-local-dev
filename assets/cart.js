@@ -83,6 +83,14 @@
       _pendingLineUpdates: {},
       _lineUpdateDelay: 400,
 
+      // Mini-cart client-side pagination. `/cart.js` returns the whole
+      // items array (no server paging), and B2B carts can be large, so
+      // the side drawer reveals items a page at a time and grows on
+      // scroll. The header count stays authoritative over the full
+      // array (see itemCount) — never paginated.
+      _miniCartPageSize: 8,
+      miniCartVisibleCount: 8,
+
       _recalcTotals() {
         if (!this.data || !Array.isArray(this.data.items)) return;
         var count = 0;
@@ -221,6 +229,8 @@
         if (this.drawerOpen) {
           return;
         }
+        // Fresh open → show the first page from the top.
+        this.resetMiniCartPagination();
         if (this._drawerCloseTimer) {
           clearTimeout(this._drawerCloseTimer);
           this._drawerCloseTimer = null;
@@ -284,6 +294,39 @@
         if (this._toastTimer) clearTimeout(this._toastTimer);
         var self = this;
         this._toastTimer = setTimeout(function () { self.toast = null; }, 3500);
+      },
+
+      // ── Mini-cart pagination (client-side, load-on-scroll) ──
+      // The visible slice of the cart for the side drawer. The full
+      // array still backs itemCount()/the full cart page.
+      miniCartItems() {
+        return (this.data && Array.isArray(this.data.items)) ? this.data.items : [];
+      },
+      miniCartVisibleItems() {
+        return this.miniCartItems().slice(0, this.miniCartVisibleCount);
+      },
+      miniCartHasMore() {
+        return this.miniCartItems().length > this.miniCartVisibleCount;
+      },
+      resetMiniCartPagination() {
+        this.miniCartVisibleCount = this._miniCartPageSize;
+      },
+      // Bump the visible slice by a page. Bound to the drawer body's
+      // scroll handler; no-op once everything is shown.
+      loadMoreMiniCart() {
+        if (this.miniCartHasMore()) {
+          this.miniCartVisibleCount += this._miniCartPageSize;
+        }
+      },
+      // Scroll-driven reveal: when the body is scrolled near its bottom
+      // and there's more to show, grow the slice.
+      onMiniCartScroll(event) {
+        var el = event && event.target;
+        if (!el || !this.miniCartHasMore()) return;
+        var threshold = 120; // px from the bottom
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - threshold) {
+          this.loadMoreMiniCart();
+        }
       },
 
       // Header / mini-cart badge label. Plural via the count.
@@ -422,6 +465,17 @@
     Alpine.effect(function () {
       var open = Alpine.store('cart').drawerOpen;
       if (open) Alpine.store('cart').refresh();
+    });
+
+    // Whenever the cart data is replaced (add / refresh / update), clamp
+    // the mini-cart's visible slice back to the first page so a fresh
+    // add doesn't leave a huge slice from a prior reveal. Reading
+    // `.data` registers the dependency; `_recalcTotals` mutates items
+    // in place (same object ref) so qty tweaks don't reset the slice.
+    Alpine.effect(function () {
+      var data = Alpine.store('cart').data; // track replacement
+      void data;
+      Alpine.store('cart').resetMiniCartPagination();
     });
   }
 

@@ -597,7 +597,8 @@
           </button>
         </header>
 
-        <div class="aico-mini-cart-body">
+        <div class="aico-mini-cart-body"
+             @scroll.passive="$store.cart.onMiniCartScroll($event)">
           <template x-if="!$store.cart.data || $store.cart.data.empty">
             <div class="aico-mini-cart-empty">
               <p>{{ 'cart.empty.heading' | t }}</p>
@@ -609,7 +610,7 @@
 
           <template x-if="$store.cart.data && !$store.cart.data.empty">
             <ul class="aico-mini-cart-list">
-              <template x-for="line in $store.cart.data.items" :key="line.id">
+              <template x-for="line in $store.cart.miniCartVisibleItems()" :key="line.id">
                 <li class="aico-mini-cart-line">
                   <a class="aico-mini-cart-line-image" :href="line.url || '#'">
                     <template x-if="line.image"><img :src="line.image" :alt="line.title" loading="lazy"></template>
@@ -629,6 +630,15 @@
                           aria-label="{{ 'cart.line.remove' | t }}">×</button>
                 </li>
               </template>
+              <template x-if="$store.cart.miniCartHasMore()">
+                <li class="aico-mini-cart-more">
+                  <button type="button"
+                          class="aico-button aico-button-outline aico-mini-cart-more-button"
+                          @click="$store.cart.loadMoreMiniCart()">
+                    {{ 'cart.load_more' | t }}
+                  </button>
+                </li>
+              </template>
             </ul>
           </template>
         </div>
@@ -638,13 +648,7 @@
             <span>{{ 'cart.summary.subtotal' | t }}</span>
             <strong x-text="$store.cart.formatMoney($store.cart.data && $store.cart.data.total_price)"></strong>
           </div>
-          <a href="{{ routes.cart_url }}" class="aico-button aico-button-outline">{{ 'cart.view_cart' | t }}</a>
-          <a href="{{ routes.checkout_url }}"
-             class="aico-button aico-button-primary"
-             :class="{ 'aico-is-disabled': !$store.cart.canCheckout({% if customer.aico_shipping_block %}true{% else %}false{% endif %}) }"
-             @click.prevent="$store.cart.goCheckout($el.getAttribute('href'), {% if customer.aico_shipping_block %}true{% else %}false{% endif %})">
-            {{ 'cart.checkout_cta' | t }}
-          </a>
+          <a href="{{ routes.cart_url }}" class="aico-button aico-button-primary aico-mini-cart-view-cart">{{ 'cart.view_cart' | t }}</a>
         </footer>
       </aside>
     </div>

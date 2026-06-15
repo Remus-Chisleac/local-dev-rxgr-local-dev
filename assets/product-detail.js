@@ -7,10 +7,13 @@
 //   2. Option chips/dropdowns → resolve the matching variant id and
 //      mirror it into the hidden `id` input (legacy mode only).
 //   3. Size matrix — sum the per-size quantity inputs into "Total".
-//   4. Add-to-cart submit — currently posts to the form's action URL.
-//      The backend endpoint may return 501 until cart-add is wired
-//      (see the PDP plan §5 + storefront.php route stub). The script
-//      degrades to a no-op error banner in that case.
+//   4. Add-to-cart / update-cart submit — routes through the shared cart
+//      store (`Alpine.store('cart').add()`), which POSTs `/cart/add.js`,
+//      updates the header badge + mini-cart contents, and opens the
+//      drawer. Single-item adds flash `cart.added`; matrix submits
+//      override with `cart.updated` so the toast shows the localised
+//      "Warenkorb aktualisiert" copy. Falls back to a native form POST
+//      to `routes.cart_add_url` (`/cart/add`) when Alpine is absent.
 
 // Info tabs — specs / description switcher. Self-contained so it runs
 // regardless of whether the buy form is present (the main IIFE below
@@ -313,7 +316,43 @@
     });
   })();
 
-  // -------- Add-to-cart submit ------------------------------------------
+  // -------- Add-to-cart / update-cart submit ----------------------------
+
+  // Parse the buy form into the `add()` payload the cart store expects:
+  // a single `{ id, quantity }` (legacy mode) or an array of them
+  // (matrix mode). Mirrors the FormData parsing in `cart.js`'s global
+  // `[data-aico-cart-add]` delegate so both add paths agree.
+  function buildAddPayload() {
+    var data = new FormData(form);
+    var batch = {};
+    data.forEach(function (value, key) {
+      var match = key.match(/^items\[(\d+)\]\[(id|quantity)\]$/);
+      if (match) {
+        var bucket = batch[match[1]] || (batch[match[1]] = {});
+        bucket[match[2]] = value;
+      }
+    });
+    var indices = Object.keys(batch);
+    if (indices.length > 0) {
+      var items = [];
+      indices.forEach(function (idx) {
+        var row = batch[idx];
+        var qty = Number(row.quantity);
+        if (row.id && qty > 0) {
+          items.push({ id: Number(row.id), quantity: qty });
+        }
+      });
+      return items.length > 0 ? items : null;
+    }
+    if (data.has('id') && data.has('quantity')) {
+      var id = data.get('id');
+      var quantity = Number(data.get('quantity'));
+      if (id && quantity > 0) {
+        return { id: Number(id), quantity: quantity };
+      }
+    }
+    return null;
+  }
 
   form.addEventListener('submit', function (event) {
     // Pre-flight: in matrix mode we need at least one row > 0; in
@@ -345,43 +384,51 @@
       }
     }
 
-    // Optimistic UX: the script intercepts the submit and posts via
-    // fetch so the page does not navigate away. The backend endpoint
-    // returns 501 until cart-add is wired (PDP plan §5). When it
-    // lands, the response shape will follow Shopify's `/cart/add.js`
-    // (return the cart line as JSON); the no-JS fallback continues to
-    // submit the form normally (the browser navigation overrides this
-    // listener if JS is disabled).
+    // Progressive enhancement: route the add/update through the shared
+    // cart store so the single source of truth (`Alpine.store('cart')`)
+    // mutates — header badge, mini-cart contents, toast and drawer all
+    // update reactively, with no page navigation. If Alpine/the store
+    // is absent, fall through to the native form POST to
+    // `routes.cart_add_url` (`/cart/add`, 302) so no-JS still works.
+    var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
+    if (!store || typeof store.add !== 'function') {
+      return; // let the browser submit the form normally
+    }
+
     event.preventDefault();
+
+    var payload = buildAddPayload();
+    if (!payload) {
+      // Nothing addable parsed (e.g. legacy variant not yet resolved):
+      // surface the same "select a size/option" hint, no network call.
+      renderError('select_quantity');
+      return;
+    }
+
     var button = form.querySelector('[data-aico-buy-button]');
     if (button) {
       button.setAttribute('disabled', 'disabled');
     }
 
-    var data = new FormData(form);
-    fetch(form.action, {
-      method: form.method || 'POST',
-      body: data,
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
-    }).then(function (response) {
-      if (button) {
-        button.removeAttribute('disabled');
+    Promise.resolve(store.add(payload)).then(function (ok) {
+      // The store flashes its own success toast (cart.added) and opens
+      // the drawer. For matrix mode we override with cart.updated so
+      // the toast reads "Warenkorb aktualisiert" (the update-cart
+      // path) rather than the single-item "added" copy.
+      if (ok !== false && hasMatrix && typeof store.flash === 'function') {
+        var cartT = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
+        store.flash(cartT.updated || 'Cart updated.', 'success');
       }
-      if (response.status === 501) {
-        renderError('not_implemented');
-        return;
-      }
-      if (!response.ok) {
-        renderError('error');
-        return;
-      }
-      renderSuccess();
+      // Clear any stale inline pre-flight message.
+      clearMessage();
     }).catch(function () {
+      // Store.add() resolves rather than rejects on failure, but guard
+      // against unexpected throws so the button never stays disabled.
+      renderError('error');
+    }).then(function () {
       if (button) {
         button.removeAttribute('disabled');
       }
-      renderError('error');
     });
   });
 
@@ -391,10 +438,13 @@
     hint.dataset.kind = 'error';
   }
 
-  function renderSuccess() {
-    var hint = form.querySelector('[data-aico-pdp-message]') || createMessage();
-    hint.textContent = messageFor(hasMatrix ? 'updated' : 'saved');
-    hint.dataset.kind = 'ok';
+  // Successful adds surface via the cart store's toast now, so clear any
+  // leftover inline pre-flight message instead of writing a success line.
+  function clearMessage() {
+    var hint = form.querySelector('[data-aico-pdp-message]');
+    if (hint && hint.parentNode) {
+      hint.parentNode.removeChild(hint);
+    }
   }
 
   function createMessage() {
@@ -411,15 +461,6 @@
   // these are post-submit-only fallbacks, kept inline so the script
   // ships in a single file.
   function messageFor(kind) {
-    if (kind === 'saved') {
-      return getLocaleHint('items_saved', 'Items saved to cart.');
-    }
-    if (kind === 'updated') {
-      return getLocaleHint('cart_updated', 'Cart updated.');
-    }
-    if (kind === 'not_implemented') {
-      return getLocaleHint('not_implemented', 'Add-to-cart is not connected yet.');
-    }
     if (kind === 'select_quantity') {
       return getLocaleHint('select_quantity', 'Select at least one size first.');
     }
