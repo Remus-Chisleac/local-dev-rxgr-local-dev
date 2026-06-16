@@ -7401,6 +7401,14 @@ html.aico-preorder-gallery-open {
    hide. Scope it to the page and force it. */
 .aico-exchange [hidden] { display: none !important; }
 
+.aico-exchange-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--ex-radius);
+  margin-top: -0.5rem;
+}
+
 .aico-exchange-title {
   font-size: 1.75rem;
   font-weight: 700;

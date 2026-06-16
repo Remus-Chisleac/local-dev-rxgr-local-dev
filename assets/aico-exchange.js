@@ -121,6 +121,15 @@
   var sizeSelect = root.querySelector('[data-aico-exchange-size]');
   var submitBtn = root.querySelector('[data-aico-exchange-submit]');
 
+  // Placeholder option markup for the size select (rebuilt on each gender
+  // change / form reset). Matches the legacy b2b-shop "Size" placeholder.
+  var sizePlaceholderText = (sizeSelect && sizeSelect.getAttribute('data-aico-exchange-size-placeholder')) || '';
+  function sizePlaceholderOption() {
+    return '<option value="" disabled selected hidden>' +
+      sizePlaceholderText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+      '</option>';
+  }
+
   var rowsEl = root.querySelector('[data-aico-exchange-rows]');
   var loaderEl = root.querySelector('[data-aico-exchange-loader]');
   var emptyEl = root.querySelector('[data-aico-exchange-empty]');
@@ -256,7 +265,9 @@
         ac.lastPage = meta.last_page || 0;
         ac.hasMore = !!meta.has_more;
 
-        var names = data.map(function (d) { return d.web_name; }).filter(Boolean);
+        // The service returns the model name as `webName` (camelCase); keep a
+        // snake_case fallback in case the envelope shape ever changes.
+        var names = data.map(function (d) { return d.webName || d.web_name; }).filter(Boolean);
         if (reset || ac.page === 0) {
           ac.options = names;
         } else {
@@ -333,7 +344,7 @@
 
   function loadSizeOptions(gender) {
     if (!sizeSelect || !SIZE_OPTIONS_URL || !gender) { return; }
-    sizeSelect.innerHTML = '<option value="">—</option>';
+    sizeSelect.innerHTML = sizePlaceholderOption();
     jsonGet(SIZE_OPTIONS_URL + '?gender=' + encodeURIComponent(gender))
       .then(function (res) {
         var options = (res && res.data) || [];

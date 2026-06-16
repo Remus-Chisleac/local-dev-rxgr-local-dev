@@ -33,6 +33,8 @@
 
   <div class="aico-page-container aico-exchange-shell">
 
+    <img class="aico-exchange-banner" src="{{ 'exchange-banner.jpg' | asset_url }}" alt="" loading="eager">
+
     <h1 class="aico-exchange-title">{{ 'aico_exchange.title' | t }}</h1>
 
     {% unless customer.aico_exchange_eligible %}
@@ -59,19 +61,20 @@
 
         <form class="aico-exchange-form" data-aico-exchange-form novalidate>
           <div class="aico-exchange-field aico-exchange-field--brand">
-            <label class="aico-exchange-field-label" for="aico-exchange-brand">{{ 'aico_exchange.form.brand' | t }}</label>
-            <select class="aico-exchange-select" id="aico-exchange-brand" data-aico-exchange-brand>
-              <option value="">—</option>
+            <select class="aico-exchange-select" id="aico-exchange-brand" data-aico-exchange-brand
+                    aria-label="{{ 'aico_exchange.form.brand' | t }}">
+              <option value="" disabled selected hidden>{{ 'aico_exchange.form.brand' | t }}</option>
             </select>
           </div>
 
           <div class="aico-exchange-field aico-exchange-field--product" data-aico-exchange-product-field hidden>
-            <label class="aico-exchange-field-label" for="aico-exchange-product">{{ 'aico_exchange.form.model_color' | t }}</label>
             <div class="aico-exchange-autocomplete" data-aico-exchange-autocomplete>
               <input
                 type="text"
                 class="aico-exchange-input"
                 id="aico-exchange-product"
+                placeholder="{{ 'aico_exchange.form.model_color' | t }}"
+                aria-label="{{ 'aico_exchange.form.model_color' | t }}"
                 autocomplete="off"
                 role="combobox"
                 aria-expanded="false"
@@ -85,18 +88,19 @@
           </div>
 
           <div class="aico-exchange-field aico-exchange-field--gender" data-aico-exchange-gender-field hidden>
-            <label class="aico-exchange-field-label" for="aico-exchange-gender">{{ 'aico_exchange.form.gender' | t }}</label>
-            <select class="aico-exchange-select" id="aico-exchange-gender" data-aico-exchange-gender>
-              <option value="">—</option>
+            <select class="aico-exchange-select" id="aico-exchange-gender" data-aico-exchange-gender
+                    aria-label="{{ 'aico_exchange.form.gender' | t }}">
+              <option value="" disabled selected hidden>{{ 'aico_exchange.form.gender' | t }}</option>
               <option value="women">{{ 'aico_exchange.form.women' | t }}</option>
               <option value="men">{{ 'aico_exchange.form.men' | t }}</option>
             </select>
           </div>
 
           <div class="aico-exchange-field aico-exchange-field--size" data-aico-exchange-size-field hidden>
-            <label class="aico-exchange-field-label" for="aico-exchange-size">{{ 'aico_exchange.form.size' | t }}</label>
-            <select class="aico-exchange-select" id="aico-exchange-size" data-aico-exchange-size>
-              <option value="">—</option>
+            <select class="aico-exchange-select" id="aico-exchange-size" data-aico-exchange-size
+                    data-aico-exchange-size-placeholder="{{ 'aico_exchange.form.size' | t }}"
+                    aria-label="{{ 'aico_exchange.form.size' | t }}">
+              <option value="" disabled selected hidden>{{ 'aico_exchange.form.size' | t }}</option>
             </select>
           </div>
 
