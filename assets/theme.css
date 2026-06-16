@@ -7433,7 +7433,9 @@ html.aico-preorder-gallery-open {
 .aico-exchange-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  /* Top-align so the product field's "custom colour?" hint can grow downward
+     without dragging the other boxes with it. */
+  align-items: flex-start;
   gap: 1rem;
 }
 .aico-exchange-field { display: flex; flex-direction: column; gap: 0.375rem; min-width: 0; }
@@ -7441,7 +7443,7 @@ html.aico-preorder-gallery-open {
 .aico-exchange-field--product { flex: 0 0 22rem; }
 .aico-exchange-field--gender { flex: 0 0 9.5rem; }
 .aico-exchange-field--size { flex: 0 0 9.5rem; }
-.aico-exchange-field--submit { margin-left: auto; align-self: flex-end; }
+.aico-exchange-field--submit { margin-left: auto; align-self: flex-start; }
 .aico-exchange-field-label {
   font-size: 0.8125rem;
   color: var(--aico-muted-fg);
@@ -7649,7 +7651,7 @@ html.aico-preorder-gallery-open {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    align-items: end;
+    align-items: start;
   }
   .aico-exchange-field--brand,
   .aico-exchange-field--product,
