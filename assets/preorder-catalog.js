@@ -565,6 +565,11 @@
     this.searchQuery = '';
     // Collapsed state per category (optionGroupName), preserved across re-renders.
     this.collapsedGroups = {};
+    // Per-category loading state: true while any page for that section is still
+    // in flight. Drives the per-section skeleton (a placeholder card appended to
+    // the group body) and lets a category's header render before its first page.
+    this.groupLoading = {};
+    this.groupPending = {};
   }
 
   CatalogController.prototype.setSearchQuery = function (q) {
@@ -595,8 +600,12 @@
     var generation = this.loadGeneration;
     this.products = [];
     this.groupPagination = {};
+    this.groupLoading = {};
+    this.groupPending = {};
     this.loading = true;
-    this.showLoading(true);
+    // The per-section skeletons (rendered below) are the loading feedback now,
+    // so the single global "loading" line stays hidden.
+    this.showLoading(false);
     this.showError(false);
 
     var failures = 0;
@@ -660,8 +669,24 @@
       }
     }
 
+    // Per-section loading flag: a category's skeleton stays until ALL of its
+    // pages (page 1 + the fan-out of pages 2..N) have settled, then it clears
+    // and the section re-renders without the skeleton.
+    function groupRequestDone(groupName) {
+      if (generation !== self.loadGeneration) return;
+      self.groupPending[groupName] = (self.groupPending[groupName] || 1) - 1;
+      if (self.groupPending[groupName] <= 0) {
+        self.groupPending[groupName] = 0;
+        if (self.groupLoading[groupName]) {
+          self.groupLoading[groupName] = false;
+          displayCatalog();
+        }
+      }
+    }
+
     function fetchGroupPage(groupName, pageNumber) {
       pending += 1;
+      self.groupPending[groupName] = (self.groupPending[groupName] || 0) + 1;
       fetchProductsJson(
         buildProductsUrl(self.productsUrl, {
           buyerAddressId: buyerAddressId,
@@ -691,6 +716,7 @@
           pageBuffer[groupName][pageNumber] = result;
           mergeReadyPages(groupName);
           requestDone();
+          groupRequestDone(groupName);
         })
         .catch(function (err) {
           if (generation !== self.loadGeneration) return;
@@ -712,14 +738,19 @@
           pageBuffer[groupName][pageNumber] = FAILED_PAGE;
           mergeReadyPages(groupName);
           requestDone();
+          groupRequestDone(groupName);
         });
     }
 
     OPTION_GROUP_ORDER.forEach(function (groupName) {
       pageBuffer[groupName] = {};
       nextPageToMerge[groupName] = 1;
+      self.groupLoading[groupName] = true;
       fetchGroupPage(groupName, 1);
     });
+    // Paint the category headers + skeletons immediately, before any page lands,
+    // so every section shows its head and a loading skeleton right away.
+    self.render();
 
     return Promise.resolve();
   };
@@ -772,20 +803,39 @@
     var matchedCount = 0;
     var totalCount = 0;
 
-    sortGroupsByOrder(this.products).forEach(function (group) {
-      var all = asArray(group && group.items);
+    // Index the loaded groups by name, then iterate the FIXED category order so
+    // every category's header renders even before (or without) any of its shoes,
+    // and a still-loading section can carry a skeleton at the end of its body.
+    var loadedByName = {};
+    sortGroupsByOrder(this.products).forEach(function (g) {
+      if (g && g.optionGroupName) loadedByName[g.optionGroupName] = g;
+    });
+    var groupOrder = OPTION_GROUP_ORDER.slice();
+    Object.keys(loadedByName).forEach(function (name) {
+      if (groupOrder.indexOf(name) < 0) groupOrder.push(name);
+    });
+
+    groupOrder.forEach(function (groupName) {
+      var group = loadedByName[groupName] || { optionGroupName: groupName, items: [] };
+      var all = asArray(group.items);
       totalCount += all.length;
       var items = self.filterItems(all);
-      if (!items.length) return;
       matchedCount += items.length;
+      var groupLoading = !!self.groupLoading[groupName];
 
-      var collapsed = !!self.collapsedGroups[group.optionGroupName];
+      // While searching, hide categories that have nothing matching (and aren't
+      // still loading) — a search result shouldn't be padded with empty heads.
+      if (searching && !items.length && !groupLoading) return;
+
+      var collapsed = !!self.collapsedGroups[groupName];
       var sizeValues = collectGroupSizeValues(items);
       var cellW = computeGroupMatrixCellWidthRem(group, charts, region);
 
       groupsHtml +=
         '<section class="aico-preorder-group' +
         (collapsed ? ' aico-preorder-group-collapsed' : '') +
+        (groupLoading ? ' aico-preorder-group-loading' : '') +
+        (!items.length && !groupLoading ? ' aico-preorder-group-empty' : '') +
         '" data-aico-preorder-group style="--aico-preorder-cell-w:' +
         cellW +
         '">';
@@ -842,6 +892,17 @@
           copy,
         );
       });
+      // Loading skeleton at the END of the section's shoes — visible only while a
+      // page for this category is still being fetched.
+      if (groupLoading) {
+        groupsHtml += self.renderSkeletonCard();
+      } else if (!items.length && !searching) {
+        // Finished loading with nothing in it: keep the header, note it's empty.
+        groupsHtml +=
+          '<p class="aico-preorder-group-empty-note">' +
+          escapeHtml(copy.empty || 'No products.') +
+          '</p>';
+      }
       groupsHtml += '</div></div>';
       groupsHtml += '</section>';
     });
@@ -1026,6 +1087,28 @@
         );
       });
     });
+  };
+
+  // A placeholder card shown at the end of a category while its next page is
+  // still loading. Mirrors the real card's aside (media + title/sku/price) and a
+  // couple of matrix rows, all as shimmering skeleton blocks.
+  CatalogController.prototype.renderSkeletonCard = function () {
+    return (
+      '<article class="aico-preorder-product-card aico-preorder-product-card--skeleton" aria-hidden="true">' +
+      '<div class="aico-preorder-product-grid">' +
+      '<div class="aico-preorder-product-aside">' +
+      '<div class="aico-preorder-product-media"><span class="aico-skeleton aico-skel-pulse aico-preorder-skel-media"></span></div>' +
+      '<div class="aico-preorder-product-info">' +
+      '<span class="aico-skeleton aico-skel-pulse aico-preorder-skel-line aico-preorder-skel-line--title"></span>' +
+      '<span class="aico-skeleton aico-skel-pulse aico-preorder-skel-line aico-preorder-skel-line--sku"></span>' +
+      '<span class="aico-skeleton aico-skel-pulse aico-preorder-skel-line aico-preorder-skel-line--price"></span>' +
+      '</div></div>' +
+      '<div class="aico-preorder-product-rows">' +
+      '<span class="aico-skeleton aico-skel-pulse aico-preorder-skel-row"></span>' +
+      '<span class="aico-skeleton aico-skel-pulse aico-preorder-skel-row"></span>' +
+      '</div>' +
+      '</div></article>'
+    );
   };
 
   CatalogController.prototype.renderProductCard = function (

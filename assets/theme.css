@@ -8050,3 +8050,41 @@ html.aico-preorder-gallery-open {
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-input {
   color: #111;
 }
+
+/* ===== Preorder per-section loading skeleton + always-visible category heads ===== */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-card--skeleton {
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 0;
+  pointer-events: none;
+}
+.aico-preorder-skel-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+}
+.aico-preorder-skel-line {
+  display: block;
+  height: 0.7rem;
+  margin: 0 0 0.4rem;
+  border-radius: 2px;
+}
+.aico-preorder-skel-line--title { width: 80%; height: 0.85rem; }
+.aico-preorder-skel-line--sku { width: 55%; }
+.aico-preorder-skel-line--price { width: 38%; margin-bottom: 0; }
+.aico-preorder-skel-row {
+  display: block;
+  height: 1.9rem;
+  margin-bottom: 0.4rem;
+  border-radius: 2px;
+}
+.aico-preorder-skel-row:last-child { margin-bottom: 0; }
+/* Empty category: header stays, body shows a quiet note instead of cards. */
+.aico-preorder-group-empty-note {
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--aico-muted-fg, #9d9d9d);
+}
