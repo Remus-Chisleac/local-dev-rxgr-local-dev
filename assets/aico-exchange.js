@@ -390,6 +390,7 @@
       if (formState.brandId) { show(productField); } else { hide(productField); }
       hide(genderField);
       hide(sizeField);
+      syncCustomDropdowns();
       refreshSubmitState();
     });
   }
@@ -494,6 +495,7 @@
     hide(genderField);
     hide(sizeField);
     updateCustomColorHint();
+    syncCustomDropdowns();
     refreshSubmitState();
   }
 
@@ -683,7 +685,108 @@
     return String(value).replace(/["\\]/g, '\\$&');
   }
 
+  // ---- custom dropdowns -------------------------------------------
+  //
+  // Replace the bare native <select>s (brand / gender / size) with a styled
+  // dropdown that has an opening animation, while keeping the native element
+  // (visually hidden) as the source of truth so all the existing value/change
+  // logic keeps working unchanged. Options are read live from the native
+  // select, so async-populated brands/sizes just work.
+
+  function enhanceSelect(select) {
+    if (!select || select.dataset.enhanced === '1') { return; }
+    select.dataset.enhanced = '1';
+
+    var wrap = document.createElement('div');
+    wrap.className = 'aico-exchange-dd';
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.classList.add('aico-exchange-dd-native');
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'aico-exchange-dd-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (select.getAttribute('aria-label')) {
+      trigger.setAttribute('aria-label', select.getAttribute('aria-label'));
+    }
+    var labelEl = document.createElement('span');
+    labelEl.className = 'aico-exchange-dd-label';
+    trigger.appendChild(labelEl);
+    var caret = document.createElement('span');
+    caret.className = 'aico-exchange-dd-caret';
+    caret.setAttribute('aria-hidden', 'true');
+    trigger.appendChild(caret);
+    wrap.appendChild(trigger);
+
+    var panel = document.createElement('ul');
+    panel.className = 'aico-exchange-dd-panel';
+    panel.setAttribute('role', 'listbox');
+    wrap.appendChild(panel);
+
+    function syncLabel() {
+      var opt = select.options[select.selectedIndex];
+      labelEl.textContent = opt ? opt.textContent : '';
+      if (select.value) { wrap.classList.remove('is-placeholder'); }
+      else { wrap.classList.add('is-placeholder'); }
+    }
+
+    function buildPanel() {
+      panel.innerHTML = '';
+      Array.prototype.forEach.call(select.options, function (opt) {
+        if (opt.value === '' || opt.disabled) { return; } // skip the placeholder
+        var li = document.createElement('li');
+        li.className = 'aico-exchange-dd-option';
+        li.setAttribute('role', 'option');
+        li.textContent = opt.textContent;
+        if (opt.value === select.value) { li.classList.add('is-selected'); }
+        li.addEventListener('mousedown', function (ev) {
+          ev.preventDefault();
+          select.value = opt.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          syncLabel();
+          close();
+        });
+        panel.appendChild(li);
+      });
+    }
+
+    function open() { buildPanel(); wrap.classList.add('is-open'); trigger.setAttribute('aria-expanded', 'true'); }
+    function close() { wrap.classList.remove('is-open'); trigger.setAttribute('aria-expanded', 'false'); }
+
+    trigger.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (wrap.classList.contains('is-open')) { close(); } else { open(); }
+    });
+    document.addEventListener('click', function (ev) { if (!wrap.contains(ev.target)) { close(); } });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { close(); } });
+
+    // Rebuild the open panel + label when options change (async brand/size load
+    // and the size reset that rewrites the option list).
+    new MutationObserver(function () {
+      syncLabel();
+      if (wrap.classList.contains('is-open')) { buildPanel(); }
+    }).observe(select, { childList: true });
+    select.addEventListener('change', syncLabel);
+
+    // Programmatic value resets (brand change / form reset) don't fire `change`,
+    // so expose a manual sync the form logic can call.
+    select._aicoSync = syncLabel;
+    syncLabel();
+  }
+
+  function syncCustomDropdowns() {
+    [brandSelect, genderSelect, sizeSelect].forEach(function (s) {
+      if (s && typeof s._aicoSync === 'function') { s._aicoSync(); }
+    });
+  }
+
   // ---- init -------------------------------------------------------
+
+  enhanceSelect(brandSelect);
+  enhanceSelect(genderSelect);
+  enhanceSelect(sizeSelect);
 
   loadBrands();
   loadRequests();
