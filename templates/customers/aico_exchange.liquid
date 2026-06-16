@@ -1,0 +1,186 @@
+{% comment %}
+  AICO-only dealer exchange-platform page (Tauschplattform). Ports the
+  b2b-shop /exchange-platform marketplace to the Liquid theme:
+
+    - Region gate: when `customer.aico_exchange_eligible` is false the page
+      shows only the "not available in your country" message (the legacy
+      shop's `isPartOfExchangeRegion` flag). No form/table.
+    - Otherwise: an intro (PDF guide + video links), the progressive-disclosure
+      create-request form (brand → model/colour autocomplete → gender →
+      region-aware size), the all-requests table with a 3-way row state
+      machine (Accept / Delete / Accepted), and the static Terms list.
+
+  The page chrome is server-rendered; `assets/aico-exchange.js` fetches the
+  request list + autocomplete + size options from the same-origin `.js`
+  endpoints (StorefrontExchangeController) using the cookie session, and wires
+  create/accept/delete and the `?er_id=` deep-link highlight. There is no
+  Shopify analog → the template name + every data hook is `aico_`-prefixed.
+{% endcomment %}
+
+<main
+  class="aico-exchange"
+  role="main"
+  data-aico-exchange
+  data-aico-exchange-eligible="{% if customer.aico_exchange_eligible %}1{% else %}0{% endif %}"
+  data-requests-url="{{ routes.aico_account_exchange_requests_url }}"
+  data-accept-url-template="{{ routes.aico_account_exchange_accept_url }}"
+  data-delete-url-template="{{ routes.aico_account_exchange_delete_url }}"
+  data-products-url="{{ routes.aico_account_exchange_products_url }}"
+  data-brands-url="{{ routes.aico_account_exchange_brands_url }}"
+  data-size-options-url="{{ routes.aico_account_exchange_size_options_url }}">
+
+  <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+  <div class="aico-page-container aico-exchange-shell">
+
+    <h1 class="aico-exchange-title">{{ 'aico_exchange.title' | t }}</h1>
+
+    {% unless customer.aico_exchange_eligible %}
+      {%- comment -%} Region gate — the only thing rendered for ineligible partners. {%- endcomment -%}
+      <p class="aico-exchange-not-available" role="status" data-aico-exchange-not-available>
+        {{ 'aico_exchange.not_available' | t }}
+      </p>
+    {% else %}
+
+      {%- comment -%} ── Intro ───────────────────────────────────────────── {%- endcomment -%}
+      <section class="aico-exchange-intro">
+        <p>{{ 'aico_exchange.intro.text1' | t }}</p>
+        <p>
+          {{ 'aico_exchange.intro.text2_before' | t }}
+          <a href="{{ 'aico_exchange.intro.guide_link' | t }}" target="_blank" rel="noopener">{{ 'aico_exchange.intro.guide_link_text' | t }}</a>
+          |
+          <a href="{{ 'aico_exchange.intro.video_link' | t }}" target="_blank" rel="noopener">{{ 'aico_exchange.intro.video_link_text' | t }}</a>.
+        </p>
+      </section>
+
+      {%- comment -%} ── Create-request form ─────────────────────────────── {%- endcomment -%}
+      <section class="aico-exchange-form-section">
+        <h2 class="aico-exchange-section-title">{{ 'aico_exchange.form.title' | t }}</h2>
+
+        <form class="aico-exchange-form" data-aico-exchange-form novalidate>
+          <div class="aico-exchange-field aico-exchange-field--brand">
+            <label class="aico-exchange-field-label" for="aico-exchange-brand">{{ 'aico_exchange.form.brand' | t }}</label>
+            <select class="aico-exchange-select" id="aico-exchange-brand" data-aico-exchange-brand>
+              <option value="">—</option>
+            </select>
+          </div>
+
+          <div class="aico-exchange-field aico-exchange-field--product" data-aico-exchange-product-field hidden>
+            <label class="aico-exchange-field-label" for="aico-exchange-product">{{ 'aico_exchange.form.model_color' | t }}</label>
+            <div class="aico-exchange-autocomplete" data-aico-exchange-autocomplete>
+              <input
+                type="text"
+                class="aico-exchange-input"
+                id="aico-exchange-product"
+                autocomplete="off"
+                role="combobox"
+                aria-expanded="false"
+                aria-autocomplete="list"
+                data-aico-exchange-product-input>
+              <ul class="aico-exchange-options" role="listbox" data-aico-exchange-options hidden></ul>
+            </div>
+            <p class="aico-exchange-custom-color" data-aico-exchange-custom-color hidden>
+              {{ 'aico_exchange.form.custom_color_message' | t }}
+            </p>
+          </div>
+
+          <div class="aico-exchange-field aico-exchange-field--gender" data-aico-exchange-gender-field hidden>
+            <label class="aico-exchange-field-label" for="aico-exchange-gender">{{ 'aico_exchange.form.gender' | t }}</label>
+            <select class="aico-exchange-select" id="aico-exchange-gender" data-aico-exchange-gender>
+              <option value="">—</option>
+              <option value="women">{{ 'aico_exchange.form.women' | t }}</option>
+              <option value="men">{{ 'aico_exchange.form.men' | t }}</option>
+            </select>
+          </div>
+
+          <div class="aico-exchange-field aico-exchange-field--size" data-aico-exchange-size-field hidden>
+            <label class="aico-exchange-field-label" for="aico-exchange-size">{{ 'aico_exchange.form.size' | t }}</label>
+            <select class="aico-exchange-select" id="aico-exchange-size" data-aico-exchange-size>
+              <option value="">—</option>
+            </select>
+          </div>
+
+          <div class="aico-exchange-field aico-exchange-field--submit">
+            <button type="submit" class="aico-exchange-submit" data-aico-exchange-submit disabled>
+              {{ 'aico_exchange.form.submit' | t }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {%- comment -%} ── Requests table ──────────────────────────────────── {%- endcomment -%}
+      <section class="aico-exchange-table-section">
+        <h2 class="aico-exchange-section-title">{{ 'aico_exchange.current_requests' | t }}</h2>
+
+        <div class="aico-exchange-table-wrap">
+          <table class="aico-exchange-table">
+            <thead>
+              <tr>
+                <th>{{ 'aico_exchange.table.brand' | t }}</th>
+                <th>{{ 'aico_exchange.table.model_color' | t }}</th>
+                <th>{{ 'aico_exchange.table.gender' | t }}</th>
+                <th>{{ 'aico_exchange.table.size' | t }}</th>
+                <th>{{ 'aico_exchange.table.country' | t }}</th>
+                <th>{{ 'aico_exchange.table.actions' | t }}</th>
+              </tr>
+            </thead>
+            <tbody data-aico-exchange-rows></tbody>
+          </table>
+        </div>
+
+        <div class="aico-exchange-loader" data-aico-exchange-loader hidden>
+          <span class="aico-exchange-spinner" aria-hidden="true"></span>
+        </div>
+        <p class="aico-exchange-empty" role="status" data-aico-exchange-empty hidden>
+          {{ 'aico_exchange.table.empty' | t }}
+        </p>
+        <p class="aico-exchange-error" role="alert" data-aico-exchange-error hidden>
+          {{ 'aico_exchange.error' | t }}
+        </p>
+      </section>
+
+      {%- comment -%} ── Terms & Conditions ──────────────────────────────── {%- endcomment -%}
+      <section class="aico-exchange-terms">
+        <h2 class="aico-exchange-section-title">{{ 'aico_exchange.terms.title' | t }}</h2>
+        <ul class="aico-exchange-terms-list">
+          <li>{{ 'aico_exchange.terms.agreement_with_rules' | t }}</li>
+          <li>{{ 'aico_exchange.terms.binding_offers' | t }}</li>
+          <li>{{ 'aico_exchange.terms.contact_data_sharing' | t }}</li>
+          <li>{{ 'aico_exchange.terms.gdpr_compliance' | t }}</li>
+          <li>{{ 'aico_exchange.terms.shipping_commitment' | t }}</li>
+          <li>{{ 'aico_exchange.terms.direct_transaction_disclaimer' | t }}</li>
+          <li>{{ 'aico_exchange.terms.access_revocation' | t }}</li>
+        </ul>
+      </section>
+
+      <script type="application/json" data-aico-exchange-i18n>{
+        "locale": {{ request.locale | default: shop.default_locale | json }},
+        "gender": {
+          "women": {{ 'aico_exchange.form.women' | t | json }},
+          "men": {{ 'aico_exchange.form.men' | t | json }}
+        },
+        "table": {
+          "delete": {{ 'aico_exchange.table.delete' | t | json }},
+          "accept": {{ 'aico_exchange.table.accept' | t | json }},
+          "accepted": {{ 'aico_exchange.table.accepted' | t | json }},
+          "empty": {{ 'aico_exchange.table.empty' | t | json }},
+          "request_not_found": {{ 'aico_exchange.table.request_not_found' | t | json }}
+        },
+        "form": {
+          "empty_brands": {{ 'aico_exchange.form.empty_brands' | t | json }},
+          "empty_models": {{ 'aico_exchange.form.empty_models' | t | json }},
+          "empty_sizes": {{ 'aico_exchange.form.empty_sizes' | t | json }}
+        },
+        "error": {{ 'aico_exchange.error' | t | json }}
+      }</script>
+
+    {% endunless %}
+  </div>
+
+  {%- comment -%} Shared site toast (bottom-center) for accept/delete/deep-link feedback. {%- endcomment -%}
+  <div class="aico-toast-wrap" aria-live="polite" aria-atomic="true">
+    <div class="aico-toast aico-exchange-toast" data-aico-exchange-toast></div>
+  </div>
+
+  <script src="{{ 'aico-exchange.js' | asset_url }}" defer></script>
+</main>

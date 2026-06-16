@@ -16,6 +16,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ shop.name }}</title>
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
+  {%- comment -%}
+    Most `customers/` templates are the bare, centered auth shell (login,
+    recover_password). The returns/complaints page lives under `customers/`
+    for Shopify-path compatibility but is a full account-area page, so it
+    renders inside the regular shop chrome (header, nav drawer, footer) and
+    loads its own script + the Alpine/cart bootstrap.
+  {%- endcomment -%}
+  {%- assign aico_is_auth_shell = false -%}
+  {%- if template.directory == 'customers' and template.name != 'customers/aico_returns' -%}
+    {%- assign aico_is_auth_shell = true -%}
+  {%- endif -%}
   {% if aico_is_auth_shell %}
     <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
   {% else %}
@@ -121,6 +132,34 @@
       `$store.panels` global and the `aicoSearch` component.
     {%- endcomment -%}
     <script src="{{ 'header-panels.js' | asset_url }}" defer></script>
+    {% if template.name == 'customers/aico_returns' %}
+      {%- comment -%}
+        Returns/complaints page bootstrap — endpoints + the locale strings
+        the form needs (reason lists, defect taxonomy, validation messages),
+        seeded SSR so aico-returns.js runs without a follow-up fetch.
+      {%- endcomment -%}
+      <script>
+        window.__AICO_RETURNS__ = {
+          csrf: {{ aico_csrf_token | json }},
+          locale: {{ request.locale | default: shop.default_locale | json }},
+          routes: {
+            productsUrl: {{ routes.aico_account_returns_products_url | json }},
+            submitUrl: {{ routes.aico_account_returns_submit_url | json }}
+          },
+          customer: {
+            contact: {{ customer.name | default: '' | json }},
+            email: {{ customer.email | default: '' | json }}
+          },
+          brands: [
+            {%- for brand in aico_brands -%}
+              { id: {{ brand.id | json }}, label: {{ brand.label | json }} }{%- unless forloop.last -%},{%- endunless -%}
+            {%- endfor -%}
+          ],
+          i18n: {{ 'aico_returns' | aico_t_tree | json }}
+        };
+      </script>
+      <script src="{{ 'aico-returns.js' | asset_url }}" defer></script>
+    {% endif %}
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
 </head>
@@ -453,6 +492,28 @@
               <span class="aico-drawer-perm-split-label">{{ 'nav.faq' | t }}</span>
             </a>
           </div>
+
+          {%- comment -%} ── Exchange platform (Tauschplattform) ── {%- endcomment -%}
+          <a href="{{ routes.aico_account_exchange_url }}" class="aico-drawer-row aico-drawer-row-zebra">
+            <span class="aico-drawer-row-icon">
+              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m16 3 4 4-4 4"></path>
+                <path d="M20 7H4"></path>
+                <path d="m8 21-4-4 4-4"></path>
+                <path d="M4 17h16"></path>
+              </svg>
+            </span>
+            <span class="aico-drawer-row-label">{{ 'nav.exchange' | t }}</span>
+          {%- comment -%} ── Returns / complaints intake (AICO B2B support-request) ── {%- endcomment -%}
+          <a href="{{ routes.aico_account_returns_url }}" class="aico-drawer-row aico-drawer-row-zebra">
+            <span class="aico-drawer-row-icon">
+              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 7v6h6"></path>
+                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+              </svg>
+            </span>
+            <span class="aico-drawer-row-label">{{ 'nav.returns' | t }}</span>
+          </a>
 
           {%- comment -%} ── Logout + language (no label row) ── {%- endcomment -%}
           <div class="aico-drawer-perm-footer">

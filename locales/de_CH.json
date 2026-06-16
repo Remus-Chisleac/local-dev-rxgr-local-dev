@@ -8,18 +8,6 @@
   "footer": {
     "tagline": "Mit Aico Storefront betrieben"
   },
-  "general": {
-    "search": {
-      "search": "Suchen",
-      "close": "Suche schliessen",
-      "reset": "Suche zurücksetzen",
-      "products": "Produkte",
-      "hint": "Tippen, um Produkte zu suchen",
-      "searching": "Suche läuft…",
-      "no_results": "Keine Ergebnisse für",
-      "sale": "Sale"
-    }
-  },
   "errors": {
     "not_found": "Diese Seite wurde nicht gefunden.",
     "back_home": "Zurück zur Startseite"
@@ -34,10 +22,10 @@
     "categories_aria": "Kategorien",
     "category_women": "Frauen",
     "category_men": "Männer",
-    "products_heading": "Unsere beliebtesten Modelle",
     "gender_women": "Damen",
     "gender_men": "Herren",
     "news_heading": "Aktuelles",
+    "products_heading": "Unsere beliebtesten Modelle",
     "badge_new": "NEU"
   },
   "nav": {
@@ -64,7 +52,9 @@
     "menu_load_error": "Das Menü konnte nicht geladen werden. Standard wird angezeigt.",
     "fallback_shop": "Shop",
     "fallback_news": "Aktuelles",
-    "fallback_service": "Service"
+    "fallback_service": "Service",
+    "exchange": "Tauschplattform",
+    "returns": "Retouren"
   },
   "home_page": {
     "loading_status": "Shop-Inhalte werden geladen…",
@@ -140,6 +130,9 @@
       "cancel": "Zurück zur Anmeldung"
     },
     "account": {
+      "billing_addresses_title": "Ihre Rechnungsadressen",
+      "delivery_addresses_title": "Ihre Lieferadressen",
+      "no_addresses": "Keine Adressen hinterlegt.",
       "greeting": "Guten Tag,",
       "document_language": "Dokumentsprache",
       "email_language": "E-Mail Sprache",
@@ -151,14 +144,43 @@
       "contact_person_title": "Ihre Ansprechperson",
       "contact_placeholder_name": "Ihre persönliche Ansprechperson",
       "contact_placeholder_hint": "Die Kontaktdaten werden in Kürze hier angezeigt.",
-      "billing_addresses_title": "Ihre Rechnungsadressen",
-      "delivery_addresses_title": "Ihre Lieferadressen",
-      "no_addresses": "Keine Adressen hinterlegt.",
       "call_label": "Anrufen",
       "email_label": "E-Mail senden",
       "saving": "Wird gespeichert…",
       "saved": "Gespeichert",
       "save_error": "Speichern fehlgeschlagen"
+    },
+    "addresses": {
+      "title": "Meine Adressen",
+      "store_locator_title": "Standorte",
+      "no_stores": "Keine Standorte hinterlegt.",
+      "store_details_title": "Geschäftsdetails bearbeiten",
+      "tab_contact": "Kontaktangaben",
+      "tab_hours": "Öffnungszeiten",
+      "tab_images": "Bilder",
+      "close": "Schließen",
+      "cancel": "Abbrechen",
+      "submit": "Senden",
+      "saving": "Wird gespeichert…",
+      "saved": "Gespeichert",
+      "save_error": "Konnte nicht gespeichert werden.",
+      "aico_request_change": "Adressänderung anfragen",
+      "aico_edit_request": "Anfrage bearbeiten",
+      "aico_change_pending": "Änderung ausstehend",
+      "aico_explanation": "Begründung",
+      "aico_edit_store_details": "Geschäftsdetails bearbeiten",
+      "field": {
+        "company": "Firma",
+        "first_name": "Vorname",
+        "last_name": "Nachname",
+        "address1": "Adresse",
+        "address2": "Adresszusatz",
+        "zip": "PLZ",
+        "city": "Ort",
+        "province": "Kanton/Region",
+        "country": "Land",
+        "phone": "Telefon"
+      }
     },
     "orders_page": {
       "title": "Meine Bestellungen",
@@ -231,31 +253,11 @@
     "quantity": "Menge",
     "choose": "Auswählen…",
     "add_to_cart": "In den Warenkorb",
-    "update_cart": "Warenkorb aktualisieren",
     "restricted": "Eingeschränkt",
     "shipping_blocked_hint": "Versand ist für Ihr Konto gesperrt — Sie können keine Artikel in den Warenkorb legen.",
     "info_tabs_aria": "Produktinformationen",
     "about_product": "Über dieses Produkt",
     "specs": "Spezifikationen",
-    "specs_label": {
-      "colors": "Farben",
-      "gender": "Geschlecht",
-      "material": "Material",
-      "shoe_insole": "Schuheinlage",
-      "shoe_last_width": "Schuhleistenbreite",
-      "shoe_sole": "Schuhsohle",
-      "shoe_sole_category": "Schuhsohlenkategorie",
-      "sku": "Artikelnummer",
-      "hs_code": "Zolltarifnummer"
-    },
-    "gender": {
-      "men": "Herren",
-      "women": "Damen",
-      "unisex": "Unisex",
-      "kids": "Kinder",
-      "boys": "Jungen",
-      "girls": "Mädchen"
-    },
     "downloads": "Downloads",
     "you_may_also_like": "Das könnte Ihnen auch gefallen",
     "stock": {
@@ -273,9 +275,9 @@
     "size_matrix": {
       "aria": "Grössenraster",
       "qty_aria": "Menge für diese Grösse",
+      "total": "Gesamt",
       "decrease": "Menge verringern",
-      "increase": "Menge erhöhen",
-      "total": "Gesamt"
+      "increase": "Menge erhöhen"
     },
     "size_region": {
       "eu": "EU",
@@ -313,6 +315,26 @@
       "not_implemented": "Warenkorb-Funktion ist noch nicht verbunden.",
       "select_quantity": "Bitte mindestens eine Grösse auswählen.",
       "error": "Konnte nicht zum Warenkorb hinzugefügt werden."
+    },
+    "update_cart": "Warenkorb aktualisieren",
+    "specs_label": {
+      "colors": "Farben",
+      "gender": "Geschlecht",
+      "material": "Material",
+      "shoe_insole": "Schuheinlage",
+      "shoe_last_width": "Schuhleistenbreite",
+      "shoe_sole": "Schuhsohle",
+      "shoe_sole_category": "Schuhsohlenkategorie",
+      "sku": "Artikelnummer",
+      "hs_code": "Zolltarifnummer"
+    },
+    "gender": {
+      "men": "Herren",
+      "women": "Damen",
+      "unisex": "Unisex",
+      "kids": "Kinder",
+      "boys": "Jungen",
+      "girls": "Mädchen"
     }
   },
   "cart": {
@@ -351,10 +373,6 @@
       "quantity_exceeds_stock": "Nur {count} auf Lager — reduzieren Sie die Menge, um fortzufahren.",
       "quantity_exceeds_stock_generic": "Nicht genügend Bestand für diese Menge — bitte reduzieren."
     },
-    "group": {
-      "pcs": "Stk.",
-      "quantity_aria": "Gesamtmenge"
-    },
     "summary": {
       "title": "Bestellübersicht",
       "aria": "Bestellübersicht",
@@ -370,6 +388,10 @@
       "invalid_quantity": "Einige Artikel in Ihrem Warenkorb sind nicht mehr in der gewünschten Menge verfügbar. Bitte passen Sie die Mengen an, um fortzufahren.",
       "invalid_price": "Einige Preise haben sich geändert, seit Sie die Artikel hinzugefügt haben. Bitte überprüfen Sie diese vor dem Bezahlen.",
       "credit_limit_exceeded": "Der Gesamtbetrag Ihres Warenkorbs übersteigt Ihren verfügbaren Kredit. Zahlungen ohne Kreditkarte sind an der Kasse nicht verfügbar."
+    },
+    "group": {
+      "pcs": "Stk.",
+      "quantity_aria": "Gesamtmenge"
     }
   },
   "checkout": {
@@ -453,13 +475,13 @@
       "size_region_option_us": "US",
       "size_region_option_mm": "MM",
       "size_region_label": "Grössentyp",
-      "b2b_search_placeholder": "B2B suchen…",
       "billing_label": "Rechnungsadresse",
       "billing_placeholder": "Rechnungsadresse wählen",
       "delivery_label": "Lieferadresse",
       "delivery_placeholder": "Lieferadresse wählen",
       "view_grid": "Rasteransicht",
-      "view_list": "Listenansicht"
+      "view_list": "Listenansicht",
+      "b2b_search_placeholder": "B2B suchen…"
     },
     "catalog": {
       "section_aria": "PreOrder-Produkte",
@@ -472,10 +494,10 @@
       "select_b2b": "B2B auswählen",
       "select_debtor": "Verkäufer auswählen",
       "dates_label": "Liefertermine",
-      "dates_all": "Alle",
       "row_total": "Total Input",
       "product_total": "Gesamt",
-      "pcs": "STK"
+      "pcs": "STK",
+      "dates_all": "Alle"
     },
     "reopen_notice": {
       "title": "Sie haben für diese Adresse bereits eine PreOrder aufgegeben",
@@ -501,13 +523,13 @@
       "saved": "Warenkorb gespeichert",
       "submitting": "PreOrder wird abgeschickt…",
       "submitted": "PreOrder abgeschickt",
-      "committed_warning": "Einige Positionen sind bereits bestätigt und können nicht reduziert werden.",
       "place_order": "PreOrder absenden",
       "subtotal": "Zwischensumme",
       "total": "GESAMTBETRAG",
       "discount": "Rabatt",
       "excl_vat": "ohne MwSt",
-      "stock_warning": "Der Warenkorb wird an die verfügbare Menge angepasst."
+      "stock_warning": "Der Warenkorb wird an die verfügbare Menge angepasst.",
+      "committed_warning": "Einige Positionen sind bereits bestätigt und können nicht reduziert werden."
     },
     "thank_you": {
       "title": "Vielen Dank",
@@ -517,6 +539,251 @@
     },
     "cart_button_aria": "PreOrder-Warenkorb öffnen",
     "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
+  },
+  "aico_exchange": {
+    "title": "Tauschplattform",
+    "current_requests": "Aktuelle Anfragen",
+    "not_available": "Die Exchange-Plattform ist derzeit in Ihrem Land nicht verfügbar",
+    "intro": {
+      "text1": "Auf dieser Plattform kann gezielt nach einem bestimmten Schuh gesucht werden – und ein anderer Partner, der diesen an Lager hat, kann ihn direkt zum Verkauf anbieten.",
+      "text2_before": "Wird eine Anfrage akzeptiert, erhalten beide Parteien eine E-Mail mit den jeweiligen Kontaktinformationen. So funktioniert die Tauschplattform:",
+      "guide_link": "http://files.kybunjoya.swiss/documents/b2b/Tauschplattform_Anleitung.pdf",
+      "guide_link_text": "Anleitung Tauschplattform",
+      "video_link": "https://www.youtube.com/watch?v=vceAG5KWN5Q",
+      "video_link_text": "Video-Anleitung"
+    },
+    "form": {
+      "title": "Neuen Eintrag erstellen",
+      "brand": "Marke",
+      "model_color": "Model & Farbe",
+      "gender": "Damen/Herren",
+      "women": "Damen",
+      "men": "Herren",
+      "size": "Grösse",
+      "submit": "Neuen Eintrag erstellen",
+      "empty_brands": "Es gibt keine Marken",
+      "empty_models": "Es gibt keine Modelle für die Marke",
+      "empty_sizes": "Es gibt keine Grössen für das Model",
+      "custom_color_message": "Haben Sie die gesuchte Farbe eingetragen?"
+    },
+    "table": {
+      "brand": "Marke",
+      "model_color": "Model & Farbe",
+      "gender": "Damen/Herren",
+      "size": "Grösse",
+      "date": "Datum",
+      "country": "Gesucht in",
+      "actions": "Aktionen",
+      "delete": "Löschen",
+      "accept": "Anfrage annehmen",
+      "accepted": "Angenommen",
+      "empty": "Es gibt keine aktuelle Anfragen",
+      "request_not_found": "Die gesuchte Anfrage ist nicht mehr verfügbar"
+    },
+    "terms": {
+      "title": "AGBs",
+      "agreement_with_rules": "Mit der Nutzung der Tauschplattform erklären sich teilnehmende Partner mit allen geltenden Regelungen und Abläufen einverstanden.",
+      "binding_offers": "Angenommene Angebote sind verbindlich und können nachträglich nicht abgelehnt werden.",
+      "contact_data_sharing": "Mit der Nutzung der Tauschbörse erklären sich die Partner ausdrücklich damit einverstanden, dass ihre Kontaktdaten im Rahmen eines bestätigten Tauschs an die jeweils andere Partei übermittelt werden.",
+      "gdpr_compliance": "Zum Zweck der Abwicklung eines bestätigten Tauschs ist die Weitergabe der Kontaktdaten beider involvierten Parteien notwendig und erfolgt gemäss den geltenden Datenschutzbestimmungen (DSGVO).",
+      "shipping_commitment": "Die anbietende Partei verpflichtet sich, das gesuchte Modell innerhalb von zwei Arbeitstagen zu versenden.",
+      "direct_transaction_disclaimer": "Versand und Zahlung erfolgen direkt zwischen den Partnern. Die kybun Joya Retail AG ist nicht in die Transaktion involviert und übernimmt keine Haftung.",
+      "access_revocation": "Bei Missbrauch oder Regelverstössen kann der Zugang zur Tauschplattform durch die kybun Joya Retail AG entzogen werden."
+    },
+    "saving": "Wird gespeichert…",
+    "saved": "Gespeichert",
+    "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "aico_returns": {
+    "page_title": "Retouren & Reklamationen",
+    "page_description": "Reichen Sie eine Rückgabe oder eine Reklamation für Ihre Artikel ein. Es ist keine Bestellreferenz erforderlich — durchsuchen Sie den Katalog und fügen Sie die Artikel hinzu.",
+    "tabs": {
+      "complaint": "Beschwerde",
+      "return": "Rückgabe"
+    },
+    "common": {
+      "brand": "Marke *",
+      "product": "Produktname oder Artikelnummer *",
+      "size_format": "Größenformat *",
+      "size": "Größe *",
+      "size_disabled": "Zuerst ein Produkt auswählen",
+      "contact": "Kontakt *",
+      "email": "Email *",
+      "amount": "Betrag *",
+      "return_reason": "Rückgabegrund *",
+      "required_note": "* = erforderlich",
+      "submit": "Absenden",
+      "submitting": "Wird gesendet…",
+      "select_option": "Option auswählen",
+      "success": "Ihre Anfrage wurde übermittelt.",
+      "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "search_no_results": "Keine Produkte gefunden",
+      "searching": "Suche läuft…"
+    },
+    "return": {
+      "add": "Hinzufügen",
+      "delete": "Löschen",
+      "total_amount": "Gesamtbetrag"
+    },
+    "complaint": {
+      "condition": "Zustand *",
+      "type": "Typ *",
+      "date_of_sale": "Verkaufsdatum an Kunden *",
+      "image_of_defect": "Bild des Mangels *",
+      "image_of_side_view": "Seitenansicht *",
+      "production_number": "Produktionsnummer *",
+      "factory_number": "Fabriknummer *",
+      "batch_number": "Chargenummer *",
+      "drop_files_or": "Dateien hier ablegen oder",
+      "browse": "durchsuchen",
+      "click_to_change_image": "Klicken, um das Bild zu ändern"
+    },
+    "conditions": {
+      "used": "Gebraucht",
+      "unused": "Ungenutzt"
+    },
+    "types": {
+      "shoe": "Schuh",
+      "mat_or_pillow": "Matte/Kissen"
+    },
+    "return_reasons": [
+      "Falsche Größe",
+      "Falsche Lieferung",
+      "Produktmängel",
+      "Verarbeitungsfehler",
+      "Vereinbarte Rückgabe"
+    ],
+    "defect_taxonomy": {
+      "shoe": [
+        {
+          "label": "Schaft",
+          "options": [
+            "Defekte oder unsaubere Nähte",
+            "Materialschaden",
+            "Faltiges oder mangelhaftes Material",
+            "Flecken / Dreck / Schimmelpilz",
+            "Defekte oder fehlende Accessoires (Ösen, Haken, Ringe, Schlaufen, Klett, Reissverschluss, Elastiks, Schnallen, …)",
+            "Defekte Logoapplikation",
+            "Farbprobleme (Farbunterschiede, Verfärbungen, Farbmigration)",
+            "Krumme Montage"
+          ]
+        },
+        {
+          "label": "Futter/Innensohle",
+          "options": [
+            "Defekte/fehlende Innensohle",
+            "Defektes Futter",
+            "Unbequemes oder faltiges Futter/Innensohle",
+            "Undichte Membran"
+          ]
+        },
+        {
+          "label": "Sohle",
+          "options": [
+            "Sohlenablösung",
+            "Defekte Sohle",
+            "Verfärbte Sohle",
+            "Abgeriebene Laufsohle",
+            "Sohle unterschiedlich weich",
+            "Sohle proniert oder supiniert"
+          ]
+        },
+        {
+          "label": "Übriges",
+          "options": [
+            "Geruch",
+            "Luftgeräusch",
+            "Unpaar",
+            "Falsche Grösse"
+          ]
+        }
+      ],
+      "mat_or_pillow": [
+        {
+          "label": "Bezug",
+          "options": [
+            "Defekte Nähte / Schweissnähte",
+            "Materialschaden",
+            "Defekte Logoapplikation",
+            "Flecken / Dreck",
+            "Defekte oder fehlende Accessoires (Reissverschluss, Elastiks, Schnallen, …)"
+          ]
+        },
+        {
+          "label": "Schaum",
+          "options": [
+            "Defekter Schaum",
+            "Delaminierung zwischen Schaum und Bezug"
+          ]
+        }
+      ]
+    },
+    "validation": {
+      "contact": "Kontakt ist erforderlich",
+      "email": "Email ist erforderlich",
+      "product": "Produktname oder Artikelnummer ist erforderlich",
+      "size": "Größe ist erforderlich",
+      "return_reason": "Rückgabegrund ist erforderlich",
+      "amount": "Betrag ist erforderlich",
+      "condition": "Zustand ist erforderlich",
+      "date_of_sale": "Verkaufsdatum ist erforderlich",
+      "defect_image": "Bild des Mangels ist erforderlich",
+      "side_view_image": "Seitenansichtsbild ist erforderlich",
+      "production_number": "Produktionsnummer ist erforderlich",
+      "factory_number": "Fabriknummer ist erforderlich",
+      "batch_number": "Chargenummer ist erforderlich"
+    }
+  },
+  "aico_production_cockpit": {
+    "title": "Produktion Cockpit",
+    "intro": {
+      "paragraph1": "Hier finden Sie eine aktuelle Übersicht unserer Produktionspläne. So sehen Sie jederzeit, wann bestimmte Modelle wieder nachproduziert und verfügbar sein werden. Diese Transparenz unterstützt Sie dabei, Ihre Bestellungen optimal zu planen und Ihren Kunden eine zuverlässige Verfügbarkeit zu gewährleisten.",
+      "paragraph2": "Bitte beachten Sie, dass es trotz sorgfältiger Planung vereinzelt zu unvorhergesehenen Verzögerungen in der Logistikkette und damit zu kleinen Abweichungen kommen kann."
+    },
+    "table": {
+      "columns": {
+        "brand": "Marke",
+        "image": "Produktbild",
+        "model": "Modell",
+        "sku": "Art. Nr.",
+        "restock_date": "Verfügbar ab",
+        "actions": "Aktion"
+      },
+      "no_data": "Keine Nachlieferungsdaten verfügbar",
+      "no_data_for_brands": "Keine Produkte für ausgewählte Marken gefunden"
+    },
+    "brand_filter": {
+      "title": "Nach Marke filtern",
+      "info": "Sie können die Liste filtern, indem Sie eine oder mehrere Marken auswählen. Mindestens eine Marke muss ausgewählt sein.",
+      "unknown_brand": "Unbekannte Marke"
+    },
+    "set_reminder": "Erinnerung setzen",
+    "coming_soon": "Demnächst verfügbar",
+    "error": "Fehler beim Laden der Nachlieferungsdaten. Bitte versuchen Sie es später erneut.",
+    "reminder_modal": {
+      "manage_for": "Erinnerungen verwalten für:",
+      "choose_size": "Wählen Sie Ihre Grösse",
+      "cancel": "Abbrechen",
+      "save": "Erinnerung speichern",
+      "update": "Erinnerungen aktualisieren",
+      "legend_active": "Aktive Erinnerung",
+      "legend_add": "Wird hinzugefügt",
+      "legend_remove": "Wird entfernt",
+      "toast_updated": "Erinnerungen aktualisiert",
+      "toast_error": "Erinnerungen konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "general": {
+    "search": {
+      "search": "Suchen",
+      "close": "Suche schliessen",
+      "reset": "Suche zurücksetzen",
+      "products": "Produkte",
+      "hint": "Tippen, um Produkte zu suchen",
+      "searching": "Suche läuft…",
+      "no_results": "Keine Ergebnisse für",
+      "sale": "Sale"
+    }
   },
   "contact": {
     "title": "Kontaktieren Sie uns jederzeit, wenn Sie Probleme haben",

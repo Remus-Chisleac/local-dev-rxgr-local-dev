@@ -1,0 +1,22 @@
+{% comment %}
+  Upload block — an optional video plus a list of downloadable files shown as
+  chips. Mirrors the legacy b2b shop's UploadComponent (title above the video,
+  download chips below). The video is either a YouTube embed or a direct
+  <video> source, matching the page-block-video markup.
+{% endcomment %}
+{%- assign data = block.aico_data -%}
+<div class="page-upload">
+  {%- if data.title != '' -%}<p class="page-upload__title">{{ data.title }}</p>{%- endif -%}
+  {%- if data.youtube_id != '' -%}
+    <div class="page-upload__video"><iframe src="https://www.youtube.com/embed/{{ data.youtube_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+  {%- elsif data.video_src != '' -%}
+    <div class="page-upload__video"><video src="{{ data.video_src }}" controls preload="metadata"></video></div>
+  {%- endif -%}
+  {%- if data.files.size > 0 -%}
+    <ul class="page-upload__files" role="list">
+      {%- for file in data.files -%}
+        <li class="page-upload__file"><a class="page-upload__chip" href="{{ file.href }}" target="_blank" rel="noopener">{{ file.name }}</a></li>
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}
+</div>

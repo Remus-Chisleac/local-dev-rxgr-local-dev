@@ -565,10 +565,21 @@
     this.searchQuery = '';
     // Collapsed state per category (optionGroupName), preserved across re-renders.
     this.collapsedGroups = {};
+    // Per-group loading state: 'loading' | 'ready' | 'empty' | undefined.
+    // Tracked so render() can show a skeleton under each section's header while
+    // its fetch is in flight (instead of omitting the header entirely until data
+    // arrives). NOTE: OPTION_GROUP_ORDER is the temporary hardcoded section list;
+    // this map should follow the BE-driven section list once that lands.
+    this.groupState = {};
   }
 
   CatalogController.prototype.setSearchQuery = function (q) {
     this.searchQuery = (q || '').toLowerCase().trim();
+    // Toggle a root-level state class so CSS can recolor the search icon (and
+    // any other search-active indicators) without JS knowledge of the DOM shape.
+    if (this.root) {
+      this.root.classList.toggle('aico-preorder--searching', !!this.searchQuery);
+    }
     this.render();
   };
 
@@ -576,6 +587,7 @@
     var self = this;
     if (!this.productsUrl || this.shouldSkipProducts()) {
       this.products = [];
+      this.groupState = {};
       this.render();
       return Promise.resolve();
     }
@@ -598,6 +610,22 @@
     this.loading = true;
     this.showLoading(true);
     this.showError(false);
+
+    // Mark every known section as loading so render() can immediately show the
+    // headers with a skeleton placeholder under each. NOTE: OPTION_GROUP_ORDER
+    // is the temporary hardcoded section source; replace this with BE-driven
+    // section data once that endpoint lands.
+    OPTION_GROUP_ORDER.forEach(function (name) {
+      self.groupState[name] = 'loading';
+    });
+    // Trigger an initial render so section headers (with skeletons) appear right
+    // away instead of waiting for the first group to arrive.
+    try {
+      self.onProductsLoaded(self.products, self.preorderDates);
+      self.render();
+    } catch (err) {
+      console.error('preorder catalog: initial skeleton render', err);
+    }
 
     var failures = 0;
     var pending = 0;
@@ -754,9 +782,16 @@
     if (!dates.length) dates = this.preorderDates;
     var isStockRelevant = !!session.isStockRelevant;
 
-    if (!this.products.length && !this.loading) {
+    // Check whether any group is still loading (i.e. we have active groupState
+    // entries). If no groups have been marked loading AND products is empty AND
+    // loading is false, the fetch hasn't started or everything is empty.
+    var anyGroupLoading = OPTION_GROUP_ORDER.some(function (name) {
+      return self.groupState[name] === 'loading';
+    });
+
+    if (!this.products.length && !this.loading && !anyGroupLoading) {
       this.catalogEl.innerHTML =
-        '<p class="aico-preorder-catalog-empty">' +
+        '<p class=”aico-preorder-catalog-empty”>' +
         escapeHtml(copy.empty || 'No products.') +
         '</p>';
       return;
@@ -772,21 +807,42 @@
     var matchedCount = 0;
     var totalCount = 0;
 
+    // Build a fast lookup from optionGroupName → group data from arrived products.
+    var arrivedGroups = {};
     sortGroupsByOrder(this.products).forEach(function (group) {
+      if (group && group.optionGroupName) {
+        arrivedGroups[group.optionGroupName] = group;
+      }
+    });
+
+    // NOTE: OPTION_GROUP_ORDER is the temporary hardcoded section source; this
+    // loop should iterate BE-driven sections once that endpoint lands.
+    // Always iterate every known section so headers render immediately — groups
+    // that are still loading show a skeleton item; finished-empty groups show
+    // nothing under the header (the header stays, no forever-skeleton).
+    OPTION_GROUP_ORDER.forEach(function (groupName) {
+      var group = arrivedGroups[groupName];
+      var groupLoading = self.groupState[groupName] === 'loading';
+
       var all = asArray(group && group.items);
       totalCount += all.length;
       var items = self.filterItems(all);
-      if (!items.length) return;
+
+      // When a group has no items and is not loading and not in groupState yet
+      // (i.e. reload() hasn't been called yet), skip it to avoid rendering an
+      // empty header on the initial no-fetch state.
+      if (!items.length && !groupLoading) return;
+
       matchedCount += items.length;
 
-      var collapsed = !!self.collapsedGroups[group.optionGroupName];
+      var collapsed = !!self.collapsedGroups[groupName];
       var sizeValues = collectGroupSizeValues(items);
-      var cellW = computeGroupMatrixCellWidthRem(group, charts, region);
+      var cellW = group ? computeGroupMatrixCellWidthRem(group, charts, region) : 5.5;
 
       groupsHtml +=
-        '<section class="aico-preorder-group' +
+        '<section class=”aico-preorder-group' +
         (collapsed ? ' aico-preorder-group-collapsed' : '') +
-        '" data-aico-preorder-group style="--aico-preorder-cell-w:' +
+        '” data-aico-preorder-group style=”--aico-preorder-cell-w:' +
         cellW +
         '">';
       groupsHtml += '<header class="aico-preorder-group-head">';
@@ -804,24 +860,24 @@
       // Size labels live once in the group header, aligned with the box columns
       // and scroll-synced with the per-product matrices (scrollbar hidden here).
       groupsHtml +=
-        '<div class="aico-preorder-matrix-scroll aico-preorder-matrix-scroll--header" data-aico-preorder-matrix-scroll aria-hidden="true">' +
-        '<div class="aico-preorder-matrix-track">';
+        '<div class=”aico-preorder-matrix-scroll aico-preorder-matrix-scroll--header” data-aico-preorder-matrix-scroll aria-hidden=”true”>' +
+        '<div class=”aico-preorder-matrix-track”>';
       sizeValues.forEach(function (optVal) {
-        var headLabel = getCountryLabel(charts, group.optionGroupName, region, optVal);
+        var headLabel = getCountryLabel(charts, groupName, region, optVal);
         groupsHtml +=
-          '<span class="aico-preorder-size-head">' +
+          '<span class=”aico-preorder-size-head”>' +
           formatSizeLabelHtml(headLabel) +
           '</span>';
       });
       groupsHtml += '</div></div>';
-      // "Gesamt" head also carries the section's ordered-quantity total so the
+      // “Gesamt” head also carries the section's ordered-quantity total so the
       // shopper sees a per-category count; it stays visible when collapsed.
       groupsHtml +=
-        '<div class="aico-preorder-matrix-total-head">' +
-        '<span class="aico-preorder-matrix-total-head-label">' +
+        '<div class=”aico-preorder-matrix-total-head”>' +
+        '<span class=”aico-preorder-matrix-total-head-label”>' +
         escapeHtml(copy.productTotal || 'Total') +
         '</span> ' +
-        '<span class="aico-preorder-group-ordered-total" data-aico-preorder-group-ordered-total>' +
+        '<span class=”aico-preorder-group-ordered-total” data-aico-preorder-group-ordered-total>' +
         groupOrderedTotal(items) + ' ' + escapeHtml(copy.pcs || 'STK') +
         '</span>' +
         '</div>';
@@ -829,38 +885,48 @@
 
       // Cards live in an animatable body wrapper so collapse/expand can slide
       // (grid-template-rows 1fr<->0fr) instead of snapping.
-      groupsHtml += '<div class="aico-preorder-group-body"><div class="aico-preorder-group-body-inner">';
-      items.forEach(function (product) {
-        groupsHtml += self.renderProductCard(
-          product,
-          group.optionGroupName,
-          dates,
-          sizeValues,
-          isStockRelevant,
-          charts,
-          region,
-          copy,
-        );
-      });
+      groupsHtml += '<div class=”aico-preorder-group-body”><div class=”aico-preorder-group-body-inner”>';
+      if (groupLoading) {
+        // Show one skeleton product-card placeholder while this section's fetch
+        // is in flight. Uses the base skeleton + pulse primitives so no new
+        // keyframe is needed.
+        groupsHtml +=
+          '<div class=”aico-preorder-product-card aico-preorder-product-card--skeleton” aria-hidden=”true”>' +
+          '<div class=”aico-skeleton aico-skel-pulse” style=”height:3.5rem;border-radius:0.125rem;”></div>' +
+          '</div>';
+      } else {
+        items.forEach(function (product) {
+          groupsHtml += self.renderProductCard(
+            product,
+            groupName,
+            dates,
+            sizeValues,
+            isStockRelevant,
+            charts,
+            region,
+            copy,
+          );
+        });
+      }
       groupsHtml += '</div></div>';
       groupsHtml += '</section>';
     });
 
     var countBadge = searching
-      ? '<span class="aico-preorder-products-count" data-aico-preorder-products-count>' +
+      ? '<span class=”aico-preorder-products-count” data-aico-preorder-products-count>' +
         matchedCount + '/' + totalCount + '</span>'
       : '';
     var html =
-      '<div class="aico-preorder-products-heading">' +
+      '<div class=”aico-preorder-products-heading”>' +
       escapeHtml(copy.productsHeading || 'Products') +
       countBadge +
       '</div>';
 
     if (!groupsHtml && searching) {
       // A search that matches nothing must say so — otherwise the blank area
-      // reads as "the search didn't run".
+      // reads as “the search didn't run”.
       html +=
-        '<p class="aico-preorder-catalog-empty aico-preorder-no-matches">' +
+        '<p class=”aico-preorder-catalog-empty aico-preorder-no-matches”>' +
         escapeHtml(copy.empty || 'No products.') +
         ' “' + escapeHtml(this.searchQuery) + '”</p>';
     } else {

@@ -88,6 +88,23 @@
         </label>
 
       </div>
+
+      {%- comment -%}
+        Production-cockpit entry point. B2B-only: the cockpit (upcoming restocks
+        + reminders) is meaningless for a plain B2C session, so the link is
+        gated on `customer.aico_debtor_id` (presence = the session has a
+        selected B2B debtor). The page itself stays login-gated by the
+        storefront catch-all; a non-B2B session simply never sees this link.
+      {%- endcomment -%}
+      {% if customer.aico_debtor_id %}
+        <nav class="aico-account-links" aria-label="{{ 'customer.account.production_cockpit_link' | t }}">
+          <a class="aico-account-link" href="{{ routes.aico_production_cockpit_url }}" data-aico-account-cockpit-link>
+            <svg class="aico-account-link-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+            <span>{{ 'customer.account.production_cockpit_link' | t }}</span>
+            <svg class="aico-account-link-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+          </a>
+        </nav>
+      {% endif %}
     </aside>
 
     {%- comment -%} ── Right: contact + addresses ───────────────────────── {%- endcomment -%}

@@ -5047,6 +5047,26 @@ html.aico-preorder-gallery-open {
 .aico-preorder-catalog-error {
   margin: 1rem 0;
   font-size: 0.9375rem;
+
+/* When a search term is active, color the search icon orange so there is a
+   clear visible indicator that the catalog is filtered. The class is toggled
+   on the .aico-preorder root by CatalogController.setSearchQuery. */
+.aico-preorder--searching .aico-preorder-field-search .aico-preorder-field-icon {
+  color: #e8702d;
+  transition: color 0.15s ease;
+}
+
+.aico-preorder-select-native {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 .aico-preorder-catalog-error { color: #b91c1c; }
 .aico-preorder-date-filter {
@@ -5889,6 +5909,27 @@ html.aico-preorder-gallery-open {
 
 .aico-preorder-btn-spinner {
   display: inline-block;
+/* Overall result count next to the "Products" heading while searching.
+   Colored orange to match the search icon active state. */
+.aico-preorder-products-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #e8702d;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.aico-preorder-no-matches { font-style: italic; }
+
+/* Instant-search "searching" spinner inside the search field. */
+.aico-preorder-field-control--searchable { position: relative; }
+.aico-preorder-search-spinner {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
   width: 1rem;
   height: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.45);
@@ -5990,6 +6031,22 @@ html.aico-preorder-gallery-open {
 }
 .aico-brand-gender-sep {
   color: var(--aico-muted);
+
+/* Per-section loading skeleton: one placeholder card shown while a group's
+   products.js fetch is in flight. Reuses base .aico-skeleton + .aico-skel-pulse
+   so no new keyframe is needed. Padding mirrors the real card's inner spacing. */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-card--skeleton {
+  padding: 0.75rem;
+  box-shadow: none;
+  background: transparent;
+}
+
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-grid {
+  display: grid;
+  grid-template-columns: var(--aico-preorder-aside-w, 8.25rem) minmax(0, 1fr);
+  column-gap: var(--aico-preorder-grid-gap, 0.35rem);
+  align-items: start;
+  padding: 0.75rem;
 }
 
 /* Featured products — real cards (override the skeleton card chrome). */
@@ -6156,6 +6213,19 @@ html.aico-preorder-gallery-open {
 .page-builder .content-column {
   flex: 1 1 0;
   min-width: min(100%, 12rem);
+
+/* Already-confirmed (committed) quantity (the locked minimum) on a reopened
+   preorder: black border + text so the locked floor reads as a firm value, not
+   a grayed-out placeholder. Raising it flips to the blue --filled look (2.2).
+   --committed and --filled are mutually exclusive. */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-box__inner {
+  border-color: #111;
+  box-shadow: inset 0 0 0 1px #111;
+  background: #fff;
+}
+
+.aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box--committed .aico-preorder-qty-input {
+  color: #111;
 }
 .page-builder .content + .content {
   margin-top: 1.25rem;
@@ -6476,6 +6546,12 @@ html.aico-preorder-gallery-open {
   display: flex;
   gap: 1.25rem;
   align-items: flex-start;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #272727;
 }
 
 .aico-account-contact-photo {
@@ -6506,6 +6582,20 @@ html.aico-preorder-gallery-open {
 .aico-account-contact-name {
   font-weight: 700;
   margin: 0 0 0.15rem;
+.aico-preorder-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.125rem; /* 2px — matches the rest of the preorder page */
+  min-width: 2.25rem; /* equal width so qty and discount badges align */
+  box-sizing: border-box;
+  background: #66b0bb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .aico-account-contact-role {
@@ -7063,3 +7153,1093 @@ html.aico-preorder-gallery-open {
   .aico-order-prow { grid-template-columns: 32px minmax(0, 1fr) 3rem 4.5rem; }
   .aico-order-prow > :nth-child(5), .aico-order-prow > :nth-child(6) { display: none; }
 }
+
+/* ═══ Content pages (/pages/<handle>) — content-builder block layout ═══ */
+/* Ported from the default scaffold theme; all page-block snippets render
+   here. Brand-page helper classes (gender split, news strip, product card)
+   reused by page snippets are scoped under .page-builder so they don't
+   collide with kj-theme's own brand-page styling. */
+/* Gender selector — centered "Damen – Herren" links into the products listing. */
+.page-builder .aico-brand-gender {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 1.75rem;
+  padding-bottom: 1.25rem;
+}
+.page-builder .aico-brand-gender-link {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--aico-fg);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.page-builder .aico-brand-gender-link:hover {
+  color: var(--color-accent, #f97316);
+}
+.page-builder .aico-brand-gender-sep {
+  color: var(--aico-muted);
+}
+
+/* Featured products — real cards (override the skeleton card chrome). */
+.page-builder .aico-brand-products {
+  padding-bottom: 2.5rem;
+}
+.page-builder .aico-brand-products .aico-brand-product-card {
+  position: relative;
+  background: #ffffff;
+}
+.page-builder .aico-brand-product-link {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.page-builder .aico-brand-products .aico-brand-product-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f4f5;
+  overflow: hidden;
+}
+.page-builder .aico-brand-products .aico-brand-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.page-builder .aico-brand-product-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 2px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.page-builder .aico-brand-product-badge-hidden {
+  background: transparent;
+  min-height: 1.1rem;
+}
+.page-builder .aico-brand-product-stars {
+  color: #2563eb;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+.page-builder .aico-brand-product-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+}
+.page-builder .aico-brand-product-price {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+.page-builder .aico-brand-product-rrp {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent, #f97316);
+}
+.page-builder .aico-brand-product-cart {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--color-accent, #f97316);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+.page-builder .aico-brand-product-cart:hover {
+  filter: brightness(0.95);
+}
+/* Aktuelles — latest 3 brand articles. */
+.page-builder .aico-brand-news {
+  padding-bottom: 3.5rem;
+}
+.page-builder .aico-brand-news-heading {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--aico-fg);
+}
+.page-builder .aico-brand-news-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .page-builder .aico-brand-news-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+.page-builder .aico-brand-news-card {
+  border: 1px solid var(--aico-border);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.page-builder .aico-brand-news-link {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+.page-builder .aico-brand-news-image {
+  aspect-ratio: 16 / 10;
+  background: #f4f4f5;
+  overflow: hidden;
+}
+.page-builder .aico-brand-news-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.page-builder .aico-brand-news-title {
+  margin: 0;
+  padding: 0.75rem 0.875rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--aico-fg);
+}
+/* ── Content pages (/pages/<handle>) — content-builder block layout ── */
+.page-builder {
+  /* Direct child of the flex-column shell; width:100% stops the auto margins
+     from shrink-wrapping it to content, so it fills the site container width. */
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+@media (min-width: 640px) {
+  .page-builder {
+    padding: 2rem 1.25rem 4rem;
+  }
+}
+.page-builder .content-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.page-builder .content-row.fullwidth {
+  max-width: none;
+}
+.page-builder .content-column {
+  flex: 1 1 0;
+  min-width: min(100%, 12rem);
+}
+.page-builder .content + .content {
+  margin-top: 1.25rem;
+}
+.page-builder img {
+  max-width: 100%;
+  height: auto;
+}
+.page-builder .page-album {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+.page-builder .page-quote {
+  border-left: 3px solid var(--aico-fg);
+  padding-left: 1rem;
+  font-style: italic;
+}
+.page-builder .page-quote cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-weight: 600;
+}
+.page-builder .page-bullets {
+  padding-left: 1.25rem;
+}
+.page-builder .page-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.page-builder .page-table th,
+.page-builder .page-table td {
+  border: 1px solid var(--aico-border, #ddd);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.page-builder .content-type-video iframe,
+.page-builder .content-type-video video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+.page-builder .page-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.page-builder .page-faq__item {
+  border-bottom: 1px solid var(--aico-border, #ddd);
+  padding: 0.75rem 0;
+}
+.page-builder .page-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.page-builder .page-testimonial {
+  margin: 0;
+}
+.page-builder .page-testimonial__image {
+  max-width: 5rem;
+  border-radius: 50%;
+}
+.page-builder .page-upload {
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: #ffffff;
+  max-width: 32rem;
+}
+.page-builder .page-upload__title {
+  margin: 0;
+  padding: 0.875rem 1rem 0;
+  text-align: center;
+  font-weight: 600;
+}
+.page-builder .page-upload__video iframe,
+.page-builder .page-upload__video video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+.page-builder .page-upload__files {
+  list-style: none;
+  margin: 0;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.page-builder .page-upload__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-accent, #f97316);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+.page-builder .page-upload__chip:hover {
+  filter: brightness(0.95);
+}
+.page-builder .page-carousel {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.page-builder .page-carousel__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.page-builder .page-carousel__slide img {
+  width: 100%;
+  display: block;
+}
+/* Product / divider blocks reuse the brand page's `aico-brand-*` styling.
+   The brand grid anchors the absolute cart button via `.aico-brand-products
+   .aico-brand-product-card { position: relative }`; mirror that here so the
+   cart sits inside each card on content pages too. */
+.page-builder .aico-brand-product-card {
+  position: relative;
+  background: #ffffff;
+}
+
+/* ---------------------------------------------------------------- */
+/* Exchange platform (Tauschplattform) — templates/customers/aico_exchange */
+/* ---------------------------------------------------------------- */
+
+.aico-exchange { padding: 1.5rem 0 4rem; }
+.aico-exchange-shell { display: flex; flex-direction: column; gap: 2rem; }
+
+.aico-exchange-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+.aico-exchange-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.aico-exchange-not-available {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--aico-muted-fg);
+  font-size: 1.0625rem;
+}
+
+.aico-exchange-intro { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-exchange-intro p { margin: 0; line-height: 1.5; }
+.aico-exchange-intro a { color: var(--color-accent); text-decoration: underline; }
+
+/* ── create-request form ─────────────────────────────────────────── */
+.aico-exchange-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.aico-exchange-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.aico-exchange-field--brand { flex: 0 0 14rem; }
+.aico-exchange-field--product { flex: 1 1 20rem; }
+.aico-exchange-field--gender { flex: 0 0 9rem; }
+.aico-exchange-field--size { flex: 0 0 9rem; }
+.aico-exchange-field--submit { margin-left: auto; align-self: flex-end; }
+.aico-exchange-field-label {
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-exchange-select,
+.aico-exchange-input {
+  height: 2.5rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.5rem;
+  background: var(--aico-card);
+  font-size: 0.9375rem;
+  width: 100%;
+}
+.aico-exchange-submit {
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.aico-exchange-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* autocomplete dropdown */
+.aico-exchange-autocomplete { position: relative; }
+.aico-exchange-options {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+}
+.aico-exchange-option { padding: 0.375rem 0.625rem; cursor: pointer; font-size: 0.9375rem; }
+.aico-exchange-option:hover { background: var(--aico-muted); }
+.aico-exchange-custom-color {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--aico-muted-fg);
+}
+
+/* ── requests table ──────────────────────────────────────────────── */
+.aico-exchange-table-wrap { overflow-x: auto; border: 1px solid var(--aico-border); border-radius: 0.5rem; }
+.aico-exchange-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.aico-exchange-table th,
+.aico-exchange-table td {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  vertical-align: middle;
+}
+.aico-exchange-table thead th {
+  background: var(--aico-muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.aico-exchange-row:nth-child(even) { background: var(--aico-muted); }
+.aico-exchange-row--brand-change td { border-top: 2px solid var(--aico-muted-strong); }
+.aico-exchange-flag { border-radius: 2px; object-fit: contain; }
+
+.aico-exchange-action {
+  width: 100%;
+  min-width: 9.5rem;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.aico-exchange-action--accept { background: var(--color-accent); }
+.aico-exchange-action--delete { background: #ba172b; }
+.aico-exchange-action--accepted { background: #047857; cursor: default; }
+.aico-exchange-action:disabled { opacity: 0.65; }
+.aico-exchange-action--accepted:disabled { opacity: 1; }
+
+/* deep-link (?er_id=) highlight: brief yellow wash that fades out */
+@keyframes aico-exchange-highlight {
+  0%   { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0.35); }
+  70%  { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0.35); }
+  100% { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0); }
+}
+.aico-exchange-row--highlight td { animation: aico-exchange-highlight 8s ease-in-out 1 forwards; }
+
+.aico-exchange-loader { display: flex; justify-content: center; padding: 1.5rem; }
+.aico-exchange-spinner {
+  width: 1.5rem; height: 1.5rem;
+  border: 2px solid var(--aico-muted-strong);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: aico-exchange-spin 0.8s linear infinite;
+}
+@keyframes aico-exchange-spin { to { transform: rotate(360deg); } }
+.aico-exchange-empty,
+.aico-exchange-error { text-align: center; padding: 1.5rem; color: var(--aico-muted-fg); }
+.aico-exchange-error { color: #b91c1c; }
+
+/* ── terms list ──────────────────────────────────────────────────── */
+.aico-exchange-terms-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--aico-muted-fg);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+/* toast visibility (shared .aico-toast is hidden until shown here) */
+.aico-exchange-toast { opacity: 0; transition: opacity 0.2s ease; }
+.aico-exchange-toast.is-visible { opacity: 1; }
+
+@media (max-width: 640px) {
+  .aico-exchange-form { flex-direction: column; }
+  .aico-exchange-field,
+  .aico-exchange-field--submit { flex: 1 1 auto; width: 100%; margin-left: 0; }
+  .aico-exchange-submit { width: 100%; }
+}
+
+/* ───────────────────────── Returns / complaints page ───────────────────────── */
+.aico-returns {
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+  max-width: 960px;
+}
+.aico-returns-head { margin-bottom: 1.5rem; }
+.aico-returns-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+.aico-returns-intro {
+  color: #555;
+  margin: 0;
+  max-width: 60ch;
+}
+.aico-returns-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+.aico-returns-tab {
+  appearance: none;
+  border: none;
+  background: #f5f5f5;
+  padding: 0.75rem 1.5rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: #555;
+  border-bottom: 2px solid transparent;
+}
+.aico-returns-tab--active {
+  background: #fff;
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
+}
+.aico-returns-tab:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+.aico-returns-status {
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+.aico-returns-status--success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.aico-returns-status--error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+.aico-returns-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .aico-returns-grid { grid-template-columns: 1fr 1fr; }
+  .aico-returns-grid--contact { grid-template-columns: 1fr 1fr; }
+  .aico-returns-field--product,
+  .aico-returns-field--reason { grid-column: 1 / -1; }
+}
+
+.aico-returns-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.aico-returns-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+.aico-returns-field input,
+.aico-returns-field select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  background: #fff;
+}
+.aico-returns-field input:focus,
+.aico-returns-field select:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+  border-color: var(--color-accent);
+}
+.aico-returns-field select:disabled { background: #f3f4f6; color: #9ca3af; }
+
+.aico-returns-autocomplete { position: relative; }
+.aico-returns-autocomplete-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.aico-returns-autocomplete-option {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.aico-returns-autocomplete-option:hover,
+.aico-returns-autocomplete-option:focus { background: #f3f4f6; outline: none; }
+.aico-returns-autocomplete-empty { padding: 0.5rem 0.6rem; color: #9ca3af; }
+
+.aico-returns-dropzones {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+@media (min-width: 640px) { .aico-returns-dropzones { grid-template-columns: 1fr 1fr; } }
+.aico-returns-dropzone { display: flex; flex-direction: column; gap: 0.35rem; }
+.aico-returns-dropzone-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 140px;
+  padding: 1rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  color: #6b7280;
+}
+.aico-returns-dropzone-area:hover,
+.aico-returns-dropzone--over .aico-returns-dropzone-area { border-color: var(--color-accent); background: #f9fafb; }
+.aico-returns-dropzone--filled .aico-returns-dropzone-area { border-style: solid; }
+.aico-returns-dropzone-preview {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.aico-returns-rows { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem; }
+.aico-returns-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  position: relative;
+}
+@media (min-width: 640px) {
+  .aico-returns-row { grid-template-columns: 1fr 1fr; }
+  .aico-returns-row .aico-returns-field--product { grid-column: 1 / -1; }
+}
+.aico-returns-row-delete {
+  appearance: none;
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  justify-self: start;
+}
+.aico-returns-row-delete:hover { background: #fef2f2; }
+
+.aico-returns-return-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.aico-returns-total { display: flex; gap: 0.5rem; align-items: baseline; margin: 0; font-size: 1.05rem; }
+.aico-returns-total strong { font-size: 1.25rem; }
+
+.aico-returns-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+.aico-returns-required-note { color: #6b7280; margin: 0; font-size: 0.85rem; }
+.aico-returns-submit { min-width: 160px; }
+
+/* ── Production cockpit (B2B restock overview + reminders) ───────────
+   templates/customers/aico_production_cockpit.liquid + the PDP restock
+   block + the shared reminder modal. JS-driven (aico-production-cockpit.js).
+   Uses the shared chrome tokens with literal fallbacks so it renders even
+   on a theme whose palette omits them. */
+.aico-cockpit-shell { padding: 1.5rem 0 4rem; }
+.aico-cockpit-head { margin-bottom: 1.5rem; max-width: 60rem; }
+.aico-cockpit-title { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.75rem; }
+.aico-cockpit-intro { margin: 0 0 0.5rem; color: var(--aico-fg, #1a1a1a); font-size: 0.9375rem; line-height: 1.6; }
+.aico-cockpit-intro--muted { color: var(--aico-muted-fg, #6b7280); }
+
+.aico-cockpit-filter {
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.aico-cockpit-filter-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.375rem; }
+.aico-cockpit-filter-info { margin: 0 0 0.875rem; color: var(--aico-muted-fg, #6b7280); font-size: 0.875rem; }
+.aico-cockpit-brand-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.aico-cockpit-brand-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 999px;
+  font-size: 0.8125rem; cursor: pointer;
+  user-select: none;
+}
+.aico-cockpit-brand-chip input { accent-color: var(--color-accent, #2563eb); margin: 0; }
+
+.aico-cockpit-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--aico-border, #e5e7eb); border-radius: 0.75rem; }
+.aico-cockpit-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; min-width: 640px; }
+.aico-cockpit-th {
+  text-align: left; font-weight: 600; color: var(--aico-muted-fg, #6b7280);
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--aico-border, #e5e7eb);
+  background: var(--aico-muted, #f4f4f5); white-space: nowrap;
+}
+.aico-cockpit-sort {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; color: inherit; font-weight: 600;
+}
+.aico-cockpit-sort-icon { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; opacity: 0.5; }
+.aico-cockpit-th[aria-sort="descending"] .aico-cockpit-sort-icon { transform: rotate(180deg); opacity: 1; }
+.aico-cockpit-th[aria-sort="ascending"] .aico-cockpit-sort-icon { opacity: 1; }
+
+.aico-cockpit-cell { padding: 0.75rem 1rem; border-bottom: 1px solid var(--aico-border, #e5e7eb); vertical-align: middle; }
+.aico-cockpit-row:last-child .aico-cockpit-cell { border-bottom: 0; }
+.aico-cockpit-cell--sku { font-variant-numeric: tabular-nums; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-cell--date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aico-cockpit-thumb { width: 48px; height: 48px; object-fit: contain; border-radius: 0.375rem; background: var(--aico-muted, #f4f4f5); display: block; }
+.aico-cockpit-thumb--empty { display: inline-block; }
+.aico-cockpit-badge {
+  display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.45rem;
+  font-size: 0.6875rem; font-weight: 600; border-radius: 999px;
+  background: var(--aico-muted-strong, #e4e4e7); color: var(--aico-fg, #1a1a1a);
+}
+
+.aico-cockpit-empty, .aico-cockpit-error { margin: 1rem 0; color: var(--aico-muted-fg, #6b7280); font-size: 0.9375rem; }
+.aico-cockpit-error { color: #b91c1c; }
+
+.aico-cockpit-loader { display: flex; justify-content: center; padding: 1.5rem; }
+.aico-cockpit-spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--aico-muted-strong, #e4e4e7); border-top-color: var(--color-accent, #2563eb);
+  animation: aico-cockpit-spin 0.7s linear infinite;
+}
+@keyframes aico-cockpit-spin { to { transform: rotate(360deg); } }
+
+/* Buttons (shared by table rows, modal, PDP). */
+.aico-cockpit-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.45rem 0.875rem; border-radius: 0.5rem;
+  font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; line-height: 1.2;
+}
+.aico-cockpit-btn--outline { background: var(--aico-card, #fff); border-color: var(--aico-border, #e5e7eb); color: var(--aico-fg, #1a1a1a); }
+.aico-cockpit-btn--outline:hover { background: var(--aico-muted, #f4f4f5); }
+.aico-cockpit-btn--primary { background: var(--color-accent, #2563eb); color: #fff; }
+.aico-cockpit-btn--primary:hover { filter: brightness(0.95); }
+.aico-cockpit-btn--ghost { background: none; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Reminder modal ─────────────────────────────────────────────── */
+.aico-cockpit-modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.aico-cockpit-modal[hidden] { display: none; }
+.aico-cockpit-modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+.aico-cockpit-modal-panel {
+  position: relative; z-index: 1;
+  background: var(--aico-card, #fff); border-radius: 0.875rem;
+  max-width: 32rem; width: 100%; max-height: 85vh; overflow-y: auto;
+  padding: 1.5rem; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.aico-cockpit-modal-head { position: relative; margin-bottom: 0.75rem; }
+.aico-cockpit-modal-eyebrow { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-modal-title { margin: 0.2rem 0 0; font-size: 1.125rem; font-weight: 700; padding-right: 2rem; }
+.aico-cockpit-modal-x { position: absolute; top: -0.25rem; right: -0.25rem; background: none; border: 0; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-modal-hint { margin: 0 0 0.75rem; font-size: 0.8125rem; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-modal-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.aico-cockpit-size-cell {
+  min-width: 3rem; padding: 0.5rem 0.6rem; border-radius: 0.5rem; cursor: pointer;
+  border: 1px solid var(--aico-border, #e5e7eb); background: var(--aico-card, #fff);
+  font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.aico-cockpit-size-cell--active { background: #047857; border-color: #047857; color: #fff; }
+.aico-cockpit-size-cell--add { background: #2563eb; border-color: #2563eb; color: #fff; }
+.aico-cockpit-size-cell--remove { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.aico-cockpit-modal-legend { display: flex; flex-wrap: wrap; gap: 0.875rem; margin-bottom: 1rem; font-size: 0.75rem; color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+.aico-cockpit-swatch { width: 0.75rem; height: 0.75rem; border-radius: 0.2rem; display: inline-block; }
+.aico-cockpit-swatch--active { background: #047857; }
+.aico-cockpit-swatch--add { background: #2563eb; }
+.aico-cockpit-swatch--remove { background: #b91c1c; }
+.aico-cockpit-modal-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+/* ── PDP restock block ──────────────────────────────────────────── */
+.aico-cockpit-restock[hidden] { display: none; }
+.aico-cockpit-pdp-card {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+  margin-top: 0.875rem; padding: 0.875rem 1rem;
+  border: 1px solid var(--aico-border, #e5e7eb); border-radius: 0.625rem;
+  background: var(--aico-muted, #f4f4f5);
+}
+.aico-cockpit-pdp-line { margin: 0; font-size: 0.875rem; }
+.aico-cockpit-pdp-label { color: var(--aico-muted-fg, #6b7280); }
+.aico-cockpit-pdp-date { font-variant-numeric: tabular-nums; }
+.aico-cockpit-toast { font-size: 0.8125rem; color: var(--aico-muted-fg, #6b7280); opacity: 0; transition: opacity 0.2s; }
+.aico-cockpit-toast.is-visible { opacity: 1; }
+.aico-cockpit-toast--error { color: #b91c1c; }
+
+/* ===========================================================================
+   Customer addresses page (templates/customers/addresses.liquid) — F4
+   Store-locator + address-change requests. The base .aico-account-* card /
+   section / grid classes are lifted from the generic scaffold-theme (kj-theme
+   ships no account.liquid) so this self-contained page renders consistently.
+   =========================================================================== */
+.aico-account-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+  min-width: 0;
+  padding: 2.5rem 0 4rem;
+}
+.aico-account-section-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--aico-muted-fg);
+  margin: 0 0 1.1rem;
+}
+.aico-addresses-title { font-size: 1.6rem; color: var(--aico-fg); }
+.aico-account-card {
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-card);
+  padding: 1.5rem;
+}
+.aico-account-address-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 640px) {
+  .aico-account-address-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.aico-account-address-title { font-weight: 700; margin: 0 0 0.85rem; }
+.aico-account-address-block { margin-top: 0.85rem; }
+.aico-account-address-line {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--aico-fg);
+}
+.aico-account-empty {
+  color: var(--aico-muted-fg);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Address card: pending badge + action buttons */
+.aico-address-card { position: relative; display: flex; flex-direction: column; }
+.aico-change-pending-badge {
+  align-self: flex-start;
+  display: inline-block;
+  margin-bottom: 0.65rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+}
+.aico-address-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+.aico-address-card-btn {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.125rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-bg);
+  color: var(--aico-fg);
+}
+.aico-address-card-btn:hover { background: var(--aico-muted); }
+.aico-address-card-btn.is-pending {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.aico-store-details-open { border-color: var(--aico-fg); }
+
+/* Shared modal shell (change-request + store-details) */
+.aico-address-change-modal,
+.aico-store-details-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.aico-address-change-modal[hidden],
+.aico-store-details-modal[hidden] { display: none; }
+.aico-address-change-overlay,
+.aico-store-details-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.aico-address-change-dialog,
+.aico-store-details-dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 40rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--aico-bg);
+  border-radius: 0.375rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  padding: 1.5rem;
+}
+.aico-address-change-head,
+.aico-store-details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.aico-address-change-heading,
+.aico-store-details-heading { margin: 0; font-size: 1.15rem; }
+.aico-address-change-x,
+.aico-store-details-x {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--aico-muted-fg);
+}
+
+/* Change-request form */
+.aico-address-change-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.9rem;
+}
+.aico-address-change-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.aico-address-change-field--wide { grid-column: 1 / -1; }
+.aico-address-change-label { font-size: 0.78rem; font-weight: 600; color: var(--aico-muted-fg); }
+.aico-address-change-input {
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-bg);
+  color: var(--aico-fg);
+}
+.aico-address-change-textarea { resize: vertical; min-height: 4.5rem; }
+.aico-address-change-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+.aico-address-change-cancel,
+.aico-address-change-submit {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.125rem;
+  border: 1px solid var(--aico-border);
+}
+.aico-address-change-cancel { background: var(--aico-bg); color: var(--aico-fg); }
+.aico-address-change-submit { background: var(--aico-fg); color: var(--aico-bg); border-color: var(--aico-fg); }
+.aico-address-change-submit:disabled { opacity: 0.6; cursor: default; }
+
+/* Store-details tabs */
+.aico-store-details-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--aico-border);
+  margin-bottom: 1.25rem;
+}
+.aico-store-details-tab {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--aico-muted-fg);
+}
+.aico-store-details-tab.is-active { color: var(--aico-fg); border-bottom-color: var(--aico-fg); }
+.aico-store-details-panel { display: none; }
+.aico-store-details-panel.is-active { display: block; }
+.aico-store-details-section { margin-bottom: 1.25rem; }
+.aico-store-details-subhead { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--aico-muted-fg); }
+.aico-store-details-row,
+.aico-store-details-day,
+.aico-store-details-image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.aico-store-details-row input,
+.aico-store-details-day input,
+.aico-store-details-image input,
+.aico-store-details-field input,
+.aico-store-details-field textarea {
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-bg);
+  color: var(--aico-fg);
+}
+.aico-store-details-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+.aico-store-details-field > span { font-size: 0.78rem; font-weight: 600; color: var(--aico-muted-fg); }
+.aico-store-details-day-name { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 7.5rem; text-transform: capitalize; }
+.aico-store-details-main { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; color: var(--aico-muted-fg); }
+.aico-store-details-image-thumb { width: 3rem; height: 3rem; object-fit: cover; border-radius: 0.125rem; }
+.aico-store-details-add,
+.aico-store-details-save {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-bg);
+  color: var(--aico-fg);
+}
+.aico-store-details-save { background: var(--aico-fg); color: var(--aico-bg); border-color: var(--aico-fg); }
+.aico-store-details-remove {
+  appearance: none;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--aico-muted-fg);
+}
+.aico-store-details-actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
+.aico-store-details-loading { color: var(--aico-muted-fg); font-size: 0.9rem; }

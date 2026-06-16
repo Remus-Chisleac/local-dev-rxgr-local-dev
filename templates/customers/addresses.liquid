@@ -1,0 +1,272 @@
+{% comment %}
+  Customer addresses page (Shopify URL /account/addresses → this template).
+
+  Three sections — Billing, Delivery, Store locations — each a grid of address
+  cards. Card markup is lifted from the generic scaffold-theme account.liquid
+  (classes aico-account-card / aico-account-address-*); kj-theme ships no
+  account.liquid so this page is self-contained.
+
+  Data (F4 part A): customer.aico_billing_addresses, customer.aico_delivery_addresses,
+  customer.aico_store_locator_addresses are AddressDrop[] hydrated only for this
+  template (LiquidRendererService::loadShopperContext). The flat Shopify
+  customer.addresses union is also available but we render per-bucket here so
+  store cards can carry the extra "Edit store details" editor.
+
+  Each card (all buckets) renders the change-request control (F4 part B):
+    - address.aico_change_request present  → "change pending" badge + "Change the request"
+    - otherwise                            → "Request address change"
+  Card data-attrs carry the crm_address_id, the pending task id (when any), and
+  the current Shopify-shaped field values so address-change.js can prefill the form.
+
+  Store-locator cards additionally render an "Edit store details" button that
+  opens the three-tab editor (contact / opening hours / images) in store-details.js,
+  wired to the legacy /aico-shops/{aicoShopId}/addresses/* endpoints.
+
+  Endpoint URLs + csrf token live as data-attrs on the page root, mirroring how
+  account.liquid emits routes.* + aico_csrf_token. The change-request URLs carry
+  __CRM_ID__ / __TASK_ID__ placeholders the JS substitutes per card.
+
+  NOTE: the renderer uses Keepsuit\Liquid\FileSystems\BlankFileSystem, so
+  `{% render 'snippet' %}` does NOT resolve files on disk (see product.liquid).
+  The address-card markup is therefore inlined in the loops below; the canonical
+  copy is kept in sync at snippets/address-card.liquid for a future filesystem
+  loader to lift verbatim.
+{% endcomment %}
+
+{%- assign change_request_base = routes.aico_address_change_request_url -%}
+{%- assign change_request_update_base = routes.aico_address_change_request_update_url -%}
+
+<main class="aico-account aico-addresses" role="main"
+      data-aico-addresses
+      data-change-request-url="{{ change_request_base }}"
+      data-change-request-update-url="{{ change_request_update_base }}"
+      data-store-details-base="{{ routes.aico_store_details_base_url }}"
+      data-aico-shop-id="{{ customer.aico_shop_id }}"
+      data-copy-saving="{{ 'customer.addresses.saving' | t | escape }}"
+      data-copy-saved="{{ 'customer.addresses.saved' | t | escape }}"
+      data-copy-error="{{ 'customer.addresses.save_error' | t | escape }}">
+
+  <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+  <div class="aico-page-container">
+    <div class="aico-account-content">
+
+      <h1 class="aico-account-section-title aico-addresses-title">{{ 'customer.addresses.title' | t }}</h1>
+
+      {%- comment -%} ── Billing ─────────────────────────────────────────── {%- endcomment -%}
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.account.billing_addresses_title' | t }}</h2>
+        {% if customer.aico_billing_addresses.size > 0 %}
+          <div class="aico-account-address-grid">
+            {% for address in customer.aico_billing_addresses %}
+              {%- assign card_bucket = 'billing' -%}
+              {%- assign change = address.aico_change_request -%}
+              <div class="aico-account-card aico-account-address-card aico-address-card"
+                   data-aico-crm-address-id="{{ address.aico_crm_address_id }}"
+                   {% if change %}data-aico-change-request-id="{{ change.id }}"{% endif %}
+                   data-bucket="{{ card_bucket }}"
+                   data-field-company="{{ address.company | escape }}"
+                   data-field-first_name="{{ address.first_name | escape }}"
+                   data-field-last_name="{{ address.last_name | escape }}"
+                   data-field-address1="{{ address.address1 | escape }}"
+                   data-field-address2="{{ address.address2 | escape }}"
+                   data-field-zip="{{ address.zip | escape }}"
+                   data-field-city="{{ address.city | escape }}"
+                   data-field-province="{{ address.province | escape }}"
+                   data-field-country="{{ address.country | escape }}"
+                   data-field-phone="{{ address.phone | escape }}">
+                {% if change %}<span class="aico-change-pending-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
+                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
+                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
+                <div class="aico-account-address-block">
+                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
+                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
+                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
+                  {% if address.province != '' or address.country != '' %}
+                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
+                  {% endif %}
+                  {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
+                </div>
+                <div class="aico-address-card-actions">
+                  {% if change %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
+                  {% else %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open" data-aico-change-open>{{ 'customer.addresses.aico_request_change' | t }}</button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="aico-account-empty">{{ 'customer.account.no_addresses' | t }}</p>
+        {% endif %}
+      </section>
+
+      {%- comment -%} ── Delivery ────────────────────────────────────────── {%- endcomment -%}
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.account.delivery_addresses_title' | t }}</h2>
+        {% if customer.aico_delivery_addresses.size > 0 %}
+          <div class="aico-account-address-grid">
+            {% for address in customer.aico_delivery_addresses %}
+              {%- assign card_bucket = 'delivery' -%}
+              {%- assign change = address.aico_change_request -%}
+              <div class="aico-account-card aico-account-address-card aico-address-card"
+                   data-aico-crm-address-id="{{ address.aico_crm_address_id }}"
+                   {% if change %}data-aico-change-request-id="{{ change.id }}"{% endif %}
+                   data-bucket="{{ card_bucket }}"
+                   data-field-company="{{ address.company | escape }}"
+                   data-field-first_name="{{ address.first_name | escape }}"
+                   data-field-last_name="{{ address.last_name | escape }}"
+                   data-field-address1="{{ address.address1 | escape }}"
+                   data-field-address2="{{ address.address2 | escape }}"
+                   data-field-zip="{{ address.zip | escape }}"
+                   data-field-city="{{ address.city | escape }}"
+                   data-field-province="{{ address.province | escape }}"
+                   data-field-country="{{ address.country | escape }}"
+                   data-field-phone="{{ address.phone | escape }}">
+                {% if change %}<span class="aico-change-pending-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
+                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
+                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
+                <div class="aico-account-address-block">
+                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
+                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
+                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
+                  {% if address.province != '' or address.country != '' %}
+                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
+                  {% endif %}
+                  {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
+                </div>
+                <div class="aico-address-card-actions">
+                  {% if change %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
+                  {% else %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open" data-aico-change-open>{{ 'customer.addresses.aico_request_change' | t }}</button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="aico-account-empty">{{ 'customer.account.no_addresses' | t }}</p>
+        {% endif %}
+      </section>
+
+      {%- comment -%} ── Store locations ─────────────────────────────────── {%- endcomment -%}
+      <section class="aico-account-section">
+        <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
+        {% if customer.aico_store_locator_addresses.size > 0 %}
+          <div class="aico-account-address-grid">
+            {% for address in customer.aico_store_locator_addresses %}
+              {%- assign card_bucket = 'store_locator' -%}
+              {%- assign change = address.aico_change_request -%}
+              <div class="aico-account-card aico-account-address-card aico-address-card"
+                   data-aico-crm-address-id="{{ address.aico_crm_address_id }}"
+                   {% if change %}data-aico-change-request-id="{{ change.id }}"{% endif %}
+                   data-bucket="{{ card_bucket }}"
+                   data-field-company="{{ address.company | escape }}"
+                   data-field-first_name="{{ address.first_name | escape }}"
+                   data-field-last_name="{{ address.last_name | escape }}"
+                   data-field-address1="{{ address.address1 | escape }}"
+                   data-field-address2="{{ address.address2 | escape }}"
+                   data-field-zip="{{ address.zip | escape }}"
+                   data-field-city="{{ address.city | escape }}"
+                   data-field-province="{{ address.province | escape }}"
+                   data-field-country="{{ address.country | escape }}"
+                   data-field-phone="{{ address.phone | escape }}">
+                {% if change %}<span class="aico-change-pending-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
+                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
+                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
+                <div class="aico-account-address-block">
+                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
+                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
+                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
+                  {% if address.province != '' or address.country != '' %}
+                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
+                  {% endif %}
+                  {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
+                </div>
+                <div class="aico-address-card-actions">
+                  <button type="button" class="aico-address-card-btn aico-store-details-open" data-aico-store-details-open>{{ 'customer.addresses.aico_edit_store_details' | t }}</button>
+                  {% if change %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
+                  {% else %}
+                    <button type="button" class="aico-address-card-btn aico-address-change-open" data-aico-change-open>{{ 'customer.addresses.aico_request_change' | t }}</button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="aico-account-empty">{{ 'customer.addresses.no_stores' | t }}</p>
+        {% endif %}
+      </section>
+
+    </div>
+  </div>
+
+  {%- comment -%}
+    Change-request form modal (single, reused). address-change.js fills the
+    fields from the active card's data-attrs, sets the action URL, and toggles
+    create vs. update mode.
+  {%- endcomment -%}
+  <div class="aico-address-change-modal" data-aico-change-modal hidden aria-hidden="true">
+    <div class="aico-address-change-overlay" data-aico-change-close></div>
+    <div class="aico-address-change-dialog" role="dialog" aria-modal="true" aria-labelledby="aico-change-title">
+      <div class="aico-address-change-head">
+        <h3 id="aico-change-title" class="aico-address-change-heading">{{ 'customer.addresses.aico_request_change' | t }}</h3>
+        <button type="button" class="aico-address-change-x" data-aico-change-close aria-label="{{ 'customer.addresses.close' | t | escape }}">&times;</button>
+      </div>
+      <form class="aico-address-change-form" data-aico-change-form>
+        <div class="aico-address-change-grid">
+          {% assign fields = 'company,first_name,last_name,address1,address2,zip,city,province,country,phone' | split: ',' %}
+          {% for field in fields %}
+            <label class="aico-address-change-field{% if field == 'address1' or field == 'address2' %} aico-address-change-field--wide{% endif %}">
+              <span class="aico-address-change-label">{{ 'customer.addresses.field.' | append: field | t }}</span>
+              <input class="aico-address-change-input" type="text" name="{{ field }}" data-field="{{ field }}">
+            </label>
+          {% endfor %}
+        </div>
+        <label class="aico-address-change-field aico-address-change-field--wide">
+          <span class="aico-address-change-label">{{ 'customer.addresses.aico_explanation' | t }}</span>
+          <textarea class="aico-address-change-input aico-address-change-textarea" name="aico_explanation" data-field="aico_explanation" rows="3" required></textarea>
+        </label>
+        <div class="aico-address-change-actions">
+          <button type="button" class="aico-address-change-cancel" data-aico-change-close>{{ 'customer.addresses.cancel' | t }}</button>
+          <button type="submit" class="aico-address-change-submit">{{ 'customer.addresses.submit' | t }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {%- comment -%}
+    Store-details editor modal (three tabs). store-details.js loads/saves each
+    tab against the legacy /aico-shops/{aicoShopId}/addresses/* endpoints.
+  {%- endcomment -%}
+  <div class="aico-store-details-modal" data-aico-store-details-modal hidden aria-hidden="true">
+    <div class="aico-store-details-overlay" data-aico-store-details-close></div>
+    <div class="aico-store-details-dialog" role="dialog" aria-modal="true" aria-labelledby="aico-store-details-title">
+      <div class="aico-store-details-head">
+        <h3 id="aico-store-details-title" class="aico-store-details-heading">{{ 'customer.addresses.store_details_title' | t }}</h3>
+        <button type="button" class="aico-store-details-x" data-aico-store-details-close aria-label="{{ 'customer.addresses.close' | t | escape }}">&times;</button>
+      </div>
+      <div class="aico-store-details-tabs" role="tablist">
+        <button type="button" class="aico-store-details-tab is-active" data-aico-store-details-tab="contact" role="tab">{{ 'customer.addresses.tab_contact' | t }}</button>
+        <button type="button" class="aico-store-details-tab" data-aico-store-details-tab="hours" role="tab">{{ 'customer.addresses.tab_hours' | t }}</button>
+        <button type="button" class="aico-store-details-tab" data-aico-store-details-tab="images" role="tab">{{ 'customer.addresses.tab_images' | t }}</button>
+      </div>
+      <div class="aico-store-details-panels">
+        <div class="aico-store-details-panel is-active" data-aico-store-details-panel="contact"></div>
+        <div class="aico-store-details-panel" data-aico-store-details-panel="hours"></div>
+        <div class="aico-store-details-panel" data-aico-store-details-panel="images"></div>
+      </div>
+    </div>
+  </div>
+
+  {%- comment -%} Standard site toast (shared .aico-toast-wrap / .aico-toast). {%- endcomment -%}
+  <div class="aico-toast-wrap" aria-live="polite" aria-atomic="true">
+    <div class="aico-toast aico-addresses-toast" data-aico-addresses-toast></div>
+  </div>
+
+  <script src="{{ 'address-change.js' | asset_url }}" defer></script>
+  <script src="{{ 'store-details.js' | asset_url }}" defer></script>
+</main>

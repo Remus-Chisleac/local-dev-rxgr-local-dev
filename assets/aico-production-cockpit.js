@@ -1,0 +1,723 @@
+// Aico storefront — production-cockpit page + PDP restock-reminder controller.
+//
+// Recreates the b2b-shop Production Cockpit against the storefront cookie
+// session. Two entry points share one reminder modal:
+//
+//   1. The cockpit page (templates/customers/aico_production_cockpit.liquid):
+//      a brand filter + a sortable restock table. Each row opens the reminder
+//      modal listing the product's sizes/variants; toggling + saving POSTs to
+//      the reminders endpoints.
+//   2. The PDP block (templates/product.liquid, [data-aico-cockpit-restock]):
+//      hydrates a single SKU; if a restock date exists it shows the date + a
+//      "Set / Update reminder" button that opens the SAME modal.
+//
+// All data comes from the same-origin .js proxies (StorefrontProductionCockpit
+// Controller), cookie-authorized — no JWT touches the browser.
+
+(function () {
+  'use strict';
+
+  // ---- shared helpers ---------------------------------------------
+
+  function parseI18n(el) {
+    if (!el) {
+      return {};
+    }
+    try {
+      return JSON.parse(el.textContent) || {};
+    } catch (e) {
+      console.warn('aico-cockpit: invalid i18n bootstrap', e);
+      return {};
+    }
+  }
+
+  function makeT(i18n) {
+    return function t(path, fallback) {
+      var segments = path.split('.');
+      var cursor = i18n;
+      for (var i = 0; i < segments.length; i++) {
+        if (cursor && typeof cursor === 'object' && segments[i] in cursor) {
+          cursor = cursor[segments[i]];
+        } else {
+          return fallback != null ? fallback : path;
+        }
+      }
+      return typeof cursor === 'string' ? cursor : (fallback != null ? fallback : path);
+    };
+  }
+
+  // dd.MM.yyyy from an ISO-ish yyyy-MM-dd (or full ISO) date string.
+  function formatDate(raw) {
+    if (!raw) {
+      return '';
+    }
+    var match = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) {
+      return String(raw);
+    }
+    return match[3] + '.' + match[2] + '.' + match[1];
+  }
+
+  function getJson(url) {
+    return fetch(url, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (response) {
+      if (!response.ok) {
+        throw new Error('GET ' + url + ' -> ' + response.status);
+      }
+      return response.json();
+    });
+  }
+
+  function postJson(url, payload, token) {
+    return fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': token || ''
+      },
+      body: JSON.stringify(payload)
+    }).then(function (response) {
+      if (!response.ok) {
+        throw new Error('POST ' + url + ' -> ' + response.status);
+      }
+      return response.json().catch(function () {
+        return {};
+      });
+    });
+  }
+
+  function unwrap(envelope) {
+    if (!envelope) {
+      return [];
+    }
+    var data = envelope.data != null ? envelope.data : envelope;
+    return Array.isArray(data) ? data : [];
+  }
+
+  // A reminder matches a row variant either by real variant id (shop
+  // variants) or by sku+size (new-release / manual entries).
+  function reminderKeyForVariant(product, variant) {
+    if (variant && variant.variantId != null) {
+      return 'v:' + variant.variantId;
+    }
+    return 'n:' + String(product.sku) + '|' + String(variant ? variant.variantValue : '');
+  }
+
+  function reminderKey(reminder) {
+    if (reminder && reminder.product_variant_id != null) {
+      return 'v:' + reminder.product_variant_id;
+    }
+    return 'n:' + String(reminder ? reminder.sku : '') + '|' + String(reminder ? reminder.size : '');
+  }
+
+  // Build a lookup of active reminders keyed the same way as row variants,
+  // so the modal can show which sizes already have a reminder (and its id).
+  function indexReminders(reminders) {
+    var byKey = {};
+    reminders.forEach(function (reminder) {
+      byKey[reminderKey(reminder)] = reminder;
+    });
+    return byKey;
+  }
+
+  // ---- shared reminder modal --------------------------------------
+  //
+  // One modal instance serves both the cockpit page and the PDP. It is built
+  // lazily and appended to <body>. open(product, ctx) renders the size cells;
+  // saving calls back into the page controller so the table/PDP can refresh.
+
+  function createReminderModal(opts) {
+    var t = opts.t;
+    var token = opts.token;
+    var remindersUrl = opts.remindersUrl;
+    var newReleaseUrl = opts.newReleaseUrl;
+    var onToast = opts.onToast || function () {};
+    var onSaved = opts.onSaved || function () {};
+
+    var root = document.createElement('div');
+    root.className = 'aico-cockpit-modal';
+    root.setAttribute('hidden', '');
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.innerHTML =
+      '<div class="aico-cockpit-modal-backdrop" data-aico-cockpit-modal-close></div>' +
+      '<div class="aico-cockpit-modal-panel" role="document">' +
+        '<header class="aico-cockpit-modal-head">' +
+          '<p class="aico-cockpit-modal-eyebrow">' + t('reminder_modal.manage_for', 'Manage reminders for:') + '</p>' +
+          '<h2 class="aico-cockpit-modal-title" data-aico-cockpit-modal-title></h2>' +
+          '<button type="button" class="aico-cockpit-modal-x" data-aico-cockpit-modal-close aria-label="' + t('reminder_modal.cancel', 'Cancel') + '">&times;</button>' +
+        '</header>' +
+        '<p class="aico-cockpit-modal-hint">' + t('reminder_modal.choose_size', 'Choose your size') + '</p>' +
+        '<div class="aico-cockpit-modal-grid" data-aico-cockpit-modal-grid></div>' +
+        '<div class="aico-cockpit-modal-legend">' +
+          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--active"></span>' + t('reminder_modal.legend_active', 'Active reminder') + '</span>' +
+          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--add"></span>' + t('reminder_modal.legend_add', 'Will be added') + '</span>' +
+          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--remove"></span>' + t('reminder_modal.legend_remove', 'Will be removed') + '</span>' +
+        '</div>' +
+        '<footer class="aico-cockpit-modal-foot">' +
+          '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--ghost" data-aico-cockpit-modal-close>' + t('reminder_modal.cancel', 'Cancel') + '</button>' +
+          '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--primary" data-aico-cockpit-modal-save>' + t('reminder_modal.save', 'Save reminder') + '</button>' +
+        '</footer>' +
+      '</div>';
+    document.body.appendChild(root);
+
+    var titleEl = root.querySelector('[data-aico-cockpit-modal-title]');
+    var gridEl = root.querySelector('[data-aico-cockpit-modal-grid]');
+    var saveBtn = root.querySelector('[data-aico-cockpit-modal-save]');
+
+    var current = null; // { product, reminderIndex }
+
+    function close() {
+      root.setAttribute('hidden', '');
+      current = null;
+    }
+
+    root.addEventListener('click', function (event) {
+      if (event.target.closest('[data-aico-cockpit-modal-close]')) {
+        close();
+      }
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !root.hasAttribute('hidden')) {
+        close();
+      }
+    });
+
+    // cell.state: 'idle' | 'active' | 'add' | 'remove'
+    function renderGrid(product, reminderIndex) {
+      gridEl.innerHTML = '';
+      (product.variants || []).forEach(function (variant) {
+        var key = reminderKeyForVariant(product, variant);
+        var existing = reminderIndex[key] || null;
+        var cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'aico-cockpit-size-cell';
+        cell.setAttribute('data-aico-cockpit-size', '');
+        cell.dataset.state = existing ? 'active' : 'idle';
+        cell.dataset.variantId = variant.variantId != null ? String(variant.variantId) : '';
+        cell.dataset.size = variant.variantValue != null ? String(variant.variantValue) : '';
+        cell.dataset.reminderId = existing && existing.id != null ? String(existing.id) : '';
+        cell.dataset.manual = (product.isManualEntry || variant.variantId == null) ? '1' : '0';
+        cell.textContent = variant.variantValue != null ? variant.variantValue : '—';
+        applyCellClass(cell);
+        cell.addEventListener('click', function () {
+          toggleCell(cell);
+        });
+        gridEl.appendChild(cell);
+      });
+    }
+
+    function applyCellClass(cell) {
+      cell.classList.remove(
+        'aico-cockpit-size-cell--active',
+        'aico-cockpit-size-cell--add',
+        'aico-cockpit-size-cell--remove'
+      );
+      var state = cell.dataset.state;
+      if (state === 'active') {
+        cell.classList.add('aico-cockpit-size-cell--active');
+      } else if (state === 'add') {
+        cell.classList.add('aico-cockpit-size-cell--add');
+      } else if (state === 'remove') {
+        cell.classList.add('aico-cockpit-size-cell--remove');
+      }
+    }
+
+    // idle -> add -> idle ; active -> remove -> active
+    function toggleCell(cell) {
+      var state = cell.dataset.state;
+      if (state === 'idle') {
+        cell.dataset.state = 'add';
+      } else if (state === 'add') {
+        cell.dataset.state = 'idle';
+      } else if (state === 'active') {
+        cell.dataset.state = 'remove';
+      } else if (state === 'remove') {
+        cell.dataset.state = 'active';
+      }
+      applyCellClass(cell);
+    }
+
+    function collectChanges() {
+      var variantIdsToSetRemindersFor = [];
+      var reminderIdsToCancel = [];
+      var newReleases = []; // { sku, size }
+      var cells = gridEl.querySelectorAll('[data-aico-cockpit-size]');
+      Array.prototype.forEach.call(cells, function (cell) {
+        var state = cell.dataset.state;
+        if (state === 'add') {
+          if (cell.dataset.manual === '1' || !cell.dataset.variantId) {
+            newReleases.push({ sku: current.product.sku, size: cell.dataset.size });
+          } else {
+            variantIdsToSetRemindersFor.push(cell.dataset.variantId);
+          }
+        } else if (state === 'remove' && cell.dataset.reminderId) {
+          reminderIdsToCancel.push(cell.dataset.reminderId);
+        }
+      });
+      return {
+        variantIdsToSetRemindersFor: variantIdsToSetRemindersFor,
+        reminderIdsToCancel: reminderIdsToCancel,
+        newReleases: newReleases
+      };
+    }
+
+    function save() {
+      if (!current) {
+        return;
+      }
+      var changes = collectChanges();
+      var tasks = [];
+
+      if (changes.variantIdsToSetRemindersFor.length || changes.reminderIdsToCancel.length) {
+        tasks.push(postJson(remindersUrl, {
+          data: {
+            variantIdsToSetRemindersFor: changes.variantIdsToSetRemindersFor,
+            reminderIdsToCancel: changes.reminderIdsToCancel
+          }
+        }, token));
+      }
+      changes.newReleases.forEach(function (entry) {
+        tasks.push(postJson(newReleaseUrl, entry, token));
+      });
+
+      if (!tasks.length) {
+        close();
+        return;
+      }
+
+      saveBtn.disabled = true;
+      Promise.all(tasks).then(function () {
+        saveBtn.disabled = false;
+        onToast('updated');
+        close();
+        onSaved();
+      }).catch(function (error) {
+        console.warn('aico-cockpit: reminder save failed', error);
+        saveBtn.disabled = false;
+        onToast('error');
+      });
+    }
+
+    saveBtn.addEventListener('click', save);
+
+    return {
+      open: function (product, reminderIndex) {
+        current = { product: product };
+        titleEl.textContent = product.name || product.sku || '';
+        renderGrid(product, reminderIndex || {});
+        root.removeAttribute('hidden');
+      },
+      close: close
+    };
+  }
+
+  // ---- cockpit page controller ------------------------------------
+
+  function initCockpitPage() {
+    var root = document.querySelector('[data-aico-cockpit]');
+    if (!root) {
+      return;
+    }
+
+    var i18n = parseI18n(root.querySelector('[data-aico-cockpit-i18n]'));
+    var t = makeT(i18n);
+    var token = root.getAttribute('data-aico-cockpit-token') || '';
+    var productsUrl = root.getAttribute('data-aico-cockpit-products-url') || '';
+    var remindersUrl = root.getAttribute('data-aico-cockpit-reminders-url') || '';
+    var newReleaseUrl = root.getAttribute('data-aico-cockpit-new-release-url') || '';
+
+    var brandFilterEl = root.querySelector('[data-aico-cockpit-brand-filter]');
+    var tbodyEl = root.querySelector('[data-aico-cockpit-tbody]');
+    var emptyEl = root.querySelector('[data-aico-cockpit-empty]');
+    var errorEl = root.querySelector('[data-aico-cockpit-error]');
+    var loaderEl = root.querySelector('[data-aico-cockpit-loader]');
+    var toastEl = root.querySelector('[data-aico-cockpit-toast]');
+    var sortButtons = root.querySelectorAll('[data-aico-cockpit-sort]');
+
+    var state = {
+      products: [],
+      reminderIndex: {},
+      brands: [],          // [{ id, label }]
+      selectedBrandIds: {}, // map id->true (string keys); '' = unknown bucket
+      sortKey: 'date',
+      sortDir: 'asc'
+    };
+
+    var toastTimer = null;
+    function toast(kind) {
+      if (!toastEl) {
+        return;
+      }
+      toastEl.textContent = kind === 'error'
+        ? t('reminder_modal.toast_error', 'Failed to update reminders. Please try again.')
+        : t('reminder_modal.toast_updated', 'Reminders updated');
+      toastEl.classList.toggle('aico-cockpit-toast--error', kind === 'error');
+      toastEl.classList.add('is-visible');
+      if (toastTimer) {
+        window.clearTimeout(toastTimer);
+      }
+      toastTimer = window.setTimeout(function () {
+        toastEl.classList.remove('is-visible');
+      }, 2600);
+    }
+
+    var modal = createReminderModal({
+      t: t,
+      token: token,
+      remindersUrl: remindersUrl,
+      newReleaseUrl: newReleaseUrl,
+      onToast: toast,
+      onSaved: refreshReminders
+    });
+
+    function brandLabel(product) {
+      var override = root.getAttribute('data-aico-cockpit-brand-' + product.brandId);
+      if (override) {
+        return override;
+      }
+      if (product.brandId == null) {
+        return t('brand_filter.unknown', 'Unknown Brand');
+      }
+      return String(product.brandId);
+    }
+
+    function buildBrands() {
+      var seen = {};
+      var brands = [];
+      state.products.forEach(function (product) {
+        var id = product.brandId == null ? '' : String(product.brandId);
+        if (!(id in seen)) {
+          seen[id] = true;
+          brands.push({ id: id, label: brandLabel(product) });
+        }
+      });
+      state.brands = brands;
+      // Default: all brands selected (b2b-shop requires >=1 selected).
+      state.selectedBrandIds = {};
+      brands.forEach(function (brand) {
+        state.selectedBrandIds[brand.id] = true;
+      });
+    }
+
+    function renderBrandFilter() {
+      if (!brandFilterEl) {
+        return;
+      }
+      brandFilterEl.innerHTML = '';
+      state.brands.forEach(function (brand) {
+        var label = document.createElement('label');
+        label.className = 'aico-cockpit-brand-chip';
+        var input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = !!state.selectedBrandIds[brand.id];
+        input.value = brand.id;
+        input.setAttribute('data-aico-cockpit-brand-checkbox', '');
+        input.addEventListener('change', function () {
+          // Keep at least one brand selected (matches legacy rule).
+          var next = {};
+          Object.keys(state.selectedBrandIds).forEach(function (k) {
+            next[k] = state.selectedBrandIds[k];
+          });
+          next[brand.id] = input.checked;
+          var anySelected = Object.keys(next).some(function (k) {
+            return next[k];
+          });
+          if (!anySelected) {
+            input.checked = true;
+            return;
+          }
+          state.selectedBrandIds = next;
+          renderRows();
+        });
+        var span = document.createElement('span');
+        span.textContent = brand.label;
+        label.appendChild(input);
+        label.appendChild(span);
+        brandFilterEl.appendChild(label);
+      });
+    }
+
+    function visibleProducts() {
+      return state.products.filter(function (product) {
+        var id = product.brandId == null ? '' : String(product.brandId);
+        return !!state.selectedBrandIds[id];
+      });
+    }
+
+    function sortedProducts(products) {
+      var dir = state.sortDir === 'desc' ? -1 : 1;
+      var key = state.sortKey;
+      return products.slice().sort(function (a, b) {
+        var av;
+        var bv;
+        if (key === 'brand') {
+          av = brandLabel(a).toLowerCase();
+          bv = brandLabel(b).toLowerCase();
+        } else {
+          av = a.date || '';
+          bv = b.date || '';
+        }
+        if (av < bv) {
+          return -1 * dir;
+        }
+        if (av > bv) {
+          return 1 * dir;
+        }
+        return 0;
+      });
+    }
+
+    function rowHasReminder(product) {
+      return (product.variants || []).some(function (variant) {
+        return !!state.reminderIndex[reminderKeyForVariant(product, variant)];
+      });
+    }
+
+    function renderRows() {
+      if (!tbodyEl) {
+        return;
+      }
+      var products = sortedProducts(visibleProducts());
+      tbodyEl.innerHTML = '';
+
+      if (!state.products.length) {
+        showEmpty(t('table.no_data', 'No restock data available'));
+        return;
+      }
+      if (!products.length) {
+        showEmpty(t('table.no_data_for_brands', 'No products found for selected brands'));
+        return;
+      }
+      hideEmpty();
+
+      products.forEach(function (product) {
+        var tr = document.createElement('tr');
+        tr.className = 'aico-cockpit-row';
+        tr.setAttribute('data-aico-cockpit-row', '');
+
+        var hasReminder = rowHasReminder(product);
+        var actionLabel = hasReminder
+          ? t('reminder_modal.update', 'Update reminders')
+          : t('set_reminder', 'Set reminder');
+
+        tr.innerHTML =
+          '<td class="aico-cockpit-cell aico-cockpit-cell--brand">' + escapeHtml(brandLabel(product)) + '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--image">' +
+            (product.image
+              ? '<img class="aico-cockpit-thumb" src="' + escapeAttr(product.image) + '" alt="" loading="lazy">'
+              : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>') +
+          '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--model">' + escapeHtml(product.name || '') +
+            (product.isManualEntry ? ' <span class="aico-cockpit-badge">' + escapeHtml(t('coming_soon', 'Coming soon')) + '</span>' : '') +
+          '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--sku">' + escapeHtml(product.sku || '') + '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--date">' + escapeHtml(formatDate(product.date)) + '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--action">' +
+            '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--outline" data-aico-cockpit-open>' + escapeHtml(actionLabel) + '</button>' +
+          '</td>';
+
+        tr.querySelector('[data-aico-cockpit-open]').addEventListener('click', function () {
+          modal.open(product, state.reminderIndex);
+        });
+        tbodyEl.appendChild(tr);
+      });
+    }
+
+    function showEmpty(message) {
+      if (emptyEl) {
+        emptyEl.textContent = message;
+        emptyEl.hidden = false;
+      }
+    }
+    function hideEmpty() {
+      if (emptyEl) {
+        emptyEl.hidden = true;
+      }
+    }
+
+    Array.prototype.forEach.call(sortButtons, function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-aico-cockpit-sort');
+        if (state.sortKey === key) {
+          state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sortKey = key;
+          state.sortDir = 'asc';
+        }
+        Array.prototype.forEach.call(sortButtons, function (other) {
+          other.setAttribute('aria-sort', 'none');
+        });
+        btn.setAttribute('aria-sort', state.sortDir === 'asc' ? 'ascending' : 'descending');
+        renderRows();
+      });
+    });
+
+    function refreshReminders() {
+      return getJson(remindersUrl).then(function (envelope) {
+        state.reminderIndex = indexReminders(unwrap(envelope));
+        renderRows();
+      }).catch(function (error) {
+        console.warn('aico-cockpit: reminders refresh failed', error);
+      });
+    }
+
+    function load() {
+      if (loaderEl) {
+        loaderEl.hidden = false;
+      }
+      Promise.all([getJson(productsUrl), getJson(remindersUrl)])
+        .then(function (results) {
+          state.products = unwrap(results[0]);
+          state.reminderIndex = indexReminders(unwrap(results[1]));
+          buildBrands();
+          renderBrandFilter();
+          renderRows();
+        })
+        .catch(function (error) {
+          console.warn('aico-cockpit: load failed', error);
+          if (errorEl) {
+            errorEl.hidden = false;
+          }
+        })
+        .then(function () {
+          if (loaderEl) {
+            loaderEl.hidden = true;
+          }
+        });
+    }
+
+    load();
+  }
+
+  // ---- PDP integration --------------------------------------------
+
+  function initPdpRestock() {
+    var block = document.querySelector('[data-aico-cockpit-restock]');
+    if (!block) {
+      return;
+    }
+
+    var i18n = parseI18n(block.querySelector('[data-aico-cockpit-i18n]'));
+    var t = makeT(i18n);
+    var token = block.getAttribute('data-aico-cockpit-token') || '';
+    var sku = block.getAttribute('data-aico-cockpit-sku') || '';
+    var productUrl = block.getAttribute('data-aico-cockpit-product-url') || '';
+    var remindersUrl = block.getAttribute('data-aico-cockpit-reminders-url') || '';
+    var newReleaseUrl = block.getAttribute('data-aico-cockpit-new-release-url') || '';
+
+    if (!sku || !productUrl) {
+      return;
+    }
+    // Placeholder carries `__SKU__`; substitute the real, encoded SKU.
+    var singleUrl = productUrl.replace('__SKU__', encodeURIComponent(sku));
+
+    var toastTimer = null;
+    function toast(kind) {
+      var toastEl = block.querySelector('[data-aico-cockpit-toast]');
+      if (!toastEl) {
+        return;
+      }
+      toastEl.textContent = kind === 'error'
+        ? t('reminder_modal.toast_error', 'Failed to update reminders. Please try again.')
+        : t('reminder_modal.toast_updated', 'Reminders updated');
+      toastEl.classList.toggle('aico-cockpit-toast--error', kind === 'error');
+      toastEl.classList.add('is-visible');
+      if (toastTimer) {
+        window.clearTimeout(toastTimer);
+      }
+      toastTimer = window.setTimeout(function () {
+        toastEl.classList.remove('is-visible');
+      }, 2600);
+    }
+
+    var modal = createReminderModal({
+      t: t,
+      token: token,
+      remindersUrl: remindersUrl,
+      newReleaseUrl: newReleaseUrl,
+      onToast: toast,
+      onSaved: hydrate
+    });
+
+    var product = null;
+    var reminderIndex = {};
+
+    function hydrate() {
+      Promise.all([getJson(singleUrl), getJson(remindersUrl)])
+        .then(function (results) {
+          var products = unwrap(results[0]);
+          reminderIndex = indexReminders(unwrap(results[1]));
+          product = products.length ? products[0] : null;
+
+          if (!product || !product.date) {
+            block.hidden = true;
+            block.innerHTML = '';
+            return;
+          }
+          render();
+        })
+        .catch(function (error) {
+          console.warn('aico-cockpit: PDP hydrate failed', error);
+          block.hidden = true;
+        });
+    }
+
+    function hasReminder() {
+      return (product.variants || []).some(function (variant) {
+        return !!reminderIndex[reminderKeyForVariant(product, variant)];
+      });
+    }
+
+    function render() {
+      var label = hasReminder()
+        ? t('reminder_modal.update', 'Update reminders')
+        : t('set_reminder', 'Set reminder');
+      block.hidden = false;
+      block.innerHTML =
+        '<div class="aico-cockpit-pdp-card">' +
+          '<p class="aico-cockpit-pdp-line">' +
+            '<span class="aico-cockpit-pdp-label">' + escapeHtml(t('table.restock_date', 'Available from')) + '</span> ' +
+            '<strong class="aico-cockpit-pdp-date">' + escapeHtml(formatDate(product.date)) + '</strong>' +
+          '</p>' +
+          '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--outline" data-aico-cockpit-pdp-open>' + escapeHtml(label) + '</button>' +
+          '<div class="aico-cockpit-toast" aria-live="polite" data-aico-cockpit-toast></div>' +
+        '</div>';
+      block.querySelector('[data-aico-cockpit-pdp-open]').addEventListener('click', function () {
+        modal.open(product, reminderIndex);
+      });
+    }
+
+    hydrate();
+  }
+
+  // ---- escaping ---------------------------------------------------
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/"/g, '&quot;');
+  }
+
+  // ---- boot -------------------------------------------------------
+
+  function boot() {
+    initCockpitPage();
+    initPdpRestock();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();

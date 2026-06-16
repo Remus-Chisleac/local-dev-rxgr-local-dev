@@ -1,0 +1,112 @@
+{% comment %}
+  AICO production-cockpit page (B2B only). Recreates the b2b-shop Production
+  Cockpit in the Liquid theme: an intro, a brand filter, and a sortable table
+  of upcoming restocks for the logged-in shopper's brands, with a per-product
+  reminder modal.
+
+  Shopify has no production-cockpit concept, so the whole feature is an
+  `aico_`-namespaced extension: the page lives under `/account/...` (and
+  `templates/customers/`) but the template stem, routes, locale keys, and data
+  hooks are all `aico_`-prefixed. Login is enforced by the storefront
+  catch-all (RequireCustomerLogin); the account link that leads here is itself
+  gated on `customer.aico_debtor_id` (B2B sessions only).
+
+  The page is JS-driven (assets/aico-production-cockpit.js): the controller
+  fetches the restock table + active reminders from the same-origin `.js`
+  proxies (StorefrontProductionCockpitController, cookie-authorized — no JWT in
+  the browser), renders the brand filter + table, and opens the reminder modal.
+  Brand ids from the feed are mapped to human labels via the `data-aico-cockpit-
+  brand-<id>` attributes emitted here from the `brands` drop.
+{% endcomment %}
+
+<main
+  class="aico-cockpit"
+  role="main"
+  data-aico-cockpit
+  data-aico-cockpit-token="{{ aico_csrf_token }}"
+  data-aico-cockpit-products-url="{{ routes.aico_production_cockpit_products_url }}"
+  data-aico-cockpit-reminders-url="{{ routes.aico_production_cockpit_reminders_url }}"
+  data-aico-cockpit-new-release-url="{{ routes.aico_production_cockpit_new_release_url }}"
+  {% for brand in brands %}data-aico-cockpit-brand-{{ brand.id }}="{{ brand.label | escape }}" {% endfor %}>
+
+  <div class="aico-page-container aico-cockpit-shell">
+
+    <header class="aico-cockpit-head">
+      <h1 class="aico-cockpit-title">{{ 'aico_production_cockpit.title' | t }}</h1>
+      <p class="aico-cockpit-intro">{{ 'aico_production_cockpit.intro.paragraph1' | t }}</p>
+      <p class="aico-cockpit-intro aico-cockpit-intro--muted">{{ 'aico_production_cockpit.intro.paragraph2' | t }}</p>
+    </header>
+
+    <section class="aico-cockpit-filter" aria-label="{{ 'aico_production_cockpit.brand_filter.title' | t }}">
+      <h2 class="aico-cockpit-filter-title">{{ 'aico_production_cockpit.brand_filter.title' | t }}</h2>
+      <p class="aico-cockpit-filter-info">{{ 'aico_production_cockpit.brand_filter.info' | t }}</p>
+      <div class="aico-cockpit-brand-chips" data-aico-cockpit-brand-filter></div>
+    </section>
+
+    <p class="aico-cockpit-empty" role="status" data-aico-cockpit-empty hidden></p>
+    <p class="aico-cockpit-error" role="alert" data-aico-cockpit-error hidden>
+      {{ 'aico_production_cockpit.error' | t }}
+    </p>
+
+    <div class="aico-cockpit-table-wrap">
+      <table class="aico-cockpit-table">
+        <thead>
+          <tr>
+            <th scope="col" class="aico-cockpit-th aico-cockpit-th--sortable" aria-sort="none">
+              <button type="button" class="aico-cockpit-sort" data-aico-cockpit-sort="brand">
+                {{ 'aico_production_cockpit.table.columns.brand' | t }}
+                <span class="aico-cockpit-sort-icon" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col" class="aico-cockpit-th">{{ 'aico_production_cockpit.table.columns.image' | t }}</th>
+            <th scope="col" class="aico-cockpit-th">{{ 'aico_production_cockpit.table.columns.model' | t }}</th>
+            <th scope="col" class="aico-cockpit-th">{{ 'aico_production_cockpit.table.columns.sku' | t }}</th>
+            <th scope="col" class="aico-cockpit-th aico-cockpit-th--sortable" aria-sort="ascending">
+              <button type="button" class="aico-cockpit-sort" data-aico-cockpit-sort="date">
+                {{ 'aico_production_cockpit.table.columns.restock_date' | t }}
+                <span class="aico-cockpit-sort-icon" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col" class="aico-cockpit-th">{{ 'aico_production_cockpit.table.columns.actions' | t }}</th>
+          </tr>
+        </thead>
+        <tbody data-aico-cockpit-tbody></tbody>
+      </table>
+
+      <div class="aico-cockpit-loader" data-aico-cockpit-loader hidden>
+        <span class="aico-cockpit-spinner" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} Shared toast (bottom-center), reused by the reminder modal. {% endcomment %}
+  <div class="aico-toast-wrap" aria-live="polite" aria-atomic="true">
+    <div class="aico-toast aico-cockpit-toast" data-aico-cockpit-toast></div>
+  </div>
+
+  <script type="application/json" data-aico-cockpit-i18n>{
+    "set_reminder": {{ 'aico_production_cockpit.set_reminder' | t | json }},
+    "coming_soon": {{ 'aico_production_cockpit.coming_soon' | t | json }},
+    "table": {
+      "no_data": {{ 'aico_production_cockpit.table.no_data' | t | json }},
+      "no_data_for_brands": {{ 'aico_production_cockpit.table.no_data_for_brands' | t | json }},
+      "restock_date": {{ 'aico_production_cockpit.table.columns.restock_date' | t | json }}
+    },
+    "brand_filter": {
+      "unknown": {{ 'aico_production_cockpit.brand_filter.unknown_brand' | t | json }}
+    },
+    "reminder_modal": {
+      "manage_for": {{ 'aico_production_cockpit.reminder_modal.manage_for' | t | json }},
+      "choose_size": {{ 'aico_production_cockpit.reminder_modal.choose_size' | t | json }},
+      "cancel": {{ 'aico_production_cockpit.reminder_modal.cancel' | t | json }},
+      "save": {{ 'aico_production_cockpit.reminder_modal.save' | t | json }},
+      "update": {{ 'aico_production_cockpit.reminder_modal.update' | t | json }},
+      "legend_active": {{ 'aico_production_cockpit.reminder_modal.legend_active' | t | json }},
+      "legend_add": {{ 'aico_production_cockpit.reminder_modal.legend_add' | t | json }},
+      "legend_remove": {{ 'aico_production_cockpit.reminder_modal.legend_remove' | t | json }},
+      "toast_updated": {{ 'aico_production_cockpit.reminder_modal.toast_updated' | t | json }},
+      "toast_error": {{ 'aico_production_cockpit.reminder_modal.toast_error' | t | json }}
+    }
+  }</script>
+  <script src="{{ 'aico-production-cockpit.js' | asset_url }}" defer></script>
+</main>

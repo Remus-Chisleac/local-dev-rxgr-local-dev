@@ -389,7 +389,42 @@
               </span>
             </button>
 
-            {% comment %} TODO: Restock-reminder button (stub) — defer per plan §2. {% endcomment %}
+            {%- comment -%}
+              Production-cockpit restock integration. The block is hydrated by
+              assets/aico-production-cockpit.js from
+              `account/aico-cockpit/products/{sku}.js` (same-origin, cookie-
+              authorized). If the SKU has a restock date it shows the date + a
+              Set/Update-reminder button opening the SAME shared modal as the
+              cockpit page; otherwise the block stays hidden (no layout shift).
+              SKU-scoped, so it only ever appears for B2B sessions whose debtor
+              has the product in a restock feed match.
+            {%- endcomment -%}
+            <div
+              class="aico-cockpit-restock"
+              data-aico-cockpit-restock
+              data-aico-cockpit-sku="{{ product.sku | escape }}"
+              data-aico-cockpit-token="{{ aico_csrf_token }}"
+              data-aico-cockpit-product-url="{{ routes.aico_production_cockpit_product_url }}"
+              data-aico-cockpit-reminders-url="{{ routes.aico_production_cockpit_reminders_url }}"
+              data-aico-cockpit-new-release-url="{{ routes.aico_production_cockpit_new_release_url }}"
+              hidden>
+              <script type="application/json" data-aico-cockpit-i18n>{
+                "set_reminder": {{ 'aico_production_cockpit.set_reminder' | t | json }},
+                "table": { "restock_date": {{ 'aico_production_cockpit.table.columns.restock_date' | t | json }} },
+                "reminder_modal": {
+                  "manage_for": {{ 'aico_production_cockpit.reminder_modal.manage_for' | t | json }},
+                  "choose_size": {{ 'aico_production_cockpit.reminder_modal.choose_size' | t | json }},
+                  "cancel": {{ 'aico_production_cockpit.reminder_modal.cancel' | t | json }},
+                  "save": {{ 'aico_production_cockpit.reminder_modal.save' | t | json }},
+                  "update": {{ 'aico_production_cockpit.reminder_modal.update' | t | json }},
+                  "legend_active": {{ 'aico_production_cockpit.reminder_modal.legend_active' | t | json }},
+                  "legend_add": {{ 'aico_production_cockpit.reminder_modal.legend_add' | t | json }},
+                  "legend_remove": {{ 'aico_production_cockpit.reminder_modal.legend_remove' | t | json }},
+                  "toast_updated": {{ 'aico_production_cockpit.reminder_modal.toast_updated' | t | json }},
+                  "toast_error": {{ 'aico_production_cockpit.reminder_modal.toast_error' | t | json }}
+                }
+              }</script>
+            </div>
           </div>
 
           {% if product.aico_shipping_blocked? %}
@@ -649,4 +684,6 @@
   </div>
 
   <script src="{{ 'product-detail.js' | asset_url }}" defer></script>
+  {%- comment -%} Hydrates the production-cockpit restock block above (PDP integration). {%- endcomment -%}
+  <script src="{{ 'aico-production-cockpit.js' | asset_url }}" defer></script>
 </main>

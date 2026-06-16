@@ -1,0 +1,274 @@
+{% comment %}
+  AICO returns / complaints page (B2B support-request intake). Ported from
+  the legacy b2b-shop "Return Center". Not a Shopify order-anchored return —
+  it is a free, order-agnostic support-request form with two variants
+  (Complaint | Return) discriminated by `supportRequestType`.
+
+  Shopify has no support-request surface, so the template name, the route
+  (`/account/returns`), the locale namespace (`aico_returns.*`) and every
+  field/route helper are `aico_`-prefixed. The page renders inside the full
+  shop chrome (the layout special-cases `customers/aico_returns`) and is
+  driven by assets/aico-returns.js, seeded from `window.__AICO_RETURNS__`
+  (built in layout/theme.liquid). The static reason lists, defect taxonomy
+  and brand options live in that JS island; this template is the shell.
+{% endcomment %}
+
+<section class="aico-page-container aico-returns" data-aico-returns>
+  <header class="aico-returns-head">
+    <h1 class="aico-returns-title">{{ 'aico_returns.page_title' | t }}</h1>
+    <p class="aico-returns-intro">{{ 'aico_returns.page_description' | t }}</p>
+  </header>
+
+  {%- comment -%} ── Tabs — Complaint (default) | Return ── {%- endcomment -%}
+  <div class="aico-returns-tabs" role="tablist" aria-label="{{ 'aico_returns.page_title' | t }}">
+    <button type="button"
+            class="aico-returns-tab aico-returns-tab--active"
+            role="tab"
+            aria-selected="true"
+            data-aico-returns-tab="complaint">
+      {{ 'aico_returns.tabs.complaint' | t }}
+    </button>
+    <button type="button"
+            class="aico-returns-tab"
+            role="tab"
+            aria-selected="false"
+            data-aico-returns-tab="return">
+      {{ 'aico_returns.tabs.return' | t }}
+    </button>
+  </div>
+
+  {%- comment -%} Shared status banner (success / error) for both forms. {%- endcomment -%}
+  <p class="aico-returns-status" data-aico-returns-status role="status" aria-live="polite" hidden></p>
+
+  {%- comment -%} ─────────────── COMPLAINT PANEL ─────────────── {%- endcomment -%}
+  <form class="aico-returns-panel aico-returns-panel--complaint"
+        data-aico-returns-panel="complaint"
+        role="tabpanel"
+        novalidate>
+    <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+    <div class="aico-returns-grid">
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.brand' | t }}</span>
+        <select name="brand" data-aico-returns-field="brand" required>
+          <option value="">{{ 'aico_returns.common.select_option' | t }}</option>
+          {% for brand in aico_brands %}
+            <option value="{{ brand.label }}">{{ brand.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="aico-returns-field aico-returns-field--product">
+        <span class="aico-returns-label">{{ 'aico_returns.common.product' | t }}</span>
+        <div class="aico-returns-autocomplete" data-aico-returns-autocomplete>
+          <input type="text"
+                 autocomplete="off"
+                 data-aico-returns-field="productSearch"
+                 data-aico-returns-id="productId"
+                 data-aico-returns-sku="sku">
+          <input type="hidden" data-aico-returns-field="productId" name="productId">
+          <ul class="aico-returns-autocomplete-list" data-aico-returns-autocomplete-list hidden></ul>
+        </div>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.condition' | t }}</span>
+        <select name="condition" data-aico-returns-field="condition" required>
+          <option value="{{ 'aico_returns.conditions.used' | t }}">{{ 'aico_returns.conditions.used' | t }}</option>
+          <option value="{{ 'aico_returns.conditions.unused' | t }}">{{ 'aico_returns.conditions.unused' | t }}</option>
+        </select>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.size_format' | t }}</span>
+        <select name="sizeFormat" data-aico-returns-field="sizeFormat">
+          <option value="EU">EU</option>
+        </select>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.size' | t }}</span>
+        <select name="variantId" data-aico-returns-field="variantId" disabled required>
+          <option value="">{{ 'aico_returns.common.size_disabled' | t }}</option>
+        </select>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.type' | t }}</span>
+        <select name="type" data-aico-returns-field="type">
+          <option value="shoe">{{ 'aico_returns.types.shoe' | t }}</option>
+          <option value="mat_or_pillow">{{ 'aico_returns.types.mat_or_pillow' | t }}</option>
+        </select>
+      </label>
+
+      <label class="aico-returns-field aico-returns-field--reason">
+        <span class="aico-returns-label">{{ 'aico_returns.common.return_reason' | t }}</span>
+        <select name="returnReason" data-aico-returns-field="returnReason" required>
+          <option value="">{{ 'aico_returns.common.select_option' | t }}</option>
+        </select>
+      </label>
+
+      <label class="aico-returns-field" data-aico-returns-conditional="dateOfSale" hidden>
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.date_of_sale' | t }}</span>
+        <input type="date" name="dateOfSale" data-aico-returns-field="dateOfSale">
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.contact' | t }}</span>
+        <input type="text" name="contact" data-aico-returns-field="contact" value="{{ customer.name }}" required>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.email' | t }}</span>
+        <input type="email" name="email" data-aico-returns-field="email" value="{{ customer.email }}" required>
+      </label>
+
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.amount' | t }}</span>
+        <input type="number" name="amount" min="1" value="1" data-aico-returns-field="amount" required>
+      </label>
+
+      {%- comment -%} Brand-conditional numbers (Joya → production+factory; kybun/Kandahar → charging). {%- endcomment -%}
+      <label class="aico-returns-field" data-aico-returns-conditional="productionNumber" hidden>
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.production_number' | t }}</span>
+        <input type="text" name="productionNumber" data-aico-returns-field="productionNumber">
+      </label>
+      <label class="aico-returns-field" data-aico-returns-conditional="factoryNumber" hidden>
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.factory_number' | t }}</span>
+        <input type="text" name="factoryNumber" data-aico-returns-field="factoryNumber">
+      </label>
+      <label class="aico-returns-field" data-aico-returns-conditional="batchNumber" hidden>
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.batch_number' | t }}</span>
+        <input type="text" name="batchNumber" data-aico-returns-field="batchNumber">
+      </label>
+    </div>
+
+    {%- comment -%} ── Photo dropzones — defect (required) + side view (required) ── {%- endcomment -%}
+    <div class="aico-returns-dropzones">
+      <div class="aico-returns-dropzone" data-aico-returns-dropzone="defect">
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.image_of_defect' | t }}</span>
+        <label class="aico-returns-dropzone-area" data-aico-returns-dropzone-area>
+          <input type="file" accept="image/*" data-aico-returns-field="defectUploadedFile" hidden>
+          <span class="aico-returns-dropzone-hint">
+            {{ 'aico_returns.complaint.drop_files_or' | t }} <u>{{ 'aico_returns.complaint.browse' | t }}</u>
+          </span>
+          <img class="aico-returns-dropzone-preview" alt="" data-aico-returns-dropzone-preview hidden>
+        </label>
+      </div>
+
+      <div class="aico-returns-dropzone" data-aico-returns-dropzone="sideView">
+        <span class="aico-returns-label">{{ 'aico_returns.complaint.image_of_side_view' | t }}</span>
+        <label class="aico-returns-dropzone-area" data-aico-returns-dropzone-area>
+          <input type="file" accept="image/*" data-aico-returns-field="sideViewUploadedFile" hidden>
+          <span class="aico-returns-dropzone-hint">
+            {{ 'aico_returns.complaint.drop_files_or' | t }} <u>{{ 'aico_returns.complaint.browse' | t }}</u>
+          </span>
+          <img class="aico-returns-dropzone-preview" alt="" data-aico-returns-dropzone-preview hidden>
+        </label>
+      </div>
+    </div>
+
+    <div class="aico-returns-foot">
+      <p class="aico-returns-required-note">{{ 'aico_returns.common.required_note' | t }}</p>
+      <button type="submit" class="aico-button aico-button-primary aico-returns-submit" data-aico-returns-submit>
+        {{ 'aico_returns.common.submit' | t }}
+      </button>
+    </div>
+  </form>
+
+  {%- comment -%} ─────────────── RETURN PANEL ─────────────── {%- endcomment -%}
+  <form class="aico-returns-panel aico-returns-panel--return"
+        data-aico-returns-panel="return"
+        role="tabpanel"
+        hidden
+        novalidate>
+    <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
+
+    <div class="aico-returns-grid aico-returns-grid--contact">
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.contact' | t }}</span>
+        <input type="text" name="contact" data-aico-returns-field="contact" value="{{ customer.name }}" required>
+      </label>
+      <label class="aico-returns-field">
+        <span class="aico-returns-label">{{ 'aico_returns.common.email' | t }}</span>
+        <input type="email" name="email" data-aico-returns-field="email" value="{{ customer.email }}" required>
+      </label>
+    </div>
+
+    {%- comment -%} Repeatable product rows are cloned from this template by the JS. {%- endcomment -%}
+    <template data-aico-returns-row-template>
+      <div class="aico-returns-row" data-aico-returns-row>
+        <label class="aico-returns-field">
+          <span class="aico-returns-label">{{ 'aico_returns.common.brand' | t }}</span>
+          <select data-aico-returns-field="brand">
+            <option value="">{{ 'aico_returns.common.select_option' | t }}</option>
+            {% for brand in aico_brands %}
+              <option value="{{ brand.label }}">{{ brand.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="aico-returns-field">
+          <span class="aico-returns-label">{{ 'aico_returns.common.return_reason' | t }}</span>
+          <select data-aico-returns-field="returnReason" required>
+            <option value="">{{ 'aico_returns.common.select_option' | t }}</option>
+          </select>
+        </label>
+
+        <label class="aico-returns-field aico-returns-field--product">
+          <span class="aico-returns-label">{{ 'aico_returns.common.product' | t }}</span>
+          <div class="aico-returns-autocomplete" data-aico-returns-autocomplete>
+            <input type="text" autocomplete="off"
+                   data-aico-returns-field="productSearch"
+                   data-aico-returns-id="productId"
+                   data-aico-returns-sku="sku">
+            <input type="hidden" data-aico-returns-field="productId">
+            <ul class="aico-returns-autocomplete-list" data-aico-returns-autocomplete-list hidden></ul>
+          </div>
+        </label>
+
+        <label class="aico-returns-field">
+          <span class="aico-returns-label">{{ 'aico_returns.common.size_format' | t }}</span>
+          <select data-aico-returns-field="sizeFormat">
+            <option value="EU">EU</option>
+          </select>
+        </label>
+
+        <label class="aico-returns-field">
+          <span class="aico-returns-label">{{ 'aico_returns.common.size' | t }}</span>
+          <select data-aico-returns-field="variantId" disabled required>
+            <option value="">{{ 'aico_returns.common.size_disabled' | t }}</option>
+          </select>
+        </label>
+
+        <label class="aico-returns-field aico-returns-field--amount">
+          <span class="aico-returns-label">{{ 'aico_returns.common.amount' | t }}</span>
+          <input type="number" min="1" value="1" data-aico-returns-field="amount" required>
+        </label>
+
+        <button type="button" class="aico-returns-row-delete" data-aico-returns-row-delete hidden>
+          {{ 'aico_returns.return.delete' | t }}
+        </button>
+      </div>
+    </template>
+
+    <div class="aico-returns-rows" data-aico-returns-rows></div>
+
+    <div class="aico-returns-return-controls">
+      <button type="button" class="aico-button aico-button-outline" data-aico-returns-add>
+        {{ 'aico_returns.return.add' | t }}
+      </button>
+      <p class="aico-returns-total">
+        <span>{{ 'aico_returns.return.total_amount' | t }}</span>
+        <strong data-aico-returns-total>1</strong>
+      </p>
+    </div>
+
+    <div class="aico-returns-foot">
+      <p class="aico-returns-required-note">{{ 'aico_returns.common.required_note' | t }}</p>
+      <button type="submit" class="aico-button aico-button-primary aico-returns-submit" data-aico-returns-submit>
+        {{ 'aico_returns.common.submit' | t }}
+      </button>
+    </div>
+  </form>
+</section>
