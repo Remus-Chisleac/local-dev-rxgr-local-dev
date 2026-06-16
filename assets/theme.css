@@ -7377,7 +7377,20 @@ html.aico-preorder-gallery-open {
 .page-builder .page-upload__chip:hover {
   filter: brightness(0.95);
 }
-.aico-exchange { padding: 1.5rem 0 4rem; }
+.aico-exchange {
+  padding: 1.5rem 0 4rem;
+  /* Legacy b2b-shop exchange palette (kj theme accent is blue, which is wrong
+     here — these match the old shop exactly). */
+  --ex-accent: #e8702d;
+  --ex-accent-dark: #d36427;
+  --ex-danger: #ba172b;
+  --ex-accepted: #047857;
+  --ex-field-border: #9d9d9d;
+  --ex-row-even: #d9dada;
+  --ex-row-odd: #eeeeed;
+  --ex-row-divider: #999999;
+  --ex-radius: 4px;
+}
 .aico-exchange-shell { display: flex; flex-direction: column; gap: 2rem; }
 
 /* Load-bearing: the create-form fields (product/gender/size) and the table
@@ -7412,14 +7425,14 @@ html.aico-preorder-gallery-open {
 .aico-exchange-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.75rem;
+  align-items: flex-end;
+  gap: 1rem;
 }
-.aico-exchange-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-.aico-exchange-field--brand { flex: 0 0 14rem; }
-.aico-exchange-field--product { flex: 1 1 20rem; }
-.aico-exchange-field--gender { flex: 0 0 9rem; }
-.aico-exchange-field--size { flex: 0 0 9rem; }
+.aico-exchange-field { display: flex; flex-direction: column; gap: 0.375rem; min-width: 0; }
+.aico-exchange-field--brand { flex: 0 0 15rem; }
+.aico-exchange-field--product { flex: 0 0 22rem; }
+.aico-exchange-field--gender { flex: 0 0 9.5rem; }
+.aico-exchange-field--size { flex: 0 0 9.5rem; }
 .aico-exchange-field--submit { margin-left: auto; align-self: flex-end; }
 .aico-exchange-field-label {
   font-size: 0.8125rem;
@@ -7428,25 +7441,34 @@ html.aico-preorder-gallery-open {
 .aico-exchange-select,
 .aico-exchange-input {
   height: 2.5rem;
-  padding: 0 0.625rem;
-  border: 1px solid var(--aico-border);
-  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--ex-field-border);
+  border-radius: var(--ex-radius);
   background: var(--aico-card);
   font-size: 0.9375rem;
   width: 100%;
 }
+.aico-exchange-select:focus,
+.aico-exchange-input:focus {
+  outline: none;
+  border-color: var(--ex-accent);
+  box-shadow: 0 0 0 1px var(--ex-accent);
+}
 .aico-exchange-submit {
   height: 2.5rem;
+  min-width: 11.25rem;
   padding: 0 1.25rem;
   border: none;
-  border-radius: 0.5rem;
-  background: var(--color-accent);
+  border-radius: var(--ex-radius);
+  background: var(--ex-accent);
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: background-color 0.15s ease;
 }
-.aico-exchange-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.aico-exchange-submit:hover:not(:disabled) { background: var(--ex-accent-dark); }
+.aico-exchange-submit:disabled { background: #c9c9c9; color: #ffffff; cursor: not-allowed; }
 .aico-exchange-autocomplete { position: relative; }
 .aico-exchange-options {
   position: absolute;
@@ -7472,7 +7494,7 @@ html.aico-preorder-gallery-open {
   font-style: italic;
   color: var(--aico-muted-fg);
 }
-.aico-exchange-table-wrap { overflow-x: auto; border: 1px solid var(--aico-border); border-radius: 0.5rem; }
+.aico-exchange-table-wrap { overflow-x: auto; border: 1px solid var(--aico-border); border-radius: var(--ex-radius); }
 .aico-exchange-table {
   width: 100%;
   border-collapse: collapse;
@@ -7480,36 +7502,48 @@ html.aico-preorder-gallery-open {
 }
 .aico-exchange-table th,
 .aico-exchange-table td {
-  padding: 0.625rem 0.75rem;
+  padding: 0.6rem 1rem;
   text-align: left;
   vertical-align: middle;
 }
 .aico-exchange-table thead th {
-  background: var(--aico-muted);
+  background: #ffffff;
   font-weight: 600;
-  font-size: 0.8125rem;
-  color: var(--aico-muted-fg);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  font-size: 0.875rem;
+  color: var(--aico-fg);
+  border-bottom: 1px solid var(--aico-border);
+  white-space: nowrap;
 }
-.aico-exchange-row:nth-child(even) { background: var(--aico-muted); }
-.aico-exchange-row--brand-change td { border-top: 2px solid var(--aico-muted-strong); }
-.aico-exchange-flag { border-radius: 2px; object-fit: contain; }
+.aico-exchange-row { background: var(--ex-row-odd); }
+.aico-exchange-row:nth-child(even) { background: var(--ex-row-even); }
+.aico-exchange-row--brand-change td { border-top: 2px solid var(--ex-row-divider); }
+.aico-exchange-brand { display: inline-flex; align-items: center; gap: 0.5rem; }
+.aico-exchange-brand-logo { width: 20px; height: 20px; border-radius: 2px; object-fit: contain; flex-shrink: 0; }
+.aico-exchange-brand-name { line-height: 1.2; }
+.aico-exchange-flag { width: 40px; height: 30px; border-radius: 2px; object-fit: contain; }
 .aico-exchange-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   width: 100%;
-  min-width: 9.5rem;
-  height: 2.25rem;
-  padding: 0 0.75rem;
+  min-width: 11rem;
+  height: 2.5rem;
+  padding: 0 0.875rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--ex-radius);
   color: #ffffff;
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
+  transition: filter 0.15s ease;
 }
-.aico-exchange-action--accept { background: var(--color-accent); }
-.aico-exchange-action--delete { background: #ba172b; }
-.aico-exchange-action--accepted { background: #047857; cursor: default; }
+.aico-exchange-action:hover:not(:disabled) { filter: brightness(0.93); }
+.aico-exchange-action-label { flex: 1 1 auto; text-align: left; }
+.aico-exchange-action-icon { flex: 0 0 auto; }
+.aico-exchange-action--accept { background: var(--ex-accent); }
+.aico-exchange-action--delete { background: var(--ex-danger); }
+.aico-exchange-action--accepted { background: var(--ex-accepted); cursor: default; }
 .aico-exchange-action:disabled { opacity: 0.65; }
 .aico-exchange-action--accepted:disabled { opacity: 1; }
 .aico-exchange-row--highlight td { animation: aico-exchange-highlight 8s ease-in-out 1 forwards; }
@@ -7536,11 +7570,22 @@ html.aico-preorder-gallery-open {
 }
 .aico-exchange-toast { opacity: 0; transition: opacity 0.2s ease; }
 .aico-exchange-toast.is-visible { opacity: 1; }
-@media (max-width: 640px) {
-  .aico-exchange-form { flex-direction: column; }
-  .aico-exchange-field,
-  .aico-exchange-field--submit { flex: 1 1 auto; width: 100%; margin-left: 0; }
+@media (max-width: 1199px) {
+  .aico-exchange-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: end;
+  }
+  .aico-exchange-field--brand,
+  .aico-exchange-field--product,
+  .aico-exchange-field--gender,
+  .aico-exchange-field--size { flex: initial; }
+  .aico-exchange-field--submit { grid-column: 1 / -1; margin-left: 0; align-self: stretch; }
   .aico-exchange-submit { width: 100%; }
+}
+@media (max-width: 767px) {
+  .aico-exchange-form { grid-template-columns: 1fr; }
 }
 .aico-returns {
   padding-top: 1.5rem;

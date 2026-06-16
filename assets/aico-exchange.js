@@ -62,6 +62,46 @@
     return typeof cursor === 'string' ? cursor : (fallback != null ? fallback : path);
   }
 
+  // Brand-name -> small square logo URL (emitted by the template). Used to
+  // prefix each requests-table brand cell, matching the legacy b2b-shop.
+  var brandLogos = {};
+  var brandLogosEl = root.querySelector('[data-aico-exchange-brand-logos]');
+  if (brandLogosEl) {
+    try {
+      brandLogos = JSON.parse(brandLogosEl.textContent) || {};
+    } catch (e) {
+      console.warn('aico-exchange: invalid brand-logos bootstrap', e);
+    }
+  }
+  function brandLogoFor(name) {
+    if (!name) { return ''; }
+    var key = String(name).trim().toLowerCase();
+    if (brandLogos[key]) { return brandLogos[key]; }
+    // Fall back on the first word (e.g. "kybun Arabic Styles" -> "kybun").
+    var first = key.split(/\s+/)[0];
+    return brandLogos[first] || '';
+  }
+
+  // Inline icons (feather/lucide style) for the action buttons.
+  var ICON_HANDSHAKE =
+    '<svg class="aico-exchange-action-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m11 17 2 2a1 1 0 1 0 3-3"/>' +
+    '<path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>' +
+    '<path d="m21 3 1 11h-2"/>' +
+    '<path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>' +
+    '<path d="M3 4h8"/>' +
+    '</svg>';
+  var ICON_TRASH =
+    '<svg class="aico-exchange-action-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<polyline points="3 6 5 6 21 6"/>' +
+    '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+    '<line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
+    '</svg>';
+  var ICON_CHECK =
+    '<svg class="aico-exchange-action-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<polyline points="20 6 9 17 4 12"/>' +
+    '</svg>';
+
   function csrfToken() {
     var input = root.querySelector('input[name="_token"]');
     return input ? input.value : '';
@@ -488,7 +528,7 @@
       }
       prevBrand = row.brand;
 
-      tr.appendChild(cell(row.brand || ''));
+      tr.appendChild(brandCell(row.brand || ''));
       tr.appendChild(cell(row.product || ''));
       tr.appendChild(cell(t('gender.' + row.gender, row.gender || '')));
       tr.appendChild(cell(row.size || row.size_eu || ''));
@@ -502,6 +542,30 @@
   function cell(text) {
     var td = document.createElement('td');
     td.textContent = text;
+    return td;
+  }
+
+  // Brand cell: small square logo (when known) + brand name.
+  function brandCell(name) {
+    var td = document.createElement('td');
+    var wrap = document.createElement('span');
+    wrap.className = 'aico-exchange-brand';
+    var logo = brandLogoFor(name);
+    if (logo) {
+      var img = document.createElement('img');
+      img.className = 'aico-exchange-brand-logo';
+      img.src = logo;
+      img.alt = '';
+      img.width = 20;
+      img.height = 20;
+      img.loading = 'lazy';
+      wrap.appendChild(img);
+    }
+    var label = document.createElement('span');
+    label.className = 'aico-exchange-brand-name';
+    label.textContent = name;
+    wrap.appendChild(label);
+    td.appendChild(wrap);
     return td;
   }
 
@@ -532,22 +596,33 @@
     if (row.is_accepted) {
       btn.classList.add('aico-exchange-action--accepted');
       btn.setAttribute('data-aico-exchange-action', 'accepted');
-      btn.textContent = t('table.accepted', 'Accepted');
+      setActionContent(btn, t('table.accepted', 'Accepted'), ICON_CHECK);
       btn.disabled = true;
     } else if (row.can_be_accepted) {
       btn.classList.add('aico-exchange-action--accept');
       btn.setAttribute('data-aico-exchange-action', 'accept');
-      btn.textContent = t('table.accept', 'Accept request');
+      setActionContent(btn, t('table.accept', 'Accept request'), ICON_HANDSHAKE);
       btn.addEventListener('click', function () { acceptRow(row.id, btn); });
     } else {
       btn.classList.add('aico-exchange-action--delete');
       btn.setAttribute('data-aico-exchange-action', 'delete');
-      btn.textContent = t('table.delete', 'Delete');
+      setActionContent(btn, t('table.delete', 'Delete'), ICON_TRASH);
       btn.addEventListener('click', function () { deleteRow(row.id, btn); });
     }
 
     td.appendChild(btn);
     return td;
+  }
+
+  // Action button content: text label on the left, icon on the right (matches
+  // the legacy b2b-shop ACCEPT REQUEST / DELETE buttons).
+  function setActionContent(btn, label, iconSvg) {
+    var span = document.createElement('span');
+    span.className = 'aico-exchange-action-label';
+    span.textContent = label;
+    btn.innerHTML = '';
+    btn.appendChild(span);
+    btn.insertAdjacentHTML('beforeend', iconSvg);
   }
 
   function acceptRow(id, btn) {
