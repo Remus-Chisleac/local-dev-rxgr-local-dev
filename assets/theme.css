@@ -7579,6 +7579,16 @@ html.aico-preorder-gallery-open {
   animation: aico-exchange-spin 0.7s linear infinite;
   pointer-events: none;
 }
+/* These @keyframes are dropped by the mirror's selector-merge reorganization
+   (at-rules aren't selectors), so re-declare them here — without them the
+   exchange/cockpit spinners are static and the deep-link row never highlights. */
+@keyframes aico-exchange-spin { to { transform: rotate(360deg); } }
+@keyframes aico-cockpit-spin { to { transform: rotate(360deg); } }
+@keyframes aico-exchange-highlight {
+  0%   { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0.35); }
+  70%  { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0.35); }
+  100% { box-shadow: inset 0 0 0 9999px rgba(255, 235, 59, 0); }
+}
 .aico-exchange-empty,
 .aico-exchange-error { text-align: center; padding: 1.5rem; color: var(--aico-muted-fg); }
 .aico-exchange-error { color: #b91c1c; }
