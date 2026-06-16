@@ -58,6 +58,18 @@
     return match[3] + '.' + match[2] + '.' + match[1];
   }
 
+  // Chronological sort key (YYYYMMDD) from either "dd.MM.yyyy" (the restock feed
+  // format) or an ISO "yyyy-MM-dd" string — string-comparing the raw dd.MM.yyyy
+  // sorts by day-of-month, which is wrong.
+  function dateSortKey(raw) {
+    if (!raw) { return ''; }
+    var dmy = String(raw).match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+    if (dmy) { return dmy[3] + dmy[2] + dmy[1]; }
+    var iso = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) { return iso[1] + iso[2] + iso[3]; }
+    return String(raw);
+  }
+
   function getJson(url) {
     return fetch(url, {
       credentials: 'same-origin',
@@ -139,6 +151,14 @@
   };
   var INFO_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
 
+  // Sortable-column header icons: distinct glyphs per state (unfold / up / down),
+  // matching the legacy shop rather than one rotating triangle.
+  var SORT_ICON = {
+    none: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>',
+    asc:  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 14 12 8 18 14"/></svg>',
+    desc: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 10 12 16 18 10"/></svg>'
+  };
+
   // Group a product's variants into "available from <date>" buckets, ascending
   // (undated last), each sorted by size — matches the legacy reminder modal.
   function groupVariantsByDate(variants) {
@@ -155,7 +175,9 @@
     order.sort(function (a, b) {
       if (!a) { return 1; }
       if (!b) { return -1; }
-      return a < b ? -1 : (a > b ? 1 : 0);
+      var ak = dateSortKey(a);
+      var bk = dateSortKey(b);
+      return ak < bk ? -1 : (ak > bk ? 1 : 0);
     });
     return order.map(function (date) {
       var list = groups[date].slice().sort(function (x, y) {
@@ -600,8 +622,8 @@
           av = brandLabel(a).toLowerCase();
           bv = brandLabel(b).toLowerCase();
         } else {
-          av = a.date || '';
-          bv = b.date || '';
+          av = dateSortKey(a.date);
+          bv = dateSortKey(b.date);
         }
         if (av < bv) {
           return -1 * dir;
@@ -688,6 +710,22 @@
       }
     }
 
+    // Reflect the active sort column + direction in each header's icon.
+    function updateSortIcons() {
+      Array.prototype.forEach.call(sortButtons, function (btn) {
+        var key = btn.getAttribute('data-aico-cockpit-sort');
+        var icon = btn.querySelector('.aico-cockpit-sort-icon');
+        if (!icon) { return; }
+        if (state.sortKey === key) {
+          icon.innerHTML = state.sortDir === 'asc' ? SORT_ICON.asc : SORT_ICON.desc;
+          btn.classList.add('is-active');
+        } else {
+          icon.innerHTML = SORT_ICON.none;
+          btn.classList.remove('is-active');
+        }
+      });
+    }
+
     Array.prototype.forEach.call(sortButtons, function (btn) {
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-aico-cockpit-sort');
@@ -701,9 +739,11 @@
           other.setAttribute('aria-sort', 'none');
         });
         btn.setAttribute('aria-sort', state.sortDir === 'asc' ? 'ascending' : 'descending');
+        updateSortIcons();
         renderRows();
       });
     });
+    updateSortIcons();
 
     function refreshReminders() {
       return getJson(remindersUrl).then(function (envelope) {

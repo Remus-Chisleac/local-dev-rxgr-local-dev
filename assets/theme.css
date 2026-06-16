@@ -7871,13 +7871,8 @@ html.aico-preorder-gallery-open {
 .aico-cockpit-title { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.75rem; }
 .aico-cockpit-intro { margin: 0 0 0.5rem; color: var(--aico-fg, #1a1a1a); font-size: 0.9375rem; line-height: 1.6; }
 .aico-cockpit-intro--muted { color: var(--aico-muted-fg, #6b7280); }
-.aico-cockpit-filter {
-  background: var(--aico-card, #fff);
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-}
+/* Brand filter is flush (no card), matching the legacy shop. */
+.aico-cockpit-filter { margin-bottom: 1.5rem; }
 .aico-cockpit-filter-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.875rem; }
 .aico-cockpit-filter-title { font-size: 1rem; font-weight: 600; margin: 0; }
 .aico-cockpit-info { position: relative; display: inline-flex; }
@@ -7917,11 +7912,13 @@ html.aico-preorder-gallery-open {
   background: none; border: 0; padding: 0; cursor: pointer;
   font: inherit; color: inherit; font-weight: 600;
 }
-.aico-cockpit-sort-icon { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 5px solid currentColor; opacity: 0.5; }
-.aico-cockpit-th[aria-sort="descending"] .aico-cockpit-sort-icon { transform: rotate(180deg); opacity: 1; }
-.aico-cockpit-th[aria-sort="ascending"] .aico-cockpit-sort-icon { opacity: 1; }
+.aico-cockpit-sort-icon { display: inline-flex; align-items: center; line-height: 0; opacity: 0.45; }
+.aico-cockpit-sort.is-active .aico-cockpit-sort-icon { opacity: 1; color: var(--color-accent); }
 .aico-cockpit-cell { padding: 0.75rem 1rem; border-bottom: 1px solid var(--aico-border, #e5e7eb); vertical-align: middle; }
 .aico-cockpit-row:last-child .aico-cockpit-cell { border-bottom: 0; }
+/* Zebra rows, like the legacy shop. */
+.aico-cockpit-row:nth-child(odd) .aico-cockpit-cell { background: var(--aico-muted, #f4f4f5); }
+.aico-cockpit-row:nth-child(even) .aico-cockpit-cell { background: var(--aico-card, #fff); }
 .aico-cockpit-cell--sku { font-variant-numeric: tabular-nums; color: var(--aico-muted-fg, #6b7280); }
 .aico-cockpit-cell--date { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .aico-cockpit-thumb { width: 48px; height: 48px; object-fit: contain; border-radius: 0.375rem; background: var(--aico-muted, #f4f4f5); display: block; }
