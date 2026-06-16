@@ -7893,10 +7893,7 @@ html.aico-preorder-gallery-open {
 .aico-cockpit-brand-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .aico-cockpit-brand-chip {
   display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 999px;
-  font-size: 0.8125rem; cursor: pointer;
+  font-size: 0.875rem; cursor: pointer;
   user-select: none;
 }
 .aico-cockpit-brand-chip input { accent-color: var(--color-accent, #2563eb); margin: 0; }
@@ -7914,7 +7911,7 @@ html.aico-preorder-gallery-open {
 }
 .aico-cockpit-sort-icon { display: inline-flex; align-items: center; line-height: 0; opacity: 0.45; }
 .aico-cockpit-sort.is-active .aico-cockpit-sort-icon { opacity: 1; color: var(--color-accent); }
-.aico-cockpit-cell { padding: 0.75rem 1rem; border-bottom: 1px solid var(--aico-border, #e5e7eb); vertical-align: middle; }
+.aico-cockpit-cell { padding: 0.4rem 1rem; border-bottom: 1px solid var(--aico-border, #e5e7eb); vertical-align: middle; }
 .aico-cockpit-row:last-child .aico-cockpit-cell { border-bottom: 0; }
 /* Vertical column separators, like the legacy shop. */
 .aico-cockpit-th:not(:last-child),
@@ -7924,8 +7921,20 @@ html.aico-preorder-gallery-open {
 .aico-cockpit-row:nth-child(even) .aico-cockpit-cell { background: var(--aico-card, #fff); }
 .aico-cockpit-cell--sku { font-variant-numeric: tabular-nums; color: var(--aico-muted-fg, #6b7280); }
 .aico-cockpit-cell--date { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.aico-cockpit-thumb { width: 48px; height: 48px; object-fit: contain; background: transparent; display: block; }
+.aico-cockpit-thumb { width: 40px; height: 40px; object-fit: contain; background: transparent; display: block; }
 .aico-cockpit-thumb--empty { display: inline-block; }
+
+/* Loading skeleton rows (shimmer). */
+.aico-cockpit-skel {
+  display: block; border-radius: 4px;
+  background: linear-gradient(90deg, #e9e9ec 25%, #f3f3f5 37%, #e9e9ec 63%);
+  background-size: 400% 100%; animation: aico-cockpit-shimmer 1.4s ease infinite;
+}
+.aico-cockpit-skel-text { height: 0.8rem; width: 70%; }
+.aico-cockpit-skel-sm { width: 50%; }
+.aico-cockpit-skel-thumb { width: 40px; height: 40px; border-radius: 6px; }
+.aico-cockpit-skel-btn { width: 15rem; max-width: 100%; height: 2.5rem; border-radius: 4px; }
+@keyframes aico-cockpit-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 .aico-cockpit-badge {
   display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.45rem;
   font-size: 0.6875rem; font-weight: 600; border-radius: 999px;

@@ -769,10 +769,27 @@
       });
     }
 
-    function load() {
-      if (loaderEl) {
-        loaderEl.hidden = false;
+    // Shimmer skeleton rows shown while the table loads (replaces the spinner).
+    function renderSkeletonRows(count) {
+      if (!tbodyEl) { return; }
+      var cells =
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-text"></span></td>' +
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-thumb"></span></td>' +
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-text"></span></td>' +
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-text aico-cockpit-skel-sm"></span></td>' +
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-text aico-cockpit-skel-sm"></span></td>' +
+        '<td class="aico-cockpit-cell"><span class="aico-cockpit-skel aico-cockpit-skel-btn"></span></td>';
+      var html = '';
+      for (var i = 0; i < count; i++) {
+        html += '<tr class="aico-cockpit-row aico-cockpit-skel-row">' + cells + '</tr>';
       }
+      tbodyEl.innerHTML = html;
+    }
+
+    function load() {
+      hideEmpty();
+      if (errorEl) { errorEl.hidden = true; }
+      renderSkeletonRows(8);
       Promise.all([getJson(productsUrl), getJson(remindersUrl)])
         .then(function (results) {
           state.products = unwrap(results[0]);
@@ -783,14 +800,8 @@
         })
         .catch(function (error) {
           console.warn('aico-cockpit: load failed', error);
-          if (errorEl) {
-            errorEl.hidden = false;
-          }
-        })
-        .then(function () {
-          if (loaderEl) {
-            loaderEl.hidden = true;
-          }
+          if (tbodyEl) { tbodyEl.innerHTML = ''; }
+          if (errorEl) { errorEl.hidden = false; }
         });
     }
 
