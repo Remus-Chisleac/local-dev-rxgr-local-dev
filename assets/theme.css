@@ -7379,15 +7379,26 @@ html.aico-preorder-gallery-open {
 }
 .aico-exchange { padding: 1.5rem 0 4rem; }
 .aico-exchange-shell { display: flex; flex-direction: column; gap: 2rem; }
+
+/* Load-bearing: the create-form fields (product/gender/size) and the table
+   loader carry a `[hidden]` attribute toggled by JS for the progressive
+   reveal + the post-load spinner hide. Their own `.aico-exchange-field` /
+   `.aico-exchange-loader` rules set `display:flex`, which (as an author rule)
+   beats the UA `[hidden]{display:none}` — so without this they would never
+   hide. Scope it to the page and force it. */
+.aico-exchange [hidden] { display: none !important; }
+
 .aico-exchange-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 .aico-exchange-section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  letter-spacing: -0.01em;
 }
 .aico-exchange-not-available {
   text-align: center;
