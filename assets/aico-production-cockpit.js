@@ -512,6 +512,11 @@
     });
 
     function brandLabel(product) {
+      // Prefer the brand name carried on the product itself; fall back to the
+      // template's id->label map, then the raw id.
+      if (product.brandName) {
+        return product.brandName;
+      }
       var override = root.getAttribute('data-aico-cockpit-brand-' + product.brandId);
       if (override) {
         return override;

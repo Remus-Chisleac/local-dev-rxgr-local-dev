@@ -7529,10 +7529,13 @@ html.aico-preorder-gallery-open {
 .aico-exchange-brand-logo { width: 20px; height: 20px; border-radius: 2px; object-fit: contain; flex-shrink: 0; }
 .aico-exchange-brand-name { line-height: 1.2; }
 .aico-exchange-flag { width: 40px; height: 30px; border-radius: 2px; object-fit: contain; }
+/* Action column shrinks to the button so it isn't stretched table-wide. */
+.aico-exchange-table th:last-child,
+.aico-exchange-table td:last-child { width: 1%; white-space: nowrap; }
 .aico-exchange-action {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5rem;
   width: 100%;
   min-width: 11rem;
@@ -7547,8 +7550,8 @@ html.aico-preorder-gallery-open {
   transition: filter 0.15s ease;
 }
 .aico-exchange-action:hover:not(:disabled) { filter: brightness(0.93); }
-.aico-exchange-action-label { flex: 1 1 auto; text-align: left; }
-.aico-exchange-action-icon { flex: 0 0 auto; }
+.aico-exchange-action-label { flex: 0 1 auto; text-align: center; }
+.aico-exchange-action-icon { flex: 0 0 auto; display: inline-flex; }
 .aico-exchange-action--accept { background: var(--ex-accent); }
 .aico-exchange-action--delete { background: var(--ex-danger); }
 .aico-exchange-action--accepted { background: var(--ex-accepted); cursor: default; }
@@ -7558,10 +7561,23 @@ html.aico-preorder-gallery-open {
 .aico-exchange-loader { display: flex; justify-content: center; padding: 1.5rem; }
 .aico-exchange-spinner {
   width: 1.5rem; height: 1.5rem;
-  border: 2px solid var(--aico-muted-strong);
-  border-top-color: var(--color-accent);
+  border: 2px solid var(--ex-row-even);
+  border-top-color: var(--ex-accent);
   border-radius: 50%;
-  animation: aico-exchange-spin 0.8s linear infinite;
+  animation: aico-exchange-spin 0.7s linear infinite;
+}
+.aico-exchange-input-spinner {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: -0.525rem;
+  border: 2px solid var(--ex-row-even);
+  border-top-color: var(--ex-accent);
+  border-radius: 50%;
+  animation: aico-exchange-spin 0.7s linear infinite;
+  pointer-events: none;
 }
 .aico-exchange-empty,
 .aico-exchange-error { text-align: center; padding: 1.5rem; color: var(--aico-muted-fg); }
@@ -7884,10 +7900,16 @@ html.aico-preorder-gallery-open {
 .aico-cockpit-btn--ghost { background: none; color: var(--aico-muted-fg, #6b7280); }
 .aico-cockpit-btn:disabled { opacity: 0.6; cursor: default; }
 .aico-cockpit-btn--primary:disabled { background: #c9c9c9; color: #fff; opacity: 1; }
-/* table SET REMINDER button — large solid orange, like the legacy shop */
+/* table SET REMINDER button — large solid orange, like the legacy shop.
+   The action column is a FIXED width sized for the longest label across EN+DE
+   ("Set reminder" / "Update reminders" / "Erinnerung setzen" /
+   "Erinnerungen aktualisieren"), so the table never reflows when a row toggles
+   between set/update. */
+.aico-cockpit-table th:last-child,
+.aico-cockpit-cell--action { width: 15.5rem; }
 .aico-cockpit-action-btn {
-  width: 100%; min-width: 10.5rem; height: 2.5rem;
-  text-transform: uppercase; letter-spacing: 0.02em;
+  width: 100%; height: 2.5rem; white-space: nowrap;
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.02em;
 }
 .aico-cockpit-modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .aico-cockpit-modal[hidden] { display: none; }

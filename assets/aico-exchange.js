@@ -113,6 +113,7 @@
   var brandSelect = root.querySelector('[data-aico-exchange-brand]');
   var productField = root.querySelector('[data-aico-exchange-product-field]');
   var productInput = root.querySelector('[data-aico-exchange-product-input]');
+  var productSpinner = root.querySelector('[data-aico-exchange-product-spinner]');
   var optionsEl = root.querySelector('[data-aico-exchange-options]');
   var customColorEl = root.querySelector('[data-aico-exchange-custom-color]');
   var genderField = root.querySelector('[data-aico-exchange-gender-field]');
@@ -250,6 +251,7 @@
   function fetchProducts(reset) {
     if (!formState.brandId || ac.fetching) { return; }
     ac.fetching = true;
+    show(productSpinner);
     if (reset) { ac.page = 0; }
 
     var url = PRODUCTS_URL +
@@ -276,7 +278,7 @@
         renderOptions();
       })
       .catch(function (e) { console.warn('aico-exchange: products load failed', e); })
-      .then(function () { ac.fetching = false; });
+      .then(function () { ac.fetching = false; hide(productSpinner); });
   }
 
   function dedupe(arr) {
