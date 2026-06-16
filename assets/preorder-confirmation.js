@@ -33,6 +33,7 @@
   var POLL_INTERVAL = 2000; // legacy parity (2s)
   var MAX_DETAIL_POLLS = 60; // ~2 min waiting for the umbrella preorder
   var MAX_PDF_POLLS = 90; // ~3 min waiting for the PDF render
+  var PUSHER_FALLBACK_MS = 20000; // if the live socket delivers nothing in 20s, poll instead
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
@@ -91,7 +92,10 @@
     this.pdfReady = false;
     this.detailLoaded = false;
     this._pusherClient = null;
-    this._pusherSubscribed = false;
+    this._pusherSubscribed = false; // attempted a subscription
+    this._pusherActive = false; // channel subscription confirmed live
+    this._pusherFallbackArmed = false;
+    this._fallbackTimer = null;
     this._timer = null;
   }
 
@@ -107,9 +111,9 @@
     } else {
       this.renderPending();
     }
-    // Poll regardless — it is the source of truth and covers the broadcast-off
-    // path. Pusher (progressive enhancement) is subscribed lazily once a payload
-    // arrives carrying the backend-sourced `pusher` block.
+    // One initial fetch loads the details (and any already-ready PDF). If the
+    // payload offers a pusher channel, polling then stops and the broadcast
+    // drives the PDF reveal; otherwise polling continues as the fallback.
     this.poll();
   };
 
@@ -149,6 +153,16 @@
     // Stop once we have details AND the PDF (or a delivered broadcast).
     if (this.detailLoaded && this.pdfReady) return;
 
+    // Pusher is primary when available: once we have the details and the backend
+    // offers a live channel, STOP polling and let the broadcast deliver the PDF.
+    // A single fallback timer resumes polling if the socket delivers nothing —
+    // so we never poll in parallel with a working pusher connection.
+    var pusherOffered = !!(confirmation && confirmation.pusher && confirmation.pusher.key && confirmation.pusher.channel);
+    if (this.detailLoaded && !this.pdfReady && (pusherOffered || this._pusherActive)) {
+      this.armPusherFallback();
+      return;
+    }
+
     if (!confirmation) {
       this.detailPolls += 1;
       if (this.detailPolls >= MAX_DETAIL_POLLS) return; // submission likely still queued
@@ -163,6 +177,40 @@
     this._timer = setTimeout(function () {
       self.poll();
     }, POLL_INTERVAL);
+  };
+
+  /** Arm a one-shot timer that resumes polling if pusher delivers no PDF in time. */
+  Confirmation.prototype.armPusherFallback = function () {
+    var self = this;
+    if (this._pusherFallbackArmed) return;
+    this._pusherFallbackArmed = true;
+    this._fallbackTimer = setTimeout(function () {
+      self._fallbackTimer = null;
+      if (self.pdfReady) return;
+      // Socket gave us nothing in time — drop back to polling.
+      self._pusherActive = false;
+      self._pusherFallbackArmed = false;
+      self.poll();
+    }, PUSHER_FALLBACK_MS);
+  };
+
+  Confirmation.prototype.stopPolling = function () {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+  };
+
+  /** Pusher dropped/failed before delivering — resume the polling fallback now. */
+  Confirmation.prototype.resumePolling = function () {
+    if (this.pdfReady) return;
+    this._pusherActive = false;
+    this._pusherFallbackArmed = false;
+    if (this._fallbackTimer) {
+      clearTimeout(this._fallbackTimer);
+      this._fallbackTimer = null;
+    }
+    if (!this._timer) this.poll();
   };
 
   /** Render the full confirmation from a payload (poll or broadcast-merged). */
@@ -301,6 +349,10 @@
       clearTimeout(this._timer);
       this._timer = null;
     }
+    if (this._fallbackTimer) {
+      clearTimeout(this._fallbackTimer);
+      this._fallbackTimer = null;
+    }
   };
 
   /**
@@ -317,13 +369,20 @@
     var eventName = config.event || 'PreorderPdfCreatedEvent';
     this.loadPusher()
       .then(function (Pusher) {
-        if (!Pusher) return;
+        if (!Pusher) { self.resumePolling(); return; } // script blocked → poll
         try {
           self._pusherClient = new Pusher(config.key, {
             cluster: config.cluster || 'mt1',
             forceTLS: true,
           });
           var channel = self._pusherClient.subscribe(config.channel);
+          // Channel confirmed live → pusher is now the source of truth: stop
+          // polling and reconcile once (covers a PDF that landed during setup).
+          channel.bind('pusher:subscription_succeeded', function () {
+            self._pusherActive = true;
+            self.stopPolling();
+            if (!self.pdfReady) self.poll();
+          });
           channel.bind(eventName, function (data) {
             if (data && data.fileUrl) {
               self.showPdfLink(data.fileUrl, data.fileName);
@@ -332,12 +391,15 @@
               self.poll();
             }
           });
+          // Socket trouble → resume the polling fallback immediately.
+          self._pusherClient.connection.bind('unavailable', function () { self.resumePolling(); });
+          self._pusherClient.connection.bind('failed', function () { self.resumePolling(); });
         } catch (_) {
-          /* polling fallback already running */
+          self.resumePolling();
         }
       })
       .catch(function () {
-        /* polling fallback already running */
+        self.resumePolling();
       });
   };
 
