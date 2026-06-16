@@ -361,49 +361,6 @@
     return updates;
   }
 
-  // Parse the LEGACY (non-matrix) buy form into the `add()` payload the
-  // cart store expects: a single `{ id, quantity }`. Matrix posts use
-  // buildMatrixUpdates() instead (absolute-quantity semantics). Mirrors
-  // the FormData parsing in `cart.js`'s global `[data-aico-cart-add]`
-  // delegate so both add paths agree.
-  function buildAddPayload() {
-    var data = new FormData(form);
-    if (data.has('id') && data.has('quantity')) {
-      var id = data.get('id');
-      var quantity = Number(data.get('quantity'));
-      if (id && quantity > 0) {
-        return { id: Number(id), quantity: quantity };
-      }
-    }
-    return null;
-  }
-
-  // Parse the size-matrix cells into `{ variantId: absoluteQty }` for
-  // store.bulkUpdate() → /cart/update.js (postUpdateJson). The matrix
-  // posts ABSOLUTE line quantities, so zeros are INCLUDED — a 0 removes
-  // that variant's line. The variant id comes from each cell's
-  // `data-aico-variant-id` (the cell's `name` is `items[<id>][quantity]`
-  // for the no-JS `/cart/add` fallback; bulkUpdate keys by variant id).
-  function buildMatrixUpdates() {
-    var updates = {};
-    Array.prototype.forEach.call(
-      form.querySelectorAll('[data-aico-size-qty]'),
-      function (input) {
-        var variantId = input.getAttribute('data-aico-variant-id');
-        if (!variantId) {
-          return;
-        }
-        var qty = parseInt(input.value, 10);
-        if (isNaN(qty) || qty < 0) {
-          qty = 0;
-        }
-        // Absolute semantics: keep zeros so a cleared size removes its line.
-        updates[variantId] = qty;
-      }
-    );
-    return updates;
-  }
-
   form.addEventListener('submit', function (event) {
     // Pre-flight: in matrix mode we need at least one row > 0; in
     // legacy mode we need at least one option resolved. The browser's

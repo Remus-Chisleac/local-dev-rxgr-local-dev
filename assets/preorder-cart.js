@@ -195,15 +195,6 @@
     if (delivery) url.searchParams.set('delivery_address_id', String(delivery));
     if (debtor) url.searchParams.set('debtor_id', String(debtor));
 
-    // Reset cart state before fetching so a previous address's snapshot
-    // (status/localCart) cannot leak into the new address's resolving window.
-    // Without this reset, _applySnapshot's "|| this.status" fallback keeps the
-    // old SUBMITTED status alive and triggers a false reopen-warning on empty
-    // carts. The slim-echo path (no item_lists in the response) is NOT affected
-    // because it never calls fetchCart — slim writes go directly to _applySnapshot.
-    this.status = null;
-    this.localCart = snapshotToLocalCart(null);
-
     return fetch(url.toString(), {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
