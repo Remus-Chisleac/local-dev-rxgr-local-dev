@@ -625,11 +625,21 @@
       "cancel": "Abbrechen",
       "save": "Erinnerung speichern",
       "update": "Erinnerungen aktualisieren",
-      "legend_active": "Aktive Erinnerung",
-      "legend_add": "Wird hinzugefügt",
-      "legend_remove": "Wird entfernt",
+      "legend_active": "Erinnerung ist gesetzt",
+      "legend_add": "Wird nach dem Speichern hinzugefügt",
+      "legend_remove": "Wird nach dem Speichern entfernt",
       "toast_updated": "Erinnerungen aktualisiert",
-      "toast_error": "Erinnerungen konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+      "toast_error": "Erinnerungen konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+      "no_date": "Kein Datum",
+      "how_to_use": "Anleitung",
+      "help_intro1": "Wählen Sie die Grössen aus, über die Sie benachrichtigt werden möchten.",
+      "help_intro2": "Damit die Änderungen wirksam werden, müssen Sie die ausgewählten Änderungen speichern.",
+      "legend_title": "Legende",
+      "legend_none": "Keine Erinnerung gesetzt",
+      "select_default": "Erinnerungen auswählen",
+      "set": "Erinnerungen setzen",
+      "remove": "Erinnerungen entfernen",
+      "update_changes": "Erinnerungen aktualisieren"
     }
   },
   "general": {

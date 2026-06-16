@@ -27,9 +27,12 @@
   data-aico-cockpit-products-url="{{ routes.aico_production_cockpit_products_url }}"
   data-aico-cockpit-reminders-url="{{ routes.aico_production_cockpit_reminders_url }}"
   data-aico-cockpit-new-release-url="{{ routes.aico_production_cockpit_new_release_url }}"
+  data-aico-cockpit-product-page-url="{{ routes.aico_production_cockpit_product_page_url }}"
   {% for brand in brands %}data-aico-cockpit-brand-{{ brand.id }}="{{ brand.label | escape }}" {% endfor %}>
 
   <div class="aico-page-container aico-cockpit-shell">
+
+    <img class="aico-cockpit-banner" src="{{ 'cockpit-banner.webp' | asset_url }}" alt="" loading="eager">
 
     <header class="aico-cockpit-head">
       <h1 class="aico-cockpit-title">{{ 'aico_production_cockpit.title' | t }}</h1>
@@ -38,8 +41,18 @@
     </header>
 
     <section class="aico-cockpit-filter" aria-label="{{ 'aico_production_cockpit.brand_filter.title' | t }}">
-      <h2 class="aico-cockpit-filter-title">{{ 'aico_production_cockpit.brand_filter.title' | t }}</h2>
-      <p class="aico-cockpit-filter-info">{{ 'aico_production_cockpit.brand_filter.info' | t }}</p>
+      <div class="aico-cockpit-filter-head">
+        <h2 class="aico-cockpit-filter-title">{{ 'aico_production_cockpit.brand_filter.title' | t }}</h2>
+        <span class="aico-cockpit-info" data-aico-cockpit-info>
+          <button type="button" class="aico-cockpit-info-btn" data-aico-cockpit-info-toggle
+                  aria-label="{{ 'aico_production_cockpit.brand_filter.info' | t }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </button>
+          <span class="aico-cockpit-info-pop" role="tooltip" data-aico-cockpit-info-pop hidden>{{ 'aico_production_cockpit.brand_filter.info' | t }}</span>
+        </span>
+      </div>
       <div class="aico-cockpit-brand-chips" data-aico-cockpit-brand-filter></div>
     </section>
 
@@ -95,12 +108,24 @@
     "brand_filter": {
       "unknown": {{ 'aico_production_cockpit.brand_filter.unknown_brand' | t | json }}
     },
+    "product_note": {{ 'aico_production_cockpit.intro.paragraph2' | t | json }},
     "reminder_modal": {
       "manage_for": {{ 'aico_production_cockpit.reminder_modal.manage_for' | t | json }},
       "choose_size": {{ 'aico_production_cockpit.reminder_modal.choose_size' | t | json }},
+      "available_from": {{ 'aico_production_cockpit.table.columns.restock_date' | t | json }},
+      "no_date": {{ 'aico_production_cockpit.reminder_modal.no_date' | t | json }},
       "cancel": {{ 'aico_production_cockpit.reminder_modal.cancel' | t | json }},
       "save": {{ 'aico_production_cockpit.reminder_modal.save' | t | json }},
       "update": {{ 'aico_production_cockpit.reminder_modal.update' | t | json }},
+      "select_default": {{ 'aico_production_cockpit.reminder_modal.select_default' | t | json }},
+      "set": {{ 'aico_production_cockpit.reminder_modal.set' | t | json }},
+      "remove": {{ 'aico_production_cockpit.reminder_modal.remove' | t | json }},
+      "update_changes": {{ 'aico_production_cockpit.reminder_modal.update_changes' | t | json }},
+      "how_to_use": {{ 'aico_production_cockpit.reminder_modal.how_to_use' | t | json }},
+      "help_intro1": {{ 'aico_production_cockpit.reminder_modal.help_intro1' | t | json }},
+      "help_intro2": {{ 'aico_production_cockpit.reminder_modal.help_intro2' | t | json }},
+      "legend_title": {{ 'aico_production_cockpit.reminder_modal.legend_title' | t | json }},
+      "legend_none": {{ 'aico_production_cockpit.reminder_modal.legend_none' | t | json }},
       "legend_active": {{ 'aico_production_cockpit.reminder_modal.legend_active' | t | json }},
       "legend_add": {{ 'aico_production_cockpit.reminder_modal.legend_add' | t | json }},
       "legend_remove": {{ 'aico_production_cockpit.reminder_modal.legend_remove' | t | json }},

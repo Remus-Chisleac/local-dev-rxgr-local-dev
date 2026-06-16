@@ -625,11 +625,21 @@
       "cancel": "Cancel",
       "save": "Save reminder",
       "update": "Update reminders",
-      "legend_active": "Active reminder",
-      "legend_add": "Will be added",
-      "legend_remove": "Will be removed",
+      "legend_active": "Reminder is set",
+      "legend_add": "Will be added after save",
+      "legend_remove": "Will be removed after save",
       "toast_updated": "Reminders updated",
-      "toast_error": "Failed to update reminders. Please try again."
+      "toast_error": "Failed to update reminders. Please try again.",
+      "no_date": "No date",
+      "how_to_use": "How to use",
+      "help_intro1": "Select the sizes you want to be reminded about.",
+      "help_intro2": "For the changes to take effect you have to save the selected changes.",
+      "legend_title": "Legend",
+      "legend_none": "No reminder set",
+      "select_default": "Select reminders",
+      "set": "Set reminders",
+      "remove": "Remove reminders",
+      "update_changes": "Update reminders"
     }
   },
   "general": {

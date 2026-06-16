@@ -131,6 +131,40 @@
   // lazily and appended to <body>. open(product, ctx) renders the size cells;
   // saving calls back into the page controller so the table/PDP can refresh.
 
+  // Inline corner icons for the size-cell states (check / plus / minus).
+  var CELL_ICON = {
+    active: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    add: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    remove: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+  };
+  var INFO_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+
+  // Group a product's variants into "available from <date>" buckets, ascending
+  // (undated last), each sorted by size — matches the legacy reminder modal.
+  function groupVariantsByDate(variants) {
+    var groups = {};
+    var order = [];
+    (variants || []).forEach(function (variant) {
+      var date = variant.date || '';
+      if (!(date in groups)) {
+        groups[date] = [];
+        order.push(date);
+      }
+      groups[date].push(variant);
+    });
+    order.sort(function (a, b) {
+      if (!a) { return 1; }
+      if (!b) { return -1; }
+      return a < b ? -1 : (a > b ? 1 : 0);
+    });
+    return order.map(function (date) {
+      var list = groups[date].slice().sort(function (x, y) {
+        return String(x.variantValue || '').localeCompare(String(y.variantValue || ''), undefined, { numeric: true });
+      });
+      return { date: date, variants: list };
+    });
+  }
+
   function createReminderModal(opts) {
     var t = opts.t;
     var token = opts.token;
@@ -148,32 +182,54 @@
       '<div class="aico-cockpit-modal-backdrop" data-aico-cockpit-modal-close></div>' +
       '<div class="aico-cockpit-modal-panel" role="document">' +
         '<header class="aico-cockpit-modal-head">' +
-          '<p class="aico-cockpit-modal-eyebrow">' + t('reminder_modal.manage_for', 'Manage reminders for:') + '</p>' +
-          '<h2 class="aico-cockpit-modal-title" data-aico-cockpit-modal-title></h2>' +
-          '<button type="button" class="aico-cockpit-modal-x" data-aico-cockpit-modal-close aria-label="' + t('reminder_modal.cancel', 'Cancel') + '">&times;</button>' +
+          '<p class="aico-cockpit-modal-eyebrow">' + escapeHtml(t('reminder_modal.manage_for', 'Manage reminders for:')) + '</p>' +
+          '<button type="button" class="aico-cockpit-modal-x" data-aico-cockpit-modal-close aria-label="' + escapeAttr(t('reminder_modal.cancel', 'Cancel')) + '">&times;</button>' +
         '</header>' +
-        '<p class="aico-cockpit-modal-hint">' + t('reminder_modal.choose_size', 'Choose your size') + '</p>' +
-        '<div class="aico-cockpit-modal-grid" data-aico-cockpit-modal-grid></div>' +
-        '<div class="aico-cockpit-modal-legend">' +
-          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--active"></span>' + t('reminder_modal.legend_active', 'Active reminder') + '</span>' +
-          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--add"></span>' + t('reminder_modal.legend_add', 'Will be added') + '</span>' +
-          '<span class="aico-cockpit-legend-item"><span class="aico-cockpit-swatch aico-cockpit-swatch--remove"></span>' + t('reminder_modal.legend_remove', 'Will be removed') + '</span>' +
+        '<div class="aico-cockpit-modal-product">' +
+          '<div class="aico-cockpit-modal-thumb" data-aico-cockpit-modal-thumb></div>' +
+          '<div class="aico-cockpit-modal-product-info">' +
+            '<h2 class="aico-cockpit-modal-title" data-aico-cockpit-modal-title></h2>' +
+            '<p class="aico-cockpit-modal-note">' + escapeHtml(t('product_note', '')) + '</p>' +
+          '</div>' +
         '</div>' +
+        '<p class="aico-cockpit-modal-hint">' + escapeHtml(t('reminder_modal.choose_size', 'Choose your size')) + '</p>' +
+        '<div class="aico-cockpit-modal-grid" data-aico-cockpit-modal-grid></div>' +
         '<footer class="aico-cockpit-modal-foot">' +
-          '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--ghost" data-aico-cockpit-modal-close>' + t('reminder_modal.cancel', 'Cancel') + '</button>' +
-          '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--primary" data-aico-cockpit-modal-save>' + t('reminder_modal.save', 'Save reminder') + '</button>' +
+          '<span class="aico-cockpit-howto" data-aico-cockpit-howto>' +
+            '<button type="button" class="aico-cockpit-howto-btn" data-aico-cockpit-howto-toggle>' +
+              escapeHtml(t('reminder_modal.how_to_use', 'How to use')) + ' ' + INFO_SVG +
+            '</button>' +
+            '<div class="aico-cockpit-howto-pop" data-aico-cockpit-howto-pop hidden>' +
+              '<p>' + escapeHtml(t('reminder_modal.help_intro1', 'Select the sizes you want to be reminded about.')) + '</p>' +
+              '<p>' + escapeHtml(t('reminder_modal.help_intro2', 'For the changes to take effect you have to save the selected changes.')) + '</p>' +
+              '<p class="aico-cockpit-legend-title">' + escapeHtml(t('reminder_modal.legend_title', 'Legend')) + '</p>' +
+              '<div class="aico-cockpit-legend-rows">' +
+                '<div class="aico-cockpit-legend-row"><span class="aico-cockpit-legend-box"></span>' + escapeHtml(t('reminder_modal.legend_none', 'No reminder set')) + '</div>' +
+                '<div class="aico-cockpit-legend-row"><span class="aico-cockpit-legend-box aico-cockpit-legend-box--active">' + CELL_ICON.active + '</span>' + escapeHtml(t('reminder_modal.legend_active', 'Reminder is set')) + '</div>' +
+                '<div class="aico-cockpit-legend-row"><span class="aico-cockpit-legend-box aico-cockpit-legend-box--add">' + CELL_ICON.add + '</span>' + escapeHtml(t('reminder_modal.legend_add', 'Will be added after save')) + '</div>' +
+                '<div class="aico-cockpit-legend-row"><span class="aico-cockpit-legend-box aico-cockpit-legend-box--remove">' + CELL_ICON.remove + '</span>' + escapeHtml(t('reminder_modal.legend_remove', 'Will be removed after save')) + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</span>' +
+          '<div class="aico-cockpit-modal-actions">' +
+            '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--ghost" data-aico-cockpit-modal-close>' + escapeHtml(t('reminder_modal.cancel', 'Cancel')) + '</button>' +
+            '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--primary" data-aico-cockpit-modal-save disabled>' + escapeHtml(t('reminder_modal.select_default', 'Select reminders')) + '</button>' +
+          '</div>' +
         '</footer>' +
       '</div>';
     document.body.appendChild(root);
 
     var titleEl = root.querySelector('[data-aico-cockpit-modal-title]');
+    var thumbEl = root.querySelector('[data-aico-cockpit-modal-thumb]');
     var gridEl = root.querySelector('[data-aico-cockpit-modal-grid]');
     var saveBtn = root.querySelector('[data-aico-cockpit-modal-save]');
+    var howtoPop = root.querySelector('[data-aico-cockpit-howto-pop]');
 
     var current = null; // { product, reminderIndex }
 
     function close() {
       root.setAttribute('hidden', '');
+      if (howtoPop) { howtoPop.hidden = true; }
       current = null;
     }
 
@@ -182,34 +238,69 @@
         close();
       }
     });
+    var howtoToggle = root.querySelector('[data-aico-cockpit-howto-toggle]');
+    if (howtoToggle && howtoPop) {
+      howtoToggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        howtoPop.hidden = !howtoPop.hidden;
+      });
+      root.querySelector('.aico-cockpit-modal-panel').addEventListener('click', function (event) {
+        if (!event.target.closest('[data-aico-cockpit-howto]')) { howtoPop.hidden = true; }
+      });
+    }
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && !root.hasAttribute('hidden')) {
         close();
       }
     });
 
-    // cell.state: 'idle' | 'active' | 'add' | 'remove'
+    // cell.state: 'idle' | 'active' | 'add' | 'remove'. Rendered as date-grouped
+    // "available from" panels; each cell carries a corner state icon and a
+    // staggered open animation.
     function renderGrid(product, reminderIndex) {
       gridEl.innerHTML = '';
-      (product.variants || []).forEach(function (variant) {
-        var key = reminderKeyForVariant(product, variant);
-        var existing = reminderIndex[key] || null;
-        var cell = document.createElement('button');
-        cell.type = 'button';
-        cell.className = 'aico-cockpit-size-cell';
-        cell.setAttribute('data-aico-cockpit-size', '');
-        cell.dataset.state = existing ? 'active' : 'idle';
-        cell.dataset.variantId = variant.variantId != null ? String(variant.variantId) : '';
-        cell.dataset.size = variant.variantValue != null ? String(variant.variantValue) : '';
-        cell.dataset.reminderId = existing && existing.id != null ? String(existing.id) : '';
-        cell.dataset.manual = (product.isManualEntry || variant.variantId == null) ? '1' : '0';
-        cell.textContent = variant.variantValue != null ? variant.variantValue : '—';
-        applyCellClass(cell);
-        cell.addEventListener('click', function () {
-          toggleCell(cell);
+      var cellIndex = 0;
+      groupVariantsByDate(product.variants || []).forEach(function (group) {
+        var panel = document.createElement('div');
+        panel.className = 'aico-cockpit-date-group';
+
+        var heading = document.createElement('p');
+        heading.className = 'aico-cockpit-date-title';
+        heading.textContent = group.date
+          ? (t('reminder_modal.available_from', 'Available from') + ' ' + formatDate(group.date))
+          : t('reminder_modal.no_date', 'No date');
+        panel.appendChild(heading);
+
+        var row = document.createElement('div');
+        row.className = 'aico-cockpit-size-row';
+        group.variants.forEach(function (variant) {
+          var key = reminderKeyForVariant(product, variant);
+          var existing = reminderIndex[key] || null;
+          var cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'aico-cockpit-size-cell';
+          cell.setAttribute('data-aico-cockpit-size', '');
+          cell.dataset.state = existing ? 'active' : 'idle';
+          cell.dataset.variantId = variant.variantId != null ? String(variant.variantId) : '';
+          cell.dataset.size = variant.variantValue != null ? String(variant.variantValue) : '';
+          cell.dataset.reminderId = existing && existing.id != null ? String(existing.id) : '';
+          cell.dataset.manual = (product.isManualEntry || variant.variantId == null) ? '1' : '0';
+          cell.style.animationDelay = (cellIndex * 35) + 'ms';
+          cellIndex += 1;
+          cell.innerHTML = '<span class="aico-cockpit-size-label">' +
+            escapeHtml(variant.variantValue != null ? variant.variantValue : '—') +
+            '</span><span class="aico-cockpit-size-icon" aria-hidden="true"></span>';
+          applyCellClass(cell);
+          cell.addEventListener('click', function () { toggleCell(cell); });
+          row.appendChild(cell);
         });
-        gridEl.appendChild(cell);
+        panel.appendChild(row);
+        gridEl.appendChild(panel);
       });
+      // Retrigger the open animation.
+      gridEl.classList.remove('is-opening');
+      void gridEl.offsetWidth;
+      gridEl.classList.add('is-opening');
     }
 
     function applyCellClass(cell) {
@@ -219,12 +310,18 @@
         'aico-cockpit-size-cell--remove'
       );
       var state = cell.dataset.state;
+      var iconEl = cell.querySelector('.aico-cockpit-size-icon');
       if (state === 'active') {
         cell.classList.add('aico-cockpit-size-cell--active');
+        if (iconEl) { iconEl.innerHTML = CELL_ICON.active; }
       } else if (state === 'add') {
         cell.classList.add('aico-cockpit-size-cell--add');
+        if (iconEl) { iconEl.innerHTML = CELL_ICON.add; }
       } else if (state === 'remove') {
         cell.classList.add('aico-cockpit-size-cell--remove');
+        if (iconEl) { iconEl.innerHTML = CELL_ICON.remove; }
+      } else if (iconEl) {
+        iconEl.innerHTML = '';
       }
     }
 
@@ -241,6 +338,7 @@
         cell.dataset.state = 'active';
       }
       applyCellClass(cell);
+      updateSaveButton();
     }
 
     function collectChanges() {
@@ -265,6 +363,26 @@
         reminderIdsToCancel: reminderIdsToCancel,
         newReleases: newReleases
       };
+    }
+
+    // Reflect pending changes on the primary button: disabled with the neutral
+    // "Select reminders" label until there's a change, then Set/Remove/Update.
+    function updateSaveButton() {
+      var changes = collectChanges();
+      var adds = changes.variantIdsToSetRemindersFor.length + changes.newReleases.length;
+      var removes = changes.reminderIdsToCancel.length;
+      var label;
+      if (adds && removes) {
+        label = t('reminder_modal.update_changes', 'Update reminders');
+      } else if (adds) {
+        label = t('reminder_modal.set', 'Set reminders');
+      } else if (removes) {
+        label = t('reminder_modal.remove', 'Remove reminders');
+      } else {
+        label = t('reminder_modal.select_default', 'Select reminders');
+      }
+      saveBtn.textContent = label;
+      saveBtn.disabled = !(adds || removes);
     }
 
     function save() {
@@ -293,7 +411,6 @@
 
       saveBtn.disabled = true;
       Promise.all(tasks).then(function () {
-        saveBtn.disabled = false;
         onToast('updated');
         close();
         onSaved();
@@ -309,8 +426,16 @@
     return {
       open: function (product, reminderIndex) {
         current = { product: product };
-        titleEl.textContent = product.name || product.sku || '';
+        titleEl.textContent = product.productionName || product.name || product.sku || '';
+        if (thumbEl) {
+          thumbEl.innerHTML = product.image
+            ? '<img src="' + escapeAttr(product.image) + '" alt="" loading="lazy">'
+            : '';
+          thumbEl.classList.toggle('is-empty', !product.image);
+        }
         renderGrid(product, reminderIndex || {});
+        updateSaveButton();
+        if (howtoPop) { howtoPop.hidden = true; }
         root.removeAttribute('hidden');
       },
       close: close
@@ -331,6 +456,16 @@
     var productsUrl = root.getAttribute('data-aico-cockpit-products-url') || '';
     var remindersUrl = root.getAttribute('data-aico-cockpit-reminders-url') || '';
     var newReleaseUrl = root.getAttribute('data-aico-cockpit-new-release-url') || '';
+    var productPageUrl = root.getAttribute('data-aico-cockpit-product-page-url') || '';
+
+    // PDP link for a row: only catalogue products (have a url handle, not a
+    // manual "coming soon" entry) link to /products/<handle>.
+    function productHref(product) {
+      if (!productPageUrl || product.isManualEntry || !product.urlHandle) {
+        return '';
+      }
+      return productPageUrl.replace('__HANDLE__', encodeURIComponent(product.urlHandle));
+    }
 
     var brandFilterEl = root.querySelector('[data-aico-cockpit-brand-filter]');
     var tbodyEl = root.querySelector('[data-aico-cockpit-tbody]');
@@ -506,20 +641,27 @@
           ? t('reminder_modal.update', 'Update reminders')
           : t('set_reminder', 'Set reminder');
 
+        var href = productHref(product);
+        var displayName = product.productionName || product.name || '';
+        var imageInner = product.image
+          ? '<img class="aico-cockpit-thumb" src="' + escapeAttr(product.image) + '" alt="" loading="lazy">'
+          : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>';
+        var nameInner = href
+          ? '<a class="aico-cockpit-model-link" href="' + escapeAttr(href) + '">' + escapeHtml(displayName) + '</a>'
+          : escapeHtml(displayName);
+
         tr.innerHTML =
           '<td class="aico-cockpit-cell aico-cockpit-cell--brand">' + escapeHtml(brandLabel(product)) + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--image">' +
-            (product.image
-              ? '<img class="aico-cockpit-thumb" src="' + escapeAttr(product.image) + '" alt="" loading="lazy">'
-              : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>') +
+            (href ? '<a class="aico-cockpit-thumb-link" href="' + escapeAttr(href) + '">' + imageInner + '</a>' : imageInner) +
           '</td>' +
-          '<td class="aico-cockpit-cell aico-cockpit-cell--model">' + escapeHtml(product.name || '') +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--model">' + nameInner +
             (product.isManualEntry ? ' <span class="aico-cockpit-badge">' + escapeHtml(t('coming_soon', 'Coming soon')) + '</span>' : '') +
           '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--sku">' + escapeHtml(product.sku || '') + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--date">' + escapeHtml(formatDate(product.date)) + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--action">' +
-            '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--outline" data-aico-cockpit-open>' + escapeHtml(actionLabel) + '</button>' +
+            '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--primary aico-cockpit-action-btn" data-aico-cockpit-open>' + escapeHtml(actionLabel) + '</button>' +
           '</td>';
 
         tr.querySelector('[data-aico-cockpit-open]').addEventListener('click', function () {
@@ -564,6 +706,21 @@
         renderRows();
       }).catch(function (error) {
         console.warn('aico-cockpit: reminders refresh failed', error);
+      });
+    }
+
+    // Brand-filter info tooltip (click-to-toggle; closes on outside click).
+    var infoToggle = root.querySelector('[data-aico-cockpit-info-toggle]');
+    var infoPop = root.querySelector('[data-aico-cockpit-info-pop]');
+    if (infoToggle && infoPop) {
+      infoToggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        infoPop.hidden = !infoPop.hidden;
+      });
+      document.addEventListener('click', function (event) {
+        if (!infoPop.hidden && !event.target.closest('[data-aico-cockpit-info]')) {
+          infoPop.hidden = true;
+        }
       });
     }
 
