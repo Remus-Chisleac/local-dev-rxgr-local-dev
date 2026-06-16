@@ -72,4 +72,21 @@
       }
     });
   }
+
+  // Outside-click auto-close for the brand `<details>` dropdown: a click
+  // anywhere outside `.aico-drawer-brand-picker` collapses just the dropdown
+  // (the menu panel stays open). Mirrors the legacy drawer behaviour.
+  var brandPickerEl = menu.querySelector('.aico-drawer-brand-picker');
+  var brandDisclosure = brandPickerEl ? brandPickerEl.querySelector('details.aico-disclosure') : null;
+  if (brandDisclosure) {
+    document.addEventListener('click', function (event) {
+      if (!brandDisclosure.open) {
+        return;
+      }
+      var target = event.target;
+      if (!(target && target.closest && target.closest('.aico-drawer-brand-picker'))) {
+        brandDisclosure.open = false;
+      }
+    });
+  }
 })();

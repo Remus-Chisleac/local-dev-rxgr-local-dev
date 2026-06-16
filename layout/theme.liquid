@@ -153,14 +153,26 @@
 
       <header class="aico-header" role="banner">
         <div class="aico-page-container aico-header-row">
-          <a href="{{ routes.root_url }}" class="aico-header-brand" aria-label="{{ shop.name }}">
-            <span class="aico-header-brand-text">
-              {%- if customer.aico_selected_brand -%}
-                {{ customer.aico_selected_brand.label }}
-              {%- else -%}
-                {{ shop.name }}
-              {%- endif -%}
-            </span>
+          {%- assign aico_header_brand = customer.aico_selected_brand -%}
+          {%- assign aico_header_brand_logo = aico_header_brand.logo_url | default: aico_header_brand.image_url -%}
+          <a href="{% if aico_header_brand %}{{ aico_header_brand.url }}{% else %}{{ routes.root_url }}{% endif %}"
+             class="aico-header-brand"
+             aria-label="{{ aico_header_brand.label | default: shop.name }}">
+            {%- if aico_header_brand and aico_header_brand_logo -%}
+              <img class="aico-header-brand-logo"
+                   src="{{ aico_header_brand_logo }}"
+                   alt="{{ aico_header_brand.label | escape }}"
+                   loading="eager"
+                   decoding="async">
+            {%- else -%}
+              <span class="aico-header-brand-text">
+                {%- if aico_header_brand -%}
+                  {{ aico_header_brand.label }}
+                {%- else -%}
+                  {{ shop.name }}
+                {%- endif -%}
+              </span>
+            {%- endif -%}
           </a>
 
           <div class="aico-header-actions">
@@ -287,9 +299,10 @@
                         <form method="post" action="{{ routes.aico_account_select_brand_url }}" class="aico-drawer-brand-row-form">
                           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
                           <input type="hidden" name="brand_id" value="{{ brand.id }}">
+                          {%- assign aico_brand_thumb = brand.logo_url | default: brand.image_url -%}
                           <button type="submit" class="aico-drawer-row aico-drawer-brand-list-row">
-                            {% if brand.image_url %}
-                              <img src="{{ brand.image_url }}" alt="" class="aico-drawer-brand-thumb">
+                            {% if aico_brand_thumb %}
+                              <img src="{{ aico_brand_thumb }}" alt="{{ brand.label | escape }}" class="aico-drawer-brand-thumb" loading="lazy" decoding="async">
                             {% else %}
                               <span class="aico-drawer-brand-thumb aico-drawer-brand-thumb-empty" aria-hidden="true"></span>
                             {% endif %}

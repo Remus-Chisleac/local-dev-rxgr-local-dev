@@ -146,7 +146,19 @@ body:not(.aico-template-customers) > .aico-shell-body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-@media (min-width: 640px) { .aico-header-brand { max-width: 28rem; } }
+/* Selected-brand logo in the header — constrained to the header brand row
+   height so it never overflows; transparent SVGs/PNGs keep their aspect. */
+.aico-header-brand-logo {
+  display: block;
+  height: 2rem;
+  width: auto;
+  max-width: min(100%, 12rem);
+  object-fit: contain;
+}
+@media (min-width: 640px) {
+  .aico-header-brand { max-width: 28rem; }
+  .aico-header-brand-logo { height: 2.25rem; max-width: 16rem; }
+}
 
 .aico-header-actions {
   margin-left: auto;
@@ -871,9 +883,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0;
 }
 
+/* Icons-first dropdown rows: make the brand logo the dominant element.
+   A light muted surface guarantees transparent SVG/PNG logos stay visible. */
 .aico-drawer-brand-list-row .aico-drawer-brand-thumb {
-  width: 2rem;
-  height: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: var(--aico-muted);
+  border: 1px solid var(--aico-border);
 }
 
 .aico-drawer-brand-list > li:nth-child(odd) .aico-drawer-brand-list-row {
