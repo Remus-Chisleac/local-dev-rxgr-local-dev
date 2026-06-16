@@ -8332,3 +8332,179 @@ html.aico-preorder-gallery-open {
   font-style: italic;
   color: var(--aico-muted-fg, #9d9d9d);
 }
+
+/* Richer preorder confirmation (G4b) — used both on the thank-you template and
+   as the inline post-submit reveal on the preorder page. */
+.aico-preorder-confirmation {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem;
+}
+
+.aico-preorder-confirmation-head {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.aico-preorder-confirmation-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: #1f9d55;
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.aico-preorder-confirmation-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.aico-preorder-confirmation-message {
+  margin: 0;
+  color: #555;
+}
+
+.aico-preorder-confirmation-number-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e4e4e4;
+  border-radius: 0.5rem;
+  background: #fafafa;
+}
+
+.aico-preorder-confirmation-number-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.aico-preorder-confirmation-number {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #272727;
+}
+
+.aico-preorder-confirmation-reference {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.aico-preorder-confirmation-details {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+
+.aico-preorder-confirmation-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.aico-preorder-confirmation-detail dt {
+  margin: 0;
+  color: #888;
+  font-size: 0.875rem;
+}
+
+.aico-preorder-confirmation-detail dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.aico-preorder-confirmation-dates-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.aico-preorder-confirmation-dates-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 0 0 0.5rem;
+}
+
+.aico-preorder-confirmation-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f4f4f4;
+  font-size: 0.875rem;
+}
+
+.aico-preorder-confirmation-date {
+  font-weight: 600;
+}
+
+.aico-preorder-confirmation-date-number {
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+.aico-preorder-confirmation-date-qty,
+.aico-preorder-confirmation-date-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.aico-preorder-confirmation-pdf-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px dashed #d4d4d4;
+  border-radius: 0.5rem;
+  text-align: center;
+  color: #555;
+}
+
+.aico-preorder-confirmation-pdf-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: #e8702d;
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  flex: none;
+}
+
+.aico-preorder-confirmation-pdf-link {
+  text-decoration: none;
+}
+
+.aico-preorder-confirmation-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 641px) {
+  .aico-preorder-confirmation-details {
+    grid-template-columns: 1fr 1fr;
+  }
+}

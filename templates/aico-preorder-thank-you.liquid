@@ -1,12 +1,88 @@
 {% comment %}
-  Preorder confirmation — after successful POST /preorder/submit.
+  Preorder confirmation — the richer "thank you" rendered after a successful
+  POST /preorder/cart/submit.js when a thank-you URL is configured. The submit
+  flow redirects here with `?cart=<cartId>` (see preorder-page.js), and
+  preorder-confirmation.js fills the panel from
+  GET /preorder/cart/confirmation.js?cart_id=<cartId>: the real per-date order
+  number(s), the umbrella Preorder id, delivery address, item count, total,
+  discount, per-date delivery dates, and the asynchronously-generated PDF
+  (generating… → download link, broadcast-driven when a pusher key is set,
+  polling otherwise).
+
+  All names on this surface are aico_*-prefixed — there is no Shopify equivalent
+  for a B2B preorder confirmation PDF. The pusher publics are NOT theme settings:
+  the backend embeds them (key / cluster / channel) in the confirmation payload,
+  sourced from aico's broadcasting config; when broadcasting is off the JS polls
+  and the same UI is shown.
+
+  Note: {% render %} does not resolve to files in this theme (BlankFileSystem),
+  so the panel markup is inlined; it is identical to the inline reveal embedded
+  on templates/aico-preorder.liquid.
 {% endcomment %}
 
 <main class="aico-preorder-thank-you aico-page-container" role="main">
-  <h1 class="aico-preorder-thank-you-title">{{ 'aico_preorder.thank_you.title' | t }}</h1>
-  <p class="aico-preorder-thank-you-message">{{ 'aico_preorder.thank_you.message' | t }}</p>
-  <p class="aico-preorder-thank-you-links">
-    <a class="aico-btn aico-btn-primary" href="{{ routes.aico_preorder_url }}">{{ 'aico_preorder.thank_you.back_to_preorder' | t }}</a>
-    <a class="aico-btn aico-btn-secondary" href="{{ routes.root_url }}">{{ 'aico_preorder.thank_you.continue_shopping' | t }}</a>
-  </p>
+  <section
+    class="aico-preorder-confirmation"
+    data-aico-preorder-confirmation
+    data-aico-confirmation-autostart="1"
+    data-aico-confirmation-url="{{ routes.aico_preorder_cart_confirmation_url }}"
+    data-aico-confirmation-title="{{ 'aico_preorder.confirmation.title' | t | escape }}"
+    data-aico-confirmation-message="{{ 'aico_preorder.confirmation.message' | t | escape }}"
+    data-aico-confirmation-number-pending="{{ 'aico_preorder.confirmation.number_pending' | t | escape }}"
+    data-aico-confirmation-pcs="{{ 'aico_preorder.catalog.pcs' | t | escape }}"
+    data-aico-confirmation-pdf-generating="{{ 'aico_preorder.confirmation.pdf_generating' | t | escape }}"
+    data-aico-confirmation-pdf-download="{{ 'aico_preorder.confirmation.pdf_download' | t | escape }}"
+    data-aico-confirmation-pdf-unavailable="{{ 'aico_preorder.confirmation.pdf_unavailable' | t | escape }}">
+
+    <header class="aico-preorder-confirmation-head">
+      <span class="aico-preorder-confirmation-check" aria-hidden="true">&#10003;</span>
+      <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h1>
+      <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
+    </header>
+
+    <div class="aico-preorder-confirmation-number-box">
+      <span class="aico-preorder-confirmation-number-label">{{ 'aico_preorder.confirmation.number_label' | t }}</span>
+      <span class="aico-preorder-confirmation-number" data-aico-confirmation-number>…</span>
+      <span class="aico-preorder-confirmation-reference">
+        {{ 'aico_preorder.confirmation.reference_label' | t }}
+        <span data-aico-confirmation-reference></span>
+      </span>
+    </div>
+
+    <dl class="aico-preorder-confirmation-details">
+      <div class="aico-preorder-confirmation-detail">
+        <dt>{{ 'aico_preorder.confirmation.delivery_address' | t }}</dt>
+        <dd data-aico-confirmation-address>—</dd>
+      </div>
+      <div class="aico-preorder-confirmation-detail">
+        <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
+        <dd data-aico-confirmation-item-count>0</dd>
+      </div>
+      <div class="aico-preorder-confirmation-detail">
+        <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
+        <dd data-aico-confirmation-total>—</dd>
+      </div>
+      <div class="aico-preorder-confirmation-detail" data-aico-confirmation-discount-row hidden>
+        <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
+        <dd data-aico-confirmation-discount>—</dd>
+      </div>
+    </dl>
+
+    <div class="aico-preorder-confirmation-dates-wrap">
+      <h2 class="aico-preorder-confirmation-dates-title">{{ 'aico_preorder.confirmation.delivery_dates' | t }}</h2>
+      <div class="aico-preorder-confirmation-dates" data-aico-confirmation-dates></div>
+    </div>
+
+    <div class="aico-preorder-confirmation-pdf-area" data-aico-confirmation-pdf aria-live="polite" aria-busy="true">
+      <span class="aico-preorder-confirmation-pdf-spinner" aria-hidden="true"></span>
+      <span>{{ 'aico_preorder.confirmation.pdf_generating' | t }}</span>
+    </div>
+
+    <p class="aico-preorder-confirmation-links">
+      <a class="aico-btn aico-btn-primary" href="{{ routes.aico_preorder_url }}">{{ 'aico_preorder.thank_you.back_to_preorder' | t }}</a>
+      <a class="aico-btn aico-btn-secondary" href="{{ routes.root_url }}">{{ 'aico_preorder.thank_you.continue_shopping' | t }}</a>
+    </p>
+  </section>
+
+  <script src="{{ 'preorder-confirmation.js' | asset_url }}" defer></script>
 </main>

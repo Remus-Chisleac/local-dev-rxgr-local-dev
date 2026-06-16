@@ -537,7 +537,22 @@
       "continue_shopping": "Weiter einkaufen"
     },
     "cart_button_aria": "PreOrder-Warenkorb öffnen",
-    "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt."
+    "address_change_warning": "Beim Wechsel der Adresse wird der PreOrder-Warenkorb zurückgesetzt.",
+    "confirmation": {
+      "title": "Vielen Dank — Ihre Vorbestellung ist bestätigt",
+      "message": "Wir haben Ihre Vorbestellung erhalten und mit der Bearbeitung begonnen. Ein Bestätigungsdokument ist unterwegs.",
+      "number_label": "Bestellnummer",
+      "number_pending": "Wird zugewiesen…",
+      "reference_label": "Vorbestellungsreferenz",
+      "delivery_address": "Lieferadresse",
+      "item_count": "Artikel gesamt",
+      "total": "Total (exkl. MwSt.)",
+      "discount": "Angewandter Rabatt",
+      "delivery_dates": "Liefertermine",
+      "pdf_generating": "Ihr Bestätigungs-PDF wird erstellt…",
+      "pdf_download": "Bestätigung herunterladen (PDF)",
+      "pdf_unavailable": "Das Bestätigungs-PDF wird Ihnen in Kürze per E-Mail zugesandt."
+    }
   },
   "aico_exchange": {
     "title": "Tauschplattform",

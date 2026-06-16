@@ -300,13 +300,12 @@
                           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
                           <input type="hidden" name="brand_id" value="{{ brand.id }}">
                           {%- assign aico_brand_thumb = brand.logo_url | default: brand.image_url -%}
-                          <button type="submit" class="aico-drawer-row aico-drawer-brand-list-row">
+                          <button type="submit" class="aico-drawer-row aico-drawer-brand-list-row aico-drawer-brand-list-row--logo" title="{{ brand.label | escape }}">
                             {% if aico_brand_thumb %}
                               <img src="{{ aico_brand_thumb }}" alt="{{ brand.label | escape }}" class="aico-drawer-brand-thumb" loading="lazy" decoding="async">
                             {% else %}
-                              <span class="aico-drawer-brand-thumb aico-drawer-brand-thumb-empty" aria-hidden="true"></span>
+                              <span class="aico-drawer-row-label">{{ brand.label }}</span>
                             {% endif %}
-                            <span class="aico-drawer-row-label">{{ brand.label }}</span>
                           </button>
                         </form>
                       </li>

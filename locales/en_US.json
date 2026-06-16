@@ -537,7 +537,22 @@
       "continue_shopping": "Continue shopping"
     },
     "cart_button_aria": "Open preorder cart",
-    "address_change_warning": "Changing the address will reset your preorder cart."
+    "address_change_warning": "Changing the address will reset your preorder cart.",
+    "confirmation": {
+      "title": "Thank you — your preorder is confirmed",
+      "message": "We have received your preorder and started processing it. A confirmation document is on its way.",
+      "number_label": "Order number",
+      "number_pending": "Assigning…",
+      "reference_label": "Preorder reference",
+      "delivery_address": "Delivery address",
+      "item_count": "Total items",
+      "total": "Total (excl. VAT)",
+      "discount": "Discount applied",
+      "delivery_dates": "Delivery dates",
+      "pdf_generating": "Generating your confirmation PDF…",
+      "pdf_download": "Download confirmation (PDF)",
+      "pdf_unavailable": "The confirmation PDF will be emailed to you shortly."
+    }
   },
   "aico_exchange": {
     "title": "Exchange platform",

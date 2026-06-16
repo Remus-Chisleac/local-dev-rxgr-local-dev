@@ -1687,6 +1687,31 @@
       }
     }
 
+    // Inline confirmation reveal (no thank-you-url path): hide the catalog +
+    // checkout, show the confirmation panel, and hand the cart id to the
+    // confirmation controller so it can poll for the order numbers + PDF.
+    function revealInlineConfirmation(cartId) {
+      var panel = root.querySelector('[data-aico-preorder-confirmation]');
+      if (!panel || !window.AicoPreorderConfirmation) {
+        // No confirmation module/panel — fall back to the old status line.
+        if (summaryStatus) {
+          summaryStatus.hidden = false;
+          summaryStatus.textContent =
+            root.getAttribute('data-aico-preorder-copy-submitted') || 'Preorder placed';
+        }
+        return;
+      }
+      if (checkoutEl) checkoutEl.hidden = true;
+      if (mainEl) mainEl.hidden = true;
+      if (catalogToolsEl) catalogToolsEl.hidden = true;
+      if (filtersWrapEl) filtersWrapEl.hidden = true;
+      window.AicoPreorderConfirmation.cartId = cartId ? String(cartId) : null;
+      window.AicoPreorderConfirmation.start();
+      try {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) {}
+    }
+
     if (cartEnabled && submitBtn) {
       submitBtn.addEventListener('click', function () {
         // Terms gate: let the click through, but if the AGB box isn't ticked,
@@ -1702,18 +1727,28 @@
         cartCtrl
           .submitPreorder(notesEl ? notesEl.value : '')
           .then(function () {
+            var cartId = cartCtrl.cartId;
             var thankYou = root.getAttribute('data-aico-preorder-thank-you-url');
             if (thankYou) {
-              window.location.href = thankYou;
-            } else {
-              isSubmitting = false;
-              setSubmitSaving(false);
-              if (summaryStatus) {
-                summaryStatus.hidden = false;
-                summaryStatus.textContent =
-                  root.getAttribute('data-aico-preorder-copy-submitted') || 'Preorder placed';
+              // Carry the cart id so the thank-you page can confirm against it
+              // (preorder-confirmation.js reads ?cart=). The umbrella preorder +
+              // PDF are created asynchronously; the confirmation page polls.
+              try {
+                var url = new URL(thankYou, window.location.origin);
+                if (cartId) url.searchParams.set('cart', String(cartId));
+                window.location.href = url.toString();
+              } catch (_) {
+                window.location.href =
+                  thankYou + (cartId ? (thankYou.indexOf('?') >= 0 ? '&' : '?') + 'cart=' + cartId : '');
               }
+              return;
             }
+            // Inline reveal: hide the checkout, show the richer confirmation in
+            // place (keeps the page/session), and let the confirmation module
+            // poll for the order numbers + PDF (broadcast-enhanced when keyed).
+            isSubmitting = false;
+            setSubmitSaving(false);
+            revealInlineConfirmation(cartId);
           })
           .catch(function () {
             isSubmitting = false;
