@@ -85,7 +85,7 @@
 
           {% if checkout.billing_addresses.size == 0 %}
             <p class="aico-checkout-empty-list">{{ 'checkout.no_addresses' | t }}</p>
-            <a href="{{ routes.account_addresses_url }}" class="aico-button aico-button-outline">
+            <a href="{{ routes.account_url }}" class="aico-button aico-button-outline">
               {{ 'checkout.manage_addresses' | t }}
             </a>
           {% else %}
