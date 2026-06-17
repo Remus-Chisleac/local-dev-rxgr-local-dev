@@ -9094,34 +9094,36 @@ html.aico-preorder-gallery-open {
 .aico-preorder-cart-panel-close { display: none; }
 
 /* ---- Docked in the gutter (wide / 1080p+ screens) ---- */
-@media (min-width: 1820px) {
+@media (min-width: 1900px) {
   .aico-preorder-cart-panel {
     position: fixed;
     top: 50%;
     transform: translateY(-50%);
     z-index: 45;
-    /* Fill the gutter between the centred 80rem container and the viewport edge,
-       hugging the content side and capped at a readable max width. The container
-       is 80rem wide (40rem each side of centre); 0.9rem gap keeps it off the
-       content. margin-auto anchors the capped box to the content side. */
+    /* Sit in the gutter beside the centred content WITHOUT overlapping it. The
+       content is `var(--max-width)` wide (1400px on the kj theme, 1280px on the
+       default), so its edge is at `50% + max-width/2`; anchor 0.9rem past that.
+       Fill the remaining gutter and cap at a readable max width; margin-auto
+       keeps the capped box hugging the content side. Using the variable means
+       this tracks the real container width instead of a hardcoded guess. */
     width: auto;
     max-width: 24rem;
-    min-width: 13rem;
+    min-width: 12rem;
   }
   .aico-preorder-cart-panel[data-side="right"] {
-    left: calc(50% + 40rem + 0.9rem);
+    left: calc(50% + (var(--max-width) / 2) + 0.9rem);
     right: 1rem;
     margin-right: auto;
   }
   .aico-preorder-cart-panel[data-side="left"] {
-    right: calc(50% + 40rem + 0.9rem);
+    right: calc(50% + (var(--max-width) / 2) + 0.9rem);
     left: 1rem;
     margin-left: auto;
   }
 }
 
 /* ---- Off-canvas with an edge tab (narrower screens) ---- */
-@media (max-width: 1819.98px) {
+@media (max-width: 1899.98px) {
   .aico-preorder-cart-panel {
     position: fixed;
     top: 50%;

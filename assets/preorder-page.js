@@ -488,9 +488,10 @@
       }
     }
 
-    // Smallest discount tier above the current quantity (null when already at
-    // the top tier or no tiers). Mirrors getDiscount's tolerant key handling.
-    function nextDiscountTier(discounts, totalQty) {
+    // Pieces still needed to reach the next discount tier — matches b2b-shop's
+    // getNextDiscountLevel (Math.abs(nextThreshold - qty)); 0 when already at the
+    // top tier or there are no tiers. Mirrors getDiscount's tolerant key handling.
+    function nextDiscountRemaining(discounts, totalQty) {
       var next = null;
       (discounts || []).forEach(function (d) {
         var from = d.from_quantity != null ? d.from_quantity : d.fromQuantity;
@@ -498,7 +499,7 @@
           next = from;
         }
       });
-      return next;
+      return next === null ? 0 : Math.abs(next - totalQty);
     }
 
     function updateCartPanel(totalQty, subtotal, discPct, discounts, currency) {
@@ -508,8 +509,7 @@
       if (cartPanelTabQty) cartPanelTabQty.textContent = totalQty;
       if (cartPanelDiscount) cartPanelDiscount.textContent = (discPct || 0) + '%';
       if (cartPanelNextTier) {
-        var tier = nextDiscountTier(discounts, totalQty);
-        cartPanelNextTier.textContent = tier !== null ? tier + ' ' + pcs : '—';
+        cartPanelNextTier.textContent = nextDiscountRemaining(discounts, totalQty) + ' ' + pcs;
       }
       if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(subtotal, currency, '');
     }
