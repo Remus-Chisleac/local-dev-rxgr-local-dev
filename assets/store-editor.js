@@ -232,24 +232,30 @@
     function renderImages(images) {
       images = images || [];
       var html = '';
+      html += '<div class="aico-store-editor-images" data-images>';
       if (images.length === 0) {
         html += '<p class="aico-store-editor-muted" data-images-empty>' + escapeHtml(t('noImages', 'No images yet.')) + '</p>';
       }
-      html += '<div class="aico-store-editor-images" data-images>';
       images.forEach(function (img) { html += imageRow(img); });
       html += '</div>';
-      html += '<label class="aico-store-editor-field"><span class="aico-store-editor-label">' + escapeHtml(t('addImage', 'Add image')) + '</span><input class="aico-store-editor-input" type="file" accept="image/*" data-image-file></label>';
+      html += '<label class="aico-store-editor-upload">'
+        + '<input type="file" accept="image/*" data-image-file hidden>'
+        + '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>'
+        + '<span class="aico-store-editor-upload-text">' + escapeHtml(t('addImage', 'Add image')) + '</span>'
+        + '</label>';
       panels.images.innerHTML = html;
     }
     function imageRow(img) {
       img = img || {};
       return '<div class="aico-store-editor-image" data-image-row data-id="' + escapeHtml(img.id || '') + '">'
-        + (img.imageUrl ? '<img src="' + escapeHtml(img.imageUrl) + '" alt="" class="aico-store-editor-image-thumb">' : '<span class="aico-store-editor-image-thumb aico-store-editor-image-thumb--empty"></span>')
+        + (img.imageUrl ? '<img src="' + escapeHtml(img.imageUrl) + '" alt="" class="aico-store-editor-image-thumb">' : '<span class="aico-store-editor-image-thumb aico-store-editor-image-thumb--empty" aria-hidden="true"></span>')
         + '<div class="aico-store-editor-image-fields">'
-        + '<input class="aico-store-editor-input" type="text" data-image-title placeholder="' + escapeHtml(t('imageTitlePlaceholder', 'Title')) + '" value="' + escapeHtml(img.title || '') + '">'
-        + '<input class="aico-store-editor-input aico-store-editor-input--order" type="number" data-image-order aria-label="' + escapeHtml(t('orderLabel', 'Order')) + '" value="' + escapeHtml(img.sortOrder || 0) + '">'
+        + '<label class="aico-store-editor-field"><span class="aico-store-editor-label">' + escapeHtml(t('imageTitlePlaceholder', 'Title')) + '</span>'
+        + '<input class="aico-store-editor-input" type="text" data-image-title placeholder="' + escapeHtml(t('imageTitlePlaceholder', 'Title')) + '" value="' + escapeHtml(img.title || '') + '"></label>'
+        + '<label class="aico-store-editor-field aico-store-editor-order-field"><span class="aico-store-editor-label">' + escapeHtml(t('orderLabel', 'Order')) + '</span>'
+        + '<input class="aico-store-editor-input aico-store-editor-input--order" type="number" min="0" data-image-order value="' + escapeHtml(img.sortOrder || 0) + '"></label>'
         + '</div>'
-        + '<button type="button" class="aico-store-editor-remove" data-image-delete aria-label="remove">&times;</button></div>';
+        + '<button type="button" class="aico-store-editor-remove aico-store-editor-image-remove" data-image-delete aria-label="remove">&times;</button></div>';
     }
     function loadImages() {
       panels.images.innerHTML = '<p class="aico-store-editor-loading">' + escapeHtml(t('loading', 'Loading…')) + '</p>';

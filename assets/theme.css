@@ -8838,7 +8838,7 @@ html.aico-preorder-gallery-open {
 }
 .aico-store-editor-input:focus-visible { outline: 2px solid var(--aico-store-accent); outline-offset: 1px; }
 .aico-store-editor-textarea { min-height: 4.5rem; resize: vertical; }
-.aico-store-editor-input--order { flex: 0 0 5rem; width: 5rem; }
+.aico-store-editor-input--order { width: 100%; }
 .aico-store-editor-main { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--aico-muted-fg); white-space: nowrap; }
 .aico-store-editor-remove {
   appearance: none; cursor: pointer; border: 1px solid var(--aico-border); background: var(--aico-bg);
@@ -8858,11 +8858,29 @@ html.aico-preorder-gallery-open {
 .aico-store-editor-time { font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--aico-border); border-radius: 0.125rem; background: var(--aico-bg); color: var(--aico-fg); }
 .aico-store-editor-time-sep { color: var(--aico-muted-fg); }
 
-.aico-store-editor-images { display: flex; flex-direction: column; gap: 0.6rem; }
-.aico-store-editor-image { display: flex; align-items: center; gap: 0.75rem; }
-.aico-store-editor-image-thumb { width: 3rem; height: 3rem; object-fit: cover; border-radius: 0.125rem; flex: 0 0 auto; background: var(--aico-muted, #e9e9ec); }
-.aico-store-editor-image-fields { display: flex; gap: 0.5rem; flex: 1 1 auto; flex-wrap: wrap; }
-.aico-store-editor-image-fields .aico-store-editor-input { flex: 1 1 10rem; }
+.aico-store-editor-images { display: flex; flex-direction: column; gap: 0.75rem; }
+.aico-store-editor-image {
+  display: flex; align-items: flex-end; gap: 1rem;
+  border: 1px solid var(--aico-border); border-radius: 0.25rem; background: var(--aico-bg); padding: 0.85rem;
+}
+.aico-store-editor-image-thumb {
+  width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: 0.25rem; flex: 0 0 auto;
+  background: var(--aico-muted, #e9e9ec); border: 1px solid var(--aico-border);
+}
+.aico-store-editor-image-thumb--empty { display: block; }
+.aico-store-editor-image-fields { display: flex; gap: 0.75rem; flex: 1 1 auto; flex-wrap: wrap; align-items: flex-end; }
+.aico-store-editor-image-fields .aico-store-editor-field { flex: 1 1 12rem; }
+.aico-store-editor-order-field { flex: 0 0 7rem; }
+.aico-store-editor-image-remove { align-self: center; }
+
+/* Upload dropzone (custom-styled label hiding the native file input) */
+.aico-store-editor-upload {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  padding: 1.15rem; border: 1.5px dashed var(--aico-border); border-radius: 0.25rem;
+  color: var(--aico-muted-fg); cursor: pointer; font-weight: 600; font-size: 0.9rem;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.aico-store-editor-upload:hover { border-color: var(--aico-store-accent); color: var(--aico-store-accent); background: rgba(47, 111, 208, 0.05); }
 
 .aico-store-editor-savebar {
   position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 1rem;
