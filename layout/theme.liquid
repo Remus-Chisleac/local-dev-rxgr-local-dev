@@ -474,19 +474,6 @@
             </a>
           </div>
 
-          {%- comment -%} ── Exchange platform (Tauschplattform) ── {%- endcomment -%}
-          <a href="{{ routes.aico_account_exchange_url }}" class="aico-drawer-row aico-drawer-row-zebra">
-            <span class="aico-drawer-row-icon">
-              <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m16 3 4 4-4 4"></path>
-                <path d="M20 7H4"></path>
-                <path d="m8 21-4-4 4-4"></path>
-                <path d="M4 17h16"></path>
-              </svg>
-            </span>
-            <span class="aico-drawer-row-label">{{ 'nav.exchange' | t }}</span>
-          </a>
-
           {%- comment -%} ── Logout + language (no label row) ── {%- endcomment -%}
           <div class="aico-drawer-perm-footer">
             <a href="{{ routes.account_logout_url }}" class="aico-drawer-perm-footer-logout">
