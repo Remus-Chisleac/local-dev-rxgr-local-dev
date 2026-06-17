@@ -17,11 +17,13 @@
   <title>{{ shop.name }}</title>
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
   {%- comment -%}
-    `customers/` templates are the bare, centered auth shell (login,
-    recover_password, etc.).
+    Only the unauthenticated auth pages (login / recover / register) use the
+    bare, centered auth shell. Authenticated profile pages under customers/
+    (account, addresses, aico_store_locator) render inside the full site chrome
+    — gating on template.directory would wrongly strip their header/footer.
   {%- endcomment -%}
   {%- assign aico_is_auth_shell = false -%}
-  {%- if template.directory == 'customers' -%}
+  {%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' -%}
     {%- assign aico_is_auth_shell = true -%}
   {%- endif -%}
   {% if aico_is_auth_shell %}
