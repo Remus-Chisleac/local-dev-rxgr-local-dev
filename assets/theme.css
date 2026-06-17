@@ -8791,3 +8791,113 @@ html.aico-preorder-gallery-open {
   justify-content: space-between;
   gap: 0.5rem;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Per-store editor page (templates/customers/aico_store_locator.liquid)
+   Full-page editor reached from a store card's "Edit store details" button.
+   Three stacked sections (contact / hours / images), a sticky save bar and a
+   leave-guard dialog. Replaces the old 3-tab store-details modal.
+   ───────────────────────────────────────────────────────────────────────── */
+.aico-store-editor { --aico-store-accent: #2f6fd0; padding: 0; color: var(--aico-fg); }
+.aico-store-editor-container { padding: 2rem 0 6rem; display: flex; flex-direction: column; gap: 1.75rem; }
+
+.aico-store-editor-topbar { display: flex; }
+.aico-store-editor-back {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  color: var(--aico-muted-fg); text-decoration: none; font-size: 0.9rem; font-weight: 600;
+}
+.aico-store-editor-back:hover { color: var(--aico-store-accent); }
+
+.aico-store-editor-header { display: flex; flex-direction: column; gap: 0.75rem; }
+.aico-store-editor-title { font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--aico-fg); }
+.aico-store-editor-store {
+  border: 1px solid var(--aico-border); border-radius: 0.25rem; background: var(--aico-card);
+  padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.15rem;
+}
+.aico-store-editor-store-name { font-weight: 700; margin: 0; }
+.aico-store-editor-store-line { color: var(--aico-muted-fg); font-size: 0.9rem; margin: 0; }
+
+.aico-store-editor-section {
+  border: 1px solid var(--aico-border); border-radius: 0.25rem; background: var(--aico-card);
+  padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+}
+.aico-store-editor-section-title { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--aico-fg); }
+.aico-store-editor-loading, .aico-store-editor-muted { color: var(--aico-muted-fg); font-size: 0.9rem; margin: 0; }
+
+.aico-store-editor-group { display: flex; flex-direction: column; gap: 0.6rem; }
+.aico-store-editor-subhead { font-size: 0.85rem; font-weight: 600; color: var(--aico-muted-fg); margin: 0; text-transform: uppercase; letter-spacing: 0.03em; }
+.aico-store-editor-rows { display: flex; flex-direction: column; gap: 0.6rem; }
+.aico-store-editor-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.aico-store-editor-row .aico-store-editor-input { flex: 1 1 12rem; min-width: 8rem; }
+
+.aico-store-editor-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.aico-store-editor-label { font-size: 0.8rem; color: var(--aico-muted-fg); }
+.aico-store-editor-input {
+  appearance: none; width: 100%; font: inherit; color: var(--aico-fg);
+  padding: 0.55rem 0.7rem; background: var(--aico-bg); border: 1px solid var(--aico-border); border-radius: 0.125rem;
+}
+.aico-store-editor-input:focus-visible { outline: 2px solid var(--aico-store-accent); outline-offset: 1px; }
+.aico-store-editor-textarea { min-height: 4.5rem; resize: vertical; }
+.aico-store-editor-input--order { flex: 0 0 5rem; width: 5rem; }
+.aico-store-editor-main { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--aico-muted-fg); white-space: nowrap; }
+.aico-store-editor-remove {
+  appearance: none; cursor: pointer; border: 1px solid var(--aico-border); background: var(--aico-bg);
+  color: var(--aico-muted-fg); width: 2rem; height: 2rem; border-radius: 0.125rem; font-size: 1.1rem; line-height: 1; flex: 0 0 auto;
+}
+.aico-store-editor-remove:hover { border-color: #e0556b; color: #e0556b; }
+.aico-store-editor-add {
+  align-self: flex-start; appearance: none; cursor: pointer; font: inherit; font-size: 0.85rem; font-weight: 600;
+  padding: 0.4rem 0.8rem; border: 1px dashed var(--aico-border); border-radius: 0.125rem; background: transparent; color: var(--aico-fg);
+}
+.aico-store-editor-add:hover { border-color: var(--aico-store-accent); color: var(--aico-store-accent); }
+
+.aico-store-editor-toggle { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+.aico-store-editor-days { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-store-editor-day { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.aico-store-editor-day-name { display: inline-flex; align-items: center; gap: 0.4rem; min-width: 9rem; }
+.aico-store-editor-time { font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--aico-border); border-radius: 0.125rem; background: var(--aico-bg); color: var(--aico-fg); }
+.aico-store-editor-time-sep { color: var(--aico-muted-fg); }
+
+.aico-store-editor-images { display: flex; flex-direction: column; gap: 0.6rem; }
+.aico-store-editor-image { display: flex; align-items: center; gap: 0.75rem; }
+.aico-store-editor-image-thumb { width: 3rem; height: 3rem; object-fit: cover; border-radius: 0.125rem; flex: 0 0 auto; background: var(--aico-muted, #e9e9ec); }
+.aico-store-editor-image-fields { display: flex; gap: 0.5rem; flex: 1 1 auto; flex-wrap: wrap; }
+.aico-store-editor-image-fields .aico-store-editor-input { flex: 1 1 10rem; }
+
+.aico-store-editor-savebar {
+  position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 1rem;
+  padding: 1rem 0; margin-top: 0.5rem; background: linear-gradient(to top, var(--aico-bg) 60%, transparent);
+}
+.aico-store-editor-dirty-hint { color: #b45309; font-size: 0.85rem; }
+.aico-store-editor-save {
+  appearance: none; cursor: pointer; font: inherit; font-weight: 700; padding: 0.7rem 1.6rem;
+  border: 0; border-radius: 0.125rem; background: var(--aico-fg); color: var(--aico-bg);
+}
+.aico-store-editor-save:hover { opacity: 0.9; }
+.aico-store-editor-save:disabled { opacity: 0.6; cursor: progress; }
+
+.aico-store-editor-notfound { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; }
+.aico-store-editor-toast { opacity: 0; transition: opacity 0.18s ease; }
+.aico-store-editor-toast.is-visible { opacity: 1; }
+
+/* Leave-guard dialog */
+.aico-store-leave-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.aico-store-leave-modal[hidden] { display: none; }
+.aico-store-leave-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+.aico-store-leave-dialog {
+  position: relative; z-index: 1; width: min(30rem, 100%); background: var(--aico-card);
+  border-radius: 0.375rem; padding: 1.75rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+.aico-store-leave-heading { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.aico-store-leave-body { margin: 0; color: var(--aico-muted-fg); font-size: 0.92rem; }
+.aico-store-leave-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; margin-top: 0.75rem; }
+.aico-store-leave-btn { appearance: none; cursor: pointer; font: inherit; font-weight: 600; padding: 0.55rem 1rem; border-radius: 0.125rem; border: 1px solid var(--aico-border); background: var(--aico-bg); color: var(--aico-fg); }
+.aico-store-leave-cancel:hover { background: var(--aico-muted); }
+.aico-store-leave-discard { border-color: #e0556b; color: #e0556b; }
+.aico-store-leave-discard:hover { background: #e0556b; color: #fff; }
+.aico-store-leave-save { border-color: var(--aico-fg); background: var(--aico-fg); color: var(--aico-bg); }
+.aico-store-leave-save:hover { opacity: 0.9; }
+
+@media (min-width: 720px) {
+  .aico-store-editor-container { max-width: 52rem; }
+}

@@ -244,12 +244,7 @@
       </section>
 
       <section class="aico-account-section">
-        <div class="aico-addresses-store-head">
-          <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
-          {% if customer.aico_store_locator_addresses.size > 0 %}
-            <a class="aico-addresses-store-manage" href="{{ routes.aico_account_store_locator_url }}">{{ 'customer.aico_store_locator.manage_link' | t }}</a>
-          {% endif %}
-        </div>
+        <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
         {% if customer.aico_store_locator_addresses.size > 0 %}
           <div class="aico-account-address-grid">
             {% for address in customer.aico_store_locator_addresses %}
@@ -282,6 +277,7 @@
                   {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
                 </div>
                 <div class="aico-address-card-actions">
+                  <a class="aico-address-card-btn aico-store-details-open" href="{{ routes.aico_account_store_locator_url }}?store={{ address.aico_crm_address_id }}">{{ 'customer.addresses.aico_edit_store_details' | t }}</a>
                   {% if change %}
                     <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
                   {% else %}
