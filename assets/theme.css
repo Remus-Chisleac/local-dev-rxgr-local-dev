@@ -3808,6 +3808,10 @@ button.aico-home-brand-card {
   font-size: 0.8125rem;
   line-height: 1.2;
   margin-bottom: 0.05rem;
+  /* one line + ellipsis so the narrow aside column doesn't grow tall again */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-sku,
