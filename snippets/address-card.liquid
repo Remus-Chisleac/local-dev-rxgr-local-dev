@@ -48,8 +48,15 @@
   <div class="aico-address-card-actions">
     {%- comment -%}
       v2: the store-details editor moved to the dedicated /account/store-locator
-      page; the addresses page card now only carries the change-request control.
+      page. On that page (bucket == 'store_locator') the card carries BOTH the
+      "Edit store details" editor button and the change-request control; the
+      profile addresses page card carries only the change-request control.
     {%- endcomment -%}
+    {% if bucket == 'store_locator' %}
+      <button type="button" class="aico-address-card-btn aico-store-details-open" data-aico-store-details-open>
+        {{ 'customer.addresses.aico_edit_store_details' | t }}
+      </button>
+    {% endif %}
     {% if change %}
       <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>
         {{ 'customer.addresses.aico_edit_request' | t }}

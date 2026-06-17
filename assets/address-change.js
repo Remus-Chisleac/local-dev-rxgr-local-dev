@@ -26,7 +26,12 @@
   ];
 
   function init() {
-    var root = document.querySelector('[data-aico-addresses]');
+    // The change-request feature lives on two pages that share this script:
+    // the profile addresses page ([data-aico-addresses]) and the dedicated
+    // store-locator page ([data-aico-store-locator]). Both carry the same
+    // change-request data-attrs, modal, cards and toast hooks.
+    var root = document.querySelector('[data-aico-addresses]')
+      || document.querySelector('[data-aico-store-locator]');
     if (!root) { return; }
 
     var modal = root.querySelector('[data-aico-change-modal]');
@@ -38,7 +43,8 @@
     var createUrlTpl = root.getAttribute('data-change-request-url') || '';
     var updateUrlTpl = root.getAttribute('data-change-request-update-url') || '';
 
-    var toast = root.querySelector('[data-aico-addresses-toast]');
+    var toast = root.querySelector('[data-aico-addresses-toast]')
+      || root.querySelector('[data-aico-store-locator-toast]');
     var copy = {
       saving: root.getAttribute('data-copy-saving') || 'Saving…',
       saved: root.getAttribute('data-copy-saved') || 'Saved',
@@ -47,6 +53,9 @@
 
     var activeCard = null;
     var toastTimer = null;
+    // Preserve the toast's page-specific base class (addresses vs store-locator)
+    // so styling stays correct on whichever page hosts this script.
+    var toastBaseClass = toast ? toast.className : 'aico-toast';
 
     function setStatus(message, state) {
       if (!toast) { return; }
@@ -54,7 +63,7 @@
       toast.textContent = message;
       var kind = state === 'saved' ? ' aico-toast-success'
         : state === 'error' ? ' aico-toast-error' : '';
-      toast.className = 'aico-toast aico-addresses-toast' + kind;
+      toast.className = toastBaseClass + kind;
       toast.classList.add('is-visible');
       if (state === 'saved' || state === 'error') {
         toastTimer = window.setTimeout(function () {
