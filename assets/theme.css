@@ -3044,10 +3044,11 @@ button.aico-home-brand-card {
   border-color: var(--aico-muted-strong);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
-.aico-pdp-size-cell:focus-within:not(.aico-pdp-size-cell-out) {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
+/* No cell-level focus ring: it painted the whole cell the same accent blue as
+   the in-cart border, so a still-focused cell kept that border after its value
+   was zeroed and read as a lagging in-cart highlight. Focus is shown on the
+   inner qty box (.aico-pdp-qty-box:focus-within) instead — distinct from the
+   value-driven in-cart border, and it clears on blur. */
 /* Cell already in the cart — accent it so the matrix reads as a cart mirror. */
 .aico-pdp-size-cell-in-cart {
   border-color: var(--color-accent);
