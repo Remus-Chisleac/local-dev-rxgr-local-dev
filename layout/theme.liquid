@@ -359,8 +359,8 @@
                 {% if item.has_children? %}
                   <details class="aico-disclosure aico-drawer-nav-group">
                     <summary class="aico-disclosure-summary aico-drawer-row aico-drawer-row-zebra">
-                      {% if item.custom_svg %}
-                        <span class="aico-drawer-row-icon">{{ item.custom_svg }}</span>
+                      {% if item.aico_icon != blank %}
+                        <span class="aico-drawer-row-icon">{{ item.aico_icon }}</span>
                       {% else %}
                         <span class="aico-drawer-row-icon aico-drawer-row-icon-dot" aria-hidden="true"></span>
                       {% endif %}
@@ -373,8 +373,8 @@
                   </details>
                 {% else %}
                   <a href="{{ item.url }}" class="aico-drawer-row aico-drawer-row-zebra"{% if item.open_in_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
-                    {% if item.custom_svg %}
-                      <span class="aico-drawer-row-icon">{{ item.custom_svg }}</span>
+                    {% if item.aico_icon != blank %}
+                      <span class="aico-drawer-row-icon">{{ item.aico_icon }}</span>
                     {% else %}
                       <span class="aico-drawer-row-icon aico-drawer-row-icon-dot" aria-hidden="true"></span>
                     {% endif %}
