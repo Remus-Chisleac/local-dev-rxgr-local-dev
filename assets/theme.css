@@ -1000,6 +1000,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 
 /* Drawer rows — zebra-striped against a muted body background. */
 .aico-drawer-nav { display: flex; flex-direction: column; }
+.aico-drawer-nav-empty { padding: 1rem; font-size: 0.875rem; line-height: 1.4; color: var(--aico-muted-strong, #6b7280); }
 .aico-drawer-nav-children { display: flex; flex-direction: column; padding-left: 0.5rem; border-left: 2px solid var(--aico-muted-strong); margin: 0 0 0 1rem; }
 
 .aico-drawer-row {

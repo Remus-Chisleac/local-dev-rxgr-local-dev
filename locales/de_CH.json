@@ -49,7 +49,7 @@
     "language": "Sprache",
     "logout": "Abmelden",
     "loading_menu": "Menü wird geladen…",
-    "menu_load_error": "Das Menü konnte nicht geladen werden. Standard wird angezeigt.",
+    "menu_load_error": "Das Menü konnte momentan nicht geladen werden. Bitte laden Sie die Seite neu oder versuchen Sie es später erneut.",
     "fallback_shop": "Shop",
     "fallback_news": "Aktuelles",
     "fallback_service": "Service",

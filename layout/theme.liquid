@@ -383,18 +383,9 @@
                 {% endif %}
               {% endfor %}
             {% else %}
-              <a href="{{ routes.root_url }}" class="aico-drawer-row aico-drawer-row-zebra">
-                <span class="aico-drawer-row-icon aico-drawer-row-icon-dot" aria-hidden="true"></span>
-                <span class="aico-drawer-row-label">{{ 'nav.fallback_shop' | t }}</span>
-              </a>
-              <a href="#" class="aico-drawer-row aico-drawer-row-zebra">
-                <span class="aico-drawer-row-icon aico-drawer-row-icon-dot" aria-hidden="true"></span>
-                <span class="aico-drawer-row-label">{{ 'nav.fallback_news' | t }}</span>
-              </a>
-              <a href="#" class="aico-drawer-row aico-drawer-row-zebra">
-                <span class="aico-drawer-row-icon aico-drawer-row-icon-dot" aria-hidden="true"></span>
-                <span class="aico-drawer-row-label">{{ 'nav.fallback_service' | t }}</span>
-              </a>
+              <div class="aico-drawer-nav-empty" role="alert">
+                {{ 'nav.menu_load_error' | t }}
+              </div>
             {% endif %}
           </nav>
           </div>

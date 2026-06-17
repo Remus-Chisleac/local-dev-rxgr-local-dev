@@ -49,7 +49,7 @@
     "language": "Language",
     "logout": "Sign out",
     "loading_menu": "Loading menu…",
-    "menu_load_error": "We couldn't load the menu. Showing defaults.",
+    "menu_load_error": "We couldn't load the menu right now. Please refresh the page or try again later.",
     "fallback_shop": "Shop",
     "fallback_news": "News",
     "fallback_service": "Service",
