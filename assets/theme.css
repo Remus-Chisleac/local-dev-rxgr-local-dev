@@ -7875,7 +7875,10 @@ html.aico-preorder-gallery-open {
    sets display:flex, which beats the UA [hidden] rule — force it. */
 .aico-cockpit [hidden] { display: none !important; }
 
-.aico-cockpit-shell { padding: 1.5rem 0 4rem; display: flex; flex-direction: column; }
+/* Keep the horizontal gutters from .aico-page-container; only add vertical rhythm
+   here (the `padding` shorthand would zero left/right and leave the header/intro/
+   filter flush against the edge). */
+.aico-cockpit-shell { padding-top: 1.5rem; padding-bottom: 4rem; display: flex; flex-direction: column; }
 .aico-cockpit-banner {
   display: block; width: 100%; height: auto;
   border-radius: 0.5rem; margin-bottom: 1.75rem;
