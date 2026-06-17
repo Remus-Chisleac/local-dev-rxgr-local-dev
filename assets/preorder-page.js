@@ -572,12 +572,13 @@
       return [billingId(), buyerId(), debtorId()].join('|');
     }
 
-    // True when the loaded cart represents an already-placed preorder: the
-    // server marked it SUBMITTED, or any line carries a committed quantity
-    // (the add-only floor set when a preorder was submitted).
+    // True when the loaded cart already has a placed preorder — i.e. any line
+    // carries a confirmed (committed) quantity. This is purely a property of the
+    // cart's line items, so it is correct per (debtor, delivery address): an
+    // address with no committed lines simply shows no warning. (Cart status is
+    // deliberately NOT used here — it can lag behind the selected address.)
     function cartHasPlacedPreorder() {
       if (!cartCtrl) return false;
-      if (cartCtrl.status === 'SUBMITTED') return true;
       var lc = cartCtrl.localCart;
       if (!lc || !lc.preorderItemLists) return false;
       return lc.preorderItemLists.some(function (list) {
