@@ -126,12 +126,22 @@
     return [productId, variantId, dateLabel].join('|');
   };
 
-  CartController.prototype._applySnapshot = function (snapshot) {
+  CartController.prototype._applySnapshot = function (snapshot, authoritative) {
     if (!snapshot) return;
     this.snapshot = snapshot;
     if (typeof snapshot.version === 'number') this.version = snapshot.version;
     if (snapshot.id) this.cartId = snapshot.id;
-    this.status = snapshot.status || this.status;
+    // A full cart.js fetch (authoritative) reflects the cart for the CURRENT
+    // (debtor, delivery-address, session); its status — including a null/empty
+    // status when that address has no cart yet — must replace any prior value, so
+    // switching to an address with no preorder clears a stale SUBMITTED (otherwise
+    // the "already placed" reopen warning wrongly persists). A slim write response
+    // may omit status, so there we keep the last known value.
+    if (authoritative) {
+      this.status = snapshot.status || null;
+    } else {
+      this.status = snapshot.status || this.status;
+    }
     // A slim write response carries no item_lists — adopt only the version/status
     // and keep the existing localCart (the optimistic grid is the source of truth
     // until the next full cart.js fetch).
@@ -204,7 +214,7 @@
         return res.json();
       })
       .then(function (snapshot) {
-        self._applySnapshot(snapshot);
+        self._applySnapshot(snapshot, true); // full fetch: status is authoritative
         return snapshot;
       });
   };
