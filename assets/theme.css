@@ -9116,3 +9116,9 @@ html.aico-preorder-gallery-open {
     border-radius: 0 0.5rem 0.5rem 0;
   }
 }
+
+/* The off-canvas cart panel parks just past the viewport edge when closed; clip
+   horizontal overflow at the document level so it never adds a scrollbar. Use
+   `clip` (not `hidden`) so the sticky header keeps working. Scoped via :has to
+   the preorder page only. */
+html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
