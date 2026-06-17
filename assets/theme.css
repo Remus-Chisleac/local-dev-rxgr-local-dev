@@ -8096,18 +8096,35 @@ html.aico-preorder-gallery-open {
 .aico-addresses-title { font-size: 1.6rem; color: var(--aico-fg); }
 .aico-address-card { position: relative; display: flex; flex-direction: column; }
 .aico-change-pending-badge {
-  align-self: flex-start;
-  display: inline-block;
-  margin-bottom: 0.65rem;
-  padding: 0.15rem 0.6rem;
-  font-size: 0.72rem;
+  position: absolute;
+  top: 0;
+  right: 1.1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  height: 2.05rem;
+  max-width: 1.55rem;
+  padding: 0.28rem 0.6rem 0.6rem;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  border-radius: 999px;
+  color: transparent;
+  background: #f59e0b;
+  border: 0;
+  border-radius: 0;
+  /* filled bookmark: rectangle with a V-notch cut from the bottom edge */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 68%, 0 100%);
+  cursor: default;
+  transition: max-width 0.3s ease, color 0.18s ease 0.04s, background 0.18s ease;
+}
+.aico-address-card:hover .aico-change-pending-badge,
+.aico-change-pending-badge:hover {
+  max-width: 14rem;
+  color: #fff;
+  background: #d97706;
 }
 .aico-address-card-actions {
   display: flex;
