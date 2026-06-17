@@ -548,12 +548,21 @@
         </div>
       </dl>
 
-      <div class="aico-preorder-cart-panel-legend">
-        <p class="aico-preorder-cart-panel-legend-title">{{ 'aico_preorder.cart_panel.legend_title' | t }}</p>
-        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--available"></span>{{ 'aico_preorder.cart_panel.legend_available' | t }}</div>
-        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--selected"></span>{{ 'aico_preorder.cart_panel.legend_selected' | t }}</div>
-        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--committed"></span>{{ 'aico_preorder.cart_panel.legend_committed' | t }}</div>
-        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--unavailable"></span>{{ 'aico_preorder.cart_panel.legend_unavailable' | t }}</div>
+      <div class="aico-preorder-cart-panel-legend" tabindex="0">
+        <span class="aico-preorder-cart-panel-legend-trigger" aria-describedby="aico-preorder-cart-panel-legend-pop">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>{{ 'aico_preorder.cart_panel.legend_title' | t }}</span>
+        </span>
+        <div class="aico-preorder-cart-panel-legend-pop" id="aico-preorder-cart-panel-legend-pop" role="tooltip">
+          <p class="aico-preorder-cart-panel-legend-pop-title">{{ 'aico_preorder.cart_panel.legend_title' | t }}</p>
+          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--available"></span>{{ 'aico_preorder.cart_panel.legend_available' | t }}</div>
+          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--selected"></span>{{ 'aico_preorder.cart_panel.legend_selected' | t }}</div>
+          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--editing"></span>{{ 'aico_preorder.cart_panel.legend_editing' | t }}</div>
+          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--committed"></span>{{ 'aico_preorder.cart_panel.legend_committed' | t }}</div>
+          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--unavailable"></span>{{ 'aico_preorder.cart_panel.legend_unavailable' | t }}</div>
+        </div>
       </div>
     </div>
   </aside>

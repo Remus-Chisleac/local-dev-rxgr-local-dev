@@ -524,6 +524,7 @@
       "legend_title": "Legende",
       "legend_available": "Verfügbar",
       "legend_selected": "Ausgewählt",
+      "legend_editing": "In Bearbeitung",
       "legend_committed": "Fixiert (bestätigt)",
       "legend_unavailable": "Nicht verfügbar",
       "toggle_side": "Seite wechseln",

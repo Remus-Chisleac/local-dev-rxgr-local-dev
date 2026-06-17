@@ -524,6 +524,7 @@
       "legend_title": "Legend",
       "legend_available": "Available",
       "legend_selected": "Selected",
+      "legend_editing": "Being edited",
       "legend_committed": "Confirmed (locked)",
       "legend_unavailable": "Out of stock",
       "toggle_side": "Switch side",
