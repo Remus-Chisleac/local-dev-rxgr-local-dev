@@ -8900,3 +8900,219 @@ html.aico-preorder-gallery-open {
 @media (min-width: 720px) {
   .aico-store-editor-container { max-width: 52rem; }
 }
+
+/* ====================== cart-summary panel (appended) ====================== */
+   Preorder sticky cart-summary panel
+   Docks in the page gutter on wide (1080p+) screens; collapses to an edge tab
+   on narrower screens. Read-only live totals + a colour legend for the qty
+   cells. Side (left/right) is user-switchable + persisted.
+   ============================================================================ */
+.aico-preorder-cart-panel { box-sizing: border-box; }
+.aico-preorder-cart-panel[hidden] { display: none; }
+
+.aico-preorder-cart-panel-body {
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 1rem 1.05rem;
+}
+
+.aico-preorder-cart-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.aico-preorder-cart-panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--aico-fg, #1a1a1a);
+}
+.aico-preorder-cart-panel-head-actions { display: inline-flex; gap: 0.25rem; }
+.aico-preorder-cart-panel-side,
+.aico-preorder-cart-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0.125rem;
+  background: none;
+  color: var(--aico-muted-fg, #6b7280);
+  cursor: pointer;
+}
+.aico-preorder-cart-panel-side:hover,
+.aico-preorder-cart-panel-close:hover {
+  color: #0e6e7a;
+  border-color: var(--aico-border, #e5e7eb);
+}
+
+.aico-preorder-cart-panel-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.aico-preorder-cart-panel-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.aico-preorder-cart-panel-row dt {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-preorder-cart-panel-row dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--aico-fg, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.aico-preorder-cart-panel-row--subtotal {
+  margin-top: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-preorder-cart-panel-row--subtotal dd { font-size: 1rem; }
+
+.aico-preorder-cart-panel-legend {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-preorder-cart-panel-legend-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-preorder-cart-panel-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  color: var(--aico-fg, #1a1a1a);
+  margin-bottom: 0.4rem;
+}
+.aico-preorder-cart-panel-legend-row:last-child { margin-bottom: 0; }
+.aico-preorder-cart-panel-swatch {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.1rem;
+  border-radius: 0.125rem;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+}
+.aico-preorder-cart-panel-swatch--selected {
+  border-color: #66b0bb;
+  box-shadow: inset 0 0 0 1px #66b0bb;
+}
+.aico-preorder-cart-panel-swatch--committed { border-color: #111; }
+.aico-preorder-cart-panel-swatch--unavailable {
+  background: #e0e0e0;
+  border-color: #c8c8c8;
+}
+
+/* Edge tab — only rendered in off-canvas mode (narrow screens). */
+.aico-preorder-cart-panel-tab {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 2.75rem;
+  padding: 0.6rem 0;
+  border: 0;
+  cursor: pointer;
+  background: #e8702d;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+.aico-preorder-cart-panel-tab-qty {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.1rem;
+  padding: 0.05rem 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.aico-preorder-cart-panel-close { display: none; }
+
+/* ---- Docked in the gutter (wide / 1080p+ screens) ---- */
+@media (min-width: 1820px) {
+  .aico-preorder-cart-panel {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 45;
+    width: 15rem;
+  }
+  .aico-preorder-cart-panel[data-side="right"] { right: 1.25rem; left: auto; }
+  .aico-preorder-cart-panel[data-side="left"] { left: 1.25rem; right: auto; }
+  .aico-preorder-cart-panel-body {
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+  }
+}
+
+/* ---- Off-canvas with an edge tab (narrower screens) ---- */
+@media (max-width: 1819.98px) {
+  .aico-preorder-cart-panel {
+    position: fixed;
+    top: 50%;
+    z-index: 45;
+    width: 15rem;
+    transition: transform 0.25s ease;
+  }
+  .aico-preorder-cart-panel-body {
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+  }
+  .aico-preorder-cart-panel-tab { display: inline-flex; }
+  .aico-preorder-cart-panel-close { display: inline-flex; }
+  /* The side-swap lives only in the docked mode; in the drawer the tab side is
+     still driven by the same persisted data-side. */
+  .aico-preorder-cart-panel-side { display: none; }
+
+  .aico-preorder-cart-panel[data-side="right"] {
+    right: 0;
+    left: auto;
+    transform: translate(100%, -50%);
+  }
+  .aico-preorder-cart-panel[data-side="right"].is-open { transform: translate(0, -50%); }
+  .aico-preorder-cart-panel[data-side="right"] .aico-preorder-cart-panel-tab {
+    right: 100%;
+    border-radius: 0.5rem 0 0 0.5rem;
+  }
+  .aico-preorder-cart-panel[data-side="right"] .aico-preorder-cart-panel-body {
+    border-radius: 0.5rem 0 0 0.5rem;
+  }
+
+  .aico-preorder-cart-panel[data-side="left"] {
+    left: 0;
+    right: auto;
+    transform: translate(-100%, -50%);
+  }
+  .aico-preorder-cart-panel[data-side="left"].is-open { transform: translate(0, -50%); }
+  .aico-preorder-cart-panel[data-side="left"] .aico-preorder-cart-panel-tab {
+    left: 100%;
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+  .aico-preorder-cart-panel[data-side="left"] .aico-preorder-cart-panel-body {
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+}

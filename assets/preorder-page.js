@@ -435,6 +435,84 @@
     var summaryDiscountRow = root.querySelector('[data-aico-preorder-summary-discount-row]');
     var summaryBilling = root.querySelector('[data-aico-preorder-summary-billing]');
     var summaryDelivery = root.querySelector('[data-aico-preorder-summary-delivery]');
+
+    // Sticky cart-summary panel (gutter on wide screens, off-canvas tab on
+    // narrow). Read-only — fed by updateSummary(); visibility tracks the
+    // checkout section. Side (left/right) is persisted in localStorage.
+    var cartPanel = root.querySelector('[data-aico-preorder-cart-panel]');
+    var cartPanelTab = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-tab]');
+    var cartPanelTabQty = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-tab-qty]');
+    var cartPanelTotalQty = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-total-qty]');
+    var cartPanelDiscount = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-discount]');
+    var cartPanelNextTier = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-next-tier]');
+    var cartPanelSubtotal = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-subtotal]');
+    var cartPanelSideBtn = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-side]');
+    var cartPanelCloseBtn = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-close]');
+    var CART_PANEL_KEY = 'aico_preorder_cart_panel';
+
+    function readCartPanelSide() {
+      try {
+        var raw = JSON.parse(localStorage.getItem(CART_PANEL_KEY) || '{}');
+        return raw.side === 'left' ? 'left' : 'right';
+      } catch (e) {
+        return 'right';
+      }
+    }
+    function writeCartPanelSide(side) {
+      try {
+        localStorage.setItem(CART_PANEL_KEY, JSON.stringify({ side: side }));
+      } catch (e) {}
+    }
+
+    if (cartPanel) {
+      cartPanel.setAttribute('data-side', readCartPanelSide());
+      if (cartPanelSideBtn) {
+        cartPanelSideBtn.addEventListener('click', function () {
+          var next = cartPanel.getAttribute('data-side') === 'right' ? 'left' : 'right';
+          cartPanel.setAttribute('data-side', next);
+          writeCartPanelSide(next);
+        });
+      }
+      // Off-canvas (narrow screens): the edge tab slides the panel in/out.
+      if (cartPanelTab) {
+        cartPanelTab.addEventListener('click', function () {
+          var open = cartPanel.classList.toggle('is-open');
+          cartPanelTab.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+      if (cartPanelCloseBtn) {
+        cartPanelCloseBtn.addEventListener('click', function () {
+          cartPanel.classList.remove('is-open');
+          if (cartPanelTab) cartPanelTab.setAttribute('aria-expanded', 'false');
+        });
+      }
+    }
+
+    // Smallest discount tier above the current quantity (null when already at
+    // the top tier or no tiers). Mirrors getDiscount's tolerant key handling.
+    function nextDiscountTier(discounts, totalQty) {
+      var next = null;
+      (discounts || []).forEach(function (d) {
+        var from = d.from_quantity != null ? d.from_quantity : d.fromQuantity;
+        if (from != null && from > totalQty && (next === null || from < next)) {
+          next = from;
+        }
+      });
+      return next;
+    }
+
+    function updateCartPanel(totalQty, subtotal, discPct, discounts, currency) {
+      if (!cartPanel) return;
+      var pcs = root.getAttribute('data-aico-preorder-copy-pcs') || 'STK';
+      if (cartPanelTotalQty) cartPanelTotalQty.textContent = totalQty + ' ' + pcs;
+      if (cartPanelTabQty) cartPanelTabQty.textContent = totalQty;
+      if (cartPanelDiscount) cartPanelDiscount.textContent = (discPct || 0) + '%';
+      if (cartPanelNextTier) {
+        var tier = nextDiscountTier(discounts, totalQty);
+        cartPanelNextTier.textContent = tier !== null ? tier + ' ' + pcs : '—';
+      }
+      if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(subtotal, currency, '');
+    }
     var summaryStatus = root.querySelector('[data-aico-preorder-summary-status]');
     var searchInput = root.querySelector('[data-aico-preorder-search]');
     var termsCheckbox = root.querySelector('[data-aico-preorder-terms]');
@@ -567,6 +645,15 @@
       // thank-you redirect.
       checkoutEl.hidden =
         !cartEnabled || !addressesReady() || (reopenPending() && !isSubmitting);
+      // The sticky cart-summary panel rides with the checkout section. When it
+      // hides, also collapse any open off-canvas drawer so it can't linger.
+      if (cartPanel) {
+        cartPanel.hidden = checkoutEl.hidden;
+        if (checkoutEl.hidden) {
+          cartPanel.classList.remove('is-open');
+          if (cartPanelTab) cartPanelTab.setAttribute('aria-expanded', 'false');
+        }
+      }
     }
 
     function cartContextKey() {
@@ -1229,6 +1316,7 @@
         // a silently-disabled button. Only an empty cart / in-flight save disable.
         submitBtn.disabled = saving || totalQty <= 0;
       }
+      updateCartPanel(totalQty, subtotal, discPct, discounts, currency);
       updateCheckoutVisibility();
     }
 

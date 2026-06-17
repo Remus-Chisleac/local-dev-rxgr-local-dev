@@ -515,6 +515,21 @@
       "size_labels_first": "Nur erste Reihe",
       "size_labels_none": "Nur Kopfzeile"
     },
+    "cart_panel": {
+      "title": "Warenkorb",
+      "total_qty": "Gesamt",
+      "discount": "Vorbestellungsrabatt",
+      "next_tier": "Nächste Rabattstufe",
+      "subtotal": "Zwischensumme",
+      "legend_title": "Legende",
+      "legend_available": "Verfügbar",
+      "legend_selected": "Ausgewählt",
+      "legend_committed": "Fixiert (bestätigt)",
+      "legend_unavailable": "Nicht verfügbar",
+      "toggle_side": "Seite wechseln",
+      "show": "Warenkorb anzeigen",
+      "hide": "Schliessen"
+    },
     "filters": {
       "section_aria": "PreOrder-Filter",
       "search_label": "Produkte suchen",

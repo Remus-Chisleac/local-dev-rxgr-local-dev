@@ -492,6 +492,72 @@
     </div>
   </section>
 
+  {%- comment -%} Sticky cart-summary panel — read-only live totals + a colour
+       legend for the qty cells. Docks in the page gutter on wide (1080p+)
+       screens (default right; the user can flip the side, persisted), and
+       collapses to an edge tab on narrower screens. Ordering stays in the
+       checkout section above; this panel has no action button. Visibility
+       tracks the checkout section (shown once a session + addresses are set). {%- endcomment -%}
+  <aside class="aico-preorder-cart-panel" data-aico-preorder-cart-panel data-side="right" hidden
+         aria-label="{{ 'aico_preorder.cart_panel.title' | t }}">
+    <button type="button" class="aico-preorder-cart-panel-tab" data-aico-preorder-cart-panel-tab
+            aria-expanded="false" aria-label="{{ 'aico_preorder.cart_panel.show' | t }}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      <span class="aico-preorder-cart-panel-tab-qty" data-aico-preorder-cart-panel-tab-qty>0</span>
+    </button>
+
+    <div class="aico-preorder-cart-panel-body">
+      <div class="aico-preorder-cart-panel-head">
+        <h3 class="aico-preorder-cart-panel-title">{{ 'aico_preorder.cart_panel.title' | t }}</h3>
+        <div class="aico-preorder-cart-panel-head-actions">
+          <button type="button" class="aico-preorder-cart-panel-side" data-aico-preorder-cart-panel-side
+                  title="{{ 'aico_preorder.cart_panel.toggle_side' | t }}" aria-label="{{ 'aico_preorder.cart_panel.toggle_side' | t }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+          </button>
+          <button type="button" class="aico-preorder-cart-panel-close" data-aico-preorder-cart-panel-close
+                  aria-label="{{ 'aico_preorder.cart_panel.hide' | t }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <dl class="aico-preorder-cart-panel-rows">
+        <div class="aico-preorder-cart-panel-row">
+          <dt>{{ 'aico_preorder.cart_panel.total_qty' | t }}</dt>
+          <dd data-aico-preorder-cart-panel-total-qty>—</dd>
+        </div>
+        <div class="aico-preorder-cart-panel-row">
+          <dt>{{ 'aico_preorder.cart_panel.discount' | t }}</dt>
+          <dd data-aico-preorder-cart-panel-discount>—</dd>
+        </div>
+        <div class="aico-preorder-cart-panel-row">
+          <dt>{{ 'aico_preorder.cart_panel.next_tier' | t }}</dt>
+          <dd data-aico-preorder-cart-panel-next-tier>—</dd>
+        </div>
+        <div class="aico-preorder-cart-panel-row aico-preorder-cart-panel-row--subtotal">
+          <dt>{{ 'aico_preorder.cart_panel.subtotal' | t }}</dt>
+          <dd data-aico-preorder-cart-panel-subtotal>—</dd>
+        </div>
+      </dl>
+
+      <div class="aico-preorder-cart-panel-legend">
+        <p class="aico-preorder-cart-panel-legend-title">{{ 'aico_preorder.cart_panel.legend_title' | t }}</p>
+        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--available"></span>{{ 'aico_preorder.cart_panel.legend_available' | t }}</div>
+        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--selected"></span>{{ 'aico_preorder.cart_panel.legend_selected' | t }}</div>
+        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--committed"></span>{{ 'aico_preorder.cart_panel.legend_committed' | t }}</div>
+        <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--unavailable"></span>{{ 'aico_preorder.cart_panel.legend_unavailable' | t }}</div>
+      </div>
+    </div>
+  </aside>
+
   {%- comment -%} Inline preorder confirmation (no thank-you-url path): hidden until
        preorder-page.js reveals it on a successful submit and calls
        AicoPreorderConfirmation.start(). When a thank-you-url IS set, the submit

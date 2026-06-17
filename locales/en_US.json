@@ -515,6 +515,21 @@
       "size_labels_first": "First row only",
       "size_labels_none": "Header only"
     },
+    "cart_panel": {
+      "title": "Cart",
+      "total_qty": "Total",
+      "discount": "Preorder discount",
+      "next_tier": "Next discount tier",
+      "subtotal": "Subtotal",
+      "legend_title": "Legend",
+      "legend_available": "Available",
+      "legend_selected": "Selected",
+      "legend_committed": "Confirmed (locked)",
+      "legend_unavailable": "Out of stock",
+      "toggle_side": "Switch side",
+      "show": "Show cart",
+      "hide": "Close"
+    },
     "filters": {
       "section_aria": "Preorder filters",
       "search_label": "Search products",
