@@ -3772,27 +3772,42 @@ button.aico-home-brand-card {
 
 /* In the compact size-label modes the qty rows get shorter, but the product
    aside (image + title + SKU + price) keeps its full height and leaves white
-   space beside the rows. Shrink the aside to match so that gap collapses. */
+   space beside the rows. Lay the aside out horizontally (small thumbnail beside
+   the text) so it stays short and the gap collapses — independent of how many
+   date rows a product has. */
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-grid,
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-grid {
   padding: 0.5rem 0.75rem;
 }
 
-.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-media img,
-.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-media img {
-  width: 56px;
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-aside,
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-aside {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-info,
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-info {
+  min-width: 0;
 }
 
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-media,
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-media {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-media img,
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-media img {
+  width: 48px;
 }
 
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-title,
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-product-title {
   font-size: 0.8125rem;
   line-height: 1.2;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.05rem;
 }
 
 .aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"] .aico-preorder-product-sku,
