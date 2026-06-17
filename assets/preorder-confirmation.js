@@ -221,11 +221,15 @@
 
     var root = this.root;
 
+    // On an edit of an already-submitted preorder the backend sets is_update;
+    // show "updated, not a new preorder; the new document replaces the old"
+    // copy instead of the first-submit thank-you.
+    var isUpdate = !!confirmation.is_update;
     var headerEl = root.querySelector('[data-aico-confirmation-header]');
-    if (headerEl) headerEl.textContent = copyOf(root, 'title', 'Thank you');
+    if (headerEl) headerEl.textContent = copyOf(root, isUpdate ? 'update-title' : 'title', 'Thank you');
 
     var messageEl = root.querySelector('[data-aico-confirmation-message]');
-    if (messageEl) messageEl.textContent = copyOf(root, 'message', '');
+    if (messageEl) messageEl.textContent = copyOf(root, isUpdate ? 'update-message' : 'message', '');
 
     var numbers = Array.isArray(confirmation.order_numbers) ? confirmation.order_numbers : [];
     var numberEl = root.querySelector('[data-aico-confirmation-number]');

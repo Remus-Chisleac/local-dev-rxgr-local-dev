@@ -541,6 +541,8 @@
     "confirmation": {
       "title": "Thank you — your preorder is confirmed",
       "message": "We have received your preorder and started processing it. A confirmation document is on its way.",
+      "update_title": "Your preorder has been updated",
+      "update_message": "You did not place a new preorder — your existing preorder was updated. The new confirmation document replaces the previous one.",
       "number_label": "Order number",
       "number_pending": "Assigning…",
       "reference_label": "Preorder reference",

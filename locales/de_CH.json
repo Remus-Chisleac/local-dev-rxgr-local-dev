@@ -541,6 +541,8 @@
     "confirmation": {
       "title": "Vielen Dank — Ihre Vorbestellung ist bestätigt",
       "message": "Wir haben Ihre Vorbestellung erhalten und mit der Bearbeitung begonnen. Ein Bestätigungsdokument ist unterwegs.",
+      "update_title": "Ihre Vorbestellung wurde aktualisiert",
+      "update_message": "Sie haben keine neue Vorbestellung aufgegeben — Ihre bestehende Vorbestellung wurde aktualisiert. Das neue Bestätigungsdokument ersetzt das vorherige.",
       "number_label": "Bestellnummer",
       "number_pending": "Wird zugewiesen…",
       "reference_label": "Vorbestellungsreferenz",
