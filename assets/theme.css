@@ -2614,7 +2614,7 @@ button.aico-home-brand-card {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 0.125rem;
   background: #ffffff;
   border: 1px solid #d4dde0;
   color: #0e6e7a;
@@ -3667,7 +3667,7 @@ button.aico-home-brand-card {
   height: 2.5rem;
   padding: 0;
   border: 1px solid var(--aico-border);
-  border-radius: 0.25rem;
+  border-radius: 0.125rem;
   background: var(--aico-card);
   color: var(--aico-muted-fg);
   cursor: pointer;
