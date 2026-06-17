@@ -465,7 +465,17 @@
         "hours": "Std",
         "minutes": "Min",
         "seconds": "Sek"
-      }
+      },
+      "collection_book": "Kollektionsbuch"
+    },
+    "display": {
+      "button_label": "Anzeigeoptionen",
+      "heading": "Anzeige",
+      "show_strip": "Gesamtleiste unter jedem Produkt anzeigen",
+      "size_labels_label": "Grössen über den Mengenfeldern",
+      "size_labels_all": "Über allen Reihen",
+      "size_labels_first": "Nur erste Reihe",
+      "size_labels_none": "Nur Kopfzeile"
     },
     "filters": {
       "section_aria": "PreOrder-Filter",

@@ -465,7 +465,17 @@
         "hours": "Hrs",
         "minutes": "Min",
         "seconds": "Sec"
-      }
+      },
+      "collection_book": "Collection Book"
+    },
+    "display": {
+      "button_label": "Display options",
+      "heading": "Display",
+      "show_strip": "Show total bar under each product",
+      "size_labels_label": "Sizes above the quantity boxes",
+      "size_labels_all": "Above all rows",
+      "size_labels_first": "First row only",
+      "size_labels_none": "Header only"
     },
     "filters": {
       "section_aria": "Preorder filters",

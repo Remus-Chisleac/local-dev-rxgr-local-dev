@@ -93,6 +93,15 @@
       <div class="aico-preorder-hero-left">
         <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title" data-aico-preorder-hero-title></h1>
         <p class="aico-preorder-no-session" data-aico-preorder-no-session hidden>{{ 'aico_preorder.session.no_active' | t }}</p>
+        {%- comment -%} Collection book: explicit labelled download (replaces the old
+           b2b-shop affordance of clicking the hero banner image). Hidden until
+           preorder-page.js resolves the session and finds a collectionBookUrl. {%- endcomment -%}
+        <a class="aico-preorder-hero-book" data-aico-preorder-hero-book href="#" target="_blank" rel="noopener" hidden>
+          <svg class="aico-preorder-hero-book-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="aico-preorder-hero-book-label">{{ 'aico_preorder.session.collection_book' | t }}</span>
+        </a>
       </div>
 
       <div class="aico-preorder-hero-side">
@@ -357,6 +366,45 @@
               <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
                 <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {%- comment -%} Display options: a gear that opens a small popover controlling
+           how compact the catalog renders. Pure client-side view state (persisted in
+           localStorage), applied as a class/attribute on the .aico-preorder root so it
+           survives catalog re-renders. {%- endcomment -%}
+        <div class="aico-preorder-field aico-preorder-field-display" data-aico-field="display" data-aico-preorder-display>
+          <button type="button" class="aico-preorder-display-trigger" data-aico-preorder-display-trigger
+                  aria-haspopup="true" aria-expanded="false" title="{{ 'aico_preorder.display.button_label' | t }}"
+                  aria-label="{{ 'aico_preorder.display.button_label' | t }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+          <div class="aico-preorder-display-panel" data-aico-preorder-display-panel hidden role="dialog" aria-label="{{ 'aico_preorder.display.button_label' | t }}">
+            <p class="aico-preorder-display-heading">{{ 'aico_preorder.display.heading' | t }}</p>
+
+            <label class="aico-preorder-display-toggle">
+              <input type="checkbox" data-aico-preorder-display-strip checked>
+              <span class="aico-preorder-display-toggle-text">{{ 'aico_preorder.display.show_strip' | t }}</span>
+            </label>
+
+            <div class="aico-preorder-display-group" role="radiogroup" aria-label="{{ 'aico_preorder.display.size_labels_label' | t }}">
+              <p class="aico-preorder-display-group-label">{{ 'aico_preorder.display.size_labels_label' | t }}</p>
+              <label class="aico-preorder-display-radio">
+                <input type="radio" name="aico-preorder-size-labels" value="all" data-aico-preorder-display-sizes checked>
+                <span>{{ 'aico_preorder.display.size_labels_all' | t }}</span>
+              </label>
+              <label class="aico-preorder-display-radio">
+                <input type="radio" name="aico-preorder-size-labels" value="first" data-aico-preorder-display-sizes>
+                <span>{{ 'aico_preorder.display.size_labels_first' | t }}</span>
+              </label>
+              <label class="aico-preorder-display-radio">
+                <input type="radio" name="aico-preorder-size-labels" value="none" data-aico-preorder-display-sizes>
+                <span>{{ 'aico_preorder.display.size_labels_none' | t }}</span>
+              </label>
             </div>
           </div>
         </div>

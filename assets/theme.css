@@ -2599,8 +2599,46 @@ button.aico-home-brand-card {
 /* Title sits alone on the far left, vertically centred in the band. */
 .aico-preorder-hero-left {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.75rem;
   min-width: 0;
+}
+
+/* Collection-book download: explicit pill button under the hero title (replaces
+   b2b-shop's invisible "click the banner image" affordance). Hidden until
+   preorder-page.js finds a collectionBookUrl on the resolved session. */
+.aico-preorder-hero-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #d4dde0;
+  color: #0e6e7a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.aico-preorder-hero-book[hidden] {
+  display: none;
+}
+
+.aico-preorder-hero-book:hover,
+.aico-preorder-hero-book:focus-visible {
+  background: #0e6e7a;
+  border-color: #0e6e7a;
+  color: #ffffff;
+}
+
+.aico-preorder-hero-book-icon {
+  flex-shrink: 0;
 }
 
 /* Banner image lives on the right, just left of the countdown (see hero-side). */
@@ -3609,6 +3647,127 @@ button.aico-home-brand-card {
 .aico-preorder-field-size {
   flex: 0 0 7.5rem;
   min-width: 6.5rem;
+}
+
+/* ── Display options (gear popover) ──────────────────────────────────────── */
+/* The gear is content-sized and bottom-aligned so it lines up with the other
+   field controls (which carry a label row above them). */
+.aico-preorder-field-display {
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  align-self: flex-end;
+}
+
+.aico-preorder-display-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.25rem;
+  background: var(--aico-card);
+  color: var(--aico-muted-fg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.aico-preorder-display-trigger:hover,
+.aico-preorder-display-trigger[aria-expanded="true"] {
+  border-color: #0e6e7a;
+  color: #0e6e7a;
+}
+
+.aico-preorder-display-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.aico-preorder-display-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 30;
+  width: 17rem;
+  max-width: 80vw;
+  padding: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.12);
+}
+
+.aico-preorder-display-panel[hidden] {
+  display: none;
+}
+
+.aico-preorder-display-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+
+.aico-preorder-display-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+
+.aico-preorder-display-toggle input,
+.aico-preorder-display-radio input {
+  margin: 0.1rem 0 0;
+  flex-shrink: 0;
+  accent-color: #0e6e7a;
+  cursor: pointer;
+}
+
+.aico-preorder-display-group {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--aico-border);
+}
+
+.aico-preorder-display-group-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aico-muted-fg);
+}
+
+.aico-preorder-display-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+
+/* ── Display-option effects on the catalog ───────────────────────────────── */
+/* Hide the orange per-product total strip. */
+.aico-preorder.aico-preorder--no-strip .aico-preorder-product-footer {
+  display: none;
+}
+
+/* Size labels above the qty boxes: "none" hides every per-box label (the teal
+   header sizes still show); "first" keeps them only on each product's first
+   date row. The header-row size labels (.aico-preorder-size-head) are never
+   touched here. */
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="none"] .aico-preorder-qty-box__size {
+  display: none;
+}
+
+.aico-preorder:not(.aico-preorder2)[data-aico-size-labels="first"]
+  .aico-preorder-matrix-row:not(:first-child)
+  .aico-preorder-qty-box__size {
+  display: none;
 }
 .aico-preorder-field-b2b,
 .aico-preorder-field-debtor {

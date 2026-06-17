@@ -402,6 +402,7 @@
     var heroEl = root.querySelector('[data-aico-preorder-hero]');
     var heroImgEl = root.querySelector('[data-aico-preorder-hero-img]');
     var heroTitleEl = root.querySelector('[data-aico-preorder-hero-title]');
+    var heroBookEl = root.querySelector('[data-aico-preorder-hero-book]');
     var noSessionEl = root.querySelector('[data-aico-preorder-no-session]');
     // True while the cart is being fetched to discover a pre-existing preorder.
     // Everything below the hero stays hidden (spinner only) until it resolves.
@@ -607,6 +608,10 @@
       if (heroImgEl) {
         heroImgEl.hidden = true;
         heroImgEl.removeAttribute('src');
+      }
+      if (heroBookEl) {
+        heroBookEl.hidden = true;
+        heroBookEl.removeAttribute('href');
       }
       if (filtersWrapEl) filtersWrapEl.hidden = true;
       if (promptEl) promptEl.hidden = true;
@@ -1290,6 +1295,18 @@
         } else {
           heroImgEl.removeAttribute('src');
           heroImgEl.hidden = true;
+        }
+      }
+      if (heroBookEl) {
+        // Explicit collection-book download (was a click-the-banner affordance in
+        // b2b-shop). Show only when the resolved session carries a book URL.
+        var bookUrl = session && session.collectionBookUrl;
+        if (bookUrl) {
+          heroBookEl.setAttribute('href', bookUrl);
+          heroBookEl.hidden = false;
+        } else {
+          heroBookEl.removeAttribute('href');
+          heroBookEl.hidden = true;
         }
       }
       if (heroEl) {
@@ -2004,9 +2021,112 @@
     }
   }
 
+  // ── Display options (gear popover) ──────────────────────────────────────
+  // Pure client-side view state: whether the orange per-product total strip
+  // shows, and how many rows carry the per-box size labels. Applied as a class
+  // + data-attribute on the stable .aico-preorder root (NOT on re-rendered
+  // cards), so the choice survives every catalog re-render via CSS alone.
+  // Persisted in localStorage so it sticks across visits.
+  var DISPLAY_STORAGE_KEY = 'aico_preorder_display';
+
+  function readDisplayPrefs() {
+    var prefs = { strip: true, sizeLabels: 'all' };
+    try {
+      var raw = JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) || '{}');
+      if (typeof raw.strip === 'boolean') prefs.strip = raw.strip;
+      if (raw.sizeLabels === 'all' || raw.sizeLabels === 'first' || raw.sizeLabels === 'none') {
+        prefs.sizeLabels = raw.sizeLabels;
+      }
+    } catch (e) {}
+    return prefs;
+  }
+
+  function writeDisplayPrefs(prefs) {
+    try {
+      localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify(prefs));
+    } catch (e) {}
+  }
+
+  function initPreorderDisplayOptions() {
+    var root = document.querySelector('[data-aico-preorder]');
+    if (!root) return;
+    var field = root.querySelector('[data-aico-preorder-display]');
+    if (!field) return;
+    var trigger = field.querySelector('[data-aico-preorder-display-trigger]');
+    var panel = field.querySelector('[data-aico-preorder-display-panel]');
+    var stripInput = field.querySelector('[data-aico-preorder-display-strip]');
+    var sizeInputs = Array.prototype.slice.call(
+      field.querySelectorAll('[data-aico-preorder-display-sizes]'),
+    );
+
+    var prefs = readDisplayPrefs();
+
+    function apply() {
+      root.classList.toggle('aico-preorder--no-strip', !prefs.strip);
+      root.setAttribute('data-aico-size-labels', prefs.sizeLabels);
+    }
+
+    // Reflect stored prefs into the controls, then apply to the page.
+    if (stripInput) stripInput.checked = !!prefs.strip;
+    sizeInputs.forEach(function (input) {
+      input.checked = input.value === prefs.sizeLabels;
+    });
+    apply();
+
+    function openPanel() {
+      if (!panel) return;
+      panel.hidden = false;
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel() {
+      if (!panel) return;
+      panel.hidden = true;
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    }
+    function togglePanel() {
+      if (panel && panel.hidden) openPanel();
+      else closePanel();
+    }
+
+    if (trigger) {
+      trigger.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePanel();
+      });
+    }
+    // Close on outside click / Escape.
+    document.addEventListener('click', function (e) {
+      if (panel && !panel.hidden && !field.contains(e.target)) closePanel();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && panel && !panel.hidden) closePanel();
+    });
+
+    if (stripInput) {
+      stripInput.addEventListener('change', function () {
+        prefs.strip = !!stripInput.checked;
+        writeDisplayPrefs(prefs);
+        apply();
+      });
+    }
+    sizeInputs.forEach(function (input) {
+      input.addEventListener('change', function () {
+        if (!input.checked) return;
+        prefs.sizeLabels = input.value;
+        writeDisplayPrefs(prefs);
+        apply();
+      });
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPreorderPage);
+    document.addEventListener('DOMContentLoaded', function () {
+      initPreorderPage();
+      initPreorderDisplayOptions();
+    });
   } else {
     initPreorderPage();
+    initPreorderDisplayOptions();
   }
 })();
