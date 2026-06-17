@@ -12,15 +12,17 @@
   customer.addresses union is also available but we render per-bucket here so
   store cards can carry the extra "Edit store details" editor.
 
-  Each card (all buckets) renders the change-request control (F4 part B):
+  Each card (all buckets, incl. store-locator) renders ONLY the change-request
+  control (F4 part B):
     - address.aico_change_request present  → "change pending" badge + "Change the request"
     - otherwise                            → "Request address change"
   Card data-attrs carry the crm_address_id, the pending task id (when any), and
   the current Shopify-shaped field values so address-change.js can prefill the form.
 
-  Store-locator cards additionally render an "Edit store details" button that
-  opens the three-tab editor (contact / opening hours / images) in store-details.js,
-  wired to the legacy /aico-shops/{aicoShopId}/addresses/* endpoints.
+  v2 split: the rich per-store editor (contact / opening hours / images) is NOT
+  here anymore — it lives on the dedicated store-locator page
+  (/account/store-locator → customers/aico_store_locator.liquid). The store
+  section just links there via routes.aico_account_store_locator_url.
 
   Endpoint URLs + csrf token live as data-attrs on the page root, mirroring how
   account.liquid emits routes.* + aico_csrf_token. The change-request URLs carry
@@ -40,7 +42,6 @@
       data-aico-addresses
       data-change-request-url="{{ change_request_base }}"
       data-change-request-update-url="{{ change_request_update_base }}"
-      data-store-details-base="{{ routes.aico_store_details_base_url }}"
       data-aico-shop-id="{{ customer.aico_shop_id }}"
       data-copy-saving="{{ 'customer.addresses.saving' | t | escape }}"
       data-copy-saved="{{ 'customer.addresses.saved' | t | escape }}"
@@ -153,7 +154,12 @@
 
       {%- comment -%} ── Store locations ─────────────────────────────────── {%- endcomment -%}
       <section class="aico-account-section">
-        <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
+        <div class="aico-addresses-store-head">
+          <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
+          {% if customer.aico_store_locator_addresses.size > 0 %}
+            <a class="aico-addresses-store-manage" href="{{ routes.aico_account_store_locator_url }}">{{ 'customer.aico_store_locator.manage_link' | t }}</a>
+          {% endif %}
+        </div>
         {% if customer.aico_store_locator_addresses.size > 0 %}
           <div class="aico-account-address-grid">
             {% for address in customer.aico_store_locator_addresses %}
@@ -186,7 +192,6 @@
                   {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
                 </div>
                 <div class="aico-address-card-actions">
-                  <button type="button" class="aico-address-card-btn aico-store-details-open" data-aico-store-details-open>{{ 'customer.addresses.aico_edit_store_details' | t }}</button>
                   {% if change %}
                     <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
                   {% else %}
@@ -238,35 +243,10 @@
     </div>
   </div>
 
-  {%- comment -%}
-    Store-details editor modal (three tabs). store-details.js loads/saves each
-    tab against the legacy /aico-shops/{aicoShopId}/addresses/* endpoints.
-  {%- endcomment -%}
-  <div class="aico-store-details-modal" data-aico-store-details-modal hidden aria-hidden="true">
-    <div class="aico-store-details-overlay" data-aico-store-details-close></div>
-    <div class="aico-store-details-dialog" role="dialog" aria-modal="true" aria-labelledby="aico-store-details-title">
-      <div class="aico-store-details-head">
-        <h3 id="aico-store-details-title" class="aico-store-details-heading">{{ 'customer.addresses.store_details_title' | t }}</h3>
-        <button type="button" class="aico-store-details-x" data-aico-store-details-close aria-label="{{ 'customer.addresses.close' | t | escape }}">&times;</button>
-      </div>
-      <div class="aico-store-details-tabs" role="tablist">
-        <button type="button" class="aico-store-details-tab is-active" data-aico-store-details-tab="contact" role="tab">{{ 'customer.addresses.tab_contact' | t }}</button>
-        <button type="button" class="aico-store-details-tab" data-aico-store-details-tab="hours" role="tab">{{ 'customer.addresses.tab_hours' | t }}</button>
-        <button type="button" class="aico-store-details-tab" data-aico-store-details-tab="images" role="tab">{{ 'customer.addresses.tab_images' | t }}</button>
-      </div>
-      <div class="aico-store-details-panels">
-        <div class="aico-store-details-panel is-active" data-aico-store-details-panel="contact"></div>
-        <div class="aico-store-details-panel" data-aico-store-details-panel="hours"></div>
-        <div class="aico-store-details-panel" data-aico-store-details-panel="images"></div>
-      </div>
-    </div>
-  </div>
-
   {%- comment -%} Standard site toast (shared .aico-toast-wrap / .aico-toast). {%- endcomment -%}
   <div class="aico-toast-wrap" aria-live="polite" aria-atomic="true">
     <div class="aico-toast aico-addresses-toast" data-aico-addresses-toast></div>
   </div>
 
   <script src="{{ 'address-change.js' | asset_url }}" defer></script>
-  <script src="{{ 'store-details.js' | asset_url }}" defer></script>
 </main>

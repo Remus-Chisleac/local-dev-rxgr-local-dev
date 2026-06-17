@@ -242,6 +242,12 @@
         "type_preorder": "Vorbestellung",
         "type_order_confirmation": "Auftragsbestätigung"
       }
+    },
+    "aico_store_locator": {
+      "title": "Standorte verwalten",
+      "intro": "Bearbeiten Sie Kontaktangaben, Öffnungszeiten und Bilder Ihrer Standorte.",
+      "manage_link": "Standorte verwalten",
+      "back_to_addresses": "← Zurück zu den Adressen"
     }
   },
   "product": {

@@ -1,19 +1,23 @@
 /**
- * Store-details editor (F4 part A4) — three-tab progressive-enhancement editor
- * reimplementing the legacy b2b-shop store drawer (NOT React).
+ * Store-details editor (F4 v2) — three-tab progressive-enhancement editor
+ * reimplementing the legacy b2b-shop store drawer (NOT React). Lives on the
+ * dedicated store-locator page (/account/store-locator).
  *
- * Tabs: contact info / opening hours / images. Wired to the EXISTING aico
- * backend endpoints the legacy b2b-shop used, base:
- *   ${origin}{base}/{aicoShopId}/addresses
- * where {base} = data-store-details-base (default /aico-shops) and the aico
- * shop id comes from data-aico-shop-id (customer.aico_shop_id).
+ * Tabs: contact info / opening hours / images. Wired to the STOREFRONT-SESSION
+ * endpoints that proxy the existing AicoShop store-details operations, base:
+ *   ${origin}{base}            (base = data-store-details-base = /account/store-details)
  *
  *   GET/POST  .../contact-info?crmAddressId=     { phones[], emails[], websiteUrl }
- *   GET/POST  .../opening-hours?addressId=       { openingHours[], isCalendarActive, notice }
- *   GET       .../calendar-images?addressId=
+ *   GET/POST  .../opening-hours?crmAddressId=    { openingHours[], isCalendarActive, notice }
+ *   GET       .../calendar-images?crmAddressId=
  *   POST      .../calendar-image                 (single image upsert)
  *   POST      .../calendar-images-order
- *   DELETE    .../calendar-image/{id}
+ *   DELETE    .../calendar-image/{id}?crmAddressId=
+ *
+ * All store-details *Id params are the crm_address_id (the backend keys the
+ * b2b_calendars + crm_phones/emails on it). Payloads are flat (top-level
+ * fields), and crmAddressId is always included so the server can scope the
+ * operation to a store the shopper owns.
  *
  * Field shapes match the legacy contracts exactly (see the F4 task file):
  *   phones {phone,label,isMain,crmAddressId,id}; emails {email,label,isMain,crmAddressId,id}
@@ -33,7 +37,10 @@
   var DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   function init() {
-    var root = document.querySelector('[data-aico-addresses]');
+    // The editor lives on the dedicated store-locator page; it also tolerates
+    // the legacy combined addresses page root if one is ever present.
+    var root = document.querySelector('[data-aico-store-locator]')
+      || document.querySelector('[data-aico-addresses]');
     if (!root) { return; }
 
     var modal = root.querySelector('[data-aico-store-details-modal]');
@@ -41,9 +48,9 @@
 
     var tokenInput = root.querySelector('input[name="_token"]');
     var token = tokenInput ? tokenInput.value : '';
-    var aicoShopId = root.getAttribute('data-aico-shop-id') || '';
-    var base = (root.getAttribute('data-store-details-base') || '/aico-shops');
-    var toast = root.querySelector('[data-aico-addresses-toast]');
+    var base = (root.getAttribute('data-store-details-base') || '/account/store-details');
+    var toast = root.querySelector('[data-aico-store-locator-toast]')
+      || root.querySelector('[data-aico-addresses-toast]');
     var copy = {
       saving: root.getAttribute('data-copy-saving') || 'Saving…',
       saved: root.getAttribute('data-copy-saved') || 'Saved',
@@ -60,7 +67,7 @@
     var toastTimer = null;
 
     function endpoint(path) {
-      return base + '/' + encodeURIComponent(aicoShopId) + '/addresses' + path;
+      return base + path;
     }
 
     function setStatus(message, state) {
@@ -69,7 +76,7 @@
       toast.textContent = message;
       var kind = state === 'saved' ? ' aico-toast-success'
         : state === 'error' ? ' aico-toast-error' : '';
-      toast.className = 'aico-toast aico-addresses-toast' + kind;
+      toast.className = 'aico-toast aico-store-locator-toast' + kind;
       toast.classList.add('is-visible');
       if (state === 'saved' || state === 'error') {
         toastTimer = window.setTimeout(function () {
@@ -162,7 +169,7 @@
     function loadContact() {
       panels.contact.innerHTML = '<p class="aico-store-details-loading">Loading…</p>';
       request('GET', endpoint('/contact-info?crmAddressId=' + encodeURIComponent(activeCrmAddressId)))
-        .then(function (data) { renderContact(data); })
+        .then(function (data) { renderContact((data && data.data) || data || {}); })
         .catch(function () { renderContact({}); });
     }
 
@@ -170,7 +177,7 @@
       var payload = collectContact();
       payload.crmAddressId = activeCrmAddressId;
       setStatus(copy.saving, 'saving');
-      request('POST', endpoint('/contact-info?crmAddressId=' + encodeURIComponent(activeCrmAddressId)), payload)
+      request('POST', endpoint('/contact-info'), payload)
         .then(function () { setStatus(copy.saved, 'saved'); })
         .catch(function () { setStatus(copy.error, 'error'); });
     }
@@ -230,21 +237,21 @@
         openingHours: openingHours,
         isCalendarActive: activeEl ? activeEl.checked : true,
         notice: noticeEl ? noticeEl.value : null,
-        addressId: activeCrmAddressId
+        crmAddressId: activeCrmAddressId
       };
     }
 
     function loadHours() {
       panels.hours.innerHTML = '<p class="aico-store-details-loading">Loading…</p>';
-      request('GET', endpoint('/opening-hours?addressId=' + encodeURIComponent(activeCrmAddressId)))
-        .then(function (data) { renderHours(data); })
+      request('GET', endpoint('/opening-hours?crmAddressId=' + encodeURIComponent(activeCrmAddressId)))
+        .then(function (data) { renderHours((data && data.data) || data || {}); })
         .catch(function () { renderHours({}); });
     }
 
     function saveHours() {
       var payload = collectHours();
       setStatus(copy.saving, 'saving');
-      request('POST', endpoint('/opening-hours?addressId=' + encodeURIComponent(activeCrmAddressId)), payload)
+      request('POST', endpoint('/opening-hours'), payload)
         .then(function () { setStatus(copy.saved, 'saved'); })
         .catch(function () { setStatus(copy.error, 'error'); });
     }
@@ -271,7 +278,7 @@
 
     function loadImages() {
       panels.images.innerHTML = '<p class="aico-store-details-loading">Loading…</p>';
-      request('GET', endpoint('/calendar-images?addressId=' + encodeURIComponent(activeCrmAddressId)))
+      request('GET', endpoint('/calendar-images?crmAddressId=' + encodeURIComponent(activeCrmAddressId)))
         .then(function (data) { renderImages((data && data.data) || data || []); })
         .catch(function () { renderImages([]); });
     }
@@ -285,7 +292,7 @@
         };
       });
       setStatus(copy.saving, 'saving');
-      request('POST', endpoint('/calendar-images-order'), { addressId: activeCrmAddressId, b2bCalendarImages: ordered })
+      request('POST', endpoint('/calendar-images-order'), { crmAddressId: activeCrmAddressId, calendarImages: ordered })
         .then(function () { setStatus(copy.saved, 'saved'); })
         .catch(function () { setStatus(copy.error, 'error'); });
     }
@@ -295,7 +302,7 @@
       reader.onload = function () {
         setStatus(copy.saving, 'saving');
         request('POST', endpoint('/calendar-image'), {
-          addressId: activeCrmAddressId,
+          crmAddressId: activeCrmAddressId,
           id: null,
           title: file.name,
           description: '',
@@ -311,7 +318,8 @@
     function deleteImage(id) {
       if (!id) { return; }
       setStatus(copy.saving, 'saving');
-      request('DELETE', endpoint('/calendar-image/' + encodeURIComponent(id)))
+      request('DELETE', endpoint('/calendar-image/' + encodeURIComponent(id)
+        + '?crmAddressId=' + encodeURIComponent(activeCrmAddressId)))
         .then(function () { setStatus(copy.saved, 'saved'); loadImages(); })
         .catch(function () { setStatus(copy.error, 'error'); });
     }

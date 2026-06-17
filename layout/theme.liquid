@@ -281,9 +281,17 @@
             {% if aico_brands.size > 0 %}
               <div class="aico-drawer-brand-picker aico-drawer-brand-picker--in-head">
                 <details class="aico-disclosure">
+                  {%- assign aico_selected_brand_logo = customer.aico_selected_brand.logo_url | default: customer.aico_selected_brand.image_url -%}
                   <summary class="aico-disclosure-summary aico-drawer-brand-summary">
                     <span class="aico-drawer-brand-label">
-                      {%- if customer.aico_selected_brand -%}
+                      {%- if customer.aico_selected_brand and aico_selected_brand_logo -%}
+                        <img class="aico-drawer-brand-summary-logo"
+                             src="{{ aico_selected_brand_logo }}"
+                             alt="{{ customer.aico_selected_brand.label | escape }}"
+                             title="{{ customer.aico_selected_brand.label | escape }}"
+                             loading="lazy"
+                             decoding="async">
+                      {%- elsif customer.aico_selected_brand -%}
                         {{ customer.aico_selected_brand.label }}
                       {%- else -%}
                         {{ 'nav.brand_choose' | t }}
