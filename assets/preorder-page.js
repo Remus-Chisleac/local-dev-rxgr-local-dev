@@ -502,14 +502,17 @@
       return next === null ? 0 : Math.abs(next - totalQty);
     }
 
-    function updateCartPanel(totalQty, subtotal, discPct, discounts, currency) {
+    function updateCartPanel(totalQty, subtotal, discPct, discounts, currency, discountQty) {
       if (!cartPanel) return;
       var pcs = root.getAttribute('data-aico-preorder-copy-pcs') || 'STK';
+      // Gesamt + subtotal reflect THIS cart; discount % and the next-tier
+      // countdown use the cumulative quantity (cart + prior preorders).
+      var tierQty = discountQty != null ? discountQty : totalQty;
       if (cartPanelTotalQty) cartPanelTotalQty.textContent = totalQty + ' ' + pcs;
       if (cartPanelTabQty) cartPanelTabQty.textContent = totalQty;
       if (cartPanelDiscount) cartPanelDiscount.textContent = (discPct || 0) + '%';
       if (cartPanelNextTier) {
-        cartPanelNextTier.textContent = nextDiscountRemaining(discounts, totalQty) + ' ' + pcs;
+        cartPanelNextTier.textContent = nextDiscountRemaining(discounts, tierQty) + ' ' + pcs;
       }
       if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(subtotal, currency, '');
     }
@@ -1254,7 +1257,12 @@
 
       var discounts =
         (sessionData && sessionData.preorderDiscounts) || [];
-      var discPct = cartCtrl ? cartCtrl.getDiscount(discounts, totalQty) : 0;
+      // Cumulative across the debtor's preorders: the tier is reached by THIS cart
+      // PLUS everything already preordered for (debtor, shop, session). Matches the
+      // backend resolveDiscount (G4a) + the legacy PreorderService::getTotalQuantity.
+      var priorItemsCount = (sessionData && sessionData.aicoPriorItemsCount) || 0;
+      var discountQty = totalQty + priorItemsCount;
+      var discPct = cartCtrl ? cartCtrl.getDiscount(discounts, discountQty) : 0;
       var discAmount = discPct ? (discPct * subtotal) / 100 : 0;
       var grandTotal = subtotal - discAmount;
       var productsLabel =
@@ -1316,7 +1324,7 @@
         // a silently-disabled button. Only an empty cart / in-flight save disable.
         submitBtn.disabled = saving || totalQty <= 0;
       }
-      updateCartPanel(totalQty, subtotal, discPct, discounts, currency);
+      updateCartPanel(totalQty, subtotal, discPct, discounts, currency, discountQty);
       updateCheckoutVisibility();
     }
 
