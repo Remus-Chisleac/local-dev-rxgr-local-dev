@@ -250,7 +250,15 @@
     function refresh() {
       var total = 0;
       inputs.forEach(function (input) {
-        total += clamp(input);
+        var qty = clamp(input);
+        total += qty;
+        // Keep the in-cart accent in sync with the live quantity: the server
+        // only stamps `aico-pdp-size-cell-in-cart` at page load, so zeroing a
+        // size (or typing into a new one) must re-evaluate the border here.
+        var cell = input.closest('[data-aico-size-cell]');
+        if (cell) {
+          cell.classList.toggle('aico-pdp-size-cell-in-cart', qty > 0);
+        }
       });
       totalNode.textContent = String(total);
     }
