@@ -688,7 +688,13 @@
     article.className = 'aico-product-card';
 
     var link = document.createElement('a');
-    link.href = '/products/' + encodeURIComponent(urlHandle);
+    // Use the server-supplied prefix (host/preview base + active-locale segment)
+    // + preview-token query so JS-rendered cards link identically to the SSR
+    // cards (E3): keeps the active locale (`/en-us/products/<handle>`) and the
+    // `/__storefront-preview/<slug>/` prefix instead of a bare `/products/...`.
+    var productUrlPrefix = config.productUrlPrefix || '/products/';
+    var productUrlQuery = config.productUrlQuery || '';
+    link.href = productUrlPrefix + encodeURIComponent(urlHandle) + productUrlQuery;
     link.className = 'aico-product-card-link';
     link.setAttribute('aria-label', title);
 
