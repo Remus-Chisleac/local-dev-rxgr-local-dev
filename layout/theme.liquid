@@ -489,7 +489,7 @@
             </a>
             <span class="aico-locale-pill aico-locale-pill--footer" role="group" aria-label="{{ 'nav.language' | t }}">
               {%- assign current_locale = request.locale | default: shop.default_locale -%}
-              <a href="{{ 'en' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'en' %}aico-locale-pill-active{% endif %}" lang="en">EN</a>
+              <a href="{{ 'en_US' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'en_US' %}aico-locale-pill-active{% endif %}" lang="en">EN</a>
               <a href="{{ 'de_CH' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'de_CH' %}aico-locale-pill-active{% endif %}" lang="de-CH">DE</a>
             </span>
           </div>
