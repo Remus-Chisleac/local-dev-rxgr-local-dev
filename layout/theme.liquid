@@ -56,6 +56,7 @@
         },
         checkout: {
           url: {{ routes.checkout_url | json }},
+          submitUrl: {{ routes.aico_checkout_submit_url | json }},
           processingUrl: {{ routes.aico_checkout_processing_url | json }},
           thankYouUrl: {{ routes.aico_checkout_thank_you_url | json }},
           paymentStatusUrl: {{ routes.aico_checkout_payment_status_url | json }}

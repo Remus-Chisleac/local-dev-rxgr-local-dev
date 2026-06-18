@@ -315,7 +315,7 @@
         }
         this.submitting = true;
 
-        fetch(routes.url || '/checkout', {
+        fetch(routes.submitUrl || routes.url || '/checkout', {
           method: 'POST',
           headers: jsonHeaders(),
           credentials: 'same-origin',
