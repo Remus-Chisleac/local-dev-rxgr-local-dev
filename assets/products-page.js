@@ -305,7 +305,9 @@
         return;
       }
       if (facetId === 'sale') {
-        parts.push('isSaleInPriceLists IS NOT EMPTY');
+        // kj: match the B2B selling list's own discount (server-built clause),
+        // not any discounted list — else regular products show as on sale.
+        parts.push(config.saleFilter || 'isSaleInPriceLists IS NOT EMPTY');
         return;
       }
       if (facetId === 'sizes') {
