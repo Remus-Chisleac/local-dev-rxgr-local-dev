@@ -752,8 +752,6 @@
     var title = pickName(hit, config.locale) || id;
     var image = pickImage(hit, config.locale);
     var pricing = extractPricing(hit, config.debtor);
-    if (!window.__dbg) { window.__dbg = []; }
-    if (window.__dbg.length < 3) { window.__dbg.push({ hitId: hit.id, hasLists: !!hit.priceLists, listKeys: hit.priceLists ? Object.keys(hit.priceLists) : null, hasShopPricing: !!config.shopPricing, sellingListId: config.shopPricing && config.shopPricing.sellingPriceListId, resolved: !!pricing }); }
     // No-price contract: a product with no resolvable price is hidden, not
     // shown as "price on request" (the legacy b2b-shop has no such state).
     if (!pricing) {
@@ -1284,25 +1282,27 @@
 
   updateFilterCountBadge();
 
-  // Seed the live facet distribution + EU-size universe on boot. Without
-  // this the size chips can't group by ⅓ band (empty universe) and the
-  // first size selection is a no-op (the size filter expands display→raw
-  // values via the distribution, which is empty until the first fetch).
-  // Facet-only fetch — leaves the SSR'd first page of cards untouched.
-  meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
-    if (resp && resp.facetDistribution) {
-      state.lastDistribution = resp.facetDistribution;
-      setEuUniverse();
-      renderFacetColumns(resp.facetDistribution);
-    }
-    // Deep-link: the page can load with facets already in the URL (chips
-    // SSR'd active). The SSR grid doesn't apply the size facet (the client
-    // owns size→raw expansion, which needs the distribution we just seeded),
-    // so the highlighted filters wouldn't actually narrow the results.
-    // Re-query the grid now that the distribution is available so the
-    // results match the active chips.
-    if (Object.keys(state.appliedFacets).length > 0) {
-      refresh();
-    }
-  }).catch(function () {});
+  // Boot the grid. Two modes:
+  //  - The products page hydrates entirely client-side (no SSR cards): render
+  //    page 1 from Meili now — refresh() does a full replace render + seeds the
+  //    facet distribution / EU-size universe + sets the real count + exhausted.
+  //  - Legacy SSR mode (server rendered page 1): leave those cards untouched and
+  //    only seed the facet distribution + EU-size universe (size chips can't
+  //    group by ⅓ band without it, and a deep-linked size facet needs it to
+  //    expand display→raw), re-querying only when facets are already applied.
+  var hasSsrCards = !!(grid && grid.querySelector('.aico-products-grid-item'));
+  if (!hasSsrCards) {
+    refresh();
+  } else {
+    meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
+      if (resp && resp.facetDistribution) {
+        state.lastDistribution = resp.facetDistribution;
+        setEuUniverse();
+        renderFacetColumns(resp.facetDistribution);
+      }
+      if (Object.keys(state.appliedFacets).length > 0) {
+        refresh();
+      }
+    }).catch(function () {});
+  }
 })();
