@@ -701,19 +701,13 @@
 
   var moneyCache = {};
   function formatMoney(amount, currencyCode, locale) {
-    var lc = (locale || 'en').replace(/_/g, '-');
-    if (!currencyCode || !/^[A-Z]{3}$/.test(currencyCode.toUpperCase())) {
-      return amount.toFixed(2);
-    }
-    var key = lc + '|' + currencyCode.toUpperCase();
-    if (!moneyCache[key]) {
-      try {
-        moneyCache[key] = new Intl.NumberFormat(lc, { style: 'currency', currency: currencyCode.toUpperCase() });
-      } catch (e) {
-        return amount.toFixed(2) + ' ' + currencyCode.toUpperCase();
-      }
-    }
-    return moneyCache[key].format(amount);
+    // Match the legacy b2b-shop's DisplayPrice: Swiss-rounded to 0.05, two
+    // decimals, currency AFTER the amount (EUR shown as €, others as the ISO
+    // code) — NOT Intl's currency style, which puts the symbol first.
+    var rounded = (Math.round((Number(amount) || 0) / 0.05) * 0.05).toFixed(2);
+    var code = (typeof currencyCode === 'string') ? currencyCode.toUpperCase() : '';
+    var symbol = code === 'EUR' ? '€' : code;
+    return symbol ? (rounded + ' ' + symbol) : rounded;
   }
 
   function discountPercentOf(p) {
@@ -824,6 +818,11 @@
 
     var body = document.createElement('div');
     body.className = 'aico-product-card-body';
+    // Name first, price underneath (matches the b2b-shop card order).
+    var h3 = document.createElement('h3');
+    h3.className = 'aico-product-card-title';
+    h3.textContent = title;
+    body.appendChild(h3);
     if (priceLabel) {
       var p = document.createElement('p');
       p.className = 'aico-product-card-price';
@@ -866,10 +865,6 @@
       pr.textContent = labelPriceOnRequest;
       body.appendChild(pr);
     }
-    var h3 = document.createElement('h3');
-    h3.className = 'aico-product-card-title';
-    h3.textContent = title;
-    body.appendChild(h3);
 
     link.appendChild(imgWrap);
     link.appendChild(body);

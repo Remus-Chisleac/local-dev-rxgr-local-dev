@@ -1330,6 +1330,9 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  /* Reserve the struck regular-price line on every card so a sale card is no
+     taller than a non-sale one (consistent grid height). */
+  min-height: 2.5rem;
 }
 @media (min-width: 640px) { .aico-product-card-price { font-size: 1rem; } }
 .aico-product-card-price-was,
