@@ -1302,12 +1302,12 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0.125rem;
 }
 .aico-product-card-badge-sale {
-  left: 0.5rem;
-  background: #b91c1c;
+  right: 0.5rem;
+  background: #0f766e;
   color: #ffffff;
 }
 .aico-product-card-badge-discontinued {
-  right: 0.5rem;
+  left: 0.5rem;
   background: var(--aico-muted);
   color: var(--aico-muted-fg);
   border: 1px solid var(--aico-border);
@@ -1328,11 +1328,17 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   color: var(--aico-fg);
   font-variant-numeric: tabular-nums;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 @media (min-width: 640px) { .aico-product-card-price { font-size: 1rem; } }
+.aico-product-card-price-was,
+.aico-product-card-price-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.375rem;
+}
 .aico-product-card-price-on-request {
   font-weight: 500;
   color: var(--aico-muted-fg);
@@ -1342,6 +1348,16 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   text-decoration: line-through;
   font-weight: 500;
   font-size: 0.8125rem;
+}
+/* Recommended retail price — informational, never a sale signal. */
+.aico-product-card-rrp {
+  color: #d97706;
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+.aico-product-card-rrp-was {
+  color: var(--aico-muted-fg);
+  text-decoration: line-through;
 }
 .aico-product-card-discount {
   background: rgba(185, 28, 28, 0.15);

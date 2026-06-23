@@ -651,17 +651,23 @@
     var selling = toNumber(sellingRow.sellingPrice);
     if (selling === null) { return null; }
     var rowDiscount = toNumber(sellingRow.discountPrice) || 0;
+    // On sale ONLY when the B2B selling row itself is discounted. The retail
+    // (B2C) list is NEVER a sale signal — B2B is structurally below retail, so
+    // comparing them would mark every product on sale. It's the informational
+    // RRP instead (regular + its own sale price when the retail list is itself
+    // discounted, which kj does in lockstep with the B2B list).
     var onSale = rowDiscount > 0 && rowDiscount < selling;
-    var net = onSale ? rowDiscount : selling;
     var cur = sp.currencyCode || null;
-    if (!onSale && sp.retailPriceListId != null && sp.retailPriceListId !== sp.sellingPriceListId) {
+    var rrp = null, rrpDiscount = null;
+    if (sp.retailPriceListId != null && sp.retailPriceListId !== sp.sellingPriceListId) {
       var retailRow = pickSeparatedRow(separatedRows(lists, sp.retailPriceListId), sp.currencyId);
-      var retail = retailRow ? toNumber(retailRow.sellingPrice) : null;
-      if (retail !== null && retail > net) {
-        return { sellingPrice: retail, discountPrice: net, isOnSale: true, currencyCode: cur };
+      if (retailRow) {
+        rrp = toNumber(retailRow.sellingPrice);
+        var rd = toNumber(retailRow.discountPrice) || 0;
+        if (rrp !== null && rd > 0 && rd < rrp) { rrpDiscount = rd; }
       }
     }
-    return { sellingPrice: selling, discountPrice: onSale ? rowDiscount : null, isOnSale: onSale, currencyCode: cur };
+    return { sellingPrice: selling, discountPrice: onSale ? rowDiscount : null, isOnSale: onSale, currencyCode: cur, rrp: rrp, rrpDiscount: rrpDiscount };
   }
 
   function extractPricing(hit, debtor) {
@@ -724,6 +730,7 @@
   var labelSale = configLabels.sale || 'Sale';
   var labelDiscontinued = configLabels.discontinued || '';
   var labelPriceOnRequest = configLabels.priceOnRequest || 'Price on request';
+  var labelRrp = configLabels.rrp || 'RRP';
 
   // Add an `aico-img-pending` class while an `<img>` is still being
   // fetched, then strip it on load — the card's existing opacity
@@ -757,10 +764,18 @@
     if (!pricing) {
       return null;
     }
+    var cc = pricing.currencyCode, loc = config.locale;
     var displayedAmount = pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice;
-    var priceLabel = pricing ? formatMoney(displayedAmount, pricing.currencyCode, config.locale) : null;
-    var compareLabel = pricing && pricing.isOnSale && pricing.discountPrice != null ? formatMoney(pricing.sellingPrice, pricing.currencyCode, config.locale) : null;
+    var priceLabel = formatMoney(displayedAmount, cc, loc);
+    // Struck regular price — sale only (the B2B selling row is discounted).
+    var compareLabel = pricing.isOnSale && pricing.discountPrice != null ? formatMoney(pricing.sellingPrice, cc, loc) : null;
     var pct = discountPercentOf(pricing);
+    // RRP (recommended retail) — informational "(RRP X)" beside the price: the
+    // sale RRP beside the current price, the regular RRP beside the struck one.
+    // Only when strictly above that line's price.
+    var rrpRaw = pricing.isOnSale ? (pricing.rrpDiscount != null ? pricing.rrpDiscount : pricing.rrp) : pricing.rrp;
+    var rrpLabel = (rrpRaw != null && rrpRaw > displayedAmount) ? formatMoney(rrpRaw, cc, loc) : null;
+    var compareRrpLabel = (pricing.isOnSale && pricing.rrp != null && pricing.rrp > pricing.sellingPrice) ? formatMoney(pricing.rrp, cc, loc) : null;
     var isDiscontinued = !!hit.isDiscontinued;
 
     var article = document.createElement('article');
@@ -794,10 +809,10 @@
       empty.setAttribute('aria-hidden', 'true');
       imgWrap.appendChild(empty);
     }
-    if (pricing && pricing.isOnSale) {
+    if (pricing && pricing.isOnSale && pct) {
       var saleBadge = document.createElement('span');
       saleBadge.className = 'aico-product-card-badge aico-product-card-badge-sale';
-      saleBadge.textContent = labelSale;
+      saleBadge.textContent = '−' + pct + '%';
       imgWrap.appendChild(saleBadge);
     }
     if (isDiscontinued && labelDiscontinued) {
@@ -812,22 +827,36 @@
     if (priceLabel) {
       var p = document.createElement('p');
       p.className = 'aico-product-card-price';
+      var mkRrp = function (label, extraCls) {
+        var s = document.createElement('span');
+        s.className = 'aico-product-card-rrp' + (extraCls ? ' ' + extraCls : '');
+        s.textContent = '(' + labelRrp + ' ' + label + ')';
+        return s;
+      };
       if (compareLabel) {
+        // Struck regular line (sale): regular price + its RRP, both struck.
+        var was = document.createElement('span');
+        was.className = 'aico-product-card-price-was';
         var cs = document.createElement('span');
         cs.className = 'aico-product-card-price-list';
         cs.textContent = compareLabel;
-        p.appendChild(cs);
+        was.appendChild(cs);
+        if (compareRrpLabel) {
+          was.appendChild(mkRrp(compareRrpLabel, 'aico-product-card-rrp-was'));
+        }
+        p.appendChild(was);
       }
+      // Current line: current price + its RRP (informational, not a sale).
+      var now = document.createElement('span');
+      now.className = 'aico-product-card-price-now';
       var cp = document.createElement('span');
       cp.className = 'aico-product-card-price-current';
       cp.textContent = priceLabel;
-      p.appendChild(cp);
-      if (pct) {
-        var pp = document.createElement('span');
-        pp.className = 'aico-product-card-discount';
-        pp.textContent = '−' + pct + '%';
-        p.appendChild(pp);
+      now.appendChild(cp);
+      if (rrpLabel) {
+        now.appendChild(mkRrp(rrpLabel));
       }
+      p.appendChild(now);
       body.appendChild(p);
     } else {
       // No row in the debtor's currency → "price on request" (mirrors the
