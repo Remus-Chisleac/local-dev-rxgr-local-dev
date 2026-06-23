@@ -383,7 +383,40 @@
         throw new Error('meilisearch ' + r.status);
       }
       return r.json();
+    }).then(function (resp) {
+      // The v2 product index is price-free; batch-fetch the separated price
+      // index and attach priceLists so extractPricing can resolve a price.
+      return mergeSeparatedPrices(resp).then(function () { return resp; });
     });
+  }
+
+  // Batch-fetch the separated price index for the current hits (by scout id)
+  // and attach `priceLists`/`variantPrices` onto each hit. No-op on the legacy
+  // embedded-price deployment (config.meilisearch.pricesIndex is null).
+  function mergeSeparatedPrices(resp) {
+    var pricesIndex = config.meilisearch && config.meilisearch.pricesIndex;
+    var hits = (resp && Array.isArray(resp.hits)) ? resp.hits : [];
+    if (!pricesIndex || hits.length === 0) {
+      return Promise.resolve();
+    }
+    var ids = [];
+    hits.forEach(function (h) { if (h && h.id != null) { ids.push(h.id); } });
+    if (ids.length === 0) {
+      return Promise.resolve();
+    }
+    var url = config.meilisearch.host + '/indexes/' + encodeURIComponent(pricesIndex) + '/search';
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.meilisearch.searchKey },
+      body: JSON.stringify({ filter: 'id IN [' + ids.join(', ') + ']', limit: ids.length, attributesToRetrieve: ['id', 'priceLists', 'variantPrices'] }),
+    }).then(function (r) { return r.ok ? r.json() : { hits: [] }; }).then(function (pr) {
+      var byId = {};
+      (pr.hits || []).forEach(function (row) { if (row && row.id != null) { byId[row.id] = row; } });
+      hits.forEach(function (h) {
+        var row = byId[h.id];
+        if (row) { h.priceLists = row.priceLists || {}; h.variantPrices = row.variantPrices || []; }
+      });
+    }).catch(function () { /* leave prices unset → "price on request" */ });
   }
 
   // ---- Hit → card transform (port of PHP ProductCatalogLoader) -----
@@ -595,10 +628,51 @@
     return ordered;
   }
 
+  // Separated-shop resolution (kj): selling = shop default-list row in the
+  // debtor currency; retail list = struck-through compare-at when higher.
+  // Mirrors PHP ProductPriceResolver::resolveSeparatedForShop.
+  function separatedRows(lists, listId) {
+    if (listId == null) { return []; }
+    var entry = lists[String(listId)] || lists[listId];
+    return (entry && Array.isArray(entry.rows)) ? entry.rows : [];
+  }
+  function pickSeparatedRow(rows, currencyId) {
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row || toNumber(row.sellingPrice) === null) { continue; }
+      var cid = row.currencyId != null ? Number(row.currencyId) : null;
+      if (currencyId == null || cid === Number(currencyId)) { return row; }
+    }
+    return null;
+  }
+  function extractSeparatedPricing(lists, sp) {
+    var sellingRow = pickSeparatedRow(separatedRows(lists, sp.sellingPriceListId), sp.currencyId);
+    if (!sellingRow) { return null; }
+    var selling = toNumber(sellingRow.sellingPrice);
+    if (selling === null) { return null; }
+    var rowDiscount = toNumber(sellingRow.discountPrice) || 0;
+    var onSale = rowDiscount > 0 && rowDiscount < selling;
+    var net = onSale ? rowDiscount : selling;
+    var cur = sp.currencyCode || null;
+    if (!onSale && sp.retailPriceListId != null && sp.retailPriceListId !== sp.sellingPriceListId) {
+      var retailRow = pickSeparatedRow(separatedRows(lists, sp.retailPriceListId), sp.currencyId);
+      var retail = retailRow ? toNumber(retailRow.sellingPrice) : null;
+      if (retail !== null && retail > net) {
+        return { sellingPrice: retail, discountPrice: net, isOnSale: true, currencyCode: cur };
+      }
+    }
+    return { sellingPrice: selling, discountPrice: onSale ? rowDiscount : null, isOnSale: onSale, currencyCode: cur };
+  }
+
   function extractPricing(hit, debtor) {
     var lists = hit.priceLists;
     if (!lists || typeof lists !== 'object') {
       return null;
+    }
+    // Separated-shop (kj on v2): shop default list × debtor currency.
+    if (config.shopPricing && config.shopPricing.sellingPriceListId != null) {
+      var sep = extractSeparatedPricing(lists, config.shopPricing);
+      if (sep) { return sep; }
     }
     var preferred = debtor && debtor.currencyCode ? debtor.currencyCode : null;
     var keys = orderedKeys(lists, debtor);
