@@ -395,10 +395,13 @@
   // Batch-fetch the separated price index for the current hits (by scout id)
   // and attach `priceLists`/`variantPrices` onto each hit. No-op on the legacy
   // embedded-price deployment (config.meilisearch.pricesIndex is null).
+  // Resolve prices SERVER-SIDE: send the hit scout ids to the prices endpoint
+  // and attach the resolved price each shopper is entitled to onto `hit.pricing`.
+  // The browser never touches the price index, so other price lists can't leak.
   function mergeSeparatedPrices(resp) {
-    var pricesIndex = config.meilisearch && config.meilisearch.pricesIndex;
+    var url = config.pricesApi;
     var hits = (resp && Array.isArray(resp.hits)) ? resp.hits : [];
-    if (!pricesIndex || hits.length === 0) {
+    if (!url || hits.length === 0) {
       return Promise.resolve();
     }
     var ids = [];
@@ -406,19 +409,16 @@
     if (ids.length === 0) {
       return Promise.resolve();
     }
-    var url = config.meilisearch.host + '/indexes/' + encodeURIComponent(pricesIndex) + '/search';
-    return fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.meilisearch.searchKey },
-      body: JSON.stringify({ filter: 'id IN [' + ids.join(', ') + ']', limit: ids.length, attributesToRetrieve: ['id', 'priceLists', 'variantPrices'] }),
-    }).then(function (r) { return r.ok ? r.json() : { hits: [] }; }).then(function (pr) {
-      var byId = {};
-      (pr.hits || []).forEach(function (row) { if (row && row.id != null) { byId[row.id] = row; } });
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return fetch(url + sep + 'ids=' + encodeURIComponent(ids.join(',')), {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin',
+    }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (priced) {
       hits.forEach(function (h) {
-        var row = byId[h.id];
-        if (row) { h.priceLists = row.priceLists || {}; h.variantPrices = row.variantPrices || []; }
+        var p = (priced[h.id] != null) ? priced[h.id] : priced[String(h.id)];
+        if (p) { h.pricing = p; }
       });
-    }).catch(function () { /* leave prices unset → "price on request" */ });
+    }).catch(function () { /* leave prices unset → product hidden by the no-price rule */ });
   }
 
   // ---- Hit → card transform (port of PHP ProductCatalogLoader) -----
@@ -672,33 +672,11 @@
     return { sellingPrice: selling, discountPrice: onSale ? rowDiscount : null, isOnSale: onSale, currencyCode: cur, rrp: rrp, rrpDiscount: rrpDiscount };
   }
 
-  function extractPricing(hit, debtor) {
-    var lists = hit.priceLists;
-    if (!lists || typeof lists !== 'object') {
-      return null;
-    }
-    // Separated-shop (kj on v2): shop default list × debtor currency.
-    if (config.shopPricing && config.shopPricing.sellingPriceListId != null) {
-      var sep = extractSeparatedPricing(lists, config.shopPricing);
-      if (sep) { return sep; }
-    }
-    var preferred = debtor && debtor.currencyCode ? debtor.currencyCode : null;
-    var keys = orderedKeys(lists, debtor);
-    for (var i = 0; i < keys.length; i++) {
-      var entry = lists[keys[i]];
-      if (!entry || typeof entry !== 'object') {
-        continue;
-      }
-      var fromRows = tryPriceFromRows(entry, preferred);
-      if (fromRows) {
-        return fromRows;
-      }
-      var fromGross = tryPriceFromGross(entry, preferred);
-      if (fromGross) {
-        return fromGross;
-      }
-    }
-    return null;
+  function extractPricing(hit) {
+    // Prices are resolved server-side (mergeSeparatedPrices → the prices API);
+    // each hit carries ONLY this shopper's entitled price under `hit.pricing`
+    // ({ sellingPrice, discountPrice, isOnSale, currencyCode, rrp, rrpDiscount }).
+    return hit.pricing || null;
   }
 
   var moneyCache = {};
