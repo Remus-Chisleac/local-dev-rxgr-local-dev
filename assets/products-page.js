@@ -1240,6 +1240,21 @@
     });
   }
 
+  // Load successive pages until the sentinel is pushed past the viewport (+the
+  // observer margin) or the catalogue is exhausted. Needed because the page now
+  // renders page 1 client-side: if those cards don't fill the screen the
+  // IntersectionObserver fires once while still loading and never re-arms.
+  function fillViewport() {
+    if (!sentinel || state.loading || state.exhausted) {
+      return;
+    }
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    if (sentinel.getBoundingClientRect().top <= vh + 400) {
+      state.page += 1;
+      fetchAndRender({}).then(function () { fillViewport(); });
+    }
+  }
+
   if (sentinel && 'IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
@@ -1292,7 +1307,7 @@
   //    expand display→raw), re-querying only when facets are already applied.
   var hasSsrCards = !!(grid && grid.querySelector('.aico-products-grid-item'));
   if (!hasSsrCards) {
-    refresh();
+    refresh().then(function () { fillViewport(); });
   } else {
     meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
       if (resp && resp.facetDistribution) {
