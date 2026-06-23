@@ -195,6 +195,8 @@
 
     <ul class="aico-products-grid" data-aico-products-grid{% if aico_products.empty? %} hidden{% endif %}>
       {% for product in aico_products %}
+        {% assign aico_card_eager = false %}
+        {% if forloop.index0 < 8 %}{% assign aico_card_eager = true %}{% endif %}
         <li class="aico-products-grid-item" data-aico-product-id="{{ product.id }}">
           {% render 'product-card',
             url: product.url,
@@ -207,7 +209,7 @@
             on_sale: product.aico_is_on_sale?,
             is_new: product.aico_is_new?,
             discontinued: product.aico_is_discontinued?,
-            eager: forloop.index0 < 8,
+            eager: aico_card_eager,
             show_reviews: false %}
         </li>
       {% endfor %}

@@ -67,6 +67,8 @@
     {% if aico_brand_products.size > 0 %}
       <ul class="aico-products-grid aico-brand-product-grid" role="list">
         {% for product in aico_brand_products %}
+          {% assign aico_card_eager = false %}
+          {% if forloop.index0 < 4 %}{% assign aico_card_eager = true %}{% endif %}
           <li class="aico-products-grid-item" data-aico-product-id="{{ product.id }}">
             {% render 'product-card',
               url: product.url,
@@ -79,7 +81,7 @@
               on_sale: product.aico_is_on_sale?,
               is_new: product.aico_is_new?,
               discontinued: product.aico_is_discontinued?,
-              eager: forloop.index0 < 4,
+              eager: aico_card_eager,
               show_reviews: true %}
           </li>
         {% endfor %}
