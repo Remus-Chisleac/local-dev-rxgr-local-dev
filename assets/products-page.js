@@ -752,7 +752,12 @@
     var title = pickName(hit, config.locale) || id;
     var image = pickImage(hit, config.locale);
     var pricing = extractPricing(hit, config.debtor);
-    var displayedAmount = pricing ? (pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice) : null;
+    // No-price contract: a product with no resolvable price is hidden, not
+    // shown as "price on request" (the legacy b2b-shop has no such state).
+    if (!pricing) {
+      return null;
+    }
+    var displayedAmount = pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice;
     var priceLabel = pricing ? formatMoney(displayedAmount, pricing.currencyCode, config.locale) : null;
     var compareLabel = pricing && pricing.isOnSale && pricing.discountPrice != null ? formatMoney(pricing.sellingPrice, pricing.currencyCode, config.locale) : null;
     var pct = discountPercentOf(pricing);
@@ -1017,7 +1022,10 @@
     }
     var frag = document.createDocumentFragment();
     hits.forEach(function (hit, i) {
-      frag.appendChild(buildCard(hit, eagerStart + i < 8));
+      var card = buildCard(hit, eagerStart + i < 8);
+      if (card) {
+        frag.appendChild(card);
+      }
     });
     grid.appendChild(frag);
   }
