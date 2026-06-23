@@ -57,22 +57,47 @@
             </svg>
           </button>
 
-          <div class="aico-filterbar-sort">
+          {% assign aico_sort = aico_products.sort | default: '-date' %}
+          <div class="aico-sortmenu" data-aico-sortmenu>
             <label class="aico-sr-only" for="aico-products-sort">{{ 'products.sort_label' | t }}</label>
-            <svg class="aico-filterbar-sort-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 6h13"></path><path d="M3 12h9"></path><path d="M3 18h5"></path><path d="m17 8 4 4-4 4"></path><path d="M21 12H10"></path>
-            </svg>
-            <select id="aico-products-sort" class="aico-filterbar-sort-select" data-aico-sort-select>
-              <option value="-date" {% if aico_products.sort == '-date' %}selected{% endif %}>{{ 'products.sort_newest' | t }}</option>
-              <option value="date" {% if aico_products.sort == 'date' %}selected{% endif %}>{{ 'products.sort_oldest' | t }}</option>
-              <option value="name" {% if aico_products.sort == 'name' %}selected{% endif %}>{{ 'products.sort_name_asc' | t }}</option>
-              <option value="-name" {% if aico_products.sort == '-name' %}selected{% endif %}>{{ 'products.sort_name_desc' | t }}</option>
+
+            <button
+              type="button"
+              class="aico-sortmenu-button"
+              data-aico-sortmenu-button
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="aico-products-sort-list">
+              <svg class="aico-filterbar-sort-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h13"></path><path d="M3 12h9"></path><path d="M3 18h5"></path><path d="m17 8 4 4-4 4"></path><path d="M21 12H10"></path>
+              </svg>
+              <span class="aico-sortmenu-label" data-aico-sortmenu-label></span>
+              <svg class="aico-sortmenu-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+
+            <ul class="aico-sortmenu-list" id="aico-products-sort-list" role="listbox" data-aico-sortmenu-list tabindex="-1" hidden>
+              <li class="aico-sortmenu-option" role="option" data-value="-date"{% if aico_sort == '-date' %} aria-selected="true"{% endif %}>{{ 'products.sort_newest' | t }}</li>
+              <li class="aico-sortmenu-option" role="option" data-value="date"{% if aico_sort == 'date' %} aria-selected="true"{% endif %}>{{ 'products.sort_oldest' | t }}</li>
+              <li class="aico-sortmenu-option" role="option" data-value="name"{% if aico_sort == 'name' %} aria-selected="true"{% endif %}>{{ 'products.sort_name_asc' | t }}</li>
+              <li class="aico-sortmenu-option" role="option" data-value="-name"{% if aico_sort == '-name' %} aria-selected="true"{% endif %}>{{ 'products.sort_name_desc' | t }}</li>
+            </ul>
+
+            {% comment %} Hidden native select stays the source of truth; the controller
+                          syncs it + dispatches change so the existing sort logic is untouched. {% endcomment %}
+            <select id="aico-products-sort" class="aico-sr-only" data-aico-sort-select tabindex="-1" aria-hidden="true">
+              <option value="-date" {% if aico_sort == '-date' %}selected{% endif %}>{{ 'products.sort_newest' | t }}</option>
+              <option value="date" {% if aico_sort == 'date' %}selected{% endif %}>{{ 'products.sort_oldest' | t }}</option>
+              <option value="name" {% if aico_sort == 'name' %}selected{% endif %}>{{ 'products.sort_name_asc' | t }}</option>
+              <option value="-name" {% if aico_sort == '-name' %}selected{% endif %}>{{ 'products.sort_name_desc' | t }}</option>
             </select>
           </div>
         </div>
       </div>
 
       <div id="aico-products-filter-panel" class="aico-filterbar-panel" data-aico-panel hidden>
+        <div class="aico-filterbar-panel-clip">
         <div class="aico-filterbar-panel-inner">
           <div class="aico-filterbar-panel-head">
             <label class="aico-filterbar-sale">
@@ -150,6 +175,7 @@
             </div>
           </section>
         </div>
+        </div>
       </div>
     </div>
 
@@ -170,52 +196,19 @@
     <ul class="aico-products-grid" data-aico-products-grid{% if aico_products.empty? %} hidden{% endif %}>
       {% for product in aico_products %}
         <li class="aico-products-grid-item" data-aico-product-id="{{ product.id }}">
-          <article class="aico-product-card">
-            <a href="{{ product.url }}" class="aico-product-card-link" aria-label="{{ product.title }}">
-              <div class="aico-product-card-image-wrap">
-                {% if product.featured_image %}
-                  <img class="aico-product-card-image" src="{{ product.featured_image }}" alt="" loading="{% if forloop.index0 < 8 %}eager{% else %}lazy{% endif %}" decoding="async">
-                {% else %}
-                  <div class="aico-product-card-image-empty" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10"></path>
-                      <path d="m3 21 9-9 4 4 8-8"></path>
-                      <line x1="2" x2="22" y1="2" y2="22"></line>
-                    </svg>
-                  </div>
-                {% endif %}
-
-                {% if product.aico_is_on_sale? %}
-                  <span class="aico-product-card-badge aico-product-card-badge-sale">
-                    {{ 'products.sale' | t }}
-                  </span>
-                {% endif %}
-                {% if product.aico_is_discontinued? %}
-                  <span class="aico-product-card-badge aico-product-card-badge-discontinued">
-                    {{ 'products.discontinued' | t }}
-                  </span>
-                {% endif %}
-              </div>
-              <div class="aico-product-card-body">
-                {% if product.aico_price_label %}
-                  <p class="aico-product-card-price">
-                    {% if product.aico_compare_at_price_label %}
-                      <span class="aico-product-card-price-list">{{ product.aico_compare_at_price_label }}</span>
-                    {% endif %}
-                    <span class="aico-product-card-price-current">{{ product.aico_price_label }}</span>
-                    {% if product.aico_discount_percent %}
-                      <span class="aico-product-card-discount">−{{ product.aico_discount_percent }}%</span>
-                    {% endif %}
-                  </p>
-                {% else %}
-                  <p class="aico-product-card-price aico-product-card-price-on-request">
-                    {{ 'product.price_on_request' | t }}
-                  </p>
-                {% endif %}
-                <h3 class="aico-product-card-title">{{ product.title }}</h3>
-              </div>
-            </a>
-          </article>
+          {% render 'product-card',
+            url: product.url,
+            image: product.featured_image,
+            title: product.title,
+            sku: product.aico_sku,
+            price_label: product.aico_price_label,
+            compare_at_label: product.aico_compare_at_price_label,
+            discount_percent: product.aico_discount_percent,
+            on_sale: product.aico_is_on_sale?,
+            is_new: product.aico_is_new?,
+            discontinued: product.aico_is_discontinued?,
+            eager: forloop.index0 < 8,
+            show_reviews: false %}
         </li>
       {% endfor %}
     </ul>

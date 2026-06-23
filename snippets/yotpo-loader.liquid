@@ -1,0 +1,10 @@
+{% comment %}
+  Yotpo widgets loader. Emits the single per-store loader script that
+  hydrates every `.yotpo-widget-instance` on the page (the product-card
+  reviews stars). Gated on the reviews flag + a configured store App Key,
+  so it's inert until a merchant pastes their key in theme settings.
+  Include once per page that shows reviews (currently the brand page).
+{% endcomment %}
+{% if settings.aico_reviews_enabled and settings.aico_yotpo_app_key and settings.aico_yotpo_app_key != '' %}
+  <script async src="https://cdn-widgetsrepository.yotpo.com/v1/loader/{{ settings.aico_yotpo_app_key }}"></script>
+{% endif %}

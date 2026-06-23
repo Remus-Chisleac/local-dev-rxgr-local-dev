@@ -65,66 +65,31 @@
     </h2>
 
     {% if aico_brand_products.size > 0 %}
-      <ul class="aico-brand-product-grid" role="list">
+      <ul class="aico-products-grid aico-brand-product-grid" role="list">
         {% for product in aico_brand_products %}
-          <li class="aico-brand-product-card">
-            <a class="aico-brand-product-link" href="{{ product.url }}">
-              <div class="aico-brand-product-card-top">
-                {% if product.aico_is_on_sale? %}
-                  <span class="aico-brand-product-badge">{{ 'brand_page.badge_new' | t }}</span>
-                {% else %}
-                  <span class="aico-brand-product-badge aico-brand-product-badge-hidden" aria-hidden="true"></span>
-                {% endif %}
-                <span class="aico-brand-product-stars" aria-hidden="true">★★★★★</span>
-              </div>
-
-              <div class="aico-brand-product-image">
-                {% if product.featured_image %}
-                  <img src="{{ product.featured_image }}" alt="{{ product.title | escape }}" loading="lazy">
-                {% endif %}
-              </div>
-
-              <div class="aico-brand-product-meta">
-                <span class="aico-brand-product-title">{{ product.title }}</span>
-                <div class="aico-brand-product-price-row">
-                  {% if product.aico_price_label %}
-                    <span class="aico-brand-product-price">{{ product.aico_price_label }}</span>
-                    {% if product.aico_compare_at_price_label %}
-                      <span class="aico-brand-product-rrp">({{ 'product.rrp' | t }} {{ product.aico_compare_at_price_label }})</span>
-                    {% endif %}
-                  {% else %}
-                    <span class="aico-brand-product-price">{{ 'product.price_on_request' | t }}</span>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-
-            <a class="aico-brand-product-cart" href="{{ product.url }}" aria-label="{{ product.title | escape }}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="8" cy="21" r="1"></circle>
-                <circle cx="19" cy="21" r="1"></circle>
-                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-              </svg>
-            </a>
+          <li class="aico-products-grid-item" data-aico-product-id="{{ product.id }}">
+            {% render 'product-card',
+              url: product.url,
+              image: product.featured_image,
+              title: product.title,
+              sku: product.aico_sku,
+              price_label: product.aico_price_label,
+              compare_at_label: product.aico_compare_at_price_label,
+              discount_percent: product.aico_discount_percent,
+              on_sale: product.aico_is_on_sale?,
+              is_new: product.aico_is_new?,
+              discontinued: product.aico_is_discontinued?,
+              eager: forloop.index0 < 4,
+              show_reviews: true %}
           </li>
         {% endfor %}
       </ul>
     {% else %}
       {%- comment -%} No SKUs pinned for this brand yet — deterministic skeleton keeps the layout previewable. {%- endcomment -%}
-      <ul class="aico-brand-product-grid" role="list">
+      <ul class="aico-products-grid aico-brand-product-grid" role="list">
         {% for iteration in (1..4) %}
-          <li class="aico-brand-product-card">
-            <div class="aico-brand-product-card-top">
-              <span class="aico-brand-product-badge skeleton-pill" aria-hidden="true">{{ 'brand_page.badge_new' | t }}</span>
-              <div class="aico-brand-product-stars skeleton-stars" aria-hidden="true"></div>
-            </div>
-            <div class="aico-brand-product-image skeleton-block" aria-hidden="true"></div>
-            <div class="aico-brand-product-meta">
-              <span class="skeleton-line skeleton-line-title" aria-hidden="true"></span>
-              <div class="aico-brand-product-price-row">
-                <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
-              </div>
-            </div>
+          <li class="aico-products-grid-item">
+            {% render 'product-card', skeleton: true, show_reviews: true %}
           </li>
         {% endfor %}
       </ul>
@@ -152,4 +117,5 @@
     </section>
   {% endif %}
 
+  {% render 'yotpo-loader' %}
 </main>

@@ -1,0 +1,89 @@
+{% comment %}
+  Shared product card — the single card used on the products listing,
+  the brand page, and `page-block-product` content blocks. Renders the
+  `<article class="aico-product-card">` only; callers supply their own
+  list wrapper (`<li>` etc.).
+
+  The JS infinite-scroll builder (assets/products-page.js → buildCard)
+  mirrors this exact markup so server- and client-rendered cards are
+  identical — keep the two in sync when changing structure/classes.
+
+  Params (all optional):
+    url               product detail href
+    image             featured image URL
+    title             product title
+    sku               product SKU (drives the reviews widget id)
+    price_label       formatted current price (e.g. "CHF 149.00")
+    compare_at_label  formatted list/RRP price (struck) — price row 1
+    discount_percent  integer percent off (badge next to the price)
+    on_sale           true → "Sale" badge
+    is_new            true → "New" badge (only when not on_sale)
+    discontinued      true → "Discontinued" badge
+    eager             true → loading="eager" on the image (above-the-fold)
+    show_reviews      true → render the per-product reviews widget (needs sku)
+    skeleton          true → render placeholder shapes (no real data yet)
+{% endcomment %}
+
+<article class="aico-product-card{% if skeleton %} aico-product-card-skeleton{% endif %}">
+  {% if skeleton %}
+    <div class="aico-product-card-image-wrap">
+      <div class="aico-product-card-image-empty skeleton-block" aria-hidden="true"></div>
+    </div>
+    <div class="aico-product-card-body">
+      {% if show_reviews %}<span class="aico-product-card-reviews skeleton-stars" aria-hidden="true"></span>{% endif %}
+      <div class="aico-product-card-prices">
+        <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
+      </div>
+      <span class="skeleton-line skeleton-line-title" aria-hidden="true"></span>
+    </div>
+  {% else %}
+    <a href="{{ url }}" class="aico-product-card-link" aria-label="{{ title }}">
+      <div class="aico-product-card-image-wrap">
+        {% if image and image != '' %}
+          <img class="aico-product-card-image" src="{{ image }}" alt="" loading="{% if eager %}eager{% else %}lazy{% endif %}" decoding="async">
+        {% else %}
+          <div class="aico-product-card-image-empty" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10"></path>
+              <path d="m3 21 9-9 4 4 8-8"></path>
+              <line x1="2" x2="22" y1="2" y2="22"></line>
+            </svg>
+          </div>
+        {% endif %}
+
+        {% if on_sale %}
+          <span class="aico-product-card-badge aico-product-card-badge-sale">{{ 'products.sale' | t }}</span>
+        {% elsif is_new %}
+          <span class="aico-product-card-badge aico-product-card-badge-new">{{ 'products.new' | t }}</span>
+        {% endif %}
+        {% if discontinued %}
+          <span class="aico-product-card-badge aico-product-card-badge-discontinued">{{ 'products.discontinued' | t }}</span>
+        {% endif %}
+      </div>
+
+      <div class="aico-product-card-body">
+        {% if show_reviews and sku and sku != '' and settings.aico_reviews_enabled %}
+          <div class="aico-product-card-reviews">
+            <div class="yotpo-widget-instance" data-yotpo-instance-id="{{ settings.aico_yotpo_widget_instance_id }}" data-yotpo-product-id="{{ sku }}"></div>
+          </div>
+        {% endif %}
+
+        <div class="aico-product-card-prices">
+          {% if compare_at_label and compare_at_label != '' %}
+            <span class="aico-product-card-price-list">{{ compare_at_label }}</span>
+          {% endif %}
+          {% if price_label and price_label != '' %}
+            <span class="aico-product-card-price">
+              <span class="aico-product-card-price-current">{{ price_label }}</span>
+              {% if discount_percent %}<span class="aico-product-card-discount">−{{ discount_percent }}%</span>{% endif %}
+            </span>
+          {% else %}
+            <span class="aico-product-card-price aico-product-card-price-on-request">{{ 'product.price_on_request' | t }}</span>
+          {% endif %}
+        </div>
+
+        <h3 class="aico-product-card-title">{{ title }}</h3>
+      </div>
+    </a>
+  {% endif %}
+</article>

@@ -705,6 +705,28 @@
   var labelDiscontinued = configLabels.discontinued || '';
   var labelPriceOnRequest = configLabels.priceOnRequest || 'Price on request';
   var labelRrp = configLabels.rrp || 'RRP';
+  var labelNew = configLabels.new || 'New';
+  var newWithinDays = (typeof config.newWithinDays === 'number' && config.newWithinDays > 0) ? config.newWithinDays : 30;
+
+  // Mirror ProductCatalogLoader::isWithinNewWindow — a hit is "new" when its
+  // createdAt is within `newWithinDays` of now. Accepts the ISO string the
+  // index stores or a numeric unix timestamp; bad values are simply not new.
+  function isHitNew(hit) {
+    var raw = hit && hit.createdAt;
+    if (raw == null || raw === '') {
+      return false;
+    }
+    var ms;
+    if (typeof raw === 'number') {
+      ms = raw < 1e12 ? raw * 1000 : raw;
+    } else {
+      ms = Date.parse(String(raw));
+    }
+    if (!isFinite(ms)) {
+      return false;
+    }
+    return (Date.now() - ms) <= newWithinDays * 86400000;
+  }
 
   // Add an `aico-img-pending` class while an `<img>` is still being
   // fetched, then strip it on load — the card's existing opacity
@@ -788,6 +810,11 @@
       saleBadge.className = 'aico-product-card-badge aico-product-card-badge-sale';
       saleBadge.textContent = '−' + pct + '%';
       imgWrap.appendChild(saleBadge);
+    } else if (isHitNew(hit) && labelNew) {
+      var newBadge = document.createElement('span');
+      newBadge.className = 'aico-product-card-badge aico-product-card-badge-new';
+      newBadge.textContent = labelNew;
+      imgWrap.appendChild(newBadge);
     }
     if (isDiscontinued && labelDiscontinued) {
       var discBadge = document.createElement('span');
@@ -1122,6 +1149,97 @@
     });
   }
 
+  // Custom sort dropdown — a styled button + listbox that drives the hidden
+  // native <select> (kept as the source of truth so the change handler above
+  // stays the single sort entry point). Selecting an option writes the select
+  // value and dispatches `change`.
+  (function initSortMenu() {
+    var menu = rootEl.querySelector('[data-aico-sortmenu]');
+    if (!menu || !sortSelect) {
+      return;
+    }
+    var button = menu.querySelector('[data-aico-sortmenu-button]');
+    var label = menu.querySelector('[data-aico-sortmenu-label]');
+    var list = menu.querySelector('[data-aico-sortmenu-list]');
+    if (!button || !label || !list) {
+      return;
+    }
+    var options = Array.prototype.slice.call(list.querySelectorAll('[role="option"]'));
+    options.forEach(function (o) { o.tabIndex = -1; });
+
+    function syncLabel() {
+      var opt = sortSelect.options[sortSelect.selectedIndex];
+      label.textContent = opt ? opt.textContent.trim() : '';
+      options.forEach(function (o) {
+        if (o.getAttribute('data-value') === sortSelect.value) {
+          o.setAttribute('aria-selected', 'true');
+        } else {
+          o.removeAttribute('aria-selected');
+        }
+      });
+    }
+
+    function isOpen() { return !list.hidden; }
+
+    function onOutside(e) {
+      if (!menu.contains(e.target)) { close(false); }
+    }
+
+    function open() {
+      if (isOpen()) { return; }
+      list.hidden = false;
+      menu.classList.add('aico-sortmenu-open');
+      button.setAttribute('aria-expanded', 'true');
+      var current = list.querySelector('[aria-selected="true"]') || options[0];
+      if (current) { current.focus(); }
+      document.addEventListener('click', onOutside, true);
+    }
+
+    function close(focusButton) {
+      if (!isOpen()) { return; }
+      list.hidden = true;
+      menu.classList.remove('aico-sortmenu-open');
+      button.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', onOutside, true);
+      if (focusButton) { button.focus(); }
+    }
+
+    function choose(opt) {
+      var value = opt.getAttribute('data-value');
+      if (value && value !== sortSelect.value) {
+        sortSelect.value = value;
+        sortSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      syncLabel();
+      close(true);
+    }
+
+    button.addEventListener('click', function () {
+      if (isOpen()) { close(true); } else { open(); }
+    });
+    button.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    });
+    list.addEventListener('click', function (e) {
+      var opt = e.target.closest && e.target.closest('[role="option"]');
+      if (opt) { choose(opt); }
+    });
+    list.addEventListener('keydown', function (e) {
+      var idx = options.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); close(true); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); (options[idx + 1] || options[0]).focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); (options[idx - 1] || options[options.length - 1]).focus(); }
+      else if (e.key === 'Home') { e.preventDefault(); options[0].focus(); }
+      else if (e.key === 'End') { e.preventDefault(); options[options.length - 1].focus(); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (idx >= 0) { choose(options[idx]); } }
+    });
+
+    syncLabel();
+  })();
+
   // Facet column buttons + sale toggle (delegated). The native HTML
   // is a `<button>` for swatch / list items and a `<input checkbox>`
   // for the sale toggle — both carry data-aico-facet-checkbox.
@@ -1227,20 +1345,18 @@
     });
   }
 
-  // Mega-panel toggle — animated via CSS grid-template-rows on the
-  // wrapper. We just flip aria-expanded + the `hidden` attribute on
-  // the panel; CSS handles the slide.
+  // Mega-panel toggle — animated open/close via CSS grid-template-rows
+  // (0fr→1fr) on the panel. We drop the SSR `hidden` attribute on boot so
+  // the element stays in the DOM and the class transition can run; the
+  // collapsed state (clipped + visibility:hidden) keeps it inert when closed.
   if (panelToggle && panel) {
+    panel.hidden = false;
     panelToggle.addEventListener('click', function () {
-      var open = panel.dataset.aicoOpen !== 'true';
+      var open = !panel.classList.contains('aico-filterbar-panel-open');
+      panel.classList.toggle('aico-filterbar-panel-open', open);
       panel.dataset.aicoOpen = open ? 'true' : 'false';
-      panel.hidden = !open;
       panelToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (open) {
-        panelToggle.classList.add('aico-filterbar-toggle-open');
-      } else {
-        panelToggle.classList.remove('aico-filterbar-toggle-open');
-      }
+      panelToggle.classList.toggle('aico-filterbar-toggle-open', open);
     });
   }
 

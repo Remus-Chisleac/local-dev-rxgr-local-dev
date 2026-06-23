@@ -1306,6 +1306,11 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   background: #0f766e;
   color: #ffffff;
 }
+.aico-product-card-badge-new {
+  right: 0.5rem;
+  background: #15803d;
+  color: #ffffff;
+}
 .aico-product-card-badge-discontinued {
   left: 0.5rem;
   background: var(--aico-muted);
@@ -1382,6 +1387,28 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   overflow: hidden;
 }
 @media (min-width: 640px) { .aico-product-card-title { font-size: 0.9375rem; } }
+
+/* Reviews (stars) row — sits between the title and the price block.
+   Rendered only on the brand page (Yotpo widget) when reviews are enabled. */
+.aico-product-card-reviews {
+  min-height: 1rem;
+  margin: 0.125rem 0;
+}
+
+/* Skeleton state of the shared card (brand page, before real products load).
+   The generic skeleton-line/-stars utilities are tuned for dark tiles, so
+   re-tone them grey to read on the light card surface. */
+.aico-product-card-skeleton .aico-product-card-image-empty {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.aico-product-card-skeleton .skeleton-line {
+  background: rgba(161, 161, 170, 0.28);
+}
+.aico-product-card-skeleton .skeleton-stars {
+  background: rgba(161, 161, 170, 0.35);
+}
 
 /* ---------------------------------------------------------------- */
 /* Products listing — top filter bar + mega-panel                   */
@@ -1531,17 +1558,116 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 .aico-filterbar-sort-select:hover { background: var(--aico-muted); }
 .aico-filterbar-sort-select:focus-visible { box-shadow: 0 0 0 2px var(--color-accent); }
 
+/* Custom sort dropdown (replaces the native <select>) ------------- */
+
+.aico-sortmenu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.aico-sortmenu-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2.25rem;
+  padding: 0 0.5rem 0 1.625rem;
+  border: 0;
+  background: transparent;
+  color: var(--aico-fg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.aico-sortmenu-button:hover { background: var(--aico-muted); }
+.aico-sortmenu-button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-accent); }
+.aico-sortmenu-chevron {
+  color: var(--aico-muted-fg);
+  transition: transform 0.2s ease-out;
+}
+.aico-sortmenu-open .aico-sortmenu-chevron { transform: rotate(180deg); }
+
+.aico-sortmenu-list {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 30;
+  min-width: 11rem;
+  margin: 0;
+  padding: 0.375rem;
+  list-style: none;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.625rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  transform-origin: top right;
+  animation: aico-sortmenu-in 0.14s ease-out;
+}
+.aico-sortmenu-list[hidden] { display: none; }
+@keyframes aico-sortmenu-in {
+  from { opacity: 0; transform: translateY(-0.25rem) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.aico-sortmenu-option {
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+  white-space: nowrap;
+  outline: none;
+}
+.aico-sortmenu-option:hover,
+.aico-sortmenu-option:focus-visible { background: var(--aico-muted); }
+.aico-sortmenu-option[aria-selected="true"] {
+  color: #ea580c;
+  font-weight: 600;
+}
+.aico-sortmenu-option[aria-selected="true"]:hover { background: rgba(234, 88, 12, 0.1); }
+@media (prefers-reduced-motion: reduce) {
+  .aico-sortmenu-list { animation: none; }
+}
+
 /* Mega-panel ------------------------------------------------------ */
 
 .aico-filterbar-panel {
-  border-top: 1px solid var(--aico-border);
-  max-height: min(75vh, 52rem);
-  overflow-y: auto;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
 }
+/* No-JS / pre-boot: the SSR `hidden` attribute keeps it fully collapsed.
+   JS drops `hidden` on boot and toggles `-open` so the rows can animate. */
 .aico-filterbar-panel[hidden] { display: none; }
+.aico-filterbar-panel.aico-filterbar-panel-open { grid-template-rows: 1fr; }
+
+/* Clip wrapper — the grid child that the 0fr→1fr collapse clips. Held
+   visibility:hidden while closed (so its controls leave the tab order),
+   flipped visible immediately on open and only after the collapse on close. */
+.aico-filterbar-panel-clip {
+  min-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  border-top: 1px solid transparent;
+  transition: visibility 0s linear 0.28s, border-color 0.28s ease;
+}
+.aico-filterbar-panel-open .aico-filterbar-panel-clip {
+  visibility: visible;
+  border-top-color: var(--aico-border);
+  transition: visibility 0s linear 0s, border-color 0.28s ease;
+}
 
 .aico-filterbar-panel-inner {
+  max-height: min(75vh, 52rem);
+  overflow-y: auto;
   padding: 1.25rem 1rem 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-filterbar-panel { transition: none; }
+  .aico-filterbar-panel-clip { transition: none; }
 }
 @media (min-width: 640px) { .aico-filterbar-panel-inner { padding: 1.25rem 1.5rem 1.75rem; } }
 

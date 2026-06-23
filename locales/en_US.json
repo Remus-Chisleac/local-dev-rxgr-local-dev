@@ -74,6 +74,7 @@
     "title": "Products",
     "no_results": "No products match your selection.",
     "sale": "Sale",
+    "new": "New",
     "discontinued": "Discontinued",
     "search_label": "Search products",
     "search_placeholder": "Search products…",

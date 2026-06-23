@@ -57,5 +57,30 @@
         "info": "Comma-separated brand IDs (or names) the search drawer may return — e.g. \"3,6,7\" or \"kybun, Joya, kybunjoya\". Leave empty to allow every brand the shopper can access. Shoppers still only see brands they have access to."
       }
     ]
+  },
+  {
+    "name": "Product reviews",
+    "info": "Per-product star ratings on product cards, powered by Yotpo. Reviews render only on the brand page. Paste the Yotpo store App Key to activate the widget loader; the instance id identifies which Yotpo widget to show.",
+    "settings": [
+      {
+        "id": "aico_reviews_enabled",
+        "type": "checkbox",
+        "label": "Show product reviews (stars) on brand-page cards",
+        "default": false
+      },
+      {
+        "id": "aico_yotpo_app_key",
+        "type": "text",
+        "label": "Yotpo store App Key",
+        "default": "",
+        "info": "Found in your Yotpo account. Required to load the reviews widget — leave empty to keep reviews off."
+      },
+      {
+        "id": "aico_yotpo_widget_instance_id",
+        "type": "text",
+        "label": "Yotpo widget instance id",
+        "default": "1336299"
+      }
+    ]
   }
 ]
