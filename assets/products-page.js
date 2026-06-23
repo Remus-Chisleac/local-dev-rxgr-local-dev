@@ -752,6 +752,8 @@
     var title = pickName(hit, config.locale) || id;
     var image = pickImage(hit, config.locale);
     var pricing = extractPricing(hit, config.debtor);
+    if (!window.__dbg) { window.__dbg = []; }
+    if (window.__dbg.length < 3) { window.__dbg.push({ hitId: hit.id, hasLists: !!hit.priceLists, listKeys: hit.priceLists ? Object.keys(hit.priceLists) : null, hasShopPricing: !!config.shopPricing, sellingListId: config.shopPricing && config.shopPricing.sellingPriceListId, resolved: !!pricing }); }
     // No-price contract: a product with no resolvable price is hidden, not
     // shown as "price on request" (the legacy b2b-shop has no such state).
     if (!pricing) {
