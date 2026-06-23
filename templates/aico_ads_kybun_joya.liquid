@@ -1,0 +1,54 @@
+{% comment %}
+  Ads / kybun-joya marketing form (formName: kj-ads-form).
+  Two input pages + thank-you, rendered client-side by aico-ads-kybun-joya.js.
+  Ported from the legacy b2b-shop src/pages/ads/kybun-joya. Submits a multipart
+  POST to {{ routes.aico_forms_url }} with the de_CH text blob + any uploaded
+  logo as attachments[].
+{% endcomment %}
+
+<link rel="stylesheet" href="{{ 'eventtool.css' | asset_url }}">
+
+{%- comment -%} best-effort Hauptadresse from the first delivery address {%- endcomment -%}
+{%- assign et_addr = '' -%}
+{%- if customer.aico_delivery_addresses.size > 0 -%}
+  {%- assign a = customer.aico_delivery_addresses.first -%}
+  {%- capture et_addr -%}
+    {%- if a.company and a.company != '' -%}{{ a.company }}, {% endif -%}
+    {%- if a.first_name and a.first_name != '' -%}{{ a.first_name }} {% endif -%}
+    {%- if a.last_name and a.last_name != '' -%}{{ a.last_name }}, {% endif -%}
+    {%- if a.address1 and a.address1 != '' -%}{{ a.address1 }}, {% endif -%}
+    {%- if a.zip and a.zip != '' -%}{{ a.zip }} {% endif -%}
+    {%- if a.city and a.city != '' -%}{{ a.city }}{% endif -%}
+  {%- endcapture -%}
+  {%- assign et_addr = et_addr | strip -%}
+{%- endif -%}
+
+<main class="et-page" data-aico-eventtool="ads-kybun-joya">
+  <img class="et-header-img" src="{{ 'et-kj-ads-header-de_CH.jpg' | asset_url }}" alt="kybun Joya Werbeanzeige">
+
+  <div data-et-mount></div>
+
+  <script id="aico-eventtool-config" type="application/json">
+    {
+      "locale": {{ request.locale | json }},
+      "formName": "kj-ads-form",
+      "endpoint": {{ routes.aico_forms_url | json }},
+      "email": {{ customer.email | default: '' | json }},
+      "address": {{ et_addr | default: '' | json }},
+      "images": {
+        "q3": [
+          {{ 'et-kj-ads-question3-image1.jpg' | asset_url | json }},
+          {{ 'et-kj-ads-question3-image2.jpg' | asset_url | json }},
+          {{ 'et-kj-ads-question3-image3.jpg' | asset_url | json }}
+        ],
+        "q4": [
+          {{ 'et-kj-ads-question4-image1.jpg' | asset_url | json }},
+          {{ 'et-kj-ads-question4-image2.jpg' | asset_url | json }},
+          {{ 'et-kj-ads-question4-image3.jpg' | asset_url | json }}
+        ]
+      }
+    }
+  </script>
+
+  <script src="{{ 'aico-ads-kybun-joya.js' | asset_url }}" defer></script>
+</main>

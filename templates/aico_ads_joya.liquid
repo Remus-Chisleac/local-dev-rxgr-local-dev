@@ -1,0 +1,37 @@
+<link rel="stylesheet" href="{{ 'eventtool.css' | asset_url }}">
+
+{%- assign et_header = 'et-joya-ads-header-en.jpg' -%}
+{%- if request.locale contains 'de' -%}
+  {%- assign et_header = 'et-joya-ads-header-de_CH.jpg' -%}
+{%- endif -%}
+
+<main class="et-page" data-aico-eventtool="ads-joya">
+  <img class="et-header-img" src="{{ et_header | asset_url }}" alt="">
+  <div data-et-mount></div>
+</main>
+
+<script id="aico-eventtool-config" type="application/json">
+{
+  "locale": {{ request.locale | json }},
+  "formName": "joya-form",
+  "endpoint": {{ routes.aico_forms_url | json }},
+  "email": {{ customer.email | default: '' | json }},
+  "images": {
+    "question3": ["{{ 'et-joya-ads-question3-image1.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image2.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image3.jpg' | asset_url }}"],
+    "question5": ["{{ 'et-joya-ads-question5-image1.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image2.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image3.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image4.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image5.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image6.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image7.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image8.jpg' | asset_url }}"],
+    "question6": ["{{ 'et-joya-ads-question6-image1.jpg' | asset_url }}"]
+  },
+  "optionText": {
+    "question5": {
+      "de_CH": { "Text1": "a. FOREVERFOAM® mit Vorteilen", "Text2": "b. FOREVERFOAM® mit 2 Modellen", "Text3": "c. Medical Fersensporn mit FOREVERFOAM®", "Text4": "d. Medical Fersensporn mit 2 Modellen", "Text5": "e. Medical Knieschmerz mit FOREVERFOAM®", "Text6": "f. Medical Knieschmerz mit 2 Modellen", "Text7": "g. Medical Rückenschmerz mit FOREVERFOAM®", "Text8": "h. Medical Rückenschmerz mit 2 Modellen" },
+      "en": { "Text1": "a. FOREVERFOAM® with benefits", "Text2": "b. FOREVERFOAM® with 2 models", "Text3": "c. Medical heel spur with FOREVERFOAM®", "Text4": "d. Medical heel spur with 2 models", "Text5": "e. Medical knee pain with FOREVERFOAM®", "Text6": "f. Medical knee pain with 2 models", "Text7": "g. Medical back pain with FOREVERFOAM®", "Text8": "h. Medical back pain with 2 models" }
+    },
+    "question6": {
+      "de_CH": { "Text1": "Nein", "Text2": "Werbegeschenk: Trinkflasche", "Text3": "Werbegeschenk: Regenschirm", "Text4": "Werbegeschenk: Schuhpflege-Set" },
+      "en": { "Text1": "No", "Text2": "Promotional gift: Drinking bottle", "Text3": "Promotional gift: Umbrella", "Text4": "Promotional gift: Shoe care set" }
+    }
+  }
+}
+</script>
+
+<script src="{{ 'aico-ads-joya.js' | asset_url }}" defer></script>

@@ -1,0 +1,30 @@
+<link rel="stylesheet" href="{{ 'eventtool.css' | asset_url }}">
+
+{%- assign et_address = '' -%}
+{%- for address in customer.aico_delivery_addresses -%}
+  {%- if address.name == 'Hauptadresse' -%}
+    {%- assign et_address = address.country | append: ' ' | append: address.city | append: ' ' | append: address.address1 | append: ' ' | append: address.address2 | append: ' ' | append: address.zip -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<main class="et-page" data-aico-eventtool="events-kybun-joya">
+  <img class="et-header-img" src="{{ 'et-kj-events-header-de_CH.jpg' | asset_url }}" alt="">
+  <div data-et-mount></div>
+</main>
+
+<script id="aico-eventtool-config" type="application/json">
+{
+  "locale": {{ request.locale | json }},
+  "formName": "kj-events-form",
+  "endpoint": {{ routes.aico_forms_url | json }},
+  "email": {{ customer.email | default: '' | json }},
+  "address": {{ et_address | json }},
+  "images": {
+    "q3": ["{{ 'et-kj-events-question3-image1.jpg' | asset_url }}","{{ 'et-kj-events-question3-image2.jpg' | asset_url }}","{{ 'et-kj-events-question3-image3.jpg' | asset_url }}"],
+    "q4": ["{{ 'et-kj-events-question4-image1.jpg' | asset_url }}","{{ 'et-kj-events-question4-image2.jpg' | asset_url }}","{{ 'et-kj-events-question4-image3.jpg' | asset_url }}"],
+    "q10": ["{{ 'et-kj-events-question10-image1.jpg' | asset_url }}","{{ 'et-kj-events-question10-image2.jpg' | asset_url }}","{{ 'et-kj-events-question10-image3.jpg' | asset_url }}","{{ 'et-kj-events-question10-image4.jpg' | asset_url }}"]
+  }
+}
+</script>
+
+<script src="{{ 'aico-events-kybun-joya.js' | asset_url }}" defer></script>

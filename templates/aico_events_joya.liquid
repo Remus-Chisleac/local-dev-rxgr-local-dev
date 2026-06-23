@@ -1,0 +1,64 @@
+{% comment %}
+  Events / Joya multi-step form (formName: joya-formular).
+  Renders the shell; assets/aico-events-joya.js self-boots into [data-et-mount].
+  The submitted `description` is the RAW state object (with errors arrays kept)
+  whose shape matches the legacy b2b-shop events/joya FormContext.initialFormState.
+{% endcomment %}
+
+{{ 'eventtool.css' | asset_url | stylesheet_tag }}
+
+{%- assign is_de = false -%}
+{%- if request.locale contains 'de' -%}{%- assign is_de = true -%}{%- endif -%}
+
+{%- comment -%} best-effort Hauptadresse from the customer's delivery addresses {%- endcomment -%}
+{%- assign user_address = '' -%}
+{%- for addr in customer.aico_delivery_addresses -%}
+  {%- if addr.name == 'Hauptadresse' -%}
+    {%- assign user_address = addr.country | append: ' ' | append: addr.city | append: ' ' | append: addr.address1 | append: ' ' | append: addr.address2 | append: ' ' | append: addr.zip -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<main class="et-page" data-aico-eventtool="events-joya">
+  {%- if is_de -%}
+    <img class="et-header-img" src="{{ 'et-joya-events-header-de_CH.jpg' | asset_url }}" alt="Joya Erlebnistag">
+  {%- else -%}
+    <img class="et-header-img" src="{{ 'et-joya-events-header-en.jpg' | asset_url }}" alt="Joya Experience Day">
+  {%- endif -%}
+
+  <div data-et-mount></div>
+
+  <script id="aico-eventtool-config" type="application/json">
+    {
+      "locale": {% if is_de %}"de_CH"{% else %}"en"{% endif %},
+      "formName": "joya-formular",
+      "endpoint": {{ routes.aico_forms_url | json }},
+      "email": {{ customer.email | default: '' | json }},
+      "address": {{ user_address | strip | json }},
+      "images": {
+        "question3": {
+          "Image1": {{ 'et-joya-events-question3-image1.jpg' | asset_url | json }},
+          "Image2": {{ 'et-joya-events-question3-image2.jpg' | asset_url | json }},
+          "Image3": {{ 'et-joya-events-question3-image3.jpg' | asset_url | json }}
+        },
+        "question5": {
+          "Image1": {{ 'et-joya-events-question5-image1.jpg' | asset_url | json }},
+          "Image2": {{ 'et-joya-events-question5-image2.jpg' | asset_url | json }},
+          "Image3": {{ 'et-joya-events-question5-image3.jpg' | asset_url | json }}
+        },
+        "question8": {
+          "Image1": {{ 'et-joya-events-question8-image1.jpg' | asset_url | json }}
+        },
+        "question9": {
+          "Image1": {{ 'et-joya-events-question9-image1.jpg' | asset_url | json }}
+        },
+        "question10": {
+          "Image1": {{ 'et-joya-events-question10-image1.jpg' | asset_url | json }}
+        },
+        "question11": {
+          "Image1": {{ 'et-joya-events-question11-image1.jpg' | asset_url | json }}
+        }
+      }
+    }
+  </script>
+  <script src="{{ 'aico-events-joya.js' | asset_url }}" defer></script>
+</main>

@@ -1,0 +1,81 @@
+/* Events & Ads tool — shared styles for the 4 multi-step forms.
+   Class contract (all four form JS files render with these classes):
+     .et-page .et-header-img .et-form
+     .et-step (+ .is-active) .et-info
+     .et-question .et-qlabel .et-qnote
+     .et-options .et-chip (+ .is-selected)
+     .et-cards .et-card (+ .is-selected) .et-card-img .et-card-title
+     .et-field .et-field-label .et-input .et-inline-input .et-textarea
+     .et-models .et-model-row .et-error
+     .et-upload .et-upload-zone .et-upload-list .et-upload-item
+     .et-actions .et-btn .et-btn-primary .et-btn-back .et-progress
+     .et-thankyou */
+
+.et-page { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; color: var(--aico-fg); }
+.et-header-img { width: 100%; height: auto; border-radius: 0.75rem; margin-bottom: 1.5rem; object-fit: contain; }
+
+.et-step { display: none; }
+.et-step.is-active { display: block; animation: et-fade 0.2s ease-out; }
+@keyframes et-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .et-step.is-active { animation: none; } }
+
+.et-info { color: var(--aico-muted-fg); font-size: 0.9375rem; line-height: 1.5; margin-bottom: 1.5rem; }
+.et-info p { margin: 0 0 0.5rem; }
+.et-info a { color: #ea580c; }
+
+.et-question { margin-bottom: 2rem; }
+.et-qlabel { display: block; font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+.et-qnote { display: block; color: var(--aico-muted-fg); font-size: 0.8125rem; margin-bottom: 0.75rem; }
+
+/* text option chips (single or multi select) */
+.et-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.et-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border: 1px solid var(--aico-border); border-radius: 9999px; background: var(--aico-card); cursor: pointer; font-size: 0.875rem; user-select: none; transition: border-color 0.12s, background 0.12s; }
+.et-chip:hover { border-color: #ea580c; }
+.et-chip.is-selected { border-color: #ea580c; background: rgba(234, 88, 12, 0.1); color: #c2410c; font-weight: 600; }
+
+/* image cards (single or multi select) */
+.et-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.et-card { border: 2px solid var(--aico-border); border-radius: 0.75rem; overflow: hidden; cursor: pointer; background: var(--aico-card); transition: border-color 0.12s, box-shadow 0.12s; display: flex; flex-direction: column; }
+.et-card:hover { border-color: #ea580c; }
+.et-card.is-selected { border-color: #ea580c; box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.25); }
+.et-card-img { width: 100%; height: auto; display: block; background: rgba(244, 244, 245, 0.5); }
+.et-card-title { padding: 0.625rem 0.75rem; font-size: 0.875rem; line-height: 1.35; }
+
+/* fields / inputs */
+.et-field { margin-bottom: 1rem; }
+.et-field-label { display: block; font-size: 0.875rem; margin-bottom: 0.375rem; color: var(--aico-fg); }
+.et-input { width: 100%; max-width: 22rem; height: 2.5rem; padding: 0 0.75rem; border: 1px solid var(--aico-border); border-radius: 0.5rem; background: var(--aico-bg); color: var(--aico-fg); font-size: 0.9375rem; outline: none; transition: border-color 0.12s, box-shadow 0.12s; }
+.et-input:focus-visible { border-color: #ea580c; box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
+.et-inline-input { display: inline-block; width: 7rem; height: 2rem; padding: 0 0.5rem; border: 1px solid var(--aico-border); border-radius: 0.375rem; margin: 0 0.25rem; font-size: 0.875rem; }
+.et-textarea { width: 100%; min-height: 6rem; padding: 0.625rem 0.75rem; border: 1px solid var(--aico-border); border-radius: 0.5rem; background: var(--aico-bg); color: var(--aico-fg); font-size: 0.9375rem; outline: none; resize: vertical; }
+.et-textarea:focus-visible { border-color: #ea580c; box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
+
+/* model entry rows (q5/q6 text-entry list) */
+.et-models { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+.et-model-row { display: flex; gap: 0.5rem; align-items: center; }
+.et-model-row .et-input { max-width: none; flex: 1; }
+
+.et-error { display: block; color: #b91c1c; font-size: 0.8125rem; margin-top: 0.375rem; }
+
+/* file upload */
+.et-upload { margin-top: 0.5rem; }
+.et-upload-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 1.5rem; border: 2px dashed var(--aico-border); border-radius: 0.75rem; background: var(--aico-muted); cursor: pointer; text-align: center; color: var(--aico-muted-fg); transition: border-color 0.12s, background 0.12s; }
+.et-upload-zone.is-dragover, .et-upload-zone:hover { border-color: #ea580c; background: rgba(234, 88, 12, 0.06); }
+.et-upload-list { list-style: none; margin: 0.75rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.375rem; }
+.et-upload-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--aico-border); border-radius: 0.5rem; font-size: 0.875rem; background: var(--aico-card); }
+.et-upload-item button { border: 0; background: transparent; color: #b91c1c; cursor: pointer; font-size: 1.125rem; line-height: 1; }
+
+/* actions / nav */
+.et-actions { display: flex; align-items: center; gap: 1rem; margin-top: 2.5rem; }
+.et-btn { display: inline-flex; align-items: center; gap: 0.375rem; height: 2.75rem; padding: 0 1.5rem; border-radius: 9999px; border: 1.5px solid var(--aico-fg); background: transparent; color: var(--aico-fg); font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.et-btn:hover { background: var(--aico-fg); color: var(--aico-bg); }
+.et-btn-primary { margin-left: auto; border-color: #ea580c; color: #ea580c; }
+.et-btn-primary:hover { background: #ea580c; color: #ffffff; }
+.et-btn-back { padding: 0 1rem; }
+.et-btn[disabled] { opacity: 0.5; cursor: default; }
+.et-progress { color: var(--aico-muted-fg); font-variant-numeric: tabular-nums; font-size: 0.9375rem; }
+
+/* thank-you */
+.et-thankyou { text-align: center; padding: 3rem 1rem; }
+.et-thankyou h2 { font-size: 1.5rem; margin: 0 0 1rem; }
+.et-thankyou p { color: var(--aico-muted-fg); font-size: 1rem; line-height: 1.6; margin: 0 0 0.5rem; }
