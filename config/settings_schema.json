@@ -60,7 +60,7 @@
   },
   {
     "name": "Product reviews",
-    "info": "Per-product star ratings on product cards, powered by Yotpo. Reviews render only on the brand page. Paste the Yotpo store App Key to activate the widget loader; the instance id identifies which Yotpo widget to show.",
+    "info": "Per-product reviews powered by Yotpo: star ratings on the brand-page product cards and a full reviews widget on the product detail page. Paste the Yotpo store App Key to activate the widget loader; the instance id identifies which Yotpo card widget to show.",
     "settings": [
       {
         "id": "aico_reviews_enabled",
