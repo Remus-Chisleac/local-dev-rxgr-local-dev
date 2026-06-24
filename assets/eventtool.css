@@ -38,8 +38,8 @@
   background: var(--aico-bg);
   font-size: 1rem;
   font-weight: 600;
-  padding: 0.625rem 0;
-  margin-bottom: 0.25rem;
+  padding: 1rem 0 0.875rem;
+  margin-bottom: 0.75rem;
   border-bottom: 1px solid var(--aico-border);
 }
 .et-qnote { display: block; color: var(--aico-muted-fg); font-size: 0.8125rem; margin: 0.5rem 0 0.75rem; }
