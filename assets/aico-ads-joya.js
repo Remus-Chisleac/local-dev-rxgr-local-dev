@@ -218,6 +218,29 @@
   // ====================================================================
   // browser rendering (self-contained, no framework)
   // ====================================================================
+  var STORAGE_KEY = 'aico-eventtool-ads-joya';
+
+  // shallow-merge a saved plain object over a fresh initialState (so newly-added
+  // keys keep their defaults). uploadedFiles is always reset to [] (File objects
+  // cannot be serialised) and the persisted `errors` arrays are dropped.
+  function mergeSavedState(saved) {
+    var base = initialState();
+    if (!saved || typeof saved !== 'object') return base;
+    if (saved.firstPage && typeof saved.firstPage === 'object') {
+      ['question1', 'question2'].forEach(function (k) {
+        if (k in saved.firstPage) base.firstPage[k] = saved.firstPage[k];
+      });
+    }
+    if (saved.secondPage && typeof saved.secondPage === 'object') {
+      ['question1', 'question1Extra', 'question2', 'question2Extra', 'question3',
+       'question4', 'question5', 'question6', 'question7', 'question8'].forEach(function (k) {
+        if (k in saved.secondPage) base.secondPage[k] = saved.secondPage[k];
+      });
+    }
+    base.uploadedFiles = []; // never restored
+    return base;
+  }
+
   // Resolve the display language. These German-market kj forms DEFAULT to German;
   // only an explicit non-default English locale yields English. The storefront's
   // technical default 'en_US' (prefix-less, the shop default) must NOT count as English.
@@ -233,6 +256,23 @@
     return 'de_CH';
   }
 
+  function readSavedState() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      return raw ? mergeSavedState(JSON.parse(raw)) : null;
+    } catch (e) { return null; }
+  }
+
+  // current page from ?step=<n> (clamped to an input page; thank-you not restored).
+  function readStepFromUrl() {
+    try {
+      var v = new URLSearchParams(window.location.search).get('step');
+      var n = parseInt(v, 10);
+      if (!isFinite(n) || n < 1) return 1;
+      return n > 2 ? 2 : n;
+    } catch (e) { return 1; }
+  }
+
   function boot() {
     var root = document.querySelector('[data-aico-eventtool="ads-joya"]');
     if (!root) return;
@@ -240,7 +280,11 @@
     var cfg = {};
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
     var dispLang = resolveDispLang(cfg.locale);
-    new AdsJoyaForm(root, cfg, dispLang).render();
+    var form = new AdsJoyaForm(root, cfg, dispLang);
+    var saved = readSavedState();
+    if (saved) form.state = saved;
+    form.page = readStepFromUrl();
+    form.render();
   }
 
   function el(tag, cls, text) {
@@ -269,7 +313,49 @@
     this.q6Text = qj.question6 || {};   // 4 model texts
   }
 
+  // persist the in-progress answers (excluding uploadedFiles + errors) to localStorage.
+  AdsJoyaForm.prototype.persist = function () {
+    try {
+      var s = this.state, fp = s.firstPage, sp = s.secondPage;
+      var snapshot = {
+        firstPage: { question1: fp.question1, question2: fp.question2 },
+        secondPage: {
+          question1: sp.question1, question1Extra: sp.question1Extra,
+          question2: sp.question2, question2Extra: sp.question2Extra,
+          question3: sp.question3, question4: sp.question4,
+          question5: sp.question5, question6: sp.question6,
+          question7: sp.question7, question8: sp.question8
+        }
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (e) { /* storage unavailable / quota — ignore */ }
+  };
+
+  AdsJoyaForm.prototype.clearPersisted = function () {
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+  };
+
+  // derive the conditional-reveal flags from current state so a restored form
+  // re-shows the right "extra" inputs.
+  AdsJoyaForm.prototype.syncRevealFlags = function () {
+    var sp = this.state.secondPage;
+    this.showFirstQuestionInput = (sp.question1 === this.DE.secondPage.firstQuestion.option3);
+    this.showSecondQuestionInput = (sp.question2 || []).indexOf(this.DE.secondPage.secondQuestion.option4) !== -1;
+  };
+
+  // navigate between input pages; mirror the page in ?step=<n>.
+  AdsJoyaForm.prototype.goToPage = function (n) {
+    this.page = n;
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('step', String(n));
+      window.history.replaceState(null, '', url.toString());
+    } catch (e) { /* ignore */ }
+    this.render();
+  };
+
   AdsJoyaForm.prototype.render = function () {
+    this.syncRevealFlags();
     this.mount.innerHTML = '';
     if (this.page === 1) this.renderFirstPage();
     else if (this.page === 2) this.renderSecondPage();
@@ -302,7 +388,7 @@
     var dateField = el('div', 'et-field');
     var dateInput = el('input', 'et-input'); dateInput.type = 'date';
     dateInput.value = st.firstPage.question1;
-    dateInput.addEventListener('change', function () { st.firstPage.question1 = this.value; self.clearErr(q1); });
+    dateInput.addEventListener('change', function () { st.firstPage.question1 = this.value; self.persist(); self.clearErr(q1); });
     dateField.appendChild(dateInput);
     q1.appendChild(dateField);
     step.appendChild(q1);
@@ -319,8 +405,8 @@
       yes.classList.toggle('is-selected', st.firstPage.question2 === Q2_YES);
       no.classList.toggle('is-selected', st.firstPage.question2 === Q2_NO);
     }
-    yes.addEventListener('click', function () { st.firstPage.question2 = Q2_YES; syncRadio(); self.clearErr(q2); self.clearErr(upWrap); });
-    no.addEventListener('click', function () { st.firstPage.question2 = Q2_NO; syncRadio(); self.clearErr(q2); });
+    yes.addEventListener('click', function () { st.firstPage.question2 = Q2_YES; self.persist(); syncRadio(); self.clearErr(q2); self.clearErr(upWrap); });
+    no.addEventListener('click', function () { st.firstPage.question2 = Q2_NO; self.persist(); syncRadio(); self.clearErr(q2); });
     syncRadio();
     opts.appendChild(yes); opts.appendChild(no);
     q2.appendChild(opts);
@@ -385,7 +471,7 @@
       else if (res.fiveDays) { self.showErr(q1, t.minimumDaysErrorMessage); ok = false; }
       if (fe.question2) { self.showErr(q2, t.errorMessage); ok = false; }
       if (fe.uploadFiles) { self.showErr(upWrap, t.errorMessage); ok = false; }
-      if (ok) { self.page = 2; self.render(); }
+      if (ok) { self.goToPage(2); }
     });
     actions.appendChild(nextBtn);
     step.appendChild(actions);
@@ -415,7 +501,7 @@
     var extraField = el('div', 'et-field');
     extraField.appendChild(el('label', 'et-field-label', t.secondPage.textChangeWish));
     var extraInput = el('input', 'et-input'); extraInput.type = 'text'; extraInput.value = sp.question1Extra || '';
-    extraInput.addEventListener('input', function () { sp.question1Extra = this.value; self.clearErr(extraField); });
+    extraInput.addEventListener('input', function () { sp.question1Extra = this.value; self.persist(); self.clearErr(extraField); });
     extraField.appendChild(extraInput);
     function syncExtra() { extraField.hidden = !self.showFirstQuestionInput; if (extraField.hidden) self.clearErr(extraField); }
     prChoices.forEach(function (opt, idx) {
@@ -429,6 +515,7 @@
         Array.prototype.forEach.call(prCards.children, function (c, ci) {
           c.classList.toggle('is-selected', sp.question1 === prChoices[ci].value);
         });
+        self.persist();
         syncExtra();
         self.clearErr(qPR);
       });
@@ -462,7 +549,7 @@
     var m2Field = el('div', 'et-field');
     m2Field.appendChild(el('label', 'et-field-label', t.secondPage.shoeModelName));
     var m2Input = el('input', 'et-input'); m2Input.type = 'text'; m2Input.value = sp.question2Extra || '';
-    m2Input.addEventListener('input', function () { sp.question2Extra = this.value; self.clearErr(m2Field); });
+    m2Input.addEventListener('input', function () { sp.question2Extra = this.value; self.persist(); self.clearErr(m2Field); });
     m2Field.appendChild(m2Input);
     function syncM2() { m2Field.hidden = !self.showSecondQuestionInput; if (m2Field.hidden) self.clearErr(m2Field); }
     qModels.appendChild(m2Field);
@@ -482,6 +569,7 @@
         card.classList.add('is-selected');
         if (isOther) { self.showSecondQuestionInput = true; syncM2(); }
       }
+      self.persist();
       syncModelCount();
       self.clearErr(qModels);
     }
@@ -530,6 +618,7 @@
           Array.prototype.forEach.call(designCards.children, function (c, ci) {
             c.classList.toggle('is-selected', sp.question3 === designVals[ci]);
           });
+          self.persist();
           self.clearErr(qDesign);
         });
         designCards.appendChild(card);
@@ -564,6 +653,7 @@
           var i = sp.question5.indexOf(value);
           if (i !== -1) { sp.question5.splice(i, 1); card.classList.remove('is-selected'); }
           else if (sp.question5.length < MAX_MODELS) { sp.question5.push(value); card.classList.add('is-selected'); }
+          self.persist();
           self.clearErr(qSeason);
         });
         seasonCards.appendChild(card);
@@ -580,13 +670,13 @@
     var wField = el('div', 'et-field');
     wField.appendChild(el('label', 'et-field-label', t.secondPage.widthInMM));
     var wInput = el('input', 'et-input'); wInput.type = 'number'; wInput.value = sp.question6 || '';
-    wInput.addEventListener('input', function () { sp.question6 = this.value; self.clearErr(wField); });
+    wInput.addEventListener('input', function () { sp.question6 = this.value; self.persist(); self.clearErr(wField); });
     wField.appendChild(wInput);
     qFormat.appendChild(wField);
     var hField = el('div', 'et-field');
     hField.appendChild(el('label', 'et-field-label', t.secondPage.heightInMM));
     var hInput = el('input', 'et-input'); hInput.type = 'number'; hInput.value = sp.question7 || '';
-    hInput.addEventListener('input', function () { sp.question7 = this.value; self.clearErr(hField); });
+    hInput.addEventListener('input', function () { sp.question7 = this.value; self.persist(); self.clearErr(hField); });
     hField.appendChild(hInput);
     qFormat.appendChild(hField);
     step.appendChild(qFormat);
@@ -597,14 +687,14 @@
     qCl.appendChild(el('strong', null, t.secondPage.commentArea));
     qComment.appendChild(qCl);
     var ta = el('textarea', 'et-textarea'); ta.rows = 4; ta.value = sp.question8 || '';
-    ta.addEventListener('input', function () { sp.question8 = this.value; });
+    ta.addEventListener('input', function () { sp.question8 = this.value; self.persist(); });
     qComment.appendChild(ta);
     step.appendChild(qComment);
 
     // actions
     var actions = el('div', 'et-actions');
     var backBtn = el('button', 'et-btn et-btn-back', t.back); backBtn.type = 'button';
-    backBtn.addEventListener('click', function () { self.page = 1; self.render(); });
+    backBtn.addEventListener('click', function () { self.goToPage(1); });
     actions.appendChild(backBtn);
     actions.appendChild(el('span', 'et-progress', '2 / 2'));
     var submitBtn = el('button', 'et-btn et-btn-primary', t.secondPage.submit); submitBtn.type = 'button';
@@ -679,20 +769,43 @@
       if (fileObj && fileObj.file) form.append('attachments[' + index + ']', fileObj.file, fileObj.name);
     });
     form.append('data', JSON.stringify({ data: { formName: 'joya-form', description: buildDescription(this.state) } }));
-    if (btn) btn.disabled = true;
+
+    // submit spinner: prepend an .et-spinner before the label; .is-loading + disabled.
+    var spinner = null;
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+      spinner = el('span', 'et-spinner');
+      btn.insertBefore(spinner, btn.firstChild);
+    }
+    function restoreBtn() {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
+    }
+
     fetch(this.cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
       .then(function (res) {
         if (!res.ok) throw new Error('Form submit failed: ' + res.status);
+        restoreBtn();
+        self.clearPersisted();           // drop saved draft on successful submit
         self.state = initialState();
         self.showFirstQuestionInput = false;
         self.showSecondQuestionInput = false;
+        // reset ?step to 1 so a reload after success lands on a clean page 1.
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.set('step', '1');
+          window.history.replaceState(null, '', u.toString());
+        } catch (e) { /* ignore */ }
         self.page = 3;
         self.render();
       })
       .catch(function (err) {
         // eslint-disable-next-line no-console
         console.error(err);
-        if (btn) btn.disabled = false;
+        restoreBtn();
       });
   };
 

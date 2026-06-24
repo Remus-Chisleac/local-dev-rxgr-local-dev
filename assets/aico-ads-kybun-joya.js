@@ -195,13 +195,65 @@
     var T = de ? STR.de_CH : STR.en;        // display strings (labels + error messages)
     var DE = STR.de_CH;                       // canonical option values + blob (ALWAYS de_CH)
 
+    var FORM_KEY = 'ads-kybun-joya';
+    var STORAGE_KEY = 'aico-eventtool-' + FORM_KEY;
+    var TOTAL = 2;
+
+    // --- localStorage persistence (excludes uploadedFiles: File objects can't serialize) ---
+    function persist() {
+      if (page > TOTAL) return;   // don't re-write after a successful submit (thank-you step)
+      try {
+        var snap = JSON.parse(JSON.stringify(state));   // deep clone via JSON (drops nothing here)
+        if (snap.firstPage) snap.firstPage.uploadedFiles = [];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+      } catch (e) { /* storage unavailable / quota — ignore */ }
+    }
+    function clearPersisted() { try { localStorage.removeItem(STORAGE_KEY); } catch (e) {} }
+    function loadPersisted() {
+      try { var raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+    }
+
     var state = initialState();
+    var saved = loadPersisted();
+    if (saved && typeof saved === 'object') {
+      // shallow-merge each known slice over the fresh initial state
+      if (saved.userInfo) state.userInfo = { email: saved.userInfo.email || '', address: saved.userInfo.address || '' };
+      if (saved.firstPage) {
+        state.firstPage.question1 = saved.firstPage.question1 || '';
+        state.firstPage.question2 = saved.firstPage.question2 || '';
+        // uploadedFiles deliberately stays empty (not serialized)
+      }
+      if (saved.secondPage) {
+        var ss = saved.secondPage, ds = state.secondPage;
+        ds.question3 = ss.question3 || ''; ds.question4 = ss.question4 || '';
+        ds.question5 = Array.isArray(ss.question5) ? ss.question5 : []; ds.question5Extra = ss.question5Extra || '';
+        ds.question6 = Array.isArray(ss.question6) ? ss.question6 : []; ds.question6Extra = ss.question6Extra || '';
+        ds.question7 = ss.question7 || ''; ds.question7Option3Input = ss.question7Option3Input || ''; ds.question7Extra = ss.question7Extra || '';
+        if (ss.question8) ds.question8 = { inputWidth: ss.question8.inputWidth || '', inputHeight: ss.question8.inputHeight || '' };
+      }
+    }
+    // cfg always wins for the user identity fields
     state.userInfo.email = cfg.email || '';
     state.userInfo.address = cfg.address || '';
 
-    var page = 1;          // 1, 2, or 3 (thank-you)
     var attempted = { 1: false, 2: false };
-    var TOTAL = 2;
+
+    // --- current page persisted in the URL (?step=<n>) ---
+    function readStepParam() {
+      var n;
+      try { n = parseInt(new URLSearchParams(window.location.search).get('step'), 10); } catch (e) { n = NaN; }
+      if (isNaN(n) || n < 1 || n > TOTAL) return 1;   // clamp to input pages (thank-you isn't bookmarkable)
+      return n;
+    }
+    function writeStepParam(n) {
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.set('step', String(n));
+        window.history.replaceState(window.history.state, '', u.toString());
+      } catch (e) { /* ignore */ }
+    }
+
+    var page = readStepParam();   // 1, 2, or 3 (thank-you)
 
     function el(tag, cls, txt) { var n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; }
 
@@ -450,11 +502,14 @@
       back.addEventListener('click', function () { navigate(1); });
       actions.appendChild(back);
       actions.appendChild(el('span', 'et-progress', page + ' / ' + TOTAL));
-      var submit = el('button', 'et-btn et-btn-primary', T.secondPage.submit); submit.type = 'button';
+      var submit = el('button', 'et-btn et-btn-primary'); submit.type = 'button';
+      var spinner = el('span', 'et-spinner'); spinner.hidden = true;
+      submit.appendChild(spinner);
+      submit.appendChild(document.createTextNode(T.secondPage.submit));
       submit.addEventListener('click', function () {
         attempted[2] = true;
         if (Object.keys(validatePage(2, state, DE, T)).length) { refreshErrors2(step); return; }
-        doSubmit(submit);
+        doSubmit(submit, spinner);
       });
       actions.appendChild(submit);
       step.appendChild(actions);
@@ -570,6 +625,7 @@
     // ================= navigation / submit =================
     function navigate(to) {
       page = to;
+      if (page >= 1 && page <= TOTAL) writeStepParam(page);   // only input pages are bookmarkable
       mount.innerHTML = '';
       if (page === 1) mount.appendChild(buildPage1());
       else if (page === 2) mount.appendChild(buildPage2());
@@ -577,8 +633,14 @@
       window.scrollTo(0, 0);
     }
 
-    function doSubmit(btn) {
-      if (btn) btn.disabled = true;
+    function doSubmit(btn, spinner) {
+      function setLoading(on) {
+        if (!btn) return;
+        btn.disabled = on;
+        btn.classList.toggle('is-loading', on);
+        if (spinner) spinner.hidden = !on;
+      }
+      setLoading(true);
       var form = new FormData();
       state.firstPage.uploadedFiles.forEach(function (fileObj, i) {
         if (fileObj && fileObj.file) form.append('attachments[' + i + ']', fileObj.file, fileObj.name || fileObj.file.name);
@@ -587,13 +649,15 @@
       fetch(cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('Submit failed: ' + res.status);
+          setLoading(false);
+          clearPersisted();
           state = initialState();
           state.userInfo.email = cfg.email || '';
           state.userInfo.address = cfg.address || '';
           attempted = { 1: false, 2: false };
           navigate(3);
         })
-        .catch(function (err) { if (btn) btn.disabled = false; console.error(err); });
+        .catch(function (err) { setLoading(false); console.error(err); });
     }
 
     function renderThankYou() {
@@ -604,7 +668,14 @@
       mount.appendChild(ty);
     }
 
-    navigate(1);
+    // Persist on every in-page state change. All field handlers mutate `state`
+    // synchronously on input/change/click, so a delegated bubbling listener fired
+    // after them captures the new state without instrumenting each call site.
+    mount.addEventListener('input', persist);
+    mount.addEventListener('change', persist);
+    mount.addEventListener('click', persist);
+
+    navigate(page);   // boot on the URL's ?step (clamped), or default page 1
   }
 
   return { STR: STR, initialState: initialState, validatePage: validatePage, buildBlob: buildBlob, fiveWorkingDaysAway: fiveWorkingDaysAway, boot: boot };

@@ -243,9 +243,77 @@
     // config-driven shoe cap (b2b secondPage cap was 2); fall back to MAX_SHOES
     var maxShoes = (cfg.maxSelectable && cfg.maxSelectable.shoes) || MAX_SHOES;
 
-    var state = initialState();
-    // UI-only flags (not part of the submitted description)
-    var ui = { page: 1, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
+    var STORAGE_KEY = 'aico-eventtool-events-joya';
+    var TOTAL_PAGES = 4;
+
+    // ----- in-progress persistence (localStorage) -----
+    // The persisted blob is the full state MINUS uploadedFiles (File objects
+    // can't serialize). It never alters the SUBMITTED description shape: on
+    // submit we rebuild uploadedFiles + userEmail/userAddress fresh.
+    function persist() {
+      try {
+        var snap = JSON.parse(JSON.stringify(state));
+        snap.uploadedFiles = []; // File objects are not serialisable
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+      } catch (e) { /* storage unavailable / quota — ignore */ }
+    }
+    function clearPersisted() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+    }
+    // Merge a saved snapshot over a fresh initialState so any missing/renamed
+    // keys fall back to defaults and the exact shape is preserved.
+    function restoreState() {
+      var base = initialState();
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
+      if (saved && typeof saved === 'object') {
+        ['firstPage', 'secondPage', 'thirdPage'].forEach(function (pg) {
+          if (saved[pg] && typeof saved[pg] === 'object') {
+            Object.keys(base[pg]).forEach(function (k) {
+              if (Object.prototype.hasOwnProperty.call(saved[pg], k)) base[pg][k] = saved[pg][k];
+            });
+          }
+        });
+      }
+      base.uploadedFiles = [];           // never restore files
+      base.userEmail = cfg.email || '';  // always (re)derive from cfg
+      base.userAddress = cfg.address || '';
+      return base;
+    }
+
+    // ----- current page <-> URL ?step -----
+    function stepFromUrl() {
+      var n = 1;
+      try {
+        var p = new URLSearchParams(window.location.search).get('step');
+        n = parseInt(p, 10);
+      } catch (e) { n = 1; }
+      if (!n || n < 1) n = 1;
+      if (n > TOTAL_PAGES) n = TOTAL_PAGES;
+      return n;
+    }
+    function setStepInUrl(n) {
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('step', String(n));
+        window.history.replaceState(null, '', url.toString());
+      } catch (e) { /* ignore */ }
+    }
+    // central page-navigation helper: updates state, URL, scroll + rebuilds
+    function goToPage(n) {
+      ui.page = n;
+      setStepInUrl(n);
+      window.scrollTo(0, 0);
+      render();
+    }
+
+    var state = restoreState();
+    // UI-only flags (not part of the submitted description). Reveal flags are
+    // re-derived from the restored selections so conditional inputs reappear.
+    var ui = { page: stepFromUrl(), showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
+    ui.showQ3Extra = state.secondPage.question1 === DE.secondPage.firstQuestion.option3;
+    ui.showShoeExtra2 = state.secondPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
+    ui.showShoeExtra3 = state.thirdPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
 
     function imgUrl(q, key) { return (images[q] && images[q][key]) || ''; }
 
@@ -331,7 +399,7 @@
       dF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.dateQuestion }));
       dF.appendChild(el('span', { class: 'et-qnote', text: MSG.firstPage.dateNote }));
       var dInput = el('input', { class: 'et-input', type: 'date', value: state.firstPage.question1 });
-      dInput.addEventListener('input', function () { state.firstPage.question1 = dInput.value; clearErr(state.firstPage.errors, 'question1'); setError(q1, false); });
+      dInput.addEventListener('input', function () { state.firstPage.question1 = dInput.value; clearErr(state.firstPage.errors, 'question1'); setError(q1, false); persist(); });
       dF.appendChild(dInput);
       q1.appendChild(dF);
       wrap.appendChild(q1);
@@ -341,7 +409,7 @@
       var sF = el('div', { class: 'et-field' });
       sF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.startTimeQuestion }));
       var sInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question2 });
-      sInput.addEventListener('input', function () { state.firstPage.question2 = sInput.value; clearErr(state.firstPage.errors, 'question2'); setError(q2, false); });
+      sInput.addEventListener('input', function () { state.firstPage.question2 = sInput.value; clearErr(state.firstPage.errors, 'question2'); setError(q2, false); persist(); });
       sF.appendChild(sInput);
       q2.appendChild(sF);
       wrap.appendChild(q2);
@@ -351,7 +419,7 @@
       var eF = el('div', { class: 'et-field' });
       eF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.endTimeQuestion }));
       var eInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question3 });
-      eInput.addEventListener('input', function () { state.firstPage.question3 = eInput.value; clearErr(state.firstPage.errors, 'question3'); setError(q3, false); });
+      eInput.addEventListener('input', function () { state.firstPage.question3 = eInput.value; clearErr(state.firstPage.errors, 'question3'); setError(q3, false); persist(); });
       eF.appendChild(eInput);
       q3.appendChild(eF);
       wrap.appendChild(q3);
@@ -368,6 +436,7 @@
           clearErr(state.firstPage.errors, 'question4');
           singleSelect(q4opts, chip);
           setError(q4, false);
+          persist();
         });
         q4opts.appendChild(chip);
       });
@@ -442,7 +511,7 @@
         if (invalid) ok = false;
       });
       if (!ok) return;
-      ui.page = 2; window.scrollTo(0, 0); render();
+      goToPage(2);
     }
 
     // ===================== STEP 2 =====================
@@ -467,7 +536,7 @@
             arr.push(otherCanonical); cd.classList.add('is-selected');
             setShowExtra(true); extraField.hidden = false;
           }
-          onChange();
+          onChange(); persist();
         });
         cardsEl.appendChild(cd);
       }
@@ -486,7 +555,7 @@
             var i = arr.indexOf(name);
             if (i !== -1) { arr.splice(i, 1); cd.classList.remove('is-selected'); }
             else if (arr.length < cap) { arr.push(name); cd.classList.add('is-selected'); }
-            onChange();
+            onChange(); persist();
           });
           cardsEl.appendChild(cd);
         });
@@ -510,7 +579,7 @@
       var q3ExtraField = el('div', { class: 'et-field' });
       q3ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.secondPage.sendDetailsText }));
       var q3ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question1Extra });
-      q3ExtraIn.addEventListener('input', function () { state.secondPage.question1Extra = q3ExtraIn.value; clearErr(state.secondPage.errors, 'question1Extra'); setError(q3, false); });
+      q3ExtraIn.addEventListener('input', function () { state.secondPage.question1Extra = q3ExtraIn.value; clearErr(state.secondPage.errors, 'question1Extra'); setError(q3, false); persist(); });
       q3ExtraField.appendChild(q3ExtraIn);
       q3ExtraField.hidden = !ui.showQ3Extra;
 
@@ -528,6 +597,7 @@
           }
           clearErr(state.secondPage.errors, 'question1');
           setError(q3, false);
+          persist();
         });
         cards3.appendChild(cd);
       });
@@ -548,7 +618,7 @@
       var q4ExtraField = el('div', { class: 'et-field' });
       q4ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.secondPage.shoeModelName }));
       var q4ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question2Extra });
-      q4ExtraIn.addEventListener('input', function () { state.secondPage.question2Extra = q4ExtraIn.value; clearErr(state.secondPage.errors, 'question2Extra'); setError(q4, false); });
+      q4ExtraIn.addEventListener('input', function () { state.secondPage.question2Extra = q4ExtraIn.value; clearErr(state.secondPage.errors, 'question2Extra'); setError(q4, false); persist(); });
       q4ExtraField.appendChild(q4ExtraIn);
       q4ExtraField.hidden = !ui.showShoeExtra2;
 
@@ -569,7 +639,7 @@
 
       var actions = el('div', { class: 'et-actions' });
       var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
-      backBtn.addEventListener('click', function () { ui.page = 1; window.scrollTo(0, 0); render(); });
+      backBtn.addEventListener('click', function () { goToPage(1); });
       actions.appendChild(backBtn);
       actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
       var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.next });
@@ -597,7 +667,7 @@
       if (q2Bad || q2eBad) ok = false;
 
       if (!ok) return;
-      ui.page = 3; window.scrollTo(0, 0); render();
+      goToPage(3);
     }
 
     // ===================== STEP 3 =====================
@@ -618,6 +688,7 @@
           clearErr(state.thirdPage.errors, field);
           singleSelect(opts, chip);
           setError(wrap, false);
+          persist();
         });
         opts.appendChild(chip);
       });
@@ -649,7 +720,7 @@
       qRef.question2Extra = q6ExtraField;
       q6ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.suggestAnotherModel }));
       var q6ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.thirdPage.question2Extra });
-      q6ExtraIn.addEventListener('input', function () { state.thirdPage.question2Extra = q6ExtraIn.value; clearErr(state.thirdPage.errors, 'question2Extra'); setError(q6ExtraField, false); });
+      q6ExtraIn.addEventListener('input', function () { state.thirdPage.question2Extra = q6ExtraIn.value; clearErr(state.thirdPage.errors, 'question2Extra'); setError(q6ExtraField, false); persist(); });
       q6ExtraField.appendChild(q6ExtraIn);
       q6ExtraField.hidden = !ui.showShoeExtra3;
 
@@ -670,6 +741,7 @@
           counter6.textContent = state.thirdPage.question2.length + '/' + MAX_SHOES;
           clearErr(state.thirdPage.errors, 'question2');
           setError(q6, false);
+          persist();
         });
         cards6.appendChild(cd);
       });
@@ -685,7 +757,7 @@
       var wF = el('div', { class: 'et-field' });
       wF.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.widthInMM }));
       var wIn = el('input', { class: 'et-input', type: 'number', value: state.thirdPage.question3 });
-      wIn.addEventListener('input', function () { state.thirdPage.question3 = wIn.value; clearErr(state.thirdPage.errors, 'question3'); setError(q7w, false); });
+      wIn.addEventListener('input', function () { state.thirdPage.question3 = wIn.value; clearErr(state.thirdPage.errors, 'question3'); setError(q7w, false); persist(); });
       wF.appendChild(wIn);
       q7w.appendChild(wF);
       wrap.appendChild(q7w);
@@ -695,7 +767,7 @@
       var hF = el('div', { class: 'et-field' });
       hF.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.heightInMM }));
       var hIn = el('input', { class: 'et-input', type: 'number', value: state.thirdPage.question4 });
-      hIn.addEventListener('input', function () { state.thirdPage.question4 = hIn.value; clearErr(state.thirdPage.errors, 'question4'); setError(q7h, false); });
+      hIn.addEventListener('input', function () { state.thirdPage.question4 = hIn.value; clearErr(state.thirdPage.errors, 'question4'); setError(q7h, false); persist(); });
       hF.appendChild(hIn);
       q7h.appendChild(hF);
       wrap.appendChild(q7h);
@@ -713,23 +785,23 @@
       q12.appendChild(el('span', { class: 'et-qlabel', html: '12. <b>' + MSG.thirdPage.commentSection + '</b>' }));
       var ta = el('textarea', { class: 'et-textarea', rows: '4' });
       ta.value = state.thirdPage.question10;
-      ta.addEventListener('input', function () { state.thirdPage.question10 = ta.value; });
+      ta.addEventListener('input', function () { state.thirdPage.question10 = ta.value; persist(); });
       q12.appendChild(ta);
       wrap.appendChild(q12);
 
       var actions = el('div', { class: 'et-actions' });
       var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
-      backBtn.addEventListener('click', function () { ui.page = 2; window.scrollTo(0, 0); render(); });
+      backBtn.addEventListener('click', function () { goToPage(2); });
       actions.appendChild(backBtn);
       actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
       var submitBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.thirdPage.submit });
-      submitBtn.addEventListener('click', function () { onSubmit(qRef); });
+      submitBtn.addEventListener('click', function () { onSubmit(qRef, submitBtn); });
       actions.appendChild(submitBtn);
       wrap.appendChild(actions);
       return wrap;
     }
 
-    function onSubmit(qRef) {
+    function onSubmit(qRef, btn) {
       var errs = validateThirdPage(state, ui.showShoeExtra3);
       state.thirdPage.errors = errs;
       // update error nodes IN PLACE (don't rebuild the step)
@@ -741,24 +813,44 @@
         if (firstEl && firstEl.scrollIntoView) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      submit();
+      submit(btn);
     }
 
-    function submit() {
+    // toggle the submit button's loading spinner (CSS: .et-btn.is-loading + .et-spinner)
+    function setSubmitLoading(btn, loading) {
+      if (!btn) return;
+      if (loading) {
+        if (btn.querySelector('.et-spinner')) return;
+        btn.classList.add('is-loading');
+        btn.disabled = true;
+        btn.insertBefore(el('span', { class: 'et-spinner' }), btn.firstChild);
+      } else {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        var sp = btn.querySelector('.et-spinner');
+        if (sp) sp.parentNode.removeChild(sp);
+      }
+    }
+
+    function submit(btn) {
       // sync uploaded file names into the description shape; keep File objects for multipart
       state.uploadedFiles = ui.files.map(function (f) { return { name: f.name }; });
       var description = buildDescription(state, cfg);
       var form = new FormData();
       ui.files.forEach(function (f, i) { form.append('attachments[' + i + ']', f.file, f.name); });
       form.append('data', JSON.stringify({ data: { formName: 'joya-formular', description: description } }));
+      setSubmitLoading(btn, true);
       fetch(cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('submit failed: ' + res.status);
+          setSubmitLoading(btn, false);
+          clearPersisted(); // drop the saved draft only on a successful submit
           state = initialState();
           ui = { page: 4, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
+          setStepInUrl(4);
           render();
         })
-        .catch(function (e) { console.error(e); });
+        .catch(function (e) { setSubmitLoading(btn, false); console.error(e); });
     }
 
     // ===================== THANK YOU =====================

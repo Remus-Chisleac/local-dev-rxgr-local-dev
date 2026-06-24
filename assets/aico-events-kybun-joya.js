@@ -212,12 +212,79 @@
     var L = STR[dispLang];        // displayed labels
     var DE = STR.de_CH;           // canonical (validation + blob)
     var images = cfg.images || {};
-    var state = initialState();
-    state.userInfo.email = cfg.email || '';
-    state.userInfo.address = cfg.address || '';
-    var page = 1;                 // 1..3 input pages, 4 = thank-you
-    var errors = {};              // {fieldPath: msg} from validatePage
     var TOTAL = 4;
+    var LAST_INPUT_PAGE = 3;      // pages 1..3 are input; 4 = thank-you
+    var STORAGE_KEY = 'aico-eventtool-events-kybun-joya';
+
+    // ---- in-progress persistence (localStorage) ----
+    // We exclude uploadedFiles (File objects can't be serialized/restored).
+    function saveState() {
+      try {
+        var fp = state.firstPage;
+        var snapshot = {
+          userInfo: state.userInfo,
+          firstPage: {
+            question1: fp.question1, question2: fp.question2, uploadedFiles: []
+          },
+          secondPage: state.secondPage,
+          thirdPage: state.thirdPage
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      } catch (e) { /* storage unavailable / quota — ignore */ }
+    }
+    function loadState() {
+      try {
+        var raw = window.localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function clearState() {
+      try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+    }
+    function freshState() {
+      var s = initialState();
+      s.userInfo.email = cfg.email || '';
+      s.userInfo.address = cfg.address || '';
+      return s;
+    }
+
+    // ---- ?step=<n> in the URL (no navigation) ----
+    function readStepParam() {
+      try {
+        var p = new URLSearchParams(window.location.search).get('step');
+        var n = parseInt(p, 10);
+        if (isNaN(n)) return null;
+        return Math.min(Math.max(n, 1), LAST_INPUT_PAGE);
+      } catch (e) { return null; }
+    }
+    function writeStepParam(n) {
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('step', String(n));
+        window.history.replaceState(null, '', url.toString());
+      } catch (e) { /* ignore */ }
+    }
+
+    var stored = loadState();
+    var state = freshState();
+    if (stored) {
+      // merge stored over a fresh state; keep uploadedFiles empty; trust cfg for userInfo
+      if (stored.firstPage) {
+        if (stored.firstPage.question1) state.firstPage.question1 = stored.firstPage.question1;
+        if (stored.firstPage.question2 != null) state.firstPage.question2 = stored.firstPage.question2;
+      }
+      if (stored.secondPage) state.secondPage = stored.secondPage;
+      if (stored.thirdPage) state.thirdPage = stored.thirdPage;
+      // uploadedFiles intentionally left as the fresh [] (can't restore File objects)
+      state.userInfo.email = cfg.email || '';
+      state.userInfo.address = cfg.address || '';
+    }
+
+    var page = 1;                 // 1..3 input pages, 4 = thank-you
+    var startStep = readStepParam();
+    // resume the URL step only when we actually restored answers; otherwise start at 1
+    if (startStep && stored) page = startStep;  // clamped to 1..LAST_INPUT_PAGE in readStepParam
+    var errors = {};              // {fieldPath: msg} from validatePage
 
     // Per-field error anchors registered while the step is built ONCE.
     // anchors[field] = the DOM node AFTER which the .et-error span is inserted.
@@ -710,7 +777,7 @@
       var bar = el('div', 'et-actions');
       if (showBack) {
         var back = el('button', 'et-btn et-btn-back', { type: 'button', text: '‹ ' + L.back });
-        back.addEventListener('click', function () { errors = {}; page -= 1; buildStep(); window.scrollTo(0, 0); });
+        back.addEventListener('click', function () { errors = {}; page -= 1; writeStepParam(page); buildStep(); window.scrollTo(0, 0); });
         bar.appendChild(back);
       }
       bar.appendChild(el('span', 'et-progress', { text: page + '/' + TOTAL }));
@@ -730,12 +797,27 @@
       }
       errors = {};
       applyErrors();
-      if (page < 3) { page += 1; buildStep(); window.scrollTo(0, 0); return; }
+      if (page < 3) { page += 1; writeStepParam(page); buildStep(); window.scrollTo(0, 0); return; }
       // page === 3 → submit
       submit();
     }
 
     function submit() {
+      var btn = mount.querySelector('.et-btn-primary');
+      var spinner;
+      if (btn) {
+        btn.classList.add('is-loading');
+        btn.disabled = true;
+        spinner = el('span', 'et-spinner');
+        btn.insertBefore(spinner, btn.firstChild);  // before the label, label kept
+      }
+      function restoreBtn() {
+        if (!btn) return;
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
+      }
+
       var form = new FormData();
       (state.firstPage.uploadedFiles || []).forEach(function (f, i) {
         form.append('attachments[' + i + ']', f.file, f.name);
@@ -746,15 +828,19 @@
       fetch(cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('Submit failed: ' + res.status);
-          state = initialState();
-          state.userInfo.email = cfg.email || '';
-          state.userInfo.address = cfg.address || '';
+          restoreBtn();
+          clearState();  // discard saved in-progress data on success
+          state = freshState();
           errors = {};
           page = 4;
+          writeStepParam(page);
           buildStep();
           window.scrollTo(0, 0);
         })
-        .catch(function (e) { console.error('[aico-events-kybun-joya]', e); });
+        .catch(function (e) {
+          restoreBtn();
+          console.error('[aico-events-kybun-joya]', e);
+        });
     }
 
     // Full rebuild of the active step — ONLY used for page navigation.
@@ -769,6 +855,14 @@
       mount.appendChild(node);
     }
 
+    // Persist on every state change: these bubbling-phase listeners run AFTER the
+    // per-element handlers (which mutate state), so the snapshot is current.
+    // (saveState excludes uploadedFiles — File objects aren't serializable.)
+    mount.addEventListener('input', saveState);
+    mount.addEventListener('change', saveState);
+    mount.addEventListener('click', saveState);
+
+    writeStepParam(page);  // reflect the (possibly restored) starting step in the URL
     buildStep();
   }
 
