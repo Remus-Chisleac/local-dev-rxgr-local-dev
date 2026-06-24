@@ -5844,14 +5844,12 @@ html.aico-preorder-gallery-open {
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__spinners {
   display: flex;
   flex-direction: column;
-  flex: 0 0 14px;
-  width: 14px;
+  flex: 0 0 13px;
+  width: 13px;
   align-self: stretch;
-  background: #f1f1f1;
-  /* Delineate the stepper from the input and keep it clearly inside the cell —
-     box-sizing keeps the 14px footprint, so the divider eats into it, not the cell. */
-  border-left: 1px solid #d9d9d9;
-  box-sizing: border-box;
+  /* No background block — just the chevron glyphs. A filled button background
+     reached the cell's top/right/bottom borders and looked like it cut them. */
+  background: transparent;
 }
 /* Two equal-height halves: the whole top half increments, the whole bottom
    half decrements — no need to hit the chevron icon exactly. */
@@ -5873,10 +5871,11 @@ html.aico-preorder-gallery-open {
   height: 4px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:hover:not(:disabled) {
-  background: #e2e2e2;
+  color: #000;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:active:not(:disabled) {
-  background: #d4d4d4;
+  color: #000;
+  transform: scale(0.85);
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:disabled {
   opacity: 0.35;
