@@ -150,7 +150,7 @@
       if (line) { summary += '<p class="aico-stores-detail-line">' + esc(line) + '</p>'; }
       if (field(card, 'phone')) { summary += '<p class="aico-stores-detail-line">' + esc(field(card, 'phone')) + '</p>'; }
 
-      var badge = change ? '<span class="aico-stores-pending" data-aico-change-pending>' + esc(t('changePending', 'Change pending')) + '</span>' : '';
+      var badge = change ? '<span class="aico-change-pending-badge" data-aico-change-pending>' + esc(t('changePending', 'Change pending')) + '</span>' : '';
       var changeBtn = change
         ? '<button type="button" class="aico-stores-btn aico-stores-btn--ghost is-pending" data-aico-change-open>' + esc(t('editRequest', 'Change the request')) + '</button>'
         : '<button type="button" class="aico-stores-btn aico-stores-btn--ghost" data-aico-change-open>' + esc(t('requestChange', 'Request address change')) + '</button>';
