@@ -31,7 +31,9 @@
 .et-qlabel {
   display: block;
   position: sticky;
-  top: 0;
+  /* Sit below the site's sticky chrome (welcome strip ~2.25rem + header 3.5rem)
+     so the heading isn't hidden behind it while scrolling the product grid. */
+  top: 5.75rem;
   z-index: 5;
   background: var(--aico-bg);
   font-size: 1rem;

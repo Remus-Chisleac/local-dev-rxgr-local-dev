@@ -218,13 +218,28 @@
   // ====================================================================
   // browser rendering (self-contained, no framework)
   // ====================================================================
+  // Resolve the display language. These German-market kj forms DEFAULT to German;
+  // only an explicit non-default English locale yields English. The storefront's
+  // technical default 'en_US' (prefix-less, the shop default) must NOT count as English.
+  //   - lowercased starts with 'de'        -> 'de_CH'
+  //   - empty OR exactly 'en_us'           -> 'de_CH'  (technical default)
+  //   - any other 'en*' (e.g. 'en', 'en_gb') -> 'en'
+  //   - default                            -> 'de_CH'
+  function resolveDispLang(locale) {
+    var l = String(locale == null ? '' : locale).toLowerCase().trim();
+    if (l.indexOf('de') === 0) return 'de_CH';
+    if (l === '' || l === 'en_us') return 'de_CH';
+    if (l.indexOf('en') === 0) return 'en';
+    return 'de_CH';
+  }
+
   function boot() {
     var root = document.querySelector('[data-aico-eventtool="ads-joya"]');
     if (!root) return;
     var cfgEl = document.getElementById('aico-eventtool-config');
     var cfg = {};
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
-    var dispLang = (cfg.locale && String(cfg.locale).toLowerCase().indexOf('de') === 0) ? 'de_CH' : 'en';
+    var dispLang = resolveDispLang(cfg.locale);
     new AdsJoyaForm(root, cfg, dispLang).render();
   }
 
@@ -688,6 +703,7 @@
     validateSecondPage: validateSecondPage,
     buildDescription: buildDescription,
     fiveWorkingDaysAway: fiveWorkingDaysAway,
+    resolveDispLang: resolveDispLang,
     boot: boot
   };
 });

@@ -219,10 +219,26 @@
     var cfg = {};
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
 
+    // Resolve the DISPLAY language. These are German-market kj forms, so the
+    // default is de_CH: the storefront technical default resolves to the
+    // prefix-less en_US, which (and an empty locale) must render German. Only an
+    // EXPLICIT non-default English locale (an en* that is not en_us) renders EN.
+    // The template already resolves cfg.locale to 'de_CH' | 'en'; this re-derives
+    // defensively in case a raw locale is ever passed through.
+    function resolveDisplayLang(raw) {
+      var l = (raw == null ? '' : String(raw)).toLowerCase().trim();
+      if (l === '' || l === 'en_us') return 'de_CH';
+      if (l.indexOf('de') === 0) return 'de_CH';
+      if (l === 'de_ch') return 'de_CH';
+      if (l.indexOf('en') === 0) return 'en';
+      return 'de_CH';
+    }
+    var displayLang = resolveDisplayLang(cfg.locale);
+
     // de = CANONICAL option strings (stored in state, compared, submitted)
     // msg = display-language strings (labels + error message text)
     var DE = STR.de_CH;
-    var MSG = STR[cfg.locale === 'en' ? 'en' : 'de_CH'];
+    var MSG = STR[displayLang === 'en' ? 'en' : 'de_CH'];
     var images = cfg.images || {};
     // config-driven shoe cap (b2b secondPage cap was 2); fall back to MAX_SHOES
     var maxShoes = (cfg.maxSelectable && cfg.maxSelectable.shoes) || MAX_SHOES;
@@ -239,8 +255,8 @@
     function fetchJoyaProducts() {
       if (productsPromise) return productsPromise;
       if (!cfg.productsUrl) { productsPromise = Promise.resolve([]); return productsPromise; }
-      var loc = cfg.locale === 'en' ? 'en' : 'de_CH';
-      var url = cfg.productsUrl + (cfg.productsUrl.indexOf('?') === -1 ? '?' : '&') + 'brand=joya&locale=' + encodeURIComponent(loc);
+      // send the RESOLVED display language ('de_CH' | 'en') as the locale param
+      var url = cfg.productsUrl + (cfg.productsUrl.indexOf('?') === -1 ? '?' : '&') + 'brand=joya&locale=' + encodeURIComponent(displayLang);
       productsPromise = fetch(url, { credentials: 'same-origin' })
         .then(function (res) { if (!res.ok) throw new Error('products fetch failed: ' + res.status); return res.json(); })
         .then(function (data) { return (data && data.products) || []; })

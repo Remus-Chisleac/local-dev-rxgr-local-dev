@@ -7,8 +7,19 @@
 
 {{ 'eventtool.css' | asset_url | stylesheet_tag }}
 
+{%- comment -%}
+  Display-language default = de_CH (these are German-market kj forms).
+  The storefront technical default resolves to the prefix-less en_US, so treat
+  it (and an empty locale) as de_CH. Only an EXPLICIT non-default English locale
+  (any en* that is not en_us) renders English.
+{%- endcomment -%}
+{%- assign loc = request.locale | downcase | strip -%}
 {%- assign is_de = false -%}
-{%- if request.locale contains 'de' -%}{%- assign is_de = true -%}{%- endif -%}
+{%- if loc == '' or loc == 'en_us' -%}
+  {%- assign is_de = true -%}
+{%- elsif loc contains 'de' -%}
+  {%- assign is_de = true -%}
+{%- endif -%}
 
 {%- comment -%} best-effort Hauptadresse from the customer's delivery addresses {%- endcomment -%}
 {%- assign user_address = '' -%}

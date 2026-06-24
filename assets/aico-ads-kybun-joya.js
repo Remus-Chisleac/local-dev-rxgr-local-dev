@@ -180,7 +180,18 @@
     var cfg = {};
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
 
-    var de = (cfg.locale || '').indexOf('de') === 0;
+    // Display-language resolution: these German-market kj forms default to GERMAN.
+    // de* → de_CH; empty or en_us (the prefix-less shop technical default) → de_CH;
+    // any other en* → en. Only an explicit non-default English locale is English.
+    function resolveDispLang(locale) {
+      var l = (locale || '').toLowerCase();
+      if (l.indexOf('de') === 0) return 'de_CH';
+      if (l === '' || l === 'en_us') return 'de_CH';
+      if (l.indexOf('en') === 0) return 'en';
+      return 'de_CH';
+    }
+    var dispLang = resolveDispLang(cfg.locale);   // 'de_CH' | 'en'
+    var de = dispLang === 'de_CH';
     var T = de ? STR.de_CH : STR.en;        // display strings (labels + error messages)
     var DE = STR.de_CH;                       // canonical option values + blob (ALWAYS de_CH)
 
@@ -524,7 +535,7 @@
       // brief loading placeholder, then fetch
       cards.appendChild(el('div', 'et-qnote', '…'));
       var url = (cfg.productsUrl || '') + ((cfg.productsUrl || '').indexOf('?') === -1 ? '?' : '&') +
-        'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(de ? 'de_CH' : 'en');
+        'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(dispLang);
       if (cfg.productsUrl) {
         fetch(url, { credentials: 'same-origin' })
           .then(function (res) { if (!res.ok) throw new Error('Products fetch failed: ' + res.status); return res.json(); })

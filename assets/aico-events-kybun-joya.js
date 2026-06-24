@@ -199,7 +199,16 @@
   // ---- inline self-contained renderer ----
   function render(opts) {
     var root = opts.root, cfg = opts.cfg, mount = root.querySelector('[data-et-mount]');
-    var dispLang = (String(cfg.locale || 'de_CH').toLowerCase().indexOf('de') === 0) ? 'de_CH' : 'en';
+    // German-market kj forms default to German. de* → de_CH; empty or the shop
+    // technical default (en_us, served prefix-less) → de_CH; only an explicit
+    // non-default English locale (other en*) yields English.
+    var dispLang = (function () {
+      var loc = String(cfg.locale || '').toLowerCase();
+      if (loc.indexOf('de') === 0) return 'de_CH';
+      if (loc === '' || loc === 'en_us') return 'de_CH';
+      if (loc.indexOf('en') === 0) return 'en';
+      return 'de_CH';
+    })();
     var L = STR[dispLang];        // displayed labels
     var DE = STR.de_CH;           // canonical (validation + blob)
     var images = cfg.images || {};
@@ -579,7 +588,7 @@
       // fetch this brand's products (cookie-authed), then render cards
       var url = cfg.productsUrl;
       if (url) {
-        var qs = (url.indexOf('?') === -1 ? '?' : '&') + 'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(cfg.locale || 'de_CH');
+        var qs = (url.indexOf('?') === -1 ? '?' : '&') + 'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(dispLang);
         fetch(url + qs, { credentials: 'same-origin' })
           .then(function (res) { if (!res.ok) throw new Error('Products fetch failed: ' + res.status); return res.json(); })
           .then(function (data) {
