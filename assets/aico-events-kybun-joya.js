@@ -416,10 +416,10 @@
       anchor('secondPage.question4', q4grid);
       wrap.appendChild(q4);
 
-      // Q5 model text-entry list
-      wrap.appendChild(modelQuestion('5', L.secondPage.question5.text, 'question5', 'question5Extra', other));
-      // Q6 model text-entry list
-      wrap.appendChild(modelQuestion('6', L.secondPage.question6.text, 'question6', 'question6Extra', other));
+      // Q5 live Joya product image-card picker
+      wrap.appendChild(modelQuestion('5', L.secondPage.question5.text, 'question5', 'question5Extra', other, 'joya'));
+      // Q6 live kybun product image-card picker
+      wrap.appendChild(modelQuestion('6', L.secondPage.question6.text, 'question6', 'question6Extra', other, 'kybun'));
 
       // Q7 coupon chips (single) + inline discount on option3 + validity extra
       var q7 = question('7', L.secondPage.question7.text);
@@ -472,52 +472,22 @@
       return wrap;
     }
 
-    // model text-entry list (q5/q6): typed names ARE the array; "other" sentinel + extra input.
-    // Add/remove rows touch only that row's node; the "other" name field is toggled hidden.
-    function modelQuestion(num, labelText, arrKey, extraKey, other) {
+    // live product image-card picker (q5/q6): selected product NAMES are the array;
+    // "other" sentinel + extra name input kept. maxSelectable = 3. Selecting a card
+    // toggles .is-selected IN PLACE (no step rebuild); products fetched per brand.
+    function modelQuestion(num, labelText, arrKey, extraKey, other, brand) {
+      var MAX = 3;
       var sp = state.secondPage;
       var q = question(num, labelText);
-      var list = el('div', 'et-models');
 
-      function addRow(initialVal) {
-        var row = el('div', 'et-model-row');
-        var inp = el('input', 'et-input', { type: 'text', value: initialVal || '', placeholder: L.secondPage.shoeModelName });
-        // each row tracks its own (non-sentinel) value slot
-        var slot = { val: initialVal || '' };
-        inp.addEventListener('input', function () { slot.val = inp.value; syncArray(); });
-        row.appendChild(inp);
-        var rm = el('button', 'et-btn et-btn-back', { type: 'button', text: '×' });
-        rm.addEventListener('click', function () {
-          var i = slots.indexOf(slot);
-          if (i !== -1) slots.splice(i, 1);
-          if (row.parentNode) row.parentNode.removeChild(row);  // remove ONLY this row
-          syncArray();
-        });
-        row.appendChild(rm);
-        list.appendChild(row);
-        slots.push(slot);
-      }
+      // grid host for product cards + a loading/empty status line
+      var grid = el('div', 'et-cards');
+      var status = el('div', 'et-qnote');
+      status.textContent = (dispLang === 'de_CH') ? 'Produkte werden geladen…' : 'Loading products…';
+      q.appendChild(status);
+      q.appendChild(grid);
 
-      // slots = the typed (non-sentinel) values; syncArray rebuilds sp[arrKey]
-      // from slots (+ the sentinel iff the "other" chip is active).
-      var slots = [];
-      function syncArray() {
-        var arr = slots.map(function (s) { return s.val; });
-        if (hasOther()) arr.push(other);
-        sp[arrKey] = arr;
-      }
-      function hasOther() { return chip.classList.contains('is-selected'); }
-
-      // seed rows from existing typed values (skip sentinel)
-      (sp[arrKey] || []).forEach(function (v) { if (v !== other) addRow(v); });
-      q.appendChild(list);
-
-      // add-model button — appends ONE row
-      var add = el('button', 'et-btn', { type: 'button', text: L.secondPage.addModel });
-      add.addEventListener('click', function () { addRow(''); syncArray(); });
-      q.appendChild(add);
-
-      // "Anderes Schuhmodell" chip + extra input (extra rendered once, toggled hidden)
+      // "Anderes Schuhmodell" chip + extra input (rendered once, toggled hidden)
       var chipBox = el('div', 'et-options');
       var chip = el('span', 'et-chip', { text: L.secondPage.otherShoeModel });
       if ((sp[arrKey] || []).indexOf(other) !== -1) chip.classList.add('is-selected');
@@ -527,18 +497,91 @@
       extraInp.addEventListener('input', function () { sp[extraKey] = extraInp.value; });
       extraField.appendChild(extraInp);
       function toggleExtra() { extraField.hidden = !chip.classList.contains('is-selected'); }
+
+      // count of selected items (incl. the sentinel) for max enforcement
+      function selectedCount() { return (sp[arrKey] || []).length; }
+      function atMax() { return selectedCount() >= MAX; }
+
+      // repaint every product card's disabled/selected look from current state
+      var cardNodes = [];  // {name, node}
+      function repaintCards() {
+        var full = atMax();
+        cardNodes.forEach(function (c) {
+          var sel = (sp[arrKey] || []).indexOf(c.name) !== -1;
+          c.node.classList.toggle('is-selected', sel);
+          // visually disable unselected cards when at max
+          c.node.style.opacity = (!sel && full) ? '0.5' : '';
+          c.node.style.pointerEvents = (!sel && full) ? 'none' : '';
+        });
+        // also disable the "other" chip when at max and not active
+        var otherActive = chip.classList.contains('is-selected');
+        chip.style.opacity = (!otherActive && full) ? '0.5' : '';
+        chip.style.pointerEvents = (!otherActive && full) ? 'none' : '';
+      }
+
+      function makeCard(p) {
+        var card = el('div', 'et-card');
+        if (p.image) card.appendChild(el('img', 'et-card-img', { src: p.image, alt: '' }));
+        card.appendChild(el('div', 'et-card-title', { text: p.name }));
+        card.addEventListener('click', function () {
+          var arr = sp[arrKey] || (sp[arrKey] = []);
+          var idx = arr.indexOf(p.name);
+          if (idx !== -1) { arr.splice(idx, 1); }
+          else { if (atMax()) return; arr.push(p.name); }  // enforce max-3
+          repaintCards();
+        });
+        cardNodes.push({ name: p.name, node: card });
+        grid.appendChild(card);
+      }
+
+      // "other" chip behaviour (counts toward max via the sentinel in the array)
       chip.addEventListener('click', function () {
-        chip.classList.toggle('is-selected');
-        if (!chip.classList.contains('is-selected')) { sp[extraKey] = ''; extraInp.value = ''; }
+        var arr = sp[arrKey] || (sp[arrKey] = []);
+        var has = chip.classList.contains('is-selected');
+        if (has) {
+          var i = arr.indexOf(other);
+          if (i !== -1) arr.splice(i, 1);
+          chip.classList.remove('is-selected');
+          sp[extraKey] = ''; extraInp.value = '';
+        } else {
+          if (atMax()) return;  // enforce max-3
+          arr.push(other);
+          chip.classList.add('is-selected');
+        }
         toggleExtra();
-        syncArray();
+        repaintCards();
       });
+
       chipBox.appendChild(chip);
       q.appendChild(chipBox);
       anchor('secondPage.' + extraKey, extraInp);
       q.appendChild(extraField);
       toggleExtra();
       anchor('secondPage.' + arrKey, chipBox);
+
+      // fetch this brand's products (cookie-authed), then render cards
+      var url = cfg.productsUrl;
+      if (url) {
+        var qs = (url.indexOf('?') === -1 ? '?' : '&') + 'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(cfg.locale || 'de_CH');
+        fetch(url + qs, { credentials: 'same-origin' })
+          .then(function (res) { if (!res.ok) throw new Error('Products fetch failed: ' + res.status); return res.json(); })
+          .then(function (data) {
+            var products = (data && data.products) || [];
+            products.forEach(makeCard);
+            status.textContent = '';
+            status.hidden = true;
+            repaintCards();
+          })
+          .catch(function (e) {
+            console.error('[aico-events-kybun-joya]', e);
+            status.textContent = '';
+            status.hidden = true;
+          });
+      } else {
+        status.textContent = '';
+        status.hidden = true;
+      }
+
       return q;
     }
 

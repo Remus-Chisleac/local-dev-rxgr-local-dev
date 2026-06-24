@@ -367,9 +367,9 @@
       q4.setAttribute('data-et-err-for', 'secondPage.question4');
       step.appendChild(q4);
 
-      // Q5 / Q6 model entry lists
-      step.appendChild(buildModelList('question5', 'question5', 'question5Extra', '5. ', step));
-      step.appendChild(buildModelList('question6', 'question6', 'question6Extra', '6. ', step));
+      // Q5 / Q6 live product image-card pickers
+      step.appendChild(buildProductPicker('question5', 'question5', 'question5Extra', '5. ', 'joya', step));
+      step.appendChild(buildProductPicker('question6', 'question6', 'question6Extra', '6. ', 'kybun', step));
 
       // Q7 coupon chips
       var q7 = el('div', 'et-question');
@@ -450,84 +450,77 @@
       return step;
     }
 
-    // text-entry model list; an "Anderes Schuhmodell" row maps to the extra field.
-    // Rows are appended/removed individually — no rebuild.
-    function buildModelList(qKey, arrKey, extraKey, num, step) {
+    // Live product image-card picker (q5/q6). Fetches the brand's products from
+    // cfg.productsUrl, renders selectable .et-card cards (max 3 incl. the "other"
+    // sentinel). Selecting a card toggles .is-selected in place and pushes/removes
+    // the product NAME in state.secondPage[arrKey]. An "Anderes Schuhmodell" card
+    // pushes the de_CH sentinel and reveals the name input (extraKey).
+    var MAX_MODELS = 3;
+    function buildProductPicker(qKey, arrKey, extraKey, num, brand, step) {
       var other = DE.secondPage.otherShoeModel;
       var arr = state.secondPage[arrKey];
 
       var q = el('div', 'et-question');
       q.appendChild(el('div', 'et-qlabel', num + get(T, 'secondPage.' + qKey + '.text')));
-      q.appendChild(el('span', 'et-qnote', (get(T, 'secondPage.' + qKey + '.subText') || '').replace('{{count}}', '3')));
-      var wrap = el('div', 'et-models');
-      q.appendChild(wrap);
+      q.appendChild(el('span', 'et-qnote', (get(T, 'secondPage.' + qKey + '.subText') || '').replace('{{count}}', String(MAX_MODELS))));
 
-      // add-row controls live at the end; addOther button toggles when "other" present
-      var addRow = el('div', 'et-model-row');
-      var addBtn = el('button', 'et-btn et-btn-back', T.secondPage.addModel); addBtn.type = 'button';
-      addRow.appendChild(addBtn);
-      var addOther = el('button', 'et-btn et-btn-back', T.secondPage.otherShoeModel); addOther.type = 'button';
-      addRow.appendChild(addOther);
+      var cards = el('div', 'et-cards');
+      q.appendChild(cards);
 
-      function syncAddOther() { addOther.hidden = arr.indexOf(other) !== -1; }
-
-      function makeRow(val) {
-        var isOther = val === other;
-        var row = el('div', 'et-model-row');
-        row._isOther = isOther;
-        var inp = el('input', 'et-input'); inp.type = 'text';
-        inp.value = isOther ? (state.secondPage[extraKey] || '') : val;
-        inp.placeholder = T.secondPage.shoeModelName;
-        row._input = inp;
-        inp.addEventListener('input', function () {
-          if (isOther) state.secondPage[extraKey] = inp.value;
-          else { var i = rowIndex(row); if (i !== -1) arr[i] = inp.value; }
-        });
-        row.appendChild(inp);
-        var rm = el('button', 'et-btn et-btn-back', '×'); rm.type = 'button';
-        rm.addEventListener('click', function () {
-          var i = rowIndex(row);
-          if (i !== -1) arr.splice(i, 1);
-          if (isOther) state.secondPage[extraKey] = '';
-          wrap.removeChild(row);
-          syncAddOther();
-          if (attempted[2]) refreshErrors2(step);
-        });
-        row.appendChild(rm);
-        return row;
-      }
-      // map a row DOM node back to its array index (rows precede addRow, in order)
-      function rowIndex(row) {
-        var rows = wrap.querySelectorAll('.et-model-row');
-        var n = 0;
-        for (var k = 0; k < rows.length; k++) {
-          if (rows[k] === addRow) continue;
-          if (rows[k] === row) return n;
-          n++;
-        }
-        return -1;
-      }
-
-      arr.forEach(function (val) { wrap.appendChild(makeRow(val)); });
-      wrap.appendChild(addRow);
-      syncAddOther();
-
-      addBtn.addEventListener('click', function () {
-        arr.push('');
-        wrap.insertBefore(makeRow(''), addRow);
-        if (attempted[2]) refreshErrors2(step);
-      });
-      addOther.addEventListener('click', function () {
-        if (arr.indexOf(other) !== -1) return;
-        arr.push(other);
-        wrap.insertBefore(makeRow(other), addRow);
-        syncAddOther();
-        if (attempted[2]) refreshErrors2(step);
-      });
+      // "Anderes Schuhmodell" name input — rendered once, shown/hidden by selection
+      var extraFld = el('div', 'et-field');
+      extraFld.appendChild(el('label', 'et-field-label', T.secondPage.shoeModelName));
+      var extraInp = el('input', 'et-input'); extraInp.type = 'text'; extraInp.value = state.secondPage[extraKey] || '';
+      extraInp.addEventListener('input', function () { state.secondPage[extraKey] = extraInp.value; });
+      extraFld.appendChild(extraInp);
+      extraFld.hidden = arr.indexOf(other) === -1;
+      q.appendChild(extraFld);
 
       // error hosts (array-level + extra)
       var errArr = el('div'); errArr.setAttribute('data-et-err-for', 'secondPage.' + arrKey); q.appendChild(errArr);
       var errEx = el('div'); errEx.setAttribute('data-et-err-for', 'secondPage.' + extraKey); q.appendChild(errEx);
+
+      function makeCard(value, label, imgUrl) {
+        var card = el('div', 'et-card' + (arr.indexOf(value) !== -1 ? ' is-selected' : ''));
+        card._val = value;
+        if (imgUrl) { var img = el('img', 'et-card-img'); img.src = imgUrl; img.alt = label; card.appendChild(img); }
+        card.appendChild(el('div', 'et-card-title', label));
+        card.addEventListener('click', function () {
+          var idx = arr.indexOf(value);
+          if (idx !== -1) {
+            arr.splice(idx, 1);
+            card.classList.remove('is-selected');
+          } else if (arr.length < MAX_MODELS) {
+            arr.push(value);
+            card.classList.add('is-selected');
+          } else {
+            return; // enforce max
+          }
+          if (value === other) extraFld.hidden = arr.indexOf(other) === -1;
+          if (attempted[2]) refreshErrors2(step);
+        });
+        return card;
+      }
+
+      function renderCards(products) {
+        cards.innerHTML = '';
+        (products || []).forEach(function (p) { cards.appendChild(makeCard(p.name, p.name, p.image)); });
+        // always offer the "Anderes Schuhmodell" sentinel card last
+        cards.appendChild(makeCard(other, T.secondPage.otherShoeModel, null));
+      }
+
+      // brief loading placeholder, then fetch
+      cards.appendChild(el('div', 'et-qnote', '…'));
+      var url = (cfg.productsUrl || '') + ((cfg.productsUrl || '').indexOf('?') === -1 ? '?' : '&') +
+        'brand=' + encodeURIComponent(brand) + '&locale=' + encodeURIComponent(de ? 'de_CH' : 'en');
+      if (cfg.productsUrl) {
+        fetch(url, { credentials: 'same-origin' })
+          .then(function (res) { if (!res.ok) throw new Error('Products fetch failed: ' + res.status); return res.json(); })
+          .then(function (data) { renderCards((data && data.products) || []); })
+          .catch(function (err) { console.error(err); renderCards([]); });
+      } else {
+        renderCards([]);
+      }
       return q;
     }
 

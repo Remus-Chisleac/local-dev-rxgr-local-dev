@@ -32,6 +32,7 @@
       "locale": {% if is_de %}"de_CH"{% else %}"en"{% endif %},
       "formName": "joya-formular",
       "endpoint": {{ routes.aico_forms_url | json }},
+      "productsUrl": {{ routes.aico_form_products_url | json }},
       "email": {{ customer.email | default: '' | json }},
       "address": {{ user_address | strip | json }},
       "images": {

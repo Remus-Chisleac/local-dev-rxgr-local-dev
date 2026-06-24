@@ -70,7 +70,8 @@
         sendDetailsText: '* Bitte sende uns für diesen Fall Namen und Portrait der Person, die genannt werden soll, sowie deine Textänderungswünsche',
         additionalElementsText: 'Welche Schuhmodelle sollen, wenn möglich, im Textteil angezeigt werden? *',
         chooseMaxImages: 'Es sind maximal zwei Bilder von A-Ansichten möglich, sowie ein Portrait des Interview-Partners bei den Interview-Texten',
-        shoeModelName: '* Name des/r Schuhmodells/e'
+        shoeModelName: '* Name des/r Schuhmodells/e',
+        loadingProducts: 'Produkte werden geladen …'
       },
       thirdPage: {
         designVariants: "In dieser Saison steht zur Bewerbung von Erlebnistagen das Motiv 'Fersensporn' zur Verfügung. Das gesamte Material für deinen Erlebnistag wird in einem einheitlichen Design erstellt.",
@@ -128,7 +129,8 @@
         sendDetailsText: '* For this case, please send us the name and portrait of the person to be mentioned, as well as your text modification requests.',
         additionalElementsText: 'Which shoe models should be displayed in the text section? *',
         chooseMaxImages: 'A maximum of two pictures of A-views are possible, as well as a portrait of the interview partner in the interview texts.',
-        shoeModelName: '* Shoe model name'
+        shoeModelName: '* Shoe model name',
+        loadingProducts: 'Loading products …'
       },
       thirdPage: {
         designVariants: 'This season, the ‘heel spur’ motif is available for advertising experience days. All the material for your experience day is created in a standardised design.',
@@ -228,6 +230,21 @@
     var ui = { page: 1, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
 
     function imgUrl(q, key) { return (images[q] && images[q][key]) || ''; }
+
+    // ----- live joya products (replaces the b2b brandId-6 product fetch) -----
+    // Cached promise so a step rebuild (Back→Next) doesn't refetch.
+    var productsPromise = null;
+    function fetchJoyaProducts() {
+      if (productsPromise) return productsPromise;
+      if (!cfg.productsUrl) { productsPromise = Promise.resolve([]); return productsPromise; }
+      var loc = cfg.locale === 'en' ? 'en' : 'de_CH';
+      var url = cfg.productsUrl + (cfg.productsUrl.indexOf('?') === -1 ? '?' : '&') + 'brand=joya&locale=' + encodeURIComponent(loc);
+      productsPromise = fetch(url, { credentials: 'same-origin' })
+        .then(function (res) { if (!res.ok) throw new Error('products fetch failed: ' + res.status); return res.json(); })
+        .then(function (data) { return (data && data.products) || []; })
+        .catch(function (e) { console.error(e); return []; });
+      return productsPromise;
+    }
 
     // ----- small DOM helpers -----
     function el(tag, attrs, kids) {
@@ -411,15 +428,53 @@
     }
 
     // ===================== STEP 2 =====================
-    function shoeOptions() {
-      // canonical (state) = de_CH text; display = MSG text. They share content
-      // (config Text1..3 are identical across locales) but the split stays intact.
-      return [
-        { canonical: DE.secondPage.shoeText.text1, display: MSG.secondPage.shoeText.text1, url: imgUrl('question5', 'Image1') },
-        { canonical: DE.secondPage.shoeText.text2, display: MSG.secondPage.shoeText.text2, url: imgUrl('question5', 'Image2') },
-        { canonical: DE.secondPage.shoeText.text3, display: MSG.secondPage.shoeText.text3, url: imgUrl('question5', 'Image3') },
-        { canonical: DE.secondPage.secondQuestion.followingShoeModels, display: MSG.secondPage.secondQuestion.followingShoeModels, url: '', isOther: true }
-      ];
+    // Live shoe-model picker. Fetches joya products and renders selectable image
+    // cards into `cardsEl` (built ONCE, then mutated in place). Selecting a card
+    // pushes/removes the product NAME into `arr` (the EXISTING state array key),
+    // enforces MAX_SHOES, and toggles `.is-selected` in place. The trailing
+    // "other / Folgende Schuhmodelle" card reveals `extraField` (toggle hidden).
+    // `onChange` is invoked after any toggle (to refresh counter + clear errors).
+    function buildShoePicker(cardsEl, arr, extraField, getShowExtra, setShowExtra, onChange) {
+      var otherCanonical = DE.secondPage.secondQuestion.followingShoeModels;
+      var otherDisplay = MSG.secondPage.secondQuestion.followingShoeModels;
+
+      function addOtherCard() {
+        var sel = arr.indexOf(otherCanonical) !== -1;
+        var cd = card(otherDisplay, '', sel, function () {
+          var i = arr.indexOf(otherCanonical);
+          if (i !== -1) {
+            arr.splice(i, 1); cd.classList.remove('is-selected');
+            setShowExtra(false); extraField.hidden = true;
+          } else if (arr.length < MAX_SHOES) {
+            arr.push(otherCanonical); cd.classList.add('is-selected');
+            setShowExtra(true); extraField.hidden = false;
+          }
+          onChange();
+        });
+        cardsEl.appendChild(cd);
+      }
+
+      // loading placeholder until products resolve
+      var loadingEl = el('div', { class: 'et-qnote', text: MSG.secondPage.loadingProducts });
+      cardsEl.appendChild(loadingEl);
+
+      fetchJoyaProducts().then(function (products) {
+        if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+        (products || []).forEach(function (p) {
+          if (!p || !p.name) return;
+          var name = p.name; // product NAME stored in the array
+          var sel = arr.indexOf(name) !== -1;
+          var cd = card(name, p.image || '', sel, function () {
+            var i = arr.indexOf(name);
+            if (i !== -1) { arr.splice(i, 1); cd.classList.remove('is-selected'); }
+            else if (arr.length < MAX_SHOES) { arr.push(name); cd.classList.add('is-selected'); }
+            onChange();
+          });
+          cardsEl.appendChild(cd);
+        });
+        // keep the "other" option at the end of the live list
+        addOtherCard();
+      });
     }
 
     function renderSecond() {
@@ -477,26 +532,17 @@
       q4ExtraField.appendChild(q4ExtraIn);
       q4ExtraField.hidden = !ui.showShoeExtra2;
 
-      shoeOptions().forEach(function (opt) {
-        var sel = state.secondPage.question2.indexOf(opt.canonical) !== -1;
-        var cd = card(opt.display, opt.url, sel, function () {
-          var arr = state.secondPage.question2;
-          var i = arr.indexOf(opt.canonical);
-          if (i !== -1) {
-            arr.splice(i, 1);
-            cd.classList.remove('is-selected');
-            if (opt.isOther) { ui.showShoeExtra2 = false; q4ExtraField.hidden = true; }
-          } else if (arr.length < MAX_SHOES) {
-            arr.push(opt.canonical);
-            cd.classList.add('is-selected');
-            if (opt.isOther) { ui.showShoeExtra2 = true; q4ExtraField.hidden = false; }
-          }
+      // live joya product picker -> selections land in secondPage.question2 (NAME)
+      buildShoePicker(
+        cards4, state.secondPage.question2, q4ExtraField,
+        function () { return ui.showShoeExtra2; },
+        function (v) { ui.showShoeExtra2 = v; },
+        function () {
           counter4.textContent = state.secondPage.question2.length + '/' + MAX_SHOES;
           clearErr(state.secondPage.errors, 'question2');
           setError(q4, false);
-        });
-        cards4.appendChild(cd);
-      });
+        }
+      );
       q4.appendChild(cards4);
       q4.appendChild(q4ExtraField);
       wrap.appendChild(q4);

@@ -17,6 +17,7 @@
   "locale": {{ request.locale | json }},
   "formName": "kj-events-form",
   "endpoint": {{ routes.aico_forms_url | json }},
+  "productsUrl": {{ routes.aico_form_products_url | json }},
   "email": {{ customer.email | default: '' | json }},
   "address": {{ et_address | json }},
   "images": {

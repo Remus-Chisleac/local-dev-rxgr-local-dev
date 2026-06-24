@@ -424,20 +424,20 @@
     syncExtra();
     step.appendChild(qPR);
 
-    // --- Q4 (state question2): shoe models in text section — text chips, max 2 ---
+    // --- Q4 (state question2): shoe models in text section ---
+    // LIVE Sandalen picker (b2b brandId 6, max 2). Product NAME lands in sp.question2.
+    // The "Folgende/other shoe model" card (de_CH canonical) reveals the extra name input.
+    var Q2_MAX = 2; // mirrors b2b handleSecondQuestionShoeClick (question2.length < 2)
     var qModels = el('div', 'et-question');
     var qMl = el('div', 'et-qlabel'); qMl.appendChild(document.createTextNode('4. '));
     qMl.appendChild(el('strong', null, t.secondPage.importantElements));
     qModels.appendChild(qMl);
     qModels.appendChild(el('span', 'et-qnote', t.secondPage.chooseMaxImages));
-    var modelChoices = [
-      { value: DE.secondPage.secondQuestion.option1, label: t.secondPage.secondQuestion.option1 },
-      { value: DE.secondPage.secondQuestion.option2, label: t.secondPage.secondQuestion.option2 },
-      { value: DE.secondPage.secondQuestion.option3, label: t.secondPage.secondQuestion.option3 },
-      { value: DE.secondPage.secondQuestion.option4, label: t.secondPage.secondQuestion.option4 }
-    ];
-    var otherValue = DE.secondPage.secondQuestion.option4;
-    var modelOpts = el('div', 'et-options');
+    var otherValue = DE.secondPage.secondQuestion.option4; // 'Folgende(s) Schuhmodell(e)'
+    var modelCards = el('div', 'et-cards');
+    var modelLoading = el('div', 'et-info'); modelLoading.textContent = '…';
+    qModels.appendChild(modelLoading);
+    qModels.appendChild(modelCards);
     // "other shoe model" name input — render ONCE, toggle hidden.
     var m2Field = el('div', 'et-field');
     m2Field.appendChild(el('label', 'et-field-label', t.secondPage.shoeModelName));
@@ -445,28 +445,42 @@
     m2Input.addEventListener('input', function () { sp.question2Extra = this.value; self.clearErr(m2Field); });
     m2Field.appendChild(m2Input);
     function syncM2() { m2Field.hidden = !self.showSecondQuestionInput; if (m2Field.hidden) self.clearErr(m2Field); }
-    modelChoices.forEach(function (opt) {
-      var chip = el('div', 'et-chip', opt.label);
-      chip.classList.toggle('is-selected', sp.question2.indexOf(opt.value) !== -1);
-      chip.addEventListener('click', function () {
-        var i = sp.question2.indexOf(opt.value);
-        if (i !== -1) {
-          sp.question2.splice(i, 1);
-          chip.classList.remove('is-selected');
-          if (opt.value === otherValue) { self.showSecondQuestionInput = false; syncM2(); }
-        } else if (sp.question2.length < 2) {
-          sp.question2.push(opt.value);
-          chip.classList.add('is-selected');
-          if (opt.value === otherValue) { self.showSecondQuestionInput = true; syncM2(); }
-        }
-        self.clearErr(qModels);
-      });
-      modelOpts.appendChild(chip);
-    });
-    qModels.appendChild(modelOpts);
     qModels.appendChild(m2Field);
     syncM2();
     step.appendChild(qModels);
+
+    // toggles a value in sp.question2 (shared Q2_MAX across products + "other"); in place
+    function toggleModel(value, card, isOther) {
+      var i = sp.question2.indexOf(value);
+      if (i !== -1) {
+        sp.question2.splice(i, 1);
+        card.classList.remove('is-selected');
+        if (isOther) { self.showSecondQuestionInput = false; syncM2(); }
+      } else if (sp.question2.length < Q2_MAX) {
+        sp.question2.push(value);
+        card.classList.add('is-selected');
+        if (isOther) { self.showSecondQuestionInput = true; syncM2(); }
+      }
+      self.clearErr(qModels);
+    }
+    function addModelCard(value, label, imageUrl, isOther) {
+      var card = el('div', 'et-card');
+      if (imageUrl) { var im = el('img', 'et-card-img'); im.src = imageUrl; im.alt = label; card.appendChild(im); }
+      card.appendChild(el('div', 'et-card-title', label));
+      card.classList.toggle('is-selected', sp.question2.indexOf(value) !== -1);
+      card.addEventListener('click', function () { toggleModel(value, card, isOther); });
+      modelCards.appendChild(card);
+    }
+    // the "other shoe model" card is always available (no image); add it up front.
+    function addOtherCard() { addModelCard(otherValue, t.secondPage.secondQuestion.option4, null, true); }
+    // fetch live joya products, then render their cards before the "other" card.
+    this.fetchProducts(function (products, err) {
+      if (modelLoading.parentNode) modelLoading.parentNode.removeChild(modelLoading);
+      (products || []).forEach(function (p) {
+        if (p && p.name) addModelCard(p.name, p.name, p.image, false);
+      });
+      addOtherCard();
+    });
 
     // --- Q5 (state question3): design variant — 8 image cards, single select ---
     // value = de_CH text from config; label = active-locale text from config.
@@ -588,6 +602,29 @@
     step.appendChild(actions);
 
     this.mount.appendChild(step);
+  };
+
+  // ---------- live products (Sandalen, b2b brandId 6 → brand=joya) ----------
+  // Caches the result so re-entering page 2 doesn't refetch. cb(products, err).
+  AdsJoyaForm.prototype.fetchProducts = function (cb) {
+    var self = this;
+    if (this._products) { cb(this._products, null); return; }
+    var base = this.cfg.productsUrl;
+    if (!base) { this._products = []; cb([], null); return; }
+    var url = base + (base.indexOf('?') === -1 ? '?' : '&') +
+      'brand=joya&locale=' + encodeURIComponent(this.dispLang);
+    fetch(url, { method: 'GET', credentials: 'same-origin' })
+      .then(function (res) { if (!res.ok) throw new Error('Products fetch failed: ' + res.status); return res.json(); })
+      .then(function (json) {
+        self._products = (json && Array.isArray(json.products)) ? json.products : [];
+        cb(self._products, null);
+      })
+      .catch(function (err) {
+        // eslint-disable-next-line no-console
+        console.error(err);
+        self._products = [];
+        cb([], err);
+      });
   };
 
   // ---------- THANK YOU ----------
