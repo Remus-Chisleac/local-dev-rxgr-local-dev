@@ -234,7 +234,7 @@
       <footer class="aico-site-footer" role="contentinfo">
         <div class="aico-site-footer-inner">
           {% if linklists.footer.links.size > 0 %}
-            {%- assign footer_locale = request.locale | default: shop.default_locale -%}
+            {%- assign footer_locale = request.locale.iso_code | default: shop.default_locale -%}
             <nav class="aico-home-footer-links" aria-label="{{ 'footer.tagline' | t }}">
               {% for link in linklists.footer.links %}
                 {%- assign link_url = link.url -%}
@@ -489,7 +489,7 @@
               <span>{{ 'nav.logout' | t }}</span>
             </a>
             <span class="aico-locale-pill aico-locale-pill--footer" role="group" aria-label="{{ 'nav.language' | t }}">
-              {%- assign current_locale = request.locale | default: shop.default_locale -%}
+              {%- assign current_locale = request.locale.iso_code | default: shop.default_locale -%}
               <a href="{{ 'en_US' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'en_US' %}aico-locale-pill-active{% endif %}" lang="en">EN</a>
               <a href="{{ 'de_CH' | aico_locale_url }}" class="aico-locale-pill-option {% if current_locale == 'de_CH' %}aico-locale-pill-active{% endif %}" lang="de-CH">DE</a>
             </span>
