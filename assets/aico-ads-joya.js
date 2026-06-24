@@ -256,20 +256,28 @@
     return 'de_CH';
   }
 
-  function readSavedState() {
+  var LAST_INPUT_PAGE = 2;
+
+  // read the persisted draft → { state, maxStep } (or null if nothing/invalid saved).
+  function readSaved() {
     try {
       var raw = window.localStorage.getItem(STORAGE_KEY);
-      return raw ? mergeSavedState(JSON.parse(raw)) : null;
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      var maxStep = parseInt(parsed && parsed.maxStep, 10);
+      if (!isFinite(maxStep) || maxStep < 1) maxStep = 1;
+      if (maxStep > LAST_INPUT_PAGE) maxStep = LAST_INPUT_PAGE;
+      return { state: mergeSavedState(parsed), maxStep: maxStep };
     } catch (e) { return null; }
   }
 
-  // current page from ?step=<n> (clamped to an input page; thank-you not restored).
+  // requested page from ?step=<n>, clamped to 1..LAST_INPUT_PAGE (thank-you not restored).
   function readStepFromUrl() {
     try {
       var v = new URLSearchParams(window.location.search).get('step');
       var n = parseInt(v, 10);
       if (!isFinite(n) || n < 1) return 1;
-      return n > 2 ? 2 : n;
+      return n > LAST_INPUT_PAGE ? LAST_INPUT_PAGE : n;
     } catch (e) { return 1; }
   }
 
@@ -281,10 +289,15 @@
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
     var dispLang = resolveDispLang(cfg.locale);
     var form = new AdsJoyaForm(root, cfg, dispLang);
-    var saved = readSavedState();
-    if (saved) form.state = saved;
-    form.page = readStepFromUrl();
-    form.render();
+    var saved = readSaved();
+    if (saved) { form.state = saved.state; form.maxStep = saved.maxStep; }
+    // can't jump ahead via ?step without having reached that step before.
+    var requested = readStepFromUrl();
+    var target = Math.min(requested, form.maxStep);
+    if (target < 1) target = 1;
+    if (target > LAST_INPUT_PAGE) target = LAST_INPUT_PAGE;
+    // navigate so the resolved step is written back to the URL.
+    form.goToPage(target);
   }
 
   function el(tag, cls, text) {
@@ -303,6 +316,7 @@
     this.dispLang = dispLang;
     this.state = initialState();
     this.page = 1;
+    this.maxStep = 1; // furthest input page reached; gates ?step jump-ahead
     this.mount = root.querySelector('[data-et-mount]') || root;
     // "other shoe model" / "PR text option 3" reveal flags (mirror showFirst/SecondQuestionInput)
     this.showFirstQuestionInput = false;
@@ -318,6 +332,7 @@
     try {
       var s = this.state, fp = s.firstPage, sp = s.secondPage;
       var snapshot = {
+        maxStep: this.maxStep,
         firstPage: { question1: fp.question1, question2: fp.question2 },
         secondPage: {
           question1: sp.question1, question1Extra: sp.question1Extra,
@@ -471,7 +486,11 @@
       else if (res.fiveDays) { self.showErr(q1, t.minimumDaysErrorMessage); ok = false; }
       if (fe.question2) { self.showErr(q2, t.errorMessage); ok = false; }
       if (fe.uploadFiles) { self.showErr(upWrap, t.errorMessage); ok = false; }
-      if (ok) { self.goToPage(2); }
+      if (ok) {
+        self.maxStep = Math.max(self.maxStep, 2); // record furthest reached; Back never lowers it
+        self.persist();                            // save the bumped maxStep
+        self.goToPage(2);
+      }
     });
     actions.appendChild(nextBtn);
     step.appendChild(actions);
@@ -803,8 +822,9 @@
       .then(function (res) {
         if (!res.ok) throw new Error('Form submit failed: ' + res.status);
         restoreBtn();
-        self.clearPersisted();           // drop saved draft on successful submit
+        self.clearPersisted();           // drop saved draft (incl. maxStep) on success
         self.state = initialState();
+        self.maxStep = 1;                // reset the step guard for a fresh form
         self.showFirstQuestionInput = false;
         self.showSecondQuestionInput = false;
         // reset ?step to 1 so a reload after success lands on a clean page 1.

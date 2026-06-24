@@ -809,7 +809,12 @@
       }
       errors = {};
       applyErrors();
-      if (page < 3) { page += 1; writeStepParam(page); buildStep(); window.scrollTo(0, 0); return; }
+      if (page < 3) {
+        page += 1;
+        if (page > maxStep) { maxStep = page; saveState(); } // raise furthest-reached step
+        writeStepParam(page); buildStep(); window.scrollTo(0, 0);
+        return;
+      }
       // page === 3 → submit
       submit(clickedBtn);
     }

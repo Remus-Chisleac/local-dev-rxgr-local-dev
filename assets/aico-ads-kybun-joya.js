@@ -205,6 +205,7 @@
       try {
         var snap = JSON.parse(JSON.stringify(state));   // deep clone via JSON (drops nothing here)
         if (snap.firstPage) snap.firstPage.uploadedFiles = [];
+        snap.maxStep = maxStep;   // furthest validated step — sibling of state, never in the payload
         localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
       } catch (e) { /* storage unavailable / quota — ignore */ }
     }
@@ -214,6 +215,7 @@
     }
 
     var state = initialState();
+    var maxStep = 1;   // furthest validated step (jump-ahead guard)
     var saved = loadPersisted();
     if (saved && typeof saved === 'object') {
       // shallow-merge each known slice over the fresh initial state
@@ -231,6 +233,10 @@
         ds.question7 = ss.question7 || ''; ds.question7Option3Input = ss.question7Option3Input || ''; ds.question7Extra = ss.question7Extra || '';
         if (ss.question8) ds.question8 = { inputWidth: ss.question8.inputWidth || '', inputHeight: ss.question8.inputHeight || '' };
       }
+    }
+    if (saved && saved.maxStep != null) {
+      var sm = parseInt(saved.maxStep, 10);
+      if (!isNaN(sm)) maxStep = Math.min(Math.max(sm, 1), TOTAL);
     }
     // cfg always wins for the user identity fields
     state.userInfo.email = cfg.email || '';
@@ -253,7 +259,7 @@
       } catch (e) { /* ignore */ }
     }
 
-    var page = readStepParam();   // 1, 2, or 3 (thank-you)
+    var page = Math.min(readStepParam(), maxStep);   // can't deep-link past the furthest validated step
 
     function el(tag, cls, txt) { var n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; }
 
@@ -636,6 +642,7 @@
 
     // ================= navigation / submit =================
     function navigate(to) {
+      if (to > page && to <= TOTAL) { maxStep = Math.max(maxStep, to); persist(); }   // raise furthest-reached step
       page = to;
       if (page >= 1 && page <= TOTAL) writeStepParam(page);   // only input pages are bookmarkable
       mount.innerHTML = '';

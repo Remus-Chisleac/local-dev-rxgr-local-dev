@@ -244,28 +244,39 @@
     var maxShoes = (cfg.maxSelectable && cfg.maxSelectable.shoes) || MAX_SHOES;
 
     var STORAGE_KEY = 'aico-eventtool-events-joya';
-    var TOTAL_PAGES = 4;
+    var TOTAL_PAGES = 4;            // pages 1..3 are input steps, 4 = thank-you
+    var LAST_INPUT_PAGE = TOTAL_PAGES - 1; // furthest page reachable on a fresh boot
+
+    // ----- furthest navigated step (deep-link guard) -----
+    // maxStep is UI-only (NOT part of the submitted description). It rises only as
+    // the user actually navigates forward (Back never lowers it) so a fresh
+    // visitor (maxStep=1) can't deep-link to ?step=3.
+    var maxStep = 1;
 
     // ----- in-progress persistence (localStorage) -----
     // The persisted blob is the full state MINUS uploadedFiles (File objects
-    // can't serialize). It never alters the SUBMITTED description shape: on
-    // submit we rebuild uploadedFiles + userEmail/userAddress fresh.
+    // can't serialize), PLUS the UI-only maxStep. It never alters the SUBMITTED
+    // description shape: on submit we rebuild uploadedFiles + email/address fresh,
+    // and maxStep lives outside `state` so it is never sent.
     function persist() {
       try {
         var snap = JSON.parse(JSON.stringify(state));
         snap.uploadedFiles = []; // File objects are not serialisable
+        snap.maxStep = maxStep;  // UI-only guard, stored alongside the state
         localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
       } catch (e) { /* storage unavailable / quota — ignore */ }
     }
     function clearPersisted() {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
     }
+    function readSaved() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { return null; }
+    }
     // Merge a saved snapshot over a fresh initialState so any missing/renamed
-    // keys fall back to defaults and the exact shape is preserved.
-    function restoreState() {
+    // keys fall back to defaults and the exact shape is preserved. maxStep is a
+    // sibling field on the blob (read separately), never merged into state.
+    function restoreState(saved) {
       var base = initialState();
-      var saved = null;
-      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
       if (saved && typeof saved === 'object') {
         ['firstPage', 'secondPage', 'thirdPage'].forEach(function (pg) {
           if (saved[pg] && typeof saved[pg] === 'object') {
@@ -279,6 +290,12 @@
       base.userEmail = cfg.email || '';  // always (re)derive from cfg
       base.userAddress = cfg.address || '';
       return base;
+    }
+    function restoreMaxStep(saved) {
+      var m = saved && typeof saved === 'object' ? parseInt(saved.maxStep, 10) : 1;
+      if (!m || m < 1) m = 1;
+      if (m > LAST_INPUT_PAGE) m = LAST_INPUT_PAGE;
+      return m;
     }
 
     // ----- current page <-> URL ?step -----
@@ -299,18 +316,28 @@
         window.history.replaceState(null, '', url.toString());
       } catch (e) { /* ignore */ }
     }
-    // central page-navigation helper: updates state, URL, scroll + rebuilds
+    // central page-navigation helper: updates state, URL, scroll + rebuilds.
+    // Forward navigation raises the deep-link guard; Back never lowers it.
     function goToPage(n) {
+      if (n > ui.page) maxStep = Math.max(maxStep, n);
       ui.page = n;
+      persist();        // persist the raised maxStep (+ current answers)
       setStepInUrl(n);
       window.scrollTo(0, 0);
       render();
     }
 
-    var state = restoreState();
+    var __saved = readSaved();
+    var state = restoreState(__saved);
+    maxStep = restoreMaxStep(__saved);
     // UI-only flags (not part of the submitted description). Reveal flags are
     // re-derived from the restored selections so conditional inputs reappear.
-    var ui = { page: stepFromUrl(), showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
+    var ui = { page: 1, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
+    // Boot target = min(requested ?step, maxStep), clamped to 1..lastInputPage.
+    ui.page = Math.min(stepFromUrl(), maxStep);
+    if (ui.page < 1) ui.page = 1;
+    if (ui.page > LAST_INPUT_PAGE) ui.page = LAST_INPUT_PAGE;
+    setStepInUrl(ui.page); // write the resolved step back to the URL
     ui.showQ3Extra = state.secondPage.question1 === DE.secondPage.firstQuestion.option3;
     ui.showShoeExtra2 = state.secondPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
     ui.showShoeExtra3 = state.thirdPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
