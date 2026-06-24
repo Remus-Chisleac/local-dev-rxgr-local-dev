@@ -9317,3 +9317,80 @@ html.aico-preorder-gallery-open {
    `clip` (not `hidden`) so the sticky header keeps working. Scoped via :has to
    the preorder page only. */
 html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
+
+/* ===========================================================================
+   Store Locations Manager — master-detail (templates/customers/aico_store_locator)
+   Left: selectable store list. Right: the selected store's detail + inline
+   editor (reuses the .aico-store-editor-* group/section/row styles). These are
+   the master-detail layout + list + manage-button additions.
+   =========================================================================== */
+
+/* "Manage store locations" button on the profile (account.liquid) in place of
+   the store cards. */
+.aico-slm-manage { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+.aico-slm-manage-hint { margin: 0; color: var(--aico-muted-fg, #6b7280); font-size: 0.9rem; }
+.aico-slm-manage-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  background: var(--aico-account-accent, #2f6fd0); color: #fff;
+  border: 1px solid var(--aico-account-accent, #2f6fd0); border-radius: 0.5rem;
+  font-size: 0.95rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.aico-slm-manage-btn:hover { opacity: 0.9; text-decoration: none; }
+
+/* Page head */
+.aico-store-manager-head { margin-bottom: 1.5rem; }
+.aico-store-manager-title { margin: 0.5rem 0 0.25rem; }
+.aico-store-manager-intro { margin: 0; color: var(--aico-muted-fg, #6b7280); font-size: 0.95rem; }
+
+/* Master-detail layout */
+.aico-store-manager-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .aico-store-manager-layout { grid-template-columns: 1fr; }
+}
+
+/* Left: store list */
+.aico-store-manager-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-store-manager-item {
+  position: relative;
+  display: flex; flex-direction: column; gap: 0.125rem;
+  width: 100%; text-align: left;
+  padding: 0.75rem 0.875rem;
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.5rem; cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.aico-store-manager-item:hover { border-color: var(--aico-account-accent, #2f6fd0); }
+.aico-store-manager-item.is-active {
+  border-color: var(--aico-account-accent, #2f6fd0);
+  box-shadow: inset 3px 0 0 0 var(--aico-account-accent, #2f6fd0);
+  background: var(--aico-muted, #f4f4f5);
+}
+.aico-store-manager-item-name { font-weight: 600; font-size: 0.95rem; color: var(--aico-fg, #111827); }
+.aico-store-manager-item-sub { font-size: 0.85rem; color: var(--aico-muted-fg, #6b7280); }
+.aico-store-manager-item-badge { align-self: flex-start; margin-top: 0.375rem; }
+
+/* Right: detail pane */
+.aico-store-manager-detail {
+  min-height: 14rem;
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+}
+.aico-store-manager-empty { color: var(--aico-muted-fg, #6b7280); text-align: center; padding: 3rem 1rem; margin: 0; }
+
+/* Detail header carries the store summary (left) + change-request control (right). */
+.aico-store-manager .aico-store-editor-header {
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem;
+  border-bottom: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-store-editor-change { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }

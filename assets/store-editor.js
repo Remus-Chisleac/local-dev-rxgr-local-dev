@@ -1,30 +1,39 @@
 /**
- * Per-store editor (full page) — replaces the old 3-tab store-details modal.
+ * Store Locations Manager — master-detail editor.
  *
- * Lives on customers/aico_store_locator (/account/store-locator?store=<crmId>).
- * Renders the three groups (contact info / opening hours / images) as stacked
- * page SECTIONS, fetched from / saved to the storefront-session endpoints under
+ * Lives on customers/aico_store_locator (/account/store-locator). The left
+ * column is a selectable list of the shopper's store-locator addresses; picking
+ * one loads that store's detail into the right column: an address summary + the
+ * shared address-change control (pending badge + request button, handled by
+ * address-change.js), then the three editable groups (contact info / opening
+ * hours / images) as stacked SECTIONS — no tabs, no per-store sub-pages.
+ *
+ * Each group is fetched from / saved to the storefront-session endpoints under
  * data-store-details-base (/account/store-details/...). One "Save changes"
  * button saves contact + hours + image order together; image upload/delete are
- * immediate file ops. A dirty flag + leave-guard dialog protects unsaved edits
- * when the shopper clicks Back / a nav link, plus a native beforeunload prompt
- * for hard reload/close.
+ * immediate. A dirty flag + leave-guard dialog protects unsaved edits when the
+ * shopper switches store, clicks Back / a nav link, or reloads/closes the tab.
  *
- * crmAddressId comes from the root data-aico-crm-address-id (server-resolved &
- * ownership-checked). Localized row labels come from the inline
- * [data-aico-store-editor-i18n] JSON block.
+ * The active crmAddressId comes from the selected list card
+ * (data-aico-crm-address-id, server-hydrated & ownership-scoped). Localized row
+ * labels come from the inline [data-aico-store-editor-i18n] JSON block.
  */
 (function () {
   'use strict';
 
   var DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var ADDRESS_FIELDS = [
+    'company', 'first_name', 'last_name', 'address1', 'address2',
+    'zip', 'city', 'province', 'country', 'phone'
+  ];
 
   function init() {
     var root = document.querySelector('[data-aico-store-editor]');
     if (!root) { return; }
 
-    var crmAddressId = root.getAttribute('data-aico-crm-address-id');
-    if (!crmAddressId) { return; } // not-found state — nothing to edit
+    var list = root.querySelector('[data-aico-store-list]');
+    var detail = root.querySelector('[data-aico-store-detail]');
+    if (!detail) { return; }
 
     var base = root.getAttribute('data-store-details-base') || '/account/store-details';
     var accountUrl = root.getAttribute('data-account-url') || '/account';
@@ -34,21 +43,23 @@
     var copy = {
       saving: root.getAttribute('data-copy-saving') || 'Saving…',
       saved: root.getAttribute('data-copy-saved') || 'Saved',
-      error: root.getAttribute('data-copy-error') || "Couldn't save"
+      error: root.getAttribute('data-copy-error') || "Couldn't save",
+      requestChange: root.getAttribute('data-copy-request-change') || 'Request address change',
+      editRequest: root.getAttribute('data-copy-edit-request') || 'Change the request',
+      changePending: root.getAttribute('data-copy-change-pending') || 'Change pending',
+      selectStore: root.getAttribute('data-copy-select-store') || 'Select a store to edit its details.'
     };
 
     var i18n = readI18n();
 
-    var panels = {
-      contact: root.querySelector('[data-aico-store-panel="contact"]'),
-      hours: root.querySelector('[data-aico-store-panel="hours"]'),
-      images: root.querySelector('[data-aico-store-panel="images"]')
-    };
+    // Active-store state (set on selection) and the re-queried section panels.
+    var crmAddressId = null;
+    var activeCard = null;
+    var panels = { contact: null, hours: null, images: null };
 
     var dirty = false;
-    var dirtyHint = root.querySelector('[data-aico-store-dirty-hint]');
     var leaveModal = root.querySelector('[data-aico-store-leave-modal]');
-    var pendingHref = null;
+    var pendingAction = null; // { type: 'nav', href } | { type: 'switch', card }
     var toastTimer = null;
 
     function readI18n() {
@@ -75,14 +86,17 @@
       }
     }
 
+    function dirtyHintEl() { return detail.querySelector('[data-aico-store-dirty-hint]'); }
     function markDirty() {
       if (dirty) { return; }
       dirty = true;
-      if (dirtyHint) { dirtyHint.hidden = false; }
+      var hint = dirtyHintEl();
+      if (hint) { hint.hidden = false; }
     }
     function clearDirty() {
       dirty = false;
-      if (dirtyHint) { dirtyHint.hidden = true; }
+      var hint = dirtyHintEl();
+      if (hint) { hint.hidden = true; }
     }
 
     function request(method, url, body) {
@@ -104,7 +118,73 @@
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ----- Contact section -------------------------------------------------
+    // ===== Detail shell (header + change-request + section scaffolding) ======
+    function field(card, name) { return card.getAttribute('data-field-' + name) || ''; }
+
+    function detailHtml(card) {
+      var change = card.getAttribute('data-aico-change-request-id');
+      var name = field(card, 'name');
+
+      // Wrapper carries crmAddressId + data-field-* so the shared address-change.js
+      // can prefill/submit the change-request modal from the active store.
+      var headAttrs = 'data-aico-crm-address-id="' + escapeHtml(card.getAttribute('data-aico-crm-address-id')) + '" data-bucket="store_locator"';
+      if (change) { headAttrs += ' data-aico-change-request-id="' + escapeHtml(change) + '"'; }
+      ADDRESS_FIELDS.forEach(function (key) {
+        headAttrs += ' data-field-' + key + '="' + escapeHtml(field(card, key)) + '"';
+      });
+
+      var lines = '';
+      if (field(card, 'company')) { lines += '<p class="aico-store-editor-store-line">' + escapeHtml(field(card, 'company')) + '</p>'; }
+      var streetParts = [];
+      if (field(card, 'address1')) { streetParts.push(field(card, 'address1')); }
+      if (field(card, 'address2')) { streetParts.push(field(card, 'address2')); }
+      var cityLine = (field(card, 'zip') + ' ' + field(card, 'city')).trim();
+      var locale = streetParts.join(', ');
+      if (locale) { locale += ' · '; }
+      locale += cityLine;
+      if (field(card, 'country')) { locale += ' · ' + field(card, 'country'); }
+      lines += '<p class="aico-store-editor-store-line">' + escapeHtml(locale) + '</p>';
+      if (field(card, 'phone')) { lines += '<p class="aico-store-editor-store-line">' + escapeHtml(field(card, 'phone')) + '</p>'; }
+
+      var badge = change
+        ? '<span class="aico-change-pending-badge" data-aico-change-pending>' + escapeHtml(copy.changePending) + '</span>'
+        : '';
+      var changeBtn = change
+        ? '<button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>' + escapeHtml(copy.editRequest) + '</button>'
+        : '<button type="button" class="aico-address-card-btn aico-address-change-open" data-aico-change-open>' + escapeHtml(copy.requestChange) + '</button>';
+
+      var html = ''
+        + '<header class="aico-store-editor-header" ' + headAttrs + '>'
+        + '  <div class="aico-store-editor-store">'
+        + (name ? '<p class="aico-store-editor-store-name">' + escapeHtml(name) + '</p>' : '')
+        + lines
+        + '  </div>'
+        + '  <div class="aico-store-editor-change">' + badge + changeBtn + '</div>'
+        + '</header>';
+
+      ['contact', 'hours', 'images'].forEach(function (key) {
+        html += '<section class="aico-store-editor-section" data-aico-store-section="' + key + '">'
+          + '<h2 class="aico-store-editor-section-title">' + escapeHtml(t('section_' + key, key)) + '</h2>'
+          + '<div class="aico-store-editor-section-body" data-aico-store-panel="' + key + '">'
+          + '<p class="aico-store-editor-loading">' + escapeHtml(t('loading', 'Loading…')) + '</p>'
+          + '</div></section>';
+      });
+
+      html += '<div class="aico-store-editor-savebar">'
+        + '<span class="aico-store-editor-dirty-hint" data-aico-store-dirty-hint hidden>' + escapeHtml(t('unsaved_hint', 'You have unsaved changes')) + '</span>'
+        + '<button type="button" class="aico-store-editor-save" data-aico-store-save>' + escapeHtml(t('save_changes', 'Save changes')) + '</button>'
+        + '</div>';
+
+      return html;
+    }
+
+    function queryPanels() {
+      panels.contact = detail.querySelector('[data-aico-store-panel="contact"]');
+      panels.hours = detail.querySelector('[data-aico-store-panel="hours"]');
+      panels.images = detail.querySelector('[data-aico-store-panel="images"]');
+    }
+
+    // ===== Contact section ===================================================
     function renderContact(data) {
       var phones = (data && data.phones) || [];
       var emails = (data && data.emails) || [];
@@ -164,7 +244,7 @@
         .catch(function () { renderContact({}); });
     }
 
-    // ----- Opening-hours section ------------------------------------------
+    // ===== Opening-hours section ============================================
     function renderHours(data) {
       var hours = (data && data.openingHours) || [];
       var byDay = {};
@@ -228,7 +308,7 @@
         .catch(function () { renderHours({}); });
     }
 
-    // ----- Images section --------------------------------------------------
+    // ===== Images section ===================================================
     function renderImages(images) {
       images = images || [];
       var html = '';
@@ -294,8 +374,9 @@
         .catch(function () { setStatus(copy.error, 'error'); });
     }
 
-    // ----- Save all --------------------------------------------------------
+    // ===== Save all =========================================================
     function saveAll() {
+      if (!crmAddressId) { return Promise.resolve(false); }
       setStatus(copy.saving, 'saving');
       return Promise.all([
         request('POST', endpoint('/contact-info'), collectContact()),
@@ -311,24 +392,58 @@
       });
     }
 
-    // ----- Leave guard -----------------------------------------------------
-    function openLeaveModal(href) {
-      pendingHref = href;
+    // ===== Selection ========================================================
+    function doSelect(card) {
+      crmAddressId = card.getAttribute('data-aico-crm-address-id');
+      activeCard = card;
+      if (list) {
+        Array.prototype.forEach.call(list.querySelectorAll('[data-aico-store-select]'), function (item) {
+          item.classList.toggle('is-active', item === card);
+          if (item === card) { item.setAttribute('aria-current', 'true'); }
+          else { item.removeAttribute('aria-current'); }
+        });
+      }
+      detail.innerHTML = detailHtml(card);
+      detail.classList.add('is-loaded');
+      queryPanels();
+      clearDirty();
+      loadContact();
+      loadHours();
+      loadImages();
+    }
+
+    function selectStore(card) {
+      if (!card || card === activeCard) { return; }
+      if (dirty) { openLeaveModal({ type: 'switch', card: card }); return; }
+      doSelect(card);
+    }
+
+    // ===== Leave / switch guard =============================================
+    function openLeaveModal(action) {
+      pendingAction = action;
       if (leaveModal) {
         leaveModal.hidden = false;
         leaveModal.setAttribute('aria-hidden', 'false');
       }
     }
     function closeLeaveModal() {
-      pendingHref = null;
+      pendingAction = null;
       if (leaveModal) {
         leaveModal.hidden = true;
         leaveModal.setAttribute('aria-hidden', 'true');
       }
     }
-    function navigate(href) {
-      clearDirty(); // suppress the beforeunload prompt for an intentional leave
-      window.location.href = href || accountUrl;
+    function performPending() {
+      var action = pendingAction;
+      closeLeaveModal();
+      if (!action) { return; }
+      if (action.type === 'nav') {
+        clearDirty(); // suppress beforeunload for an intentional leave
+        window.location.href = action.href || accountUrl;
+      } else if (action.type === 'switch') {
+        clearDirty();
+        doSelect(action.card);
+      }
     }
 
     // Intercept in-app navigation (back button + any nav link) while dirty.
@@ -341,17 +456,19 @@
       if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0) { return; }
       if (!dirty) { return; }
       event.preventDefault();
-      openLeaveModal(link.href);
+      openLeaveModal({ type: 'nav', href: link.href });
     });
 
     root.addEventListener('click', function (event) {
+      var selectBtn = event.target.closest('[data-aico-store-select]');
+      if (selectBtn && (!list || list.contains(selectBtn))) { selectStore(selectBtn); return; }
+
       if (event.target.closest('[data-aico-store-save]')) { saveAll(); return; }
 
       if (event.target.closest('[data-aico-store-leave-cancel]')) { closeLeaveModal(); return; }
-      if (event.target.closest('[data-aico-store-leave-discard]')) { var h = pendingHref; closeLeaveModal(); navigate(h); return; }
+      if (event.target.closest('[data-aico-store-leave-discard]')) { performPending(); return; }
       if (event.target.closest('[data-aico-store-leave-save]')) {
-        var target = pendingHref;
-        saveAll().then(function (ok) { if (ok) { closeLeaveModal(); navigate(target); } });
+        saveAll().then(function (ok) { if (ok) { performPending(); } });
         return;
       }
 
@@ -369,8 +486,8 @@
       if (del) { var imageRowEl = del.closest('[data-image-row]'); if (imageRowEl) { deleteImage(imageRowEl.getAttribute('data-id'), imageRowEl); } }
     });
 
-    // Any field edit marks the form dirty (the image file input auto-uploads,
-    // so it isn't a "pending change" — exclude it).
+    // Any field edit inside a section marks the form dirty (the image file input
+    // auto-uploads, so it isn't a "pending change" — exclude it).
     root.addEventListener('input', function (event) {
       if (event.target.closest('[data-image-file]')) { return; }
       if (event.target.closest('[data-aico-store-section]')) { markDirty(); }
@@ -392,10 +509,17 @@
       if (event.key === 'Escape' && leaveModal && !leaveModal.hidden) { closeLeaveModal(); }
     });
 
-    // Initial load of all three sections.
-    loadContact();
-    loadHours();
-    loadImages();
+    // Initial selection: the server-marked active card, else the first store.
+    if (list) {
+      var initial = list.querySelector('[data-aico-store-select].is-active')
+        || list.querySelector('[data-aico-store-select]');
+      if (initial) { doSelect(initial); }
+    } else if (root.getAttribute('data-aico-crm-address-id')) {
+      // Back-compat: single-store mode (root carries the id, panels pre-rendered).
+      crmAddressId = root.getAttribute('data-aico-crm-address-id');
+      queryPanels();
+      if (panels.contact) { loadContact(); loadHours(); loadImages(); }
+    }
   }
 
   if (document.readyState === 'loading') {

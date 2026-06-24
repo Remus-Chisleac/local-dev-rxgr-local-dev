@@ -243,49 +243,17 @@
         {% endif %}
       </section>
 
+      {%- comment -%}
+        Store-locator addresses + their per-store editor moved to the dedicated
+        Store Locations Manager page (routes.aico_account_store_locator_url). The
+        profile only links there now; the change-request control lives there too.
+      {%- endcomment -%}
       <section class="aico-account-section">
         <h2 class="aico-account-section-title">{{ 'customer.addresses.store_locator_title' | t }}</h2>
         {% if customer.aico_store_locator_addresses.size > 0 %}
-          <div class="aico-account-address-grid">
-            {% for address in customer.aico_store_locator_addresses %}
-              {%- assign card_bucket = 'store_locator' -%}
-              {%- assign change = address.aico_change_request -%}
-              <div class="aico-account-card aico-account-address-card aico-address-card"
-                   data-aico-crm-address-id="{{ address.aico_crm_address_id }}"
-                   {% if change %}data-aico-change-request-id="{{ change.id }}"{% endif %}
-                   data-bucket="{{ card_bucket }}"
-                   data-field-company="{{ address.company | escape }}"
-                   data-field-first_name="{{ address.first_name | escape }}"
-                   data-field-last_name="{{ address.last_name | escape }}"
-                   data-field-address1="{{ address.address1 | escape }}"
-                   data-field-address2="{{ address.address2 | escape }}"
-                   data-field-zip="{{ address.zip | escape }}"
-                   data-field-city="{{ address.city | escape }}"
-                   data-field-province="{{ address.province | escape }}"
-                   data-field-country="{{ address.country | escape }}"
-                   data-field-phone="{{ address.phone | escape }}">
-                {% if change %}<span class="aico-change-pending-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
-                {% if address.name != '' %}<p class="aico-account-address-title">{{ address.name }}</p>{% endif %}
-                {% if address.company %}<p class="aico-account-address-line">{{ address.company }}</p>{% endif %}
-                <div class="aico-account-address-block">
-                  {% if address.address1 != '' %}<p class="aico-account-address-line">{{ address.address1 }}</p>{% endif %}
-                  {% if address.address2 != '' %}<p class="aico-account-address-line">{{ address.address2 }}</p>{% endif %}
-                  <p class="aico-account-address-line">{{ address.zip }} {{ address.city }}</p>
-                  {% if address.province != '' or address.country != '' %}
-                    <p class="aico-account-address-line">{{ address.province }}{% if address.province != '' and address.country != '' %}, {% endif %}{{ address.country }}</p>
-                  {% endif %}
-                  {% if address.phone %}<p class="aico-account-address-line">{{ address.phone }}</p>{% endif %}
-                </div>
-                <div class="aico-address-card-actions">
-                  <a class="aico-address-card-btn aico-store-details-open" href="{{ routes.aico_account_store_locator_url }}?store={{ address.aico_crm_address_id }}">{{ 'customer.addresses.aico_edit_store_details' | t }}</a>
-                  {% if change %}
-                    <button type="button" class="aico-address-card-btn aico-address-change-open is-pending" data-aico-change-open>{{ 'customer.addresses.aico_edit_request' | t }}</button>
-                  {% else %}
-                    <button type="button" class="aico-address-card-btn aico-address-change-open" data-aico-change-open>{{ 'customer.addresses.aico_request_change' | t }}</button>
-                  {% endif %}
-                </div>
-              </div>
-            {% endfor %}
+          <div class="aico-slm-manage">
+            <p class="aico-slm-manage-hint">{{ 'customer.aico_store_locator.intro' | t }}</p>
+            <a class="aico-slm-manage-btn" href="{{ routes.aico_account_store_locator_url }}">{{ 'customer.aico_store_locator.manage_link' | t }}</a>
           </div>
         {% else %}
           <p class="aico-account-empty">{{ 'customer.addresses.no_stores' | t }}</p>

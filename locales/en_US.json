@@ -245,9 +245,10 @@
       }
     },
     "aico_store_locator": {
-      "title": "Manage stores",
+      "title": "Store Locations Manager",
       "intro": "Edit the contact details, opening hours and images for your stores.",
-      "manage_link": "Manage stores",
+      "select_store": "Select a location on the left to edit its details.",
+      "manage_link": "Manage store locations",
       "back_to_addresses": "← Back to addresses",
       "edit_title": "Edit store details",
       "back_to_profile": "Back to profile",

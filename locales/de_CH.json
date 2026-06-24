@@ -247,6 +247,7 @@
     "aico_store_locator": {
       "title": "Standorte verwalten",
       "intro": "Bearbeiten Sie Kontaktangaben, Öffnungszeiten und Bilder Ihrer Standorte.",
+      "select_store": "Wählen Sie links einen Standort, um seine Details zu bearbeiten.",
       "manage_link": "Standorte verwalten",
       "back_to_addresses": "← Zurück zu den Adressen",
       "edit_title": "Geschäftsdetails bearbeiten",
