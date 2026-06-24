@@ -3732,6 +3732,14 @@ button.aico-home-brand-card {
   background: var(--aico-bg);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
 }
+
+/* The custom-select sits inside the field control's left padding (the icon gutter,
+   2rem) so a dropdown anchored at left:0 starts offset to the right of the control
+   box. Pull it back by that gutter + the control border so the dropdown's top-left
+   corner lines up with the bottom-left corner of the control box. */
+.aico-preorder-field-control-select .aico-preorder-custom-select-dropdown {
+  left: calc(-2rem - 1px);
+}
 .aico-preorder-custom-select-list {
   padding: 0.25rem;
   display: flex;
@@ -9140,18 +9148,23 @@ html.aico-preorder-gallery-open {
   padding-top: 0.7rem;
   border-top: 1px solid var(--aico-border, #e5e7eb);
 }
-/* Hover/focus trigger — the legend rows live in a popover, not permanently. */
+/* Click trigger — the legend rows live in a popover toggled open via the
+   trigger button (initPreorderCartPanelLegend in preorder-page.js), not on hover. */
 .aico-preorder-cart-panel-legend-trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--aico-muted-fg, #6b7280);
-  cursor: help;
+  cursor: pointer;
 }
-.aico-preorder-cart-panel-legend:hover .aico-preorder-cart-panel-legend-trigger,
-.aico-preorder-cart-panel-legend:focus-within .aico-preorder-cart-panel-legend-trigger {
+.aico-preorder-cart-panel-legend.is-open .aico-preorder-cart-panel-legend-trigger,
+.aico-preorder-cart-panel-legend-trigger:hover {
   color: #0e6e7a;
 }
 .aico-preorder-cart-panel-legend-pop {
@@ -9163,15 +9176,14 @@ html.aico-preorder-gallery-open {
   padding: 0.75rem 0.85rem;
   background: var(--aico-card, #fff);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.5rem;
+  border-radius: var(--aico-radius, 2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
   opacity: 0;
   visibility: hidden;
   transform: translateY(4px);
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
 }
-.aico-preorder-cart-panel-legend:hover .aico-preorder-cart-panel-legend-pop,
-.aico-preorder-cart-panel-legend:focus-within .aico-preorder-cart-panel-legend-pop {
+.aico-preorder-cart-panel-legend.is-open .aico-preorder-cart-panel-legend-pop {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);

@@ -442,6 +442,7 @@
     var cartPanel = root.querySelector('[data-aico-preorder-cart-panel]');
     var cartPanelTab = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-tab]');
     var cartPanelTabQty = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-tab-qty]');
+    var cartPanelPlaced = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-placed]');
     var cartPanelTotalQty = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-total-qty]');
     var cartPanelDiscount = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-discount]');
     var cartPanelNextTier = cartPanel && cartPanel.querySelector('[data-aico-preorder-cart-panel-next-tier]');
@@ -486,6 +487,31 @@
           if (cartPanelTab) cartPanelTab.setAttribute('aria-expanded', 'false');
         });
       }
+
+      // Colour legend popover — opens on click (not hover): toggle .is-open on the
+      // legend wrapper, close on outside click or Escape.
+      var legend = cartPanel.querySelector('[data-aico-preorder-cart-panel-legend]');
+      var legendTrigger = legend && legend.querySelector('[data-aico-preorder-cart-panel-legend-trigger]');
+      if (legend && legendTrigger) {
+        var setLegendOpen = function (open) {
+          legend.classList.toggle('is-open', open);
+          legendTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        legendTrigger.addEventListener('click', function (e) {
+          e.stopPropagation();
+          setLegendOpen(!legend.classList.contains('is-open'));
+        });
+        document.addEventListener('click', function (e) {
+          if (legend.classList.contains('is-open') && !legend.contains(e.target)) {
+            setLegendOpen(false);
+          }
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && legend.classList.contains('is-open')) {
+            setLegendOpen(false);
+          }
+        });
+      }
     }
 
     // Pieces still needed to reach the next discount tier — matches b2b-shop's
@@ -502,19 +528,26 @@
       return next === null ? 0 : Math.abs(next - totalQty);
     }
 
-    function updateCartPanel(totalQty, subtotal, discPct, discounts, currency, discountQty) {
+    function updateCartPanel(totalQty, grandTotal, discPct, discounts, currency, discountQty) {
       if (!cartPanel) return;
       var pcs = root.getAttribute('data-aico-preorder-copy-pcs') || 'STK';
-      // Gesamt + subtotal reflect THIS cart; discount % and the next-tier
-      // countdown use the cumulative quantity (cart + prior preorders).
+      // Gesamt reflects THIS cart; the money row shows the total AFTER discount.
+      // Discount % and the next-tier countdown use the cumulative quantity
+      // (cart + prior preorders).
       var tierQty = discountQty != null ? discountQty : totalQty;
+      // Number of preorders this debtor has already placed for the active session
+      // (across all of its delivery addresses) — comes from the session payload.
+      if (cartPanelPlaced) {
+        var placed = (sessionData && sessionData.aicoPlacedOrdersCount) || 0;
+        cartPanelPlaced.textContent = String(placed);
+      }
       if (cartPanelTotalQty) cartPanelTotalQty.textContent = totalQty + ' ' + pcs;
       if (cartPanelTabQty) cartPanelTabQty.textContent = totalQty;
       if (cartPanelDiscount) cartPanelDiscount.textContent = (discPct || 0) + '%';
       if (cartPanelNextTier) {
         cartPanelNextTier.textContent = nextDiscountRemaining(discounts, tierQty) + ' ' + pcs;
       }
-      if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(subtotal, currency, '');
+      if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(grandTotal, currency, '');
     }
     var summaryStatus = root.querySelector('[data-aico-preorder-summary-status]');
     var searchInput = root.querySelector('[data-aico-preorder-search]');
@@ -1324,7 +1357,7 @@
         // a silently-disabled button. Only an empty cart / in-flight save disable.
         submitBtn.disabled = saving || totalQty <= 0;
       }
-      updateCartPanel(totalQty, subtotal, discPct, discounts, currency, discountQty);
+      updateCartPanel(totalQty, grandTotal, discPct, discounts, currency, discountQty);
       updateCheckoutVisibility();
     }
 

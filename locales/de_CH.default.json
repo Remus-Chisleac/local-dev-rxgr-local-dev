@@ -518,11 +518,13 @@
       "size_labels_none": "Nur Kopfzeile"
     },
     "cart_panel": {
+      "placed_orders": "Aufgegebene Vorbestellungen",
       "title": "Warenkorb",
       "total_qty": "Gesamt",
       "discount": "Vorbestellungsrabatt",
       "next_tier": "Nächste Rabattstufe",
       "subtotal": "Zwischensumme",
+      "total": "Gesamtbetrag",
       "legend_title": "Legende",
       "legend_available": "Verfügbar",
       "legend_selected": "Ausgewählt",
