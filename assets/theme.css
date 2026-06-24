@@ -9781,7 +9781,7 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 /* ---------------------------------------------------------------- */
 
 :root {
-  --aico-customer-view-accent: #0d9488;
+  --aico-customer-view-accent: var(--color-accent);
 }
 
 /* System banner: a FIXED overlay at the very top of the viewport (modeled on
