@@ -277,22 +277,12 @@
             </dd>
           </div>
           <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.discount_percentage' | t }}</dt>
-            <dd>
-              <span x-text="formatMoney(cart && cart.aico_discount_percentage)"></span>%
-            </dd>
-          </div>
-          <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.shipping' | t }}</dt>
             <dd x-text="shippingDisplay()"></dd>
           </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
             <dd x-text="formatMoney(creditCardFlatFee)"></dd>
-          </div>
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.cc_fee_percent' | t }}</dt>
-            <dd><span x-text="formatMoney(creditCardFeePercent)"></span>%</dd>
           </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.vat' | t }}</dt>
