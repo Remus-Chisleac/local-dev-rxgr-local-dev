@@ -9071,7 +9071,7 @@ html.aico-preorder-gallery-open {
 .aico-preorder-cart-panel-body {
   background: var(--aico-card, #fff);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.5rem;
+  border-radius: var(--aico-radius, 2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 1rem 1.05rem;
 }
@@ -9141,6 +9141,57 @@ html.aico-preorder-gallery-open {
   border-top: 1px solid var(--aico-border, #e5e7eb);
 }
 .aico-preorder-cart-panel-row--subtotal dd { font-size: 1rem; }
+
+/* Info bubble next to a row label (e.g. placed-orders) — an (i) button that opens
+   a small explanatory popover on click (wired in preorder-page.js, .is-open). */
+.aico-preorder-cart-panel-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.aico-preorder-cart-panel-info-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--aico-muted-fg, #6b7280);
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-preorder-cart-panel-info-trigger:hover,
+.aico-preorder-cart-panel-info.is-open .aico-preorder-cart-panel-info-trigger {
+  color: #0e6e7a;
+}
+.aico-preorder-cart-panel-info-pop {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 6;
+  width: 15rem;
+  max-width: 70vw;
+  padding: 0.6rem 0.7rem;
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: var(--aico-radius, 2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--aico-fg, #1a1a1a);
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.aico-preorder-cart-panel-info.is-open .aico-preorder-cart-panel-info-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 
 .aico-preorder-cart-panel-legend {
   position: relative;

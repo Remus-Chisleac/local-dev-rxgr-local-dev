@@ -488,30 +488,40 @@
         });
       }
 
-      // Colour legend popover — opens on click (not hover): toggle .is-open on the
-      // legend wrapper, close on outside click or Escape.
-      var legend = cartPanel.querySelector('[data-aico-preorder-cart-panel-legend]');
-      var legendTrigger = legend && legend.querySelector('[data-aico-preorder-cart-panel-legend-trigger]');
-      if (legend && legendTrigger) {
-        var setLegendOpen = function (open) {
-          legend.classList.toggle('is-open', open);
-          legendTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      // Click-toggle popovers in the cart panel (the colour legend + the
+      // placed-orders info bubble): open on trigger click, close on outside-click
+      // or Escape. Not hover — the popovers hold real content the user reads.
+      function wireCartPanelPopover(wrapper, trigger) {
+        if (!wrapper || !trigger) return;
+        var setOpen = function (open) {
+          wrapper.classList.toggle('is-open', open);
+          trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
         };
-        legendTrigger.addEventListener('click', function (e) {
+        trigger.addEventListener('click', function (e) {
           e.stopPropagation();
-          setLegendOpen(!legend.classList.contains('is-open'));
+          setOpen(!wrapper.classList.contains('is-open'));
         });
         document.addEventListener('click', function (e) {
-          if (legend.classList.contains('is-open') && !legend.contains(e.target)) {
-            setLegendOpen(false);
+          if (wrapper.classList.contains('is-open') && !wrapper.contains(e.target)) {
+            setOpen(false);
           }
         });
         document.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape' && legend.classList.contains('is-open')) {
-            setLegendOpen(false);
+          if (e.key === 'Escape' && wrapper.classList.contains('is-open')) {
+            setOpen(false);
           }
         });
       }
+      var legendWrap = cartPanel.querySelector('[data-aico-preorder-cart-panel-legend]');
+      wireCartPanelPopover(
+        legendWrap,
+        legendWrap && legendWrap.querySelector('[data-aico-preorder-cart-panel-legend-trigger]')
+      );
+      var placedInfo = cartPanel.querySelector('[data-aico-cart-panel-info]');
+      wireCartPanelPopover(
+        placedInfo,
+        placedInfo && placedInfo.querySelector('[data-aico-cart-panel-info-trigger]')
+      );
     }
 
     // Pieces still needed to reach the next discount tier — matches b2b-shop's
