@@ -417,9 +417,9 @@
       wrap.appendChild(q4);
 
       // Q5 live Joya product image-card picker
-      wrap.appendChild(modelQuestion('5', L.secondPage.question5.text, 'question5', 'question5Extra', other, 'joya'));
+      wrap.appendChild(modelQuestion('5', 'q5', 'question5', 'question5Extra', other, 'joya'));
       // Q6 live kybun product image-card picker
-      wrap.appendChild(modelQuestion('6', L.secondPage.question6.text, 'question6', 'question6Extra', other, 'kybun'));
+      wrap.appendChild(modelQuestion('6', 'q6', 'question6', 'question6Extra', other, 'kybun'));
 
       // Q7 coupon chips (single) + inline discount on option3 + validity extra
       var q7 = question('7', L.secondPage.question7.text);
@@ -473,12 +473,27 @@
     }
 
     // live product image-card picker (q5/q6): selected product NAMES are the array;
-    // "other" sentinel + extra name input kept. maxSelectable = 3. Selecting a card
-    // toggles .is-selected IN PLACE (no step rebuild); products fetched per brand.
-    function modelQuestion(num, labelText, arrKey, extraKey, other, brand) {
-      var MAX = 3;
+    // "other" sentinel + extra name input kept. maxSelectable comes from config.
+    // Selecting a card toggles .is-selected IN PLACE (no step rebuild); products
+    // fetched per brand. cfgKey = 'q5' | 'q6' (into cfg.maxSelectable + STR strings).
+    function modelQuestion(num, cfgKey, arrKey, extraKey, other, brand) {
       var sp = state.secondPage;
-      var q = question(num, labelText);
+      var strQ = L.secondPage['question' + num];
+      var MAX = (cfg.maxSelectable && cfg.maxSelectable[cfgKey]) || 3;
+
+      // heading with live counter span inside the .et-qlabel
+      var q = el('div', 'et-question');
+      var qlabel = el('span', 'et-qlabel', { text: num + '. ' + strQ.text });
+      var counter = el('span', 'et-qcount');
+      qlabel.appendChild(counter);
+      q.appendChild(qlabel);
+      // subText as .et-qnote, with {{count}} → MAX
+      if (strQ.subText) {
+        q.appendChild(el('span', 'et-qnote', { text: String(strQ.subText).replace('{{count}}', MAX) }));
+      }
+
+      // live counter text (count = array length incl. the "other" sentinel)
+      function updateCounter() { counter.textContent = ((sp[arrKey] || []).length) + ' / ' + MAX; }
 
       // grid host for product cards + a loading/empty status line
       var grid = el('div', 'et-cards');
@@ -517,6 +532,7 @@
         var otherActive = chip.classList.contains('is-selected');
         chip.style.opacity = (!otherActive && full) ? '0.5' : '';
         chip.style.pointerEvents = (!otherActive && full) ? 'none' : '';
+        updateCounter();  // keep the live "n / max" counter in sync, in place
       }
 
       function makeCard(p) {
@@ -558,6 +574,7 @@
       q.appendChild(extraField);
       toggleExtra();
       anchor('secondPage.' + arrKey, chipBox);
+      updateCounter();  // initial "n / max" before products load
 
       // fetch this brand's products (cookie-authed), then render cards
       var url = cfg.productsUrl;

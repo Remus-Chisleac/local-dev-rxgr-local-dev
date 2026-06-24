@@ -25,8 +25,24 @@
 .et-info a { color: #ea580c; }
 
 .et-question { margin-bottom: 2rem; }
-.et-qlabel { display: block; font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
-.et-qnote { display: block; color: var(--aico-muted-fg); font-size: 0.8125rem; margin-bottom: 0.75rem; }
+/* Keep the current question's heading visible while scrolling its (tall)
+   options/product grid — it sticks at the top of the viewport until the next
+   question scrolls up to replace it. */
+.et-qlabel {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--aico-bg);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.625rem 0;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--aico-border);
+}
+.et-qnote { display: block; color: var(--aico-muted-fg); font-size: 0.8125rem; margin: 0.5rem 0 0.75rem; }
+/* live "n / max" selection counter shown beside picker questions */
+.et-qcount { float: right; font-weight: 600; color: #ea580c; font-variant-numeric: tabular-nums; }
 
 /* text option chips (single or multi select) */
 .et-options { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }

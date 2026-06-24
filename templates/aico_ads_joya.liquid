@@ -16,6 +16,7 @@
   "formName": "joya-form",
   "endpoint": {{ routes.aico_forms_url | json }},
   "productsUrl": {{ routes.aico_form_products_url | json }},
+  "maxSelectable": { "shoes": 2 },
   "email": {{ customer.email | default: '' | json }},
   "images": {
     "question3": ["{{ 'et-joya-ads-question3-image1.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image2.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image3.jpg' | asset_url }}"],

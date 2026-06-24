@@ -367,9 +367,10 @@
       q4.setAttribute('data-et-err-for', 'secondPage.question4');
       step.appendChild(q4);
 
-      // Q5 / Q6 live product image-card pickers
-      step.appendChild(buildProductPicker('question5', 'question5', 'question5Extra', '5. ', 'joya', step));
-      step.appendChild(buildProductPicker('question6', 'question6', 'question6Extra', '6. ', 'kybun', step));
+      // Q5 / Q6 live product image-card pickers (per-question maxSelectable from config)
+      var maxSel = cfg.maxSelectable || {};
+      step.appendChild(buildProductPicker('question5', 'question5', 'question5Extra', '5. ', 'joya', maxSel.q5, step));
+      step.appendChild(buildProductPicker('question6', 'question6', 'question6Extra', '6. ', 'kybun', maxSel.q6, step));
 
       // Q7 coupon chips
       var q7 = el('div', 'et-question');
@@ -451,18 +452,28 @@
     }
 
     // Live product image-card picker (q5/q6). Fetches the brand's products from
-    // cfg.productsUrl, renders selectable .et-card cards (max 3 incl. the "other"
-    // sentinel). Selecting a card toggles .is-selected in place and pushes/removes
-    // the product NAME in state.secondPage[arrKey]. An "Anderes Schuhmodell" card
-    // pushes the de_CH sentinel and reveals the name input (extraKey).
-    var MAX_MODELS = 3;
-    function buildProductPicker(qKey, arrKey, extraKey, num, brand, step) {
+    // cfg.productsUrl, renders selectable .et-card cards (max per cfg.maxSelectable,
+    // incl. the "other" sentinel). Selecting a card toggles .is-selected in place and
+    // pushes/removes the product NAME in state.secondPage[arrKey]. An "Anderes
+    // Schuhmodell" card pushes the de_CH sentinel and reveals the name input (extraKey).
+    // A live "n / max" counter in the heading updates in place on every (de)select.
+    var DEFAULT_MAX_MODELS = 3;
+    function buildProductPicker(qKey, arrKey, extraKey, num, brand, maxSel, step) {
       var other = DE.secondPage.otherShoeModel;
       var arr = state.secondPage[arrKey];
+      var max = (maxSel && maxSel > 0) ? maxSel : DEFAULT_MAX_MODELS;
 
       var q = el('div', 'et-question');
-      q.appendChild(el('div', 'et-qlabel', num + get(T, 'secondPage.' + qKey + '.text')));
-      q.appendChild(el('span', 'et-qnote', (get(T, 'secondPage.' + qKey + '.subText') || '').replace('{{count}}', String(MAX_MODELS))));
+      var label = el('div', 'et-qlabel', num + get(T, 'secondPage.' + qKey + '.text'));
+      var countEl = el('span', 'et-qcount');
+      label.appendChild(document.createTextNode(' '));
+      label.appendChild(countEl);
+      q.appendChild(label);
+      function updateCount() { countEl.textContent = arr.length + ' / ' + max; }
+      updateCount();
+
+      var subText = (get(T, 'secondPage.' + qKey + '.subText') || '');
+      if (subText.indexOf('{{count}}') !== -1) q.appendChild(el('span', 'et-qnote', subText.replace('{{count}}', String(max))));
 
       var cards = el('div', 'et-cards');
       q.appendChild(cards);
@@ -490,13 +501,14 @@
           if (idx !== -1) {
             arr.splice(idx, 1);
             card.classList.remove('is-selected');
-          } else if (arr.length < MAX_MODELS) {
+          } else if (arr.length < max) {
             arr.push(value);
             card.classList.add('is-selected');
           } else {
             return; // enforce max
           }
           if (value === other) extraFld.hidden = arr.indexOf(other) === -1;
+          updateCount();
           if (attempted[2]) refreshErrors2(step);
         });
         return card;

@@ -18,6 +18,7 @@
   "formName": "kj-events-form",
   "endpoint": {{ routes.aico_forms_url | json }},
   "productsUrl": {{ routes.aico_form_products_url | json }},
+  "maxSelectable": { "q5": 3, "q6": 3 },
   "email": {{ customer.email | default: '' | json }},
   "address": {{ et_address | json }},
   "images": {

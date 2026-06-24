@@ -224,6 +224,8 @@
     var DE = STR.de_CH;
     var MSG = STR[cfg.locale === 'en' ? 'en' : 'de_CH'];
     var images = cfg.images || {};
+    // config-driven shoe cap (b2b secondPage cap was 2); fall back to MAX_SHOES
+    var maxShoes = (cfg.maxSelectable && cfg.maxSelectable.shoes) || MAX_SHOES;
 
     var state = initialState();
     // UI-only flags (not part of the submitted description)
@@ -431,10 +433,10 @@
     // Live shoe-model picker. Fetches joya products and renders selectable image
     // cards into `cardsEl` (built ONCE, then mutated in place). Selecting a card
     // pushes/removes the product NAME into `arr` (the EXISTING state array key),
-    // enforces MAX_SHOES, and toggles `.is-selected` in place. The trailing
+    // enforces `cap`, and toggles `.is-selected` in place. The trailing
     // "other / Folgende Schuhmodelle" card reveals `extraField` (toggle hidden).
     // `onChange` is invoked after any toggle (to refresh counter + clear errors).
-    function buildShoePicker(cardsEl, arr, extraField, getShowExtra, setShowExtra, onChange) {
+    function buildShoePicker(cardsEl, arr, extraField, cap, setShowExtra, onChange) {
       var otherCanonical = DE.secondPage.secondQuestion.followingShoeModels;
       var otherDisplay = MSG.secondPage.secondQuestion.followingShoeModels;
 
@@ -445,7 +447,7 @@
           if (i !== -1) {
             arr.splice(i, 1); cd.classList.remove('is-selected');
             setShowExtra(false); extraField.hidden = true;
-          } else if (arr.length < MAX_SHOES) {
+          } else if (arr.length < cap) {
             arr.push(otherCanonical); cd.classList.add('is-selected');
             setShowExtra(true); extraField.hidden = false;
           }
@@ -467,7 +469,7 @@
           var cd = card(name, p.image || '', sel, function () {
             var i = arr.indexOf(name);
             if (i !== -1) { arr.splice(i, 1); cd.classList.remove('is-selected'); }
-            else if (arr.length < MAX_SHOES) { arr.push(name); cd.classList.add('is-selected'); }
+            else if (arr.length < cap) { arr.push(name); cd.classList.add('is-selected'); }
             onChange();
           });
           cardsEl.appendChild(cd);
@@ -517,12 +519,14 @@
       q3.appendChild(q3ExtraField);
       wrap.appendChild(q3);
 
-      // Q4 - shoe models (image cards, multi select max 2) + "other" reveals extra
+      // Q4 - shoe models (image cards, multi select; live counter in heading)
       var q4 = el('div', { class: 'et-question' });
-      q4.appendChild(el('span', { class: 'et-qlabel', html: '4. <b>' + MSG.secondPage.additionalElementsText + '</b>' }));
+      // live count span lives INSIDE the .et-qlabel (floats right via .et-qcount)
+      var count4 = el('span', { class: 'et-qcount', text: state.secondPage.question2.length + ' / ' + maxShoes });
+      var label4 = el('span', { class: 'et-qlabel', html: '4. <b>' + MSG.secondPage.additionalElementsText + '</b>' });
+      label4.appendChild(count4);
+      q4.appendChild(label4);
       q4.appendChild(el('span', { class: 'et-qnote', text: MSG.secondPage.chooseMaxImages }));
-      var counter4 = el('span', { class: 'et-qnote', text: state.secondPage.question2.length + '/' + MAX_SHOES });
-      q4.appendChild(counter4);
       var cards4 = el('div', { class: 'et-cards' });
 
       var q4ExtraField = el('div', { class: 'et-field' });
@@ -534,11 +538,11 @@
 
       // live joya product picker -> selections land in secondPage.question2 (NAME)
       buildShoePicker(
-        cards4, state.secondPage.question2, q4ExtraField,
-        function () { return ui.showShoeExtra2; },
+        cards4, state.secondPage.question2, q4ExtraField, maxShoes,
         function (v) { ui.showShoeExtra2 = v; },
         function () {
-          counter4.textContent = state.secondPage.question2.length + '/' + MAX_SHOES;
+          // count includes the "other" sentinel since it sits in the same array
+          count4.textContent = state.secondPage.question2.length + ' / ' + maxShoes;
           clearErr(state.secondPage.errors, 'question2');
           setError(q4, false);
         }

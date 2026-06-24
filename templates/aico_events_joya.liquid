@@ -33,6 +33,7 @@
       "formName": "joya-formular",
       "endpoint": {{ routes.aico_forms_url | json }},
       "productsUrl": {{ routes.aico_form_products_url | json }},
+      "maxSelectable": { "shoes": 2 },
       "email": {{ customer.email | default: '' | json }},
       "address": {{ user_address | strip | json }},
       "images": {

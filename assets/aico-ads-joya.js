@@ -425,12 +425,17 @@
     step.appendChild(qPR);
 
     // --- Q4 (state question2): shoe models in text section ---
-    // LIVE Sandalen picker (b2b brandId 6, max 2). Product NAME lands in sp.question2.
+    // LIVE Sandalen picker (b2b brandId 6). Product NAME lands in sp.question2.
     // The "Folgende/other shoe model" card (de_CH canonical) reveals the extra name input.
-    var Q2_MAX = 2; // mirrors b2b handleSecondQuestionShoeClick (question2.length < 2)
+    // Cap is config-driven (cfg.maxSelectable.shoes), default 2 (the b2b cap).
+    var Q2_MAX = (this.cfg.maxSelectable && this.cfg.maxSelectable.shoes) || 2;
     var qModels = el('div', 'et-question');
     var qMl = el('div', 'et-qlabel'); qMl.appendChild(document.createTextNode('4. '));
     qMl.appendChild(el('strong', null, t.secondPage.importantElements));
+    // live counter (n / max incl. the "other" sentinel) — floats right via .et-qcount
+    var modelCount = el('span', 'et-qcount');
+    qMl.appendChild(modelCount);
+    function syncModelCount() { modelCount.textContent = sp.question2.length + ' / ' + Q2_MAX; }
     qModels.appendChild(qMl);
     qModels.appendChild(el('span', 'et-qnote', t.secondPage.chooseMaxImages));
     var otherValue = DE.secondPage.secondQuestion.option4; // 'Folgende(s) Schuhmodell(e)'
@@ -447,6 +452,7 @@
     function syncM2() { m2Field.hidden = !self.showSecondQuestionInput; if (m2Field.hidden) self.clearErr(m2Field); }
     qModels.appendChild(m2Field);
     syncM2();
+    syncModelCount();
     step.appendChild(qModels);
 
     // toggles a value in sp.question2 (shared Q2_MAX across products + "other"); in place
@@ -461,6 +467,7 @@
         card.classList.add('is-selected');
         if (isOther) { self.showSecondQuestionInput = true; syncM2(); }
       }
+      syncModelCount();
       self.clearErr(qModels);
     }
     function addModelCard(value, label, imageUrl, isOther) {
