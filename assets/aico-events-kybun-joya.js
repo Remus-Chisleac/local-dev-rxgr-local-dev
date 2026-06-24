@@ -468,6 +468,9 @@
       var sp = state.secondPage;
       var other = DE.secondPage.otherShoeModel;
 
+      // top nav bar (same handlers as the bottom bar) — not on page 1
+      wrap.appendChild(actions(true, L.next));
+
       // Q3 image cards (single)
       var q3 = question('3', L.secondPage.question3.text);
       var q3grid = cardGroup(q3, [
@@ -683,6 +686,9 @@
       var wrap = el('div', 'et-step is-active');
       var th = state.thirdPage;
 
+      // top nav bar (same handlers as the bottom bar) — not on page 1
+      wrap.appendChild(actions(true, L.thirdPage.submit));
+
       // Q8 multi chips, option6 has inline free-text (toggles in place)
       var q8 = question('8', L.thirdPage.question8.text, L.thirdPage.question8.note);
       var box = el('div', 'et-options');
@@ -782,12 +788,13 @@
       }
       bar.appendChild(el('span', 'et-progress', { text: page + '/' + TOTAL }));
       var prim = el('button', 'et-btn et-btn-primary', { type: 'button', text: primaryLabel });
-      prim.addEventListener('click', onPrimary);
+      // pass the clicked button so submit() can spin the right one (top vs bottom bar)
+      prim.addEventListener('click', function () { onPrimary(prim); });
       bar.appendChild(prim);
       return bar;
     }
 
-    function onPrimary() {
+    function onPrimary(clickedBtn) {
       errors = validatePage(page, state, DE, L);
       if (Object.keys(errors).length) {
         applyErrors();  // update errors IN PLACE — no step rebuild
@@ -799,22 +806,21 @@
       applyErrors();
       if (page < 3) { page += 1; writeStepParam(page); buildStep(); window.scrollTo(0, 0); return; }
       // page === 3 → submit
-      submit();
+      submit(clickedBtn);
     }
 
-    function submit() {
-      var btn = mount.querySelector('.et-btn-primary');
+    function submit(clickedBtn) {
+      // page 3 now has TWO submit buttons (top + bottom bar): disable BOTH; spin the clicked one.
+      var btns = Array.prototype.slice.call(mount.querySelectorAll('.et-btn-primary'));
+      var spinBtn = (clickedBtn && btns.indexOf(clickedBtn) !== -1) ? clickedBtn : btns[0];
       var spinner;
-      if (btn) {
-        btn.classList.add('is-loading');
-        btn.disabled = true;
+      btns.forEach(function (b) { b.classList.add('is-loading'); b.disabled = true; });
+      if (spinBtn) {
         spinner = el('span', 'et-spinner');
-        btn.insertBefore(spinner, btn.firstChild);  // before the label, label kept
+        spinBtn.insertBefore(spinner, spinBtn.firstChild);  // before the label, label kept
       }
       function restoreBtn() {
-        if (!btn) return;
-        btn.classList.remove('is-loading');
-        btn.disabled = false;
+        btns.forEach(function (b) { b.classList.remove('is-loading'); b.disabled = false; });
         if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
       }
 

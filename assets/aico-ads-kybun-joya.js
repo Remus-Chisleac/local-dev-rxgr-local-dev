@@ -391,6 +391,33 @@
       var step = el('div', 'et-step is-active');
       var imgs = cfg.images || {};
 
+      // Nav bar builder — Back + .et-progress + Submit (with its own spinner).
+      // Page 2 (the last input page) renders one at the TOP and one at the BOTTOM;
+      // every Submit button is collected so that clicking either disables BOTH.
+      var submitBtns = [];
+      function makeActions() {
+        var actions = el('div', 'et-actions');
+        var back = el('button', 'et-btn et-btn-back', T.back); back.type = 'button';
+        back.addEventListener('click', function () { navigate(1); });
+        actions.appendChild(back);
+        actions.appendChild(el('span', 'et-progress', page + ' / ' + TOTAL));
+        var submit = el('button', 'et-btn et-btn-primary'); submit.type = 'button';
+        var spinner = el('span', 'et-spinner'); spinner.hidden = true;
+        submit.appendChild(spinner);
+        submit.appendChild(document.createTextNode(T.secondPage.submit));
+        submit.addEventListener('click', function () {
+          attempted[2] = true;
+          if (Object.keys(validatePage(2, state, DE, T)).length) { refreshErrors2(step); return; }
+          doSubmit(submit, spinner, submitBtns);
+        });
+        submitBtns.push(submit);
+        actions.appendChild(submit);
+        return actions;
+      }
+
+      // top nav bar (page 2 is not the first input page, so it gets one)
+      step.appendChild(makeActions());
+
       function imageCards(qKey, optKeys, imgUrls, getVal, setVal) {
         var cards = el('div', 'et-cards');
         var cardEls = [];
@@ -496,23 +523,8 @@
       });
       step.appendChild(q8);
 
-      // actions: back + submit
-      var actions = el('div', 'et-actions');
-      var back = el('button', 'et-btn et-btn-back', T.back); back.type = 'button';
-      back.addEventListener('click', function () { navigate(1); });
-      actions.appendChild(back);
-      actions.appendChild(el('span', 'et-progress', page + ' / ' + TOTAL));
-      var submit = el('button', 'et-btn et-btn-primary'); submit.type = 'button';
-      var spinner = el('span', 'et-spinner'); spinner.hidden = true;
-      submit.appendChild(spinner);
-      submit.appendChild(document.createTextNode(T.secondPage.submit));
-      submit.addEventListener('click', function () {
-        attempted[2] = true;
-        if (Object.keys(validatePage(2, state, DE, T)).length) { refreshErrors2(step); return; }
-        doSubmit(submit, spinner);
-      });
-      actions.appendChild(submit);
-      step.appendChild(actions);
+      // append the bottom nav bar (top bar was inserted above the questions)
+      step.appendChild(makeActions());
 
       return step;
     }
@@ -633,11 +645,13 @@
       window.scrollTo(0, 0);
     }
 
-    function doSubmit(btn, spinner) {
+    // btn/spinner = the clicked submit control (spinner shows here only);
+    // allBtns = every submit button on the page (all disabled while in flight).
+    function doSubmit(btn, spinner, allBtns) {
+      var buttons = allBtns && allBtns.length ? allBtns : (btn ? [btn] : []);
       function setLoading(on) {
-        if (!btn) return;
-        btn.disabled = on;
-        btn.classList.toggle('is-loading', on);
+        buttons.forEach(function (b) { b.disabled = on; });
+        if (btn) btn.classList.toggle('is-loading', on);
         if (spinner) spinner.hidden = !on;
       }
       setLoading(true);

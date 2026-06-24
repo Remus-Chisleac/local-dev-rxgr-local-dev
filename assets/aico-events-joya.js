@@ -314,6 +314,9 @@
     ui.showQ3Extra = state.secondPage.question1 === DE.secondPage.firstQuestion.option3;
     ui.showShoeExtra2 = state.secondPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
     ui.showShoeExtra3 = state.thirdPage.question2.indexOf(DE.secondPage.secondQuestion.followingShoeModels) !== -1;
+    // all submit buttons currently in the DOM (top + bottom bars on the submit
+    // page) — repopulated on each renderThird() so spinner can disable them all.
+    var submitButtons = [];
 
     function imgUrl(q, key) { return (images[q] && images[q][key]) || ''; }
 
@@ -372,6 +375,25 @@
       var sel = container.querySelectorAll('.is-selected');
       Array.prototype.forEach.call(sel, function (n) { n.classList.remove('is-selected'); });
       node.classList.add('is-selected');
+    }
+
+    // Build an `.et-actions` nav bar: optional Back, progress, primary (Next/Submit).
+    // Used to render IDENTICAL bars at the top and bottom of a step; both bars
+    // wire the SAME handlers. `backPage` = page to go Back to (null = no Back).
+    // `onPrimary(primaryBtn)` fires on the primary click (gets its own button so
+    // the submit spinner lands on whichever copy was clicked).
+    function buildActions(backPage, primaryLabel, onPrimary) {
+      var actions = el('div', { class: 'et-actions' });
+      if (backPage != null) {
+        var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
+        backBtn.addEventListener('click', function () { goToPage(backPage); });
+        actions.appendChild(backBtn);
+      }
+      actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / ' + TOTAL_PAGES }));
+      var primaryBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: primaryLabel });
+      primaryBtn.addEventListener('click', function () { onPrimary(primaryBtn); });
+      actions.appendChild(primaryBtn);
+      return { bar: actions, primary: primaryBtn };
     }
 
     // image-card option. Stores `canonical` in state but shows `display` label.
@@ -466,13 +488,8 @@
       up.appendChild(zone);
       wrap.appendChild(up);
 
-      // nav
-      var actions = el('div', { class: 'et-actions' });
-      actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.next });
-      nextBtn.addEventListener('click', function () { onFirstNext([q1, q2, q3, q4]); });
-      actions.appendChild(nextBtn);
-      wrap.appendChild(actions);
+      // nav — page 1 has BOTTOM bar only (no Back, no top bar)
+      wrap.appendChild(buildActions(null, MSG.next, function () { onFirstNext([q1, q2, q3, q4]); }).bar);
       return wrap;
     }
 
@@ -637,15 +654,12 @@
       q4.appendChild(q4ExtraField);
       wrap.appendChild(q4);
 
-      var actions = el('div', { class: 'et-actions' });
-      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
-      backBtn.addEventListener('click', function () { goToPage(1); });
-      actions.appendChild(backBtn);
-      actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.next });
-      nextBtn.addEventListener('click', function () { onSecondNext(q3, q4); });
-      actions.appendChild(nextBtn);
-      wrap.appendChild(actions);
+      // identical nav bars top + bottom; both wire Back→1 and Next→onSecondNext
+      function onNext() { onSecondNext(q3, q4); }
+      // TOP bar (inserted before the questions; page 2 is not the first page)
+      wrap.insertBefore(buildActions(1, MSG.next, onNext).bar, wrap.firstChild);
+      // BOTTOM bar
+      wrap.appendChild(buildActions(1, MSG.next, onNext).bar);
       return wrap;
     }
 
@@ -708,12 +722,13 @@
       if (u5) q5.appendChild(el('img', { class: 'et-header-img', src: u5, alt: '', loading: 'lazy', style: 'max-width:510px;' }));
       wrap.appendChild(q5);
 
-      // Q6 - current season models (image cards, multi select max 2)
+      // Q6 - current season models (live product picker, multi select; live counter)
       var q6 = el('div', { class: 'et-question' });
       qRef.question2 = q6;
-      q6.appendChild(el('span', { class: 'et-qlabel', html: '6. <b>' + MSG.thirdPage.currentSeasonModels + '</b>' }));
-      var counter6 = el('span', { class: 'et-qnote', text: state.thirdPage.question2.length + '/' + MAX_SHOES });
-      q6.appendChild(counter6);
+      var count6 = el('span', { class: 'et-qcount', text: state.thirdPage.question2.length + ' / ' + maxShoes });
+      var label6 = el('span', { class: 'et-qlabel', html: '6. <b>' + MSG.thirdPage.currentSeasonModels + '</b>' });
+      label6.appendChild(count6);
+      q6.appendChild(label6);
       var cards6 = el('div', { class: 'et-cards' });
 
       var q6ExtraField = el('div', { class: 'et-field' });
@@ -724,27 +739,16 @@
       q6ExtraField.appendChild(q6ExtraIn);
       q6ExtraField.hidden = !ui.showShoeExtra3;
 
-      shoeOptions().forEach(function (opt) {
-        var sel = state.thirdPage.question2.indexOf(opt.canonical) !== -1;
-        var cd = card(opt.display, opt.url, sel, function () {
-          var arr = state.thirdPage.question2;
-          var i = arr.indexOf(opt.canonical);
-          if (i !== -1) {
-            arr.splice(i, 1);
-            cd.classList.remove('is-selected');
-            if (opt.isOther) { ui.showShoeExtra3 = false; q6ExtraField.hidden = true; }
-          } else if (arr.length < MAX_SHOES) {
-            arr.push(opt.canonical);
-            cd.classList.add('is-selected');
-            if (opt.isOther) { ui.showShoeExtra3 = true; q6ExtraField.hidden = false; }
-          }
-          counter6.textContent = state.thirdPage.question2.length + '/' + MAX_SHOES;
+      // live joya product picker -> selections land in thirdPage.question2 (NAME)
+      buildShoePicker(
+        cards6, state.thirdPage.question2, q6ExtraField, maxShoes,
+        function (v) { ui.showShoeExtra3 = v; },
+        function () {
+          count6.textContent = state.thirdPage.question2.length + ' / ' + maxShoes;
           clearErr(state.thirdPage.errors, 'question2');
           setError(q6, false);
-          persist();
-        });
-        cards6.appendChild(cd);
-      });
+        }
+      );
       q6.appendChild(cards6);
       q6.appendChild(q6ExtraField);
       wrap.appendChild(q6);
@@ -789,15 +793,19 @@
       q12.appendChild(ta);
       wrap.appendChild(q12);
 
-      var actions = el('div', { class: 'et-actions' });
-      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
-      backBtn.addEventListener('click', function () { goToPage(2); });
-      actions.appendChild(backBtn);
-      actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var submitBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.thirdPage.submit });
-      submitBtn.addEventListener('click', function () { onSubmit(qRef, submitBtn); });
-      actions.appendChild(submitBtn);
-      wrap.appendChild(actions);
+      // identical nav bars top + bottom; both Submit buttons share onSubmit. Track
+      // every Submit button so the in-flight spinner can disable BOTH (and spin
+      // whichever copy was clicked).
+      submitButtons = [];
+      function onPrimary(btn) { onSubmit(qRef, btn); }
+      // TOP bar (inserted before the questions; submit page is not the first page)
+      var topActions = buildActions(2, MSG.thirdPage.submit, onPrimary);
+      submitButtons.push(topActions.primary);
+      wrap.insertBefore(topActions.bar, wrap.firstChild);
+      // BOTTOM bar
+      var bottomActions = buildActions(2, MSG.thirdPage.submit, onPrimary);
+      submitButtons.push(bottomActions.primary);
+      wrap.appendChild(bottomActions.bar);
       return wrap;
     }
 
@@ -816,20 +824,25 @@
       submit(btn);
     }
 
-    // toggle the submit button's loading spinner (CSS: .et-btn.is-loading + .et-spinner)
-    function setSubmitLoading(btn, loading) {
-      if (!btn) return;
-      if (loading) {
-        if (btn.querySelector('.et-spinner')) return;
-        btn.classList.add('is-loading');
-        btn.disabled = true;
-        btn.insertBefore(el('span', { class: 'et-spinner' }), btn.firstChild);
-      } else {
-        btn.classList.remove('is-loading');
-        btn.disabled = false;
-        var sp = btn.querySelector('.et-spinner');
-        if (sp) sp.parentNode.removeChild(sp);
-      }
+    // Toggle the submit loading state across ALL submit buttons (top + bottom
+    // bars share the same handler): disable every button in `btns`, but show the
+    // spinner only on `clicked` (CSS: .et-btn.is-loading + .et-spinner).
+    function setSubmitLoading(btns, clicked, loading) {
+      (btns || []).forEach(function (b) {
+        if (!b) return;
+        if (loading) {
+          b.disabled = true;
+          if (b === clicked && !b.querySelector('.et-spinner')) {
+            b.classList.add('is-loading');
+            b.insertBefore(el('span', { class: 'et-spinner' }), b.firstChild);
+          }
+        } else {
+          b.disabled = false;
+          b.classList.remove('is-loading');
+          var sp = b.querySelector('.et-spinner');
+          if (sp) sp.parentNode.removeChild(sp);
+        }
+      });
     }
 
     function submit(btn) {
@@ -839,18 +852,18 @@
       var form = new FormData();
       ui.files.forEach(function (f, i) { form.append('attachments[' + i + ']', f.file, f.name); });
       form.append('data', JSON.stringify({ data: { formName: 'joya-formular', description: description } }));
-      setSubmitLoading(btn, true);
+      setSubmitLoading(submitButtons, btn, true); // disable BOTH; spin the clicked one
       fetch(cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('submit failed: ' + res.status);
-          setSubmitLoading(btn, false);
+          setSubmitLoading(submitButtons, btn, false);
           clearPersisted(); // drop the saved draft only on a successful submit
           state = initialState();
           ui = { page: 4, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
           setStepInUrl(4);
           render();
         })
-        .catch(function (e) { setSubmitLoading(btn, false); console.error(e); });
+        .catch(function (e) { setSubmitLoading(submitButtons, btn, false); console.error(e); });
     }
 
     // ===================== THANK YOU =====================

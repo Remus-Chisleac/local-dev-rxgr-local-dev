@@ -691,14 +691,11 @@
     qComment.appendChild(ta);
     step.appendChild(qComment);
 
-    // actions
-    var actions = el('div', 'et-actions');
-    var backBtn = el('button', 'et-btn et-btn-back', t.back); backBtn.type = 'button';
-    backBtn.addEventListener('click', function () { self.goToPage(1); });
-    actions.appendChild(backBtn);
-    actions.appendChild(el('span', 'et-progress', '2 / 2'));
-    var submitBtn = el('button', 'et-btn et-btn-primary', t.secondPage.submit); submitBtn.type = 'button';
-    submitBtn.addEventListener('click', function () {
+    // --- actions: same bar at TOP (last input page) and BOTTOM; same handlers ---
+    var submitBtns = []; // every Submit button across both bars (disabled together in flight)
+
+    function onBack() { self.goToPage(1); }
+    function onSubmit(clickedBtn) {
       var map = { question1: qPR, question2: qModels, question3: qDesign, question5: qSeason, question6: qFormat, question7: qFormat, question1Extra: extraField, question2Extra: m2Field };
       // clear in place: remove only the error nodes attached to validated containers
       Object.keys(map).forEach(function (k) { self.clearErr(map[k]); });
@@ -708,10 +705,25 @@
         keys.forEach(function (k) { if (map[k]) self.showErr(map[k], t.errorMessage); });
         return;
       }
-      self.submit(submitBtn);
-    });
-    actions.appendChild(submitBtn);
-    step.appendChild(actions);
+      self.submit(clickedBtn, submitBtns);
+    }
+    function makeActions() {
+      var actions = el('div', 'et-actions');
+      var backBtn = el('button', 'et-btn et-btn-back', t.back); backBtn.type = 'button';
+      backBtn.addEventListener('click', onBack);
+      actions.appendChild(backBtn);
+      actions.appendChild(el('span', 'et-progress', '2 / 2'));
+      var submitBtn = el('button', 'et-btn et-btn-primary', t.secondPage.submit); submitBtn.type = 'button';
+      submitBtn.addEventListener('click', function () { onSubmit(submitBtn); });
+      actions.appendChild(submitBtn);
+      submitBtns.push(submitBtn);
+      return actions;
+    }
+
+    // TOP bar (every input page except page 1 → here, the last input page)
+    step.insertBefore(makeActions(), step.firstChild);
+    // BOTTOM bar (all input pages)
+    step.appendChild(makeActions());
 
     this.mount.appendChild(step);
   };
@@ -762,26 +774,28 @@
   };
 
   // ---------- submit ----------
-  AdsJoyaForm.prototype.submit = function (btn) {
+  // btn = the clicked Submit button (spinner shown on it); allBtns = every Submit
+  // button on the page (top + bottom bars) — ALL get disabled while in flight.
+  AdsJoyaForm.prototype.submit = function (btn, allBtns) {
     var self = this;
+    var buttons = allBtns && allBtns.length ? allBtns : (btn ? [btn] : []);
     var form = new FormData();
     this.state.uploadedFiles.forEach(function (fileObj, index) {
       if (fileObj && fileObj.file) form.append('attachments[' + index + ']', fileObj.file, fileObj.name);
     });
     form.append('data', JSON.stringify({ data: { formName: 'joya-form', description: buildDescription(this.state) } }));
 
-    // submit spinner: prepend an .et-spinner before the label; .is-loading + disabled.
+    // disable ALL submit buttons; show .et-spinner + .is-loading on the clicked one.
     var spinner = null;
+    buttons.forEach(function (b) { b.disabled = true; });
     if (btn) {
-      btn.disabled = true;
       btn.classList.add('is-loading');
       spinner = el('span', 'et-spinner');
       btn.insertBefore(spinner, btn.firstChild);
     }
     function restoreBtn() {
-      if (!btn) return;
-      btn.disabled = false;
-      btn.classList.remove('is-loading');
+      buttons.forEach(function (b) { b.disabled = false; });
+      if (btn) btn.classList.remove('is-loading');
       if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
     }
 
