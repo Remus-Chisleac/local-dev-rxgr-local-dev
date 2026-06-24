@@ -30,7 +30,7 @@
 
   <script id="aico-eventtool-config" type="application/json">
     {
-      "locale": {{ request.locale | json }},
+      "locale": {{ request.locale.iso_code | json }},
       "formName": "kj-ads-form",
       "endpoint": {{ routes.aico_forms_url | json }},
       "productsUrl": {{ routes.aico_form_products_url | json }},
