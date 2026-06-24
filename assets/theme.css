@@ -9774,3 +9774,77 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   background: #d97706;
   cursor: default;
 }
+
+/* ---------------------------------------------------------------- */
+/* Customer view ("Endkundenansicht") — salesperson price-hide mode  */
+/* ---------------------------------------------------------------- */
+
+:root {
+  --aico-customer-view-accent: #0d9488;
+}
+
+/* System banner: a slim full-width strip at the very top of the sticky chrome
+   that telegraphs the active customer view. Hidden until <html> carries
+   `aico-customer-view` (set client-side from the saved preference). */
+.aico-system-banner {
+  display: none;
+}
+.aico-customer-view-banner {
+  background: var(--aico-customer-view-accent);
+  color: #ffffff;
+}
+.aico-customer-view .aico-customer-view-banner {
+  display: block;
+}
+.aico-system-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+.aico-system-banner-inner .aico-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.aico-system-banner-text {
+  font-weight: 600;
+}
+.aico-system-banner-hint {
+  opacity: 0.85;
+}
+@media (max-width: 480px) {
+  .aico-system-banner-hint {
+    display: none;
+  }
+}
+
+/* Eye toggle: swap open-eye <-> eye-off with the state; tint when active. */
+.aico-customer-view-toggle .aico-icon-eye-off {
+  display: none;
+}
+.aico-customer-view .aico-customer-view-toggle .aico-icon-eye-open {
+  display: none;
+}
+.aico-customer-view .aico-customer-view-toggle .aico-icon-eye-off {
+  display: inline;
+}
+.aico-customer-view .aico-customer-view-toggle {
+  color: var(--aico-customer-view-accent);
+}
+
+/* Price hiding — covers both the server-rendered and the JS-built product
+   cards (scaffold uses <p class="aico-product-card-price">; the mirror wraps
+   prices in .aico-product-card-prices) and the PDP price block. Sale/discount
+   badges are price signals too, so they go as well; "new"/"discontinued"
+   badges stay. */
+.aico-customer-view .aico-product-card-price,
+.aico-customer-view .aico-product-card-prices,
+.aico-customer-view .aico-product-card-badge-sale,
+.aico-customer-view .aico-product-card-discount,
+.aico-customer-view .aico-pdp-price-block {
+  display: none !important;
+}
