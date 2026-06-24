@@ -9784,43 +9784,55 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   --aico-customer-view-accent: #0d9488;
 }
 
-/* System banner: a slim full-width strip at the very top of the sticky chrome
-   that telegraphs the active customer view. Hidden until <html> carries
+/* System banner: a FIXED overlay at the very top of the viewport (modeled on
+   aico-commerce's SystemBanner `inline` variant) — a full-width hairline plus
+   a small centered tab with a flat top and rounded bottom. Because it is
+   position:fixed + pointer-events:none it telegraphs the mode WITHOUT shifting
+   document flow or intercepting clicks. Hidden until <html> carries
    `aico-customer-view` (set client-side from the saved preference). */
 .aico-system-banner {
   display: none;
 }
-.aico-customer-view-banner {
-  background: var(--aico-customer-view-accent);
-  color: #ffffff;
-}
 .aico-customer-view .aico-customer-view-banner {
   display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  pointer-events: none;
 }
-.aico-system-banner-inner {
+.aico-system-banner-rule {
+  height: 2px;
+  width: 100%;
+  background: var(--aico-customer-view-accent);
+}
+.aico-system-banner-tab-wrap {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  font-size: 0.8125rem;
-  line-height: 1.2;
 }
-.aico-system-banner-inner .aico-icon {
-  width: 16px;
-  height: 16px;
+.aico-system-banner-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--aico-customer-view-accent);
+  color: #ffffff;
+  border-radius: 0 0 6px 6px;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14);
+}
+.aico-system-banner-icon {
+  width: 12px;
+  height: 12px;
   flex: none;
 }
-.aico-system-banner-text {
-  font-weight: 600;
-}
-.aico-system-banner-hint {
+.aico-system-banner-tab-hint {
+  font-weight: 500;
   opacity: 0.85;
-}
-@media (max-width: 480px) {
-  .aico-system-banner-hint {
-    display: none;
-  }
 }
 
 /* Eye toggle: swap open-eye <-> eye-off with the state; tint when active. */
