@@ -52,13 +52,14 @@
 .et-chip:hover { border-color: #ea580c; }
 .et-chip.is-selected { border-color: #ea580c; background: rgba(234, 88, 12, 0.1); color: #c2410c; font-weight: 600; }
 
-/* image cards (single or multi select) */
-.et-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
-.et-card { border: 2px solid var(--aico-border); border-radius: 0.125rem; overflow: hidden; cursor: pointer; background: var(--aico-card); transition: border-color 0.12s, box-shadow 0.12s; display: flex; flex-direction: column; }
+/* image cards (single or multi select) — uniform size, image centered in a
+   fixed area, title pinned to the bottom. */
+.et-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); grid-auto-rows: 1fr; gap: 1rem; margin-top: 0.75rem; }
+.et-card { height: 100%; border: 2px solid var(--aico-border); border-radius: 0.125rem; overflow: hidden; cursor: pointer; background: var(--aico-card); transition: border-color 0.12s, box-shadow 0.12s; display: flex; flex-direction: column; }
 .et-card:hover { border-color: #ea580c; }
 .et-card.is-selected { border-color: #ea580c; box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.25); }
-.et-card-img { width: 100%; height: auto; display: block; background: rgba(244, 244, 245, 0.5); }
-.et-card-title { padding: 0.625rem 0.75rem; font-size: 0.875rem; line-height: 1.35; }
+.et-card-img { width: 100%; height: 11rem; object-fit: contain; display: block; padding: 0.75rem; box-sizing: border-box; background: rgba(244, 244, 245, 0.5); }
+.et-card-title { margin-top: auto; padding: 0.75rem; font-size: 0.875rem; line-height: 1.35; border-top: 1px solid var(--aico-border); }
 
 /* fields / inputs */
 .et-field { margin-bottom: 1rem; }
