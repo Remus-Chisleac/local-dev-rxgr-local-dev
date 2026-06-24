@@ -14,6 +14,10 @@
   --aico-muted-fg: #6b7280;
   --aico-border: #e5e7eb;
   --aico-card: #ffffff;
+  /* Default corner rounding for the kj-theme. Unless a component intentionally
+     wants something else, use var(--aico-radius) for border-radius so the whole
+     theme stays consistent (kj design = 2px). */
+  --aico-radius: 2px;
   --aico-skeleton: rgba(0, 0, 0, 0.08);
   --aico-skeleton-strong: rgba(0, 0, 0, 0.12);
 
@@ -9333,7 +9337,7 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.625rem 1.125rem;
   background: var(--aico-account-accent, #2f6fd0); color: #fff;
-  border: 1px solid var(--aico-account-accent, #2f6fd0); border-radius: 0.5rem;
+  border: 1px solid var(--aico-account-accent, #2f6fd0); border-radius: var(--aico-radius);
   font-size: 0.95rem; font-weight: 600; text-decoration: none; cursor: pointer;
   transition: opacity 0.15s ease;
 }
@@ -9364,7 +9368,7 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   padding: 0.75rem 0.875rem;
   background: var(--aico-card, #fff);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.5rem; cursor: pointer;
+  border-radius: var(--aico-radius); cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .aico-store-manager-item:hover { border-color: var(--aico-account-accent, #2f6fd0); }
@@ -9382,7 +9386,7 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   min-height: 14rem;
   background: var(--aico-card, #fff);
   border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: 0.75rem;
+  border-radius: var(--aico-radius);
   padding: 1.25rem 1.5rem;
 }
 .aico-store-manager-empty { color: var(--aico-muted-fg, #6b7280); text-align: center; padding: 3rem 1rem; margin: 0; }

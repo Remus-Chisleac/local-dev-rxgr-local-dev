@@ -227,7 +227,8 @@
             question1: fp.question1, question2: fp.question2, uploadedFiles: []
           },
           secondPage: state.secondPage,
-          thirdPage: state.thirdPage
+          thirdPage: state.thirdPage,
+          maxStep: maxStep  // furthest validated step (jump-ahead guard)
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
       } catch (e) { /* storage unavailable / quota — ignore */ }
@@ -267,6 +268,7 @@
 
     var stored = loadState();
     var state = freshState();
+    var maxStep = 1;              // furthest validated step (fresh form → only page 1 reachable)
     if (stored) {
       // merge stored over a fresh state; keep uploadedFiles empty; trust cfg for userInfo
       if (stored.firstPage) {
@@ -278,12 +280,15 @@
       // uploadedFiles intentionally left as the fresh [] (can't restore File objects)
       state.userInfo.email = cfg.email || '';
       state.userInfo.address = cfg.address || '';
+      var sm = parseInt(stored.maxStep, 10);
+      if (!isNaN(sm)) maxStep = Math.min(Math.max(sm, 1), LAST_INPUT_PAGE);
     }
 
     var page = 1;                 // 1..3 input pages, 4 = thank-you
     var startStep = readStepParam();
-    // resume the URL step only when we actually restored answers; otherwise start at 1
-    if (startStep && stored) page = startStep;  // clamped to 1..LAST_INPUT_PAGE in readStepParam
+    // target = min(requested ?step, maxStep), then clamp to 1..lastInputPage —
+    // can't jump ahead of the furthest validated step.
+    if (startStep) page = Math.min(Math.max(Math.min(startStep, maxStep), 1), LAST_INPUT_PAGE);
     var errors = {};              // {fieldPath: msg} from validatePage
 
     // Per-field error anchors registered while the step is built ONCE.
