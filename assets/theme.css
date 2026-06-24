@@ -9410,3 +9410,68 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   border-bottom: 1px solid var(--aico-border, #e5e7eb);
 }
 .aico-store-editor-change { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+
+/* ── Search box above the store list ─────────────────────────────────────── */
+.aico-store-manager-search { position: relative; margin-bottom: 0.25rem; }
+.aico-store-manager-search-icon {
+  position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%);
+  color: var(--aico-muted-fg, #6b7280); pointer-events: none;
+}
+.aico-store-manager-search-input {
+  width: 100%; font: inherit; font-size: 0.9rem; color: var(--aico-fg, #111827);
+  padding: 0.5rem 0.6rem 0.5rem 2.1rem;
+  background: var(--aico-bg, #fff); border: 1px solid var(--aico-border, #e5e7eb); border-radius: var(--aico-radius);
+}
+.aico-store-manager-search-input:focus-visible { outline: 2px solid var(--aico-account-accent, #2f6fd0); outline-offset: 1px; }
+.aico-store-manager-item[hidden] { display: none; }
+.aico-store-manager-noresults { color: var(--aico-muted-fg, #6b7280); font-size: 0.875rem; padding: 0.75rem 0.25rem; margin: 0; }
+
+/* ── Detail: flatten the nested card borders into one clean pane ──────────── */
+.aico-store-manager .aico-store-editor-store { border: 0; background: transparent; padding: 0; border-radius: 0; }
+.aico-store-manager .aico-store-editor-section {
+  border: 0; background: transparent; border-radius: 0; padding: 0; gap: 0.85rem;
+}
+.aico-store-manager .aico-store-editor-section-title {
+  font-size: 1rem; font-weight: 700; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--aico-border, #e5e7eb);
+}
+
+/* ── Detail: reflow — contact full width, hours + images paired below ─────── */
+.aico-store-manager .aico-store-editor-sections {
+  display: grid; grid-template-columns: 1fr 1fr;
+  grid-template-areas: "contact contact" "hours images";
+  gap: 1.75rem 2.5rem;
+}
+.aico-store-manager [data-aico-store-section="contact"] { grid-area: contact; }
+.aico-store-manager [data-aico-store-section="hours"]   { grid-area: hours; }
+.aico-store-manager [data-aico-store-section="images"]  { grid-area: images; }
+@media (max-width: 900px) {
+  .aico-store-manager .aico-store-editor-sections {
+    grid-template-columns: 1fr; grid-template-areas: "contact" "hours" "images"; gap: 1.5rem;
+  }
+}
+
+/* ── Labeled phone/email rows (number vs. name) ──────────────────────────── */
+.aico-store-manager .aico-store-editor-row { align-items: flex-end; gap: 0.5rem 0.75rem; }
+.aico-store-manager .aico-store-editor-row-field { flex: 1 1 11rem; min-width: 7rem; gap: 0.3rem; }
+.aico-store-manager .aico-store-editor-row .aico-store-editor-input { flex: 0 0 auto; }
+.aico-store-manager .aico-store-editor-main { padding-bottom: 0.5rem; }
+
+/* ── Opening-hours aligned grid + column labels ──────────────────────────── */
+.aico-store-manager .aico-store-editor-day {
+  display: grid; grid-template-columns: minmax(5.5rem, 1.3fr) 1fr 0.8rem 1fr;
+  align-items: center; gap: 0 0.5rem;
+}
+.aico-store-manager .aico-store-editor-day-name { min-width: 0; }
+.aico-store-manager .aico-store-editor-time { width: 100%; min-width: 0; }
+.aico-store-manager .aico-store-editor-time-sep { text-align: center; }
+.aico-store-editor-col-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--aico-muted-fg, #6b7280); font-weight: 600;
+}
+
+/* ── Save button turns accent while there are unsaved changes ─────────────── */
+.aico-store-editor-save.is-dirty {
+  background: var(--aico-account-accent, #2f6fd0); color: #fff;
+  box-shadow: 0 0 0 3px rgba(47, 111, 208, 0.18);
+}

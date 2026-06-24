@@ -59,6 +59,11 @@
       "phonePlaceholder": {{ 'customer.aico_store_locator.phone_placeholder' | t | json }},
       "emailPlaceholder": {{ 'customer.aico_store_locator.email_placeholder' | t | json }},
       "labelPlaceholder": {{ 'customer.aico_store_locator.label_placeholder' | t | json }},
+      "numberLabel": {{ 'customer.aico_store_locator.number_label' | t | json }},
+      "emailAddressLabel": {{ 'customer.aico_store_locator.email_address_label' | t | json }},
+      "labelFieldLabel": {{ 'customer.aico_store_locator.label_field_label' | t | json }},
+      "openLabel": {{ 'customer.aico_store_locator.open_label' | t | json }},
+      "closeLabel": {{ 'customer.aico_store_locator.close_label' | t | json }},
       "mainLabel": {{ 'customer.aico_store_locator.main_label' | t | json }},
       "calendarActive": {{ 'customer.aico_store_locator.calendar_active' | t | json }},
       "notice": {{ 'customer.aico_store_locator.notice' | t | json }},
@@ -92,13 +97,27 @@
     {% if customer.aico_store_locator_addresses.size > 0 %}
       <div class="aico-store-manager-layout">
 
-        {%- comment -%} ── LEFT: store list ─────────────────────────────────── {%- endcomment -%}
+        {%- comment -%} ── LEFT: store list (search + selectable cards) ──────── {%- endcomment -%}
         <aside class="aico-store-manager-list" data-aico-store-list aria-label="{{ 'customer.aico_store_locator.title' | t | escape }}">
+          {% if customer.aico_store_locator_addresses.size > 4 %}
+            <div class="aico-store-manager-search">
+              <svg class="aico-store-manager-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="search" class="aico-store-manager-search-input" data-aico-store-search
+                     placeholder="{{ 'customer.aico_store_locator.search_placeholder' | t | escape }}"
+                     aria-label="{{ 'customer.aico_store_locator.search_placeholder' | t | escape }}"
+                     autocomplete="off">
+            </div>
+          {% endif %}
           {% for address in customer.aico_store_locator_addresses %}
             {%- assign change = address.aico_change_request -%}
+            {%- if address.name != '' -%}{%- assign display_name = address.name -%}
+            {%- elsif address.company != '' -%}{%- assign display_name = address.company -%}
+            {%- else -%}{%- assign display_name = address.address1 -%}{%- endif -%}
+            {%- capture street -%}{{ address.address1 }}{% if address.address2 != '' %}, {{ address.address2 }}{% endif %}{%- endcapture -%}
             <button type="button"
                     class="aico-store-manager-item{% if forloop.first %} is-active{% endif %}"
                     data-aico-store-select
+                    data-search="{{ display_name | append: ' ' | append: street | append: ' ' | append: address.zip | append: ' ' | append: address.city | downcase | escape }}"
                     data-aico-crm-address-id="{{ address.aico_crm_address_id }}"
                     {% if change %}data-aico-change-request-id="{{ change.id }}"{% endif %}
                     data-bucket="store_locator"
@@ -113,15 +132,13 @@
                     data-field-province="{{ address.province | escape }}"
                     data-field-country="{{ address.country | escape }}"
                     data-field-phone="{{ address.phone | escape }}">
-              <span class="aico-store-manager-item-name">
-                {%- if address.name != '' -%}{{ address.name }}
-                {%- elsif address.company != '' -%}{{ address.company }}
-                {%- else -%}{{ address.address1 }}{%- endif -%}
-              </span>
+              <span class="aico-store-manager-item-name">{{ display_name }}</span>
+              {% if street != '' %}<span class="aico-store-manager-item-sub">{{ street }}</span>{% endif %}
               <span class="aico-store-manager-item-sub">{{ address.zip }} {{ address.city }}</span>
               {% if change %}<span class="aico-change-pending-badge aico-store-manager-item-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
             </button>
           {% endfor %}
+          <p class="aico-store-manager-noresults" data-aico-store-noresults hidden>{{ 'customer.aico_store_locator.no_results' | t }}</p>
         </aside>
 
         {%- comment -%} ── RIGHT: detail (filled by store-editor.js) ────────── {%- endcomment -%}

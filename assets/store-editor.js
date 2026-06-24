@@ -87,16 +87,21 @@
     }
 
     function dirtyHintEl() { return detail.querySelector('[data-aico-store-dirty-hint]'); }
+    function saveBtnEl() { return detail.querySelector('[data-aico-store-save]'); }
     function markDirty() {
       if (dirty) { return; }
       dirty = true;
       var hint = dirtyHintEl();
       if (hint) { hint.hidden = false; }
+      var btn = saveBtnEl();
+      if (btn) { btn.classList.add('is-dirty'); }
     }
     function clearDirty() {
       dirty = false;
       var hint = dirtyHintEl();
       if (hint) { hint.hidden = true; }
+      var btn = saveBtnEl();
+      if (btn) { btn.classList.remove('is-dirty'); }
     }
 
     function request(method, url, body) {
@@ -162,6 +167,7 @@
         + '  <div class="aico-store-editor-change">' + badge + changeBtn + '</div>'
         + '</header>';
 
+      html += '<div class="aico-store-editor-sections">';
       ['contact', 'hours', 'images'].forEach(function (key) {
         html += '<section class="aico-store-editor-section" data-aico-store-section="' + key + '">'
           + '<h2 class="aico-store-editor-section-title">' + escapeHtml(t('section_' + key, key)) + '</h2>'
@@ -169,6 +175,7 @@
           + '<p class="aico-store-editor-loading">' + escapeHtml(t('loading', 'Loading…')) + '</p>'
           + '</div></section>';
       });
+      html += '</div>';
 
       html += '<div class="aico-store-editor-savebar">'
         + '<span class="aico-store-editor-dirty-hint" data-aico-store-dirty-hint hidden>' + escapeHtml(t('unsaved_hint', 'You have unsaved changes')) + '</span>'
@@ -202,16 +209,20 @@
     function phoneRow(p) {
       p = p || {};
       return '<div class="aico-store-editor-row" data-phone-row data-id="' + escapeHtml(p.id || '') + '">'
-        + '<input class="aico-store-editor-input" type="text" data-phone placeholder="' + escapeHtml(t('phonePlaceholder', 'Phone')) + '" value="' + escapeHtml(p.phone || '') + '">'
-        + '<input class="aico-store-editor-input" type="text" data-label placeholder="' + escapeHtml(t('labelPlaceholder', 'Label')) + '" value="' + escapeHtml(p.label || '') + '">'
+        + '<label class="aico-store-editor-field aico-store-editor-row-field"><span class="aico-store-editor-label">' + escapeHtml(t('numberLabel', 'Phone number')) + '</span>'
+        + '<input class="aico-store-editor-input" type="tel" data-phone placeholder="' + escapeHtml(t('phonePlaceholder', 'Phone')) + '" value="' + escapeHtml(p.phone || '') + '"></label>'
+        + '<label class="aico-store-editor-field aico-store-editor-row-field"><span class="aico-store-editor-label">' + escapeHtml(t('labelFieldLabel', 'Label')) + '</span>'
+        + '<input class="aico-store-editor-input" type="text" data-label placeholder="' + escapeHtml(t('labelPlaceholder', 'Label')) + '" value="' + escapeHtml(p.label || '') + '"></label>'
         + '<label class="aico-store-editor-main"><input type="radio" name="phone-main" data-main' + (p.isMain ? ' checked' : '') + '> ' + escapeHtml(t('mainLabel', 'main')) + '</label>'
         + '<button type="button" class="aico-store-editor-remove" data-remove aria-label="remove">&times;</button></div>';
     }
     function emailRow(e) {
       e = e || {};
       return '<div class="aico-store-editor-row" data-email-row data-id="' + escapeHtml(e.id || '') + '">'
-        + '<input class="aico-store-editor-input" type="text" data-email placeholder="' + escapeHtml(t('emailPlaceholder', 'Email')) + '" value="' + escapeHtml(e.email || '') + '">'
-        + '<input class="aico-store-editor-input" type="text" data-label placeholder="' + escapeHtml(t('labelPlaceholder', 'Label')) + '" value="' + escapeHtml(e.label || '') + '">'
+        + '<label class="aico-store-editor-field aico-store-editor-row-field"><span class="aico-store-editor-label">' + escapeHtml(t('emailAddressLabel', 'Email address')) + '</span>'
+        + '<input class="aico-store-editor-input" type="email" data-email placeholder="' + escapeHtml(t('emailPlaceholder', 'Email')) + '" value="' + escapeHtml(e.email || '') + '"></label>'
+        + '<label class="aico-store-editor-field aico-store-editor-row-field"><span class="aico-store-editor-label">' + escapeHtml(t('labelFieldLabel', 'Label')) + '</span>'
+        + '<input class="aico-store-editor-input" type="text" data-label placeholder="' + escapeHtml(t('labelPlaceholder', 'Label')) + '" value="' + escapeHtml(e.label || '') + '"></label>'
         + '<label class="aico-store-editor-main"><input type="radio" name="email-main" data-main' + (e.isMain ? ' checked' : '') + '> ' + escapeHtml(t('mainLabel', 'main')) + '</label>'
         + '<button type="button" class="aico-store-editor-remove" data-remove aria-label="remove">&times;</button></div>';
     }
@@ -253,6 +264,11 @@
       var notice = (data && data.notice) || '';
       var html = '<label class="aico-store-editor-toggle"><input type="checkbox" data-calendar-active' + (isActive ? ' checked' : '') + '> ' + escapeHtml(t('calendarActive', 'Calendar active')) + '</label>';
       html += '<div class="aico-store-editor-days">';
+      html += '<div class="aico-store-editor-day aico-store-editor-day--head" aria-hidden="true">'
+        + '<span class="aico-store-editor-day-name"></span>'
+        + '<span class="aico-store-editor-col-label">' + escapeHtml(t('openLabel', 'Open')) + '</span>'
+        + '<span class="aico-store-editor-time-sep"></span>'
+        + '<span class="aico-store-editor-col-label">' + escapeHtml(t('closeLabel', 'Close')) + '</span></div>';
       DAYS.forEach(function (day) {
         var h = byDay[day] || { day: day, isActive: false, times: [], id: null };
         html += dayRow(day, h);
@@ -267,9 +283,9 @@
       var dayLabel = (i18n.days && i18n.days[day]) || day;
       return '<div class="aico-store-editor-day" data-day-row data-day="' + escapeHtml(day) + '" data-id="' + escapeHtml(h.id || '') + '">'
         + '<label class="aico-store-editor-day-name"><input type="checkbox" data-day-active' + (h.isActive ? ' checked' : '') + '> ' + escapeHtml(dayLabel) + '</label>'
-        + '<input class="aico-store-editor-time" type="time" data-open data-time-id="' + escapeHtml(first.id || '') + '" value="' + escapeHtml(first.open || '') + '">'
+        + '<input class="aico-store-editor-time" type="time" data-open data-time-id="' + escapeHtml(first.id || '') + '" aria-label="' + escapeHtml(dayLabel + ' · ' + t('openLabel', 'Open')) + '" value="' + escapeHtml(first.open || '') + '">'
         + '<span class="aico-store-editor-time-sep">–</span>'
-        + '<input class="aico-store-editor-time" type="time" data-close value="' + escapeHtml(first.close || '') + '"></div>';
+        + '<input class="aico-store-editor-time" type="time" data-close aria-label="' + escapeHtml(dayLabel + ' · ' + t('closeLabel', 'Close')) + '" value="' + escapeHtml(first.close || '') + '"></div>';
     }
     function collectHours() {
       var openingHours = Array.prototype.map.call(panels.hours.querySelectorAll('[data-day-row]'), function (row) {
@@ -508,6 +524,23 @@
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && leaveModal && !leaveModal.hidden) { closeLeaveModal(); }
     });
+
+    // ===== List search ======================================================
+    var search = root.querySelector('[data-aico-store-search]');
+    var noResults = root.querySelector('[data-aico-store-noresults]');
+    if (search && list) {
+      search.addEventListener('input', function () {
+        var q = search.value.trim().toLowerCase();
+        var anyVisible = false;
+        Array.prototype.forEach.call(list.querySelectorAll('[data-aico-store-select]'), function (item) {
+          var haystack = item.getAttribute('data-search') || item.textContent || '';
+          var match = !q || haystack.toLowerCase().indexOf(q) !== -1;
+          item.hidden = !match;
+          if (match) { anyVisible = true; }
+        });
+        if (noResults) { noResults.hidden = anyVisible; }
+      });
+    }
 
     // Initial selection: the server-marked active card, else the first store.
     if (list) {
