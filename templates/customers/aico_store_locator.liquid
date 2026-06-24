@@ -99,7 +99,7 @@
 
         {%- comment -%} ── LEFT: store list (search + selectable cards) ──────── {%- endcomment -%}
         <aside class="aico-store-manager-list" data-aico-store-list aria-label="{{ 'customer.aico_store_locator.title' | t | escape }}">
-          {% if customer.aico_store_locator_addresses.size > 4 %}
+          {% if customer.aico_store_locator_addresses.size > 1 %}
             <div class="aico-store-manager-search">
               <svg class="aico-store-manager-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
               <input type="search" class="aico-store-manager-search-input" data-aico-store-search
