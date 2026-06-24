@@ -144,7 +144,6 @@
                 {% if street != '' %}<span class="aico-stores-card-addr">{{ street }}</span>{% endif %}
                 {%- capture city_line -%}{{ address.zip }} {{ address.city }}{%- endcapture -%}
                 {% if city_line != ' ' %}<span class="aico-stores-card-addr">{{ city_line }}</span>{% endif %}
-                {% if change %}<span class="aico-change-pending-badge aico-stores-card-badge" data-aico-change-pending>{{ 'customer.addresses.aico_change_pending' | t }}</span>{% endif %}
               </button>
             {% endfor %}
             <p class="aico-stores-noresults" data-aico-stores-noresults hidden>{{ 'customer.aico_store_locator.no_results' | t }}</p>
