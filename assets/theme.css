@@ -5848,6 +5848,10 @@ html.aico-preorder-gallery-open {
   width: 14px;
   align-self: stretch;
   background: #f1f1f1;
+  /* Delineate the stepper from the input and keep it clearly inside the cell —
+     box-sizing keeps the 14px footprint, so the divider eats into it, not the cell. */
+  border-left: 1px solid #d9d9d9;
+  box-sizing: border-box;
 }
 /* Two equal-height halves: the whole top half increments, the whole bottom
    half decrements — no need to hit the chevron icon exactly. */
@@ -5892,7 +5896,12 @@ html.aico-preorder-gallery-open {
   border: 0;
   background: transparent;
   box-sizing: border-box;
+  /* Kill the browser-native number spinner in every engine (the custom stepper
+     replaces it) — otherwise headed Chrome can paint its own buttons over the
+     cell's right border. */
+  -webkit-appearance: none;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-input::-webkit-outer-spin-button,
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-input::-webkit-inner-spin-button {
