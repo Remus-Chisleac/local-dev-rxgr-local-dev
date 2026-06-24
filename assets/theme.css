@@ -5869,8 +5869,8 @@ html.aico-preorder-gallery-open {
   line-height: 0;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step svg {
-  width: 9px;
-  height: 5px;
+  width: 7px;
+  height: 4px;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-qty-box__step:hover:not(:disabled) {
   background: #e2e2e2;
