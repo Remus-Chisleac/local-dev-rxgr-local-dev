@@ -14,6 +14,11 @@
  * validatePage()/buildBlob() are exported when run under Node so the checks and
  * the submitted text can be unit-tested without a browser; in the browser the
  * module self-boots and renders its own DOM (no shared renderer dependency).
+ *
+ * Rendering is incremental: each page builds its DOM once; in-page interactions
+ * mutate the existing DOM in place (toggle classes, show/hide conditional fields,
+ * append/remove single rows, refresh errors). A full rebuild happens ONLY on page
+ * navigation (Next / Back / thank-you).
  */
 (function (root, factory) {
   var api = factory();
@@ -96,8 +101,11 @@
   }
 
   // ---- validation (mirrors the kj ads *.schema.js) — returns {field:errorMsg} ----
-  function validatePage(pageNum, state, de) {
-    var e = {}, s = state, set = function (f, k) { e[f] = get(de, k); };
+  // `de` is the canonical de_CH bundle used for value comparison (state stores de_CH
+  // option strings); `msg` (optional) is the display-language bundle used only to
+  // resolve the error message text. Falls back to `de` when omitted.
+  function validatePage(pageNum, state, de, msg) {
+    var e = {}, s = state, m = msg || de, set = function (f, k) { e[f] = get(m, k); };
     if (pageNum === 1) {
       var fp = s.firstPage;
       if (blank(fp.question1)) set('firstPage.question1', 'errors.requiredQuestion');
@@ -162,7 +170,7 @@
     return o;
   }
 
-  // ---- browser bootstrap (self-contained DOM rendering) ----
+  // ---- browser bootstrap (self-contained, incremental DOM rendering) ----
   function boot() {
     var root = document.querySelector('[data-aico-eventtool="ads-kybun-joya"]');
     if (!root) return;
@@ -173,8 +181,8 @@
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
 
     var de = (cfg.locale || '').indexOf('de') === 0;
-    var T = de ? STR.de_CH : STR.en;        // display strings
-    var DE = STR.de_CH;                       // option values + blob are ALWAYS de_CH
+    var T = de ? STR.de_CH : STR.en;        // display strings (labels + error messages)
+    var DE = STR.de_CH;                       // canonical option values + blob (ALWAYS de_CH)
 
     var state = initialState();
     state.userInfo.email = cfg.email || '';
@@ -182,29 +190,28 @@
 
     var page = 1;          // 1, 2, or 3 (thank-you)
     var attempted = { 1: false, 2: false };
-
     var TOTAL = 2;
+
     function el(tag, cls, txt) { var n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; }
-    function errors() { return attempted[page] ? validatePage(page, state, DE) : {}; }
 
-    function render() {
-      mount.innerHTML = '';
-      if (page === 3) return renderThankYou();
-      var step = el('div', 'et-step is-active');
-      if (page === 1) renderPage1(step);
-      else renderPage2(step);
-      mount.appendChild(step);
+    // --- in-place error helpers ---
+    // Errors are keyed to a host element via data-et-err-for; refreshErrors() wipes
+    // existing .et-error nodes and re-inserts current ones, without rebuilding fields.
+    function clearErrors(scope) {
+      var nodes = scope.querySelectorAll('.et-error');
+      Array.prototype.forEach.call(nodes, function (n) { n.parentNode.removeChild(n); });
     }
-
-    function fieldError(errs, key) {
+    function attachError(host, key, errs) {
       var msg = errs[key];
-      if (!msg) return null;
-      return el('span', 'et-error', msg);
+      if (!msg) return;
+      var span = el('span', 'et-error', msg);
+      host.appendChild(span);
     }
 
-    // ---------- PAGE 1 ----------
-    function renderPage1(step) {
-      var errs = errors();
+    // ================= PAGE 1 =================
+    function buildPage1() {
+      var step = el('div', 'et-step is-active');
+
       var info = el('div', 'et-info');
       [T.firstPage.infoText.part1, T.firstPage.infoText.part2, T.firstPage.infoText.part3].forEach(function (t) { info.appendChild(el('p', null, t)); });
       var p4 = el('p'); p4.appendChild(document.createTextNode(T.firstPage.infoText.part4));
@@ -214,73 +221,79 @@
 
       // Q1 date
       var q1 = el('div', 'et-question');
-      var l1 = el('div', 'et-qlabel', '1. ' + T.firstPage.question1.text);
-      q1.appendChild(l1);
+      q1.appendChild(el('div', 'et-qlabel', '1. ' + T.firstPage.question1.text));
       q1.appendChild(el('span', 'et-qnote', T.firstPage.question1.note));
       var d = el('input', 'et-input'); d.type = 'date'; d.value = state.firstPage.question1;
-      d.addEventListener('change', function () { state.firstPage.question1 = d.value; if (attempted[1]) render(); });
+      d.addEventListener('change', function () { state.firstPage.question1 = d.value; if (attempted[1]) refreshErrors1(step); });
       q1.appendChild(d);
-      var e1 = fieldError(errs, 'firstPage.question1'); if (e1) q1.appendChild(e1);
       step.appendChild(q1);
 
       // Q2 chips (single select)
       var q2 = el('div', 'et-question');
       q2.appendChild(el('div', 'et-qlabel', '2. ' + T.firstPage.question2.text));
       var opts = el('div', 'et-options');
+      var chipEls = [];
       [['option1', DE.firstPage.question2.option1, T.firstPage.question2.option1],
        ['option2', DE.firstPage.question2.option2, T.firstPage.question2.option2]].forEach(function (o) {
         var chip = el('div', 'et-chip' + (state.firstPage.question2 === o[1] ? ' is-selected' : ''), o[2]);
+        chip._val = o[1];
         chip.addEventListener('click', function () {
           state.firstPage.question2 = (state.firstPage.question2 === o[1]) ? '' : o[1];
-          render();
+          chipEls.forEach(function (c) { c.classList.toggle('is-selected', c._val === state.firstPage.question2); });
+          up.hidden = state.firstPage.question2 !== DE.firstPage.question2.option2;   // show/hide upload zone
+          if (attempted[1]) refreshErrors1(step);
         });
+        chipEls.push(chip);
         opts.appendChild(chip);
       });
       q2.appendChild(opts);
-      var e2 = fieldError(errs, 'firstPage.question2'); if (e2) q2.appendChild(e2);
+      var q2err = el('div'); q2err.setAttribute('data-et-err-for', 'firstPage.question2'); q2.appendChild(q2err);
 
-      // upload zone — shown when question2 === option2 (de)
-      if (state.firstPage.question2 === DE.firstPage.question2.option2) {
-        var up = el('div', 'et-upload');
-        up.appendChild(el('div', 'et-field-label', T.firstPage.question2.uploadText));
-        var zone = el('label', 'et-upload-zone');
-        zone.appendChild(el('span', null, T.firstPage.question2.dropFilesOr + ' ' + T.firstPage.question2.browse));
-        var fileInput = el('input'); fileInput.type = 'file'; fileInput.multiple = true; fileInput.style.display = 'none';
-        fileInput.addEventListener('change', function () {
-          var existing = state.firstPage.uploadedFiles.map(function (f) { return f.name; });
-          Array.prototype.forEach.call(fileInput.files, function (file) {
-            if (existing.indexOf(file.name) === -1) state.firstPage.uploadedFiles.push({ file: file, name: file.name });
-          });
-          render();
+      // upload zone — rendered once, shown/hidden by the q2 toggle
+      var up = el('div', 'et-upload');
+      up.hidden = state.firstPage.question2 !== DE.firstPage.question2.option2;
+      up.appendChild(el('div', 'et-field-label', T.firstPage.question2.uploadText));
+      var zone = el('label', 'et-upload-zone');
+      zone.appendChild(el('span', null, T.firstPage.question2.dropFilesOr + ' ' + T.firstPage.question2.browse));
+      var fileInput = el('input'); fileInput.type = 'file'; fileInput.multiple = true; fileInput.style.display = 'none';
+      zone.appendChild(fileInput);
+      up.appendChild(zone);
+      var list = el('ul', 'et-upload-list');
+      up.appendChild(list);
+      var upErr = el('div'); upErr.setAttribute('data-et-err-for', 'firstPage.uploadedFiles'); up.appendChild(upErr);
+
+      function addFileRow(f) {
+        var item = el('li', 'et-upload-item');
+        item.appendChild(el('span', null, f.name));
+        var rm = el('button', null, '×'); rm.type = 'button';
+        rm.addEventListener('click', function () {
+          var idx = state.firstPage.uploadedFiles.indexOf(f);
+          if (idx !== -1) state.firstPage.uploadedFiles.splice(idx, 1);
+          list.removeChild(item);
+          if (attempted[1]) refreshErrors1(step);
         });
-        zone.appendChild(fileInput);
-        // drag & drop
-        zone.addEventListener('dragover', function (ev) { ev.preventDefault(); zone.classList.add('is-dragover'); });
-        zone.addEventListener('dragleave', function () { zone.classList.remove('is-dragover'); });
-        zone.addEventListener('drop', function (ev) {
-          ev.preventDefault(); zone.classList.remove('is-dragover');
-          var existing = state.firstPage.uploadedFiles.map(function (f) { return f.name; });
-          Array.prototype.forEach.call(ev.dataTransfer.files, function (file) {
-            if (existing.indexOf(file.name) === -1) state.firstPage.uploadedFiles.push({ file: file, name: file.name });
-          });
-          render();
-        });
-        up.appendChild(zone);
-        if (state.firstPage.uploadedFiles.length) {
-          var list = el('ul', 'et-upload-list');
-          state.firstPage.uploadedFiles.forEach(function (f, i) {
-            var item = el('li', 'et-upload-item');
-            item.appendChild(el('span', null, f.name));
-            var rm = el('button', null, '×'); rm.type = 'button';
-            rm.addEventListener('click', function () { state.firstPage.uploadedFiles.splice(i, 1); render(); });
-            item.appendChild(rm);
-            list.appendChild(item);
-          });
-          up.appendChild(list);
-        }
-        var eu = fieldError(errs, 'firstPage.uploadedFiles'); if (eu) up.appendChild(eu);
-        q2.appendChild(up);
+        item.appendChild(rm);
+        list.appendChild(item);
       }
+      function ingest(files) {
+        var existing = state.firstPage.uploadedFiles.map(function (f) { return f.name; });
+        Array.prototype.forEach.call(files, function (file) {
+          if (existing.indexOf(file.name) === -1) {
+            var rec = { file: file, name: file.name };
+            state.firstPage.uploadedFiles.push(rec);
+            existing.push(file.name);
+            addFileRow(rec);
+          }
+        });
+        if (attempted[1]) refreshErrors1(step);
+      }
+      fileInput.addEventListener('change', function () { ingest(fileInput.files); });
+      zone.addEventListener('dragover', function (ev) { ev.preventDefault(); zone.classList.add('is-dragover'); });
+      zone.addEventListener('dragleave', function () { zone.classList.remove('is-dragover'); });
+      zone.addEventListener('drop', function (ev) { ev.preventDefault(); zone.classList.remove('is-dragover'); ingest(ev.dataTransfer.files); });
+      // seed any pre-existing files (none on fresh state, but keeps it robust)
+      state.firstPage.uploadedFiles.forEach(addFileRow);
+      q2.appendChild(up);
       step.appendChild(q2);
 
       // actions
@@ -289,145 +302,119 @@
       var next = el('button', 'et-btn et-btn-primary', T.next); next.type = 'button';
       next.addEventListener('click', function () {
         attempted[1] = true;
-        if (Object.keys(validatePage(1, state, DE)).length) { render(); return; }
-        page = 2; render(); window.scrollTo(0, 0);
+        if (Object.keys(validatePage(1, state, DE, T)).length) { refreshErrors1(step); return; }
+        navigate(2);
       });
       actions.appendChild(next);
       step.appendChild(actions);
+
+      // expose the date question error host
+      q1.setAttribute('data-et-err-for', 'firstPage.question1');
+      return step;
     }
 
-    // ---------- PAGE 2 ----------
-    function imageCards(container, qKey, imgUrls, optKeys, selectedVal, onPick) {
-      var cards = el('div', 'et-cards');
-      optKeys.forEach(function (ok, i) {
-        var valDe = get(DE, 'secondPage.' + qKey + '.' + ok);
-        var label = get(T, 'secondPage.' + qKey + '.' + ok);
-        var card = el('div', 'et-card' + (selectedVal === valDe ? ' is-selected' : ''));
-        if (imgUrls && imgUrls[i]) { var img = el('img', 'et-card-img'); img.src = imgUrls[i]; img.alt = label; card.appendChild(img); }
-        card.appendChild(el('div', 'et-card-title', label));
-        card.addEventListener('click', function () { onPick(selectedVal === valDe ? '' : valDe); });
-        cards.appendChild(card);
+    function refreshErrors1(step) {
+      var errs = validatePage(1, state, DE, T);
+      ['firstPage.question1', 'firstPage.question2', 'firstPage.uploadedFiles'].forEach(function (key) {
+        var host = step.querySelector('[data-et-err-for="' + key + '"]');
+        if (!host) return;
+        clearErrors(host);
+        attachError(host, key, errs);
       });
-      container.appendChild(cards);
     }
 
-    function modelList(container, qKey, arrKey, extraKey, errs) {
-      // text-entry list of model names; an "Anderes Schuhmodell" row maps to the extra field
-      var note = el('span', 'et-qnote', (get(T, 'secondPage.' + qKey + '.subText') || '').replace('{{count}}', '3'));
-      container.appendChild(note);
-      var other = DE.secondPage.otherShoeModel;
-      var arr = state.secondPage[arrKey];
-      var wrap = el('div', 'et-models');
-
-      arr.forEach(function (val, idx) {
-        var row = el('div', 'et-model-row');
-        var inp = el('input', 'et-input'); inp.type = 'text';
-        var isOther = val === other;
-        inp.value = isOther ? (state.secondPage[extraKey] || '') : val;
-        inp.placeholder = T.secondPage.shoeModelName;
-        inp.addEventListener('input', function () {
-          if (isOther) state.secondPage[extraKey] = inp.value;
-          else arr[idx] = inp.value;
-        });
-        row.appendChild(inp);
-        var rm = el('button', 'et-btn et-btn-back', '×'); rm.type = 'button';
-        rm.addEventListener('click', function () {
-          arr.splice(idx, 1);
-          if (isOther) state.secondPage[extraKey] = '';
-          render();
-        });
-        row.appendChild(rm);
-        wrap.appendChild(row);
-      });
-
-      // add buttons: a normal model row + an "Anderes Schuhmodell" row
-      var addRow = el('div', 'et-model-row');
-      var addBtn = el('button', 'et-btn et-btn-back', T.secondPage.addModel); addBtn.type = 'button';
-      addBtn.addEventListener('click', function () { arr.push(''); render(); });
-      addRow.appendChild(addBtn);
-      if (arr.indexOf(other) === -1) {
-        var addOther = el('button', 'et-btn et-btn-back', T.secondPage.otherShoeModel); addOther.type = 'button';
-        addOther.addEventListener('click', function () { arr.push(other); render(); });
-        addRow.appendChild(addOther);
-      }
-      wrap.appendChild(addRow);
-      container.appendChild(wrap);
-
-      var eArr = fieldError(errs, 'secondPage.' + arrKey); if (eArr) container.appendChild(eArr);
-      var eEx = fieldError(errs, 'secondPage.' + extraKey); if (eEx) container.appendChild(eEx);
-    }
-
-    function renderPage2(step) {
-      var errs = errors();
+    // ================= PAGE 2 =================
+    function buildPage2() {
+      var step = el('div', 'et-step is-active');
       var imgs = cfg.images || {};
 
-      // Q3 image cards
+      function imageCards(qKey, optKeys, imgUrls, getVal, setVal) {
+        var cards = el('div', 'et-cards');
+        var cardEls = [];
+        optKeys.forEach(function (ok, i) {
+          var valDe = get(DE, 'secondPage.' + qKey + '.' + ok);
+          var label = get(T, 'secondPage.' + qKey + '.' + ok);
+          var card = el('div', 'et-card' + (getVal() === valDe ? ' is-selected' : ''));
+          card._val = valDe;
+          if (imgUrls && imgUrls[i]) { var img = el('img', 'et-card-img'); img.src = imgUrls[i]; img.alt = label; card.appendChild(img); }
+          card.appendChild(el('div', 'et-card-title', label));
+          card.addEventListener('click', function () {
+            setVal(getVal() === valDe ? '' : valDe);
+            cardEls.forEach(function (c) { c.classList.toggle('is-selected', c._val === getVal()); });
+            if (attempted[2]) refreshErrors2(step);
+          });
+          cardEls.push(card);
+          cards.appendChild(card);
+        });
+        return cards;
+      }
+
+      // Q3
       var q3 = el('div', 'et-question');
       q3.appendChild(el('div', 'et-qlabel', '3. ' + T.secondPage.question3.text));
-      imageCards(q3, 'question3', imgs.q3, ['option1', 'option2', 'option3'], state.secondPage.question3, function (v) { state.secondPage.question3 = v; render(); });
-      var e3 = fieldError(errs, 'secondPage.question3'); if (e3) q3.appendChild(e3);
+      q3.appendChild(imageCards('question3', ['option1', 'option2', 'option3'], imgs.q3,
+        function () { return state.secondPage.question3; },
+        function (v) { state.secondPage.question3 = v; }));
+      q3.setAttribute('data-et-err-for', 'secondPage.question3');
       step.appendChild(q3);
 
-      // Q4 image cards
+      // Q4
       var q4 = el('div', 'et-question');
       q4.appendChild(el('div', 'et-qlabel', '4. ' + T.secondPage.question4.text));
-      imageCards(q4, 'question4', imgs.q4, ['option1', 'option2', 'option3'], state.secondPage.question4, function (v) { state.secondPage.question4 = v; render(); });
-      var e4 = fieldError(errs, 'secondPage.question4'); if (e4) q4.appendChild(e4);
+      q4.appendChild(imageCards('question4', ['option1', 'option2', 'option3'], imgs.q4,
+        function () { return state.secondPage.question4; },
+        function (v) { state.secondPage.question4 = v; }));
+      q4.setAttribute('data-et-err-for', 'secondPage.question4');
       step.appendChild(q4);
 
-      // Q5 Joya model entry list
-      var q5 = el('div', 'et-question');
-      q5.appendChild(el('div', 'et-qlabel', '5. ' + T.secondPage.question5.text));
-      modelList(q5, 'question5', 'question5', 'question5Extra', errs);
-      step.appendChild(q5);
-
-      // Q6 kybun model entry list
-      var q6 = el('div', 'et-question');
-      q6.appendChild(el('div', 'et-qlabel', '6. ' + T.secondPage.question6.text));
-      modelList(q6, 'question6', 'question6', 'question6Extra', errs);
-      step.appendChild(q6);
+      // Q5 / Q6 model entry lists
+      step.appendChild(buildModelList('question5', 'question5', 'question5Extra', '5. ', step));
+      step.appendChild(buildModelList('question6', 'question6', 'question6Extra', '6. ', step));
 
       // Q7 coupon chips
       var q7 = el('div', 'et-question');
       q7.appendChild(el('div', 'et-qlabel', '7. ' + T.secondPage.question7.text));
       var opts = el('div', 'et-options');
+      var chipEls = [];
       ['option1', 'option2', 'option3'].forEach(function (ok) {
         var valDe = DE.secondPage.question7[ok];
         var labelStr = T.secondPage.question7[ok];
-        var selected = state.secondPage.question7 === valDe;
-        var chip = el('div', 'et-chip' + (selected ? ' is-selected' : ''));
+        var chip = el('div', 'et-chip' + (state.secondPage.question7 === valDe ? ' is-selected' : ''));
+        chip._val = valDe;
         if (ok === 'option3') {
-          // inline discount input within the chip
           var parts = labelStr.split('<input/>');
           chip.appendChild(document.createTextNode(parts[0]));
           var inl = el('input', 'et-inline-input'); inl.type = 'text'; inl.value = state.secondPage.question7Option3Input;
-          inl.addEventListener('click', function (ev) { ev.stopPropagation(); state.secondPage.question7 = valDe; render(); });
+          inl.addEventListener('click', function (ev) { ev.stopPropagation(); selectCoupon(valDe); });
           inl.addEventListener('input', function () { state.secondPage.question7Option3Input = inl.value; });
           chip.appendChild(inl);
           chip.appendChild(document.createTextNode(parts[1] || ''));
         } else {
           chip.appendChild(document.createTextNode(labelStr));
         }
-        chip.addEventListener('click', function () {
-          state.secondPage.question7 = selected ? '' : valDe;
-          render();
-        });
+        chip.addEventListener('click', function () { selectCoupon(state.secondPage.question7 === valDe ? '' : valDe); });
+        chipEls.push(chip);
         opts.appendChild(chip);
       });
       q7.appendChild(opts);
-      var e7o3 = fieldError(errs, 'secondPage.question7Option3Input'); if (e7o3) q7.appendChild(e7o3);
-      var e7 = fieldError(errs, 'secondPage.question7'); if (e7) q7.appendChild(e7);
+      var q7err = el('div'); q7err.setAttribute('data-et-err-for', 'secondPage.question7'); q7.appendChild(q7err);
 
-      // validity input shown when option2 or option3
-      var q7v = state.secondPage.question7;
-      if (q7v === DE.secondPage.question7.option2 || q7v === DE.secondPage.question7.option3) {
-        var fld = el('div', 'et-field');
-        fld.appendChild(el('label', 'et-field-label', T.secondPage.question7.extraText));
-        var vi = el('input', 'et-input'); vi.type = 'text'; vi.value = state.secondPage.question7Extra;
-        vi.addEventListener('input', function () { state.secondPage.question7Extra = vi.value; });
-        fld.appendChild(vi);
-        var e7e = fieldError(errs, 'secondPage.question7Extra'); if (e7e) fld.appendChild(e7e);
-        q7.appendChild(fld);
+      // validity field — rendered once, shown/hidden when q7 is option2/option3
+      var validityFld = el('div', 'et-field');
+      validityFld.appendChild(el('label', 'et-field-label', T.secondPage.question7.extraText));
+      var vi = el('input', 'et-input'); vi.type = 'text'; vi.value = state.secondPage.question7Extra;
+      vi.addEventListener('input', function () { state.secondPage.question7Extra = vi.value; });
+      validityFld.appendChild(vi);
+      validityFld.setAttribute('data-et-err-for', 'secondPage.question7Extra');
+      q7.appendChild(validityFld);
+
+      function couponShowsValidity(v) { return v === DE.secondPage.question7.option2 || v === DE.secondPage.question7.option3; }
+      validityFld.hidden = !couponShowsValidity(state.secondPage.question7);
+      function selectCoupon(v) {
+        state.secondPage.question7 = v;
+        chipEls.forEach(function (c) { c.classList.toggle('is-selected', c._val === v); });
+        validityFld.hidden = !couponShowsValidity(v);
+        if (attempted[2]) refreshErrors2(step);
       }
       step.appendChild(q7);
 
@@ -438,9 +425,9 @@
         var fld = el('div', 'et-field');
         fld.appendChild(el('label', 'et-field-label', pair[1]));
         var ni = el('input', 'et-input'); ni.type = 'number'; ni.value = state.secondPage.question8[pair[0]];
-        ni.addEventListener('input', function () { state.secondPage.question8[pair[0]] = ni.value; });
+        ni.addEventListener('input', function () { state.secondPage.question8[pair[0]] = ni.value; if (attempted[2]) refreshErrors2(step); });
         fld.appendChild(ni);
-        var en = fieldError(errs, 'secondPage.question8.' + pair[0]); if (en) fld.appendChild(en);
+        fld.setAttribute('data-et-err-for', 'secondPage.question8.' + pair[0]);
         q8.appendChild(fld);
       });
       step.appendChild(q8);
@@ -448,17 +435,130 @@
       // actions: back + submit
       var actions = el('div', 'et-actions');
       var back = el('button', 'et-btn et-btn-back', T.back); back.type = 'button';
-      back.addEventListener('click', function () { page = 1; render(); window.scrollTo(0, 0); });
+      back.addEventListener('click', function () { navigate(1); });
       actions.appendChild(back);
       actions.appendChild(el('span', 'et-progress', page + ' / ' + TOTAL));
       var submit = el('button', 'et-btn et-btn-primary', T.secondPage.submit); submit.type = 'button';
       submit.addEventListener('click', function () {
         attempted[2] = true;
-        if (Object.keys(validatePage(2, state, DE)).length) { render(); return; }
+        if (Object.keys(validatePage(2, state, DE, T)).length) { refreshErrors2(step); return; }
         doSubmit(submit);
       });
       actions.appendChild(submit);
       step.appendChild(actions);
+
+      return step;
+    }
+
+    // text-entry model list; an "Anderes Schuhmodell" row maps to the extra field.
+    // Rows are appended/removed individually — no rebuild.
+    function buildModelList(qKey, arrKey, extraKey, num, step) {
+      var other = DE.secondPage.otherShoeModel;
+      var arr = state.secondPage[arrKey];
+
+      var q = el('div', 'et-question');
+      q.appendChild(el('div', 'et-qlabel', num + get(T, 'secondPage.' + qKey + '.text')));
+      q.appendChild(el('span', 'et-qnote', (get(T, 'secondPage.' + qKey + '.subText') || '').replace('{{count}}', '3')));
+      var wrap = el('div', 'et-models');
+      q.appendChild(wrap);
+
+      // add-row controls live at the end; addOther button toggles when "other" present
+      var addRow = el('div', 'et-model-row');
+      var addBtn = el('button', 'et-btn et-btn-back', T.secondPage.addModel); addBtn.type = 'button';
+      addRow.appendChild(addBtn);
+      var addOther = el('button', 'et-btn et-btn-back', T.secondPage.otherShoeModel); addOther.type = 'button';
+      addRow.appendChild(addOther);
+
+      function syncAddOther() { addOther.hidden = arr.indexOf(other) !== -1; }
+
+      function makeRow(val) {
+        var isOther = val === other;
+        var row = el('div', 'et-model-row');
+        row._isOther = isOther;
+        var inp = el('input', 'et-input'); inp.type = 'text';
+        inp.value = isOther ? (state.secondPage[extraKey] || '') : val;
+        inp.placeholder = T.secondPage.shoeModelName;
+        row._input = inp;
+        inp.addEventListener('input', function () {
+          if (isOther) state.secondPage[extraKey] = inp.value;
+          else { var i = rowIndex(row); if (i !== -1) arr[i] = inp.value; }
+        });
+        row.appendChild(inp);
+        var rm = el('button', 'et-btn et-btn-back', '×'); rm.type = 'button';
+        rm.addEventListener('click', function () {
+          var i = rowIndex(row);
+          if (i !== -1) arr.splice(i, 1);
+          if (isOther) state.secondPage[extraKey] = '';
+          wrap.removeChild(row);
+          syncAddOther();
+          if (attempted[2]) refreshErrors2(step);
+        });
+        row.appendChild(rm);
+        return row;
+      }
+      // map a row DOM node back to its array index (rows precede addRow, in order)
+      function rowIndex(row) {
+        var rows = wrap.querySelectorAll('.et-model-row');
+        var n = 0;
+        for (var k = 0; k < rows.length; k++) {
+          if (rows[k] === addRow) continue;
+          if (rows[k] === row) return n;
+          n++;
+        }
+        return -1;
+      }
+
+      arr.forEach(function (val) { wrap.appendChild(makeRow(val)); });
+      wrap.appendChild(addRow);
+      syncAddOther();
+
+      addBtn.addEventListener('click', function () {
+        arr.push('');
+        wrap.insertBefore(makeRow(''), addRow);
+        if (attempted[2]) refreshErrors2(step);
+      });
+      addOther.addEventListener('click', function () {
+        if (arr.indexOf(other) !== -1) return;
+        arr.push(other);
+        wrap.insertBefore(makeRow(other), addRow);
+        syncAddOther();
+        if (attempted[2]) refreshErrors2(step);
+      });
+
+      // error hosts (array-level + extra)
+      var errArr = el('div'); errArr.setAttribute('data-et-err-for', 'secondPage.' + arrKey); q.appendChild(errArr);
+      var errEx = el('div'); errEx.setAttribute('data-et-err-for', 'secondPage.' + extraKey); q.appendChild(errEx);
+      return q;
+    }
+
+    function refreshErrors2(step) {
+      var errs = validatePage(2, state, DE, T);
+      ['secondPage.question3', 'secondPage.question4',
+       'secondPage.question5', 'secondPage.question5Extra',
+       'secondPage.question6', 'secondPage.question6Extra',
+       'secondPage.question7', 'secondPage.question7Extra', 'secondPage.question7Option3Input',
+       'secondPage.question8.inputWidth', 'secondPage.question8.inputHeight'].forEach(function (key) {
+        var host = step.querySelector('[data-et-err-for="' + key + '"]');
+        if (!host) return;
+        clearErrors(host);
+        attachError(host, key, errs);
+      });
+      // question7Option3Input has no dedicated host element; surface it on the q7 host
+      var o3 = errs['secondPage.question7Option3Input'];
+      if (o3) {
+        var q7host = step.querySelector('[data-et-err-for="secondPage.question7"]');
+        if (q7host && !q7host.querySelector('.et-error')) attachError(q7host, 'secondPage.question7Option3Input', errs);
+      }
+    }
+
+    // ================= navigation / submit =================
+    function navigate(to) {
+      page = to;
+      mount.innerHTML = '';
+      if (page === 1) mount.appendChild(buildPage1());
+      else if (page === 2) mount.appendChild(buildPage2());
+      else renderThankYou();
+      window.scrollTo(0, 0);
     }
 
     function doSubmit(btn) {
@@ -475,7 +575,7 @@
           state.userInfo.email = cfg.email || '';
           state.userInfo.address = cfg.address || '';
           attempted = { 1: false, 2: false };
-          page = 3; render(); window.scrollTo(0, 0);
+          navigate(3);
         })
         .catch(function (err) { if (btn) btn.disabled = false; console.error(err); });
     }
@@ -488,7 +588,7 @@
       mount.appendChild(ty);
     }
 
-    render();
+    navigate(1);
   }
 
   return { STR: STR, initialState: initialState, validatePage: validatePage, buildBlob: buildBlob, fiveWorkingDaysAway: fiveWorkingDaysAway, boot: boot };

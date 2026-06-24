@@ -7,14 +7,21 @@
  * structure as the legacy FormContext.initialFormState — including the per-page
  * `errors` arrays and the top-level userEmail / userAddress fields.
  *
+ * Localisation contract (mirrors the kybun-joya `de` vs `msg` split):
+ *   - DE  = STR.de_CH  -> the CANONICAL option strings stored in state / used for
+ *           value comparisons. The submitted `description` always carries de_CH
+ *           option text, regardless of UI language.
+ *   - MSG = STR[displayLocale] -> display labels + error MESSAGE text shown to the
+ *           user in the active language.
+ *
  * Multipart POST to cfg.endpoint ({{ routes.aico_forms_url }}):
  *   attachments[0..n] = each uploaded File,
  *   data = JSON.stringify({ data: { formName: 'joya-formular', description: <state> } }).
  * Auth = storefront session cookie -> credentials:'same-origin'.
  *
- * Strings inlined (de_CH + en) so the form is self-contained; the template
- * supplies the active locale, resolved image URLs, endpoint and the logged-in
- * user's email / address via the JSON config block.
+ * Rendering: each step is built ONCE on page navigation. In-page interactions
+ * (chip/card select, conditional reveals, add/remove rows, validation errors)
+ * mutate the DOM IN PLACE and never rebuild the step.
  *
  * initialState() / buildDescription() / validateThirdPage() are exported under
  * Node so the exact-shape contract can be unit-tested without a browser.
@@ -58,6 +65,7 @@
       secondPage: {
         firstQuestion: { option1: 'a. Klassischer PR-Text', option2: 'b. Interview Experte', option3: 'c. Interview Händler/in' },
         secondQuestion: { followingShoeModels: 'Folgende(s) Schuhmodell(e)' },
+        shoeText: { text1: 'a. Laura dark red', text2: 'b. Dynamo ZIP dark grey', text3: 'c. Veloce STX pink' },
         startPRText: 'Wähle einen PR-Text *',
         sendDetailsText: '* Bitte sende uns für diesen Fall Namen und Portrait der Person, die genannt werden soll, sowie deine Textänderungswünsche',
         additionalElementsText: 'Welche Schuhmodelle sollen, wenn möglich, im Textteil angezeigt werden? *',
@@ -115,6 +123,7 @@
       secondPage: {
         firstQuestion: { option1: 'a. Classic PR Text', option2: 'b. Expert interview', option3: 'c. Interview retailer' },
         secondQuestion: { followingShoeModels: 'Following shoe model(s)' },
+        shoeText: { text1: 'a. Laura dark red', text2: 'b. Dynamo ZIP dark grey', text3: 'c. Veloce STX pink' },
         startPRText: 'Choose a PR text *',
         sendDetailsText: '* For this case, please send us the name and portrait of the person to be mentioned, as well as your text modification requests.',
         additionalElementsText: 'Which shoe models should be displayed in the text section? *',
@@ -173,7 +182,6 @@
     };
   }
 
-  function blank(v) { return v == null || (typeof v === 'string' && v.trim() === ''); }
   function emptyArr(v) { return Array.isArray(v) && v.length === 0; }
 
   // ---- third-page validation (mirror ThirdPage.handleErrors fieldsToValidate) ----
@@ -194,7 +202,6 @@
   // ---- build the description object that is submitted (state AS-IS, errors kept) ----
   function buildDescription(state, cfg) {
     var s = JSON.parse(JSON.stringify(state));
-    delete s.__ui;
     s.userEmail = (cfg && cfg.email) || '';
     s.userAddress = (cfg && cfg.address) || '';
     return s;
@@ -209,12 +216,16 @@
     var cfgEl = document.getElementById('aico-eventtool-config');
     var cfg = {};
     try { cfg = JSON.parse(cfgEl.textContent); } catch (e) { return; }
-    var T = STR[cfg.locale === 'en' ? 'en' : 'de_CH'];
+
+    // de = CANONICAL option strings (stored in state, compared, submitted)
+    // msg = display-language strings (labels + error message text)
+    var DE = STR.de_CH;
+    var MSG = STR[cfg.locale === 'en' ? 'en' : 'de_CH'];
     var images = cfg.images || {};
 
     var state = initialState();
     // UI-only flags (not part of the submitted description)
-    var ui = { page: 1, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [] };
+    var ui = { page: 1, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
 
     function imgUrl(q, key) { return (images[q] && images[q][key]) || ''; }
 
@@ -231,109 +242,109 @@
       (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
       return n;
     }
-    function err(msg) { return el('span', { class: 'et-error', text: msg }); }
 
     function clearErr(arr, field) {
       var i = arr.indexOf(field);
       if (i !== -1) arr.splice(i, 1);
     }
 
-    // image-card option (single or multi select)
-    function card(title, url, selected, onClick) {
-      var c = el('div', { class: 'et-card' + (selected ? ' is-selected' : ''), onclick: onClick }, [
-        url ? el('img', { class: 'et-card-img', src: url, alt: title, loading: 'lazy' }) : null,
-        el('div', { class: 'et-card-title', text: title })
-      ]);
-      return c;
-    }
-
-    function yesNo(field, page, value, label, imgQ) {
-      var wrap = el('div', { class: 'et-question' });
-      wrap.appendChild(el('span', { class: 'et-qlabel', text: label }));
-      if (imgQ) {
-        var u = imgUrl(imgQ, 'Image1');
-        if (u) wrap.appendChild(el('img', { class: 'et-header-img', src: u, alt: label, loading: 'lazy', style: 'max-width:700px;' }));
+    // ----- IN-PLACE error rendering -----
+    // Each question wrapper owns at most one direct-child `.et-error` node when
+    // invalid. We add / update / remove that single node in place rather than
+    // rebuilding the question.
+    function setError(questionEl, present, msg) {
+      if (!questionEl) return;
+      var existing = null, kids = questionEl.children;
+      for (var i = 0; i < kids.length; i++) { if (kids[i].classList && kids[i].classList.contains('et-error')) { existing = kids[i]; break; } }
+      if (present) {
+        if (existing) existing.textContent = msg;
+        else questionEl.appendChild(el('span', { class: 'et-error', text: msg }));
+      } else if (existing) {
+        existing.parentNode.removeChild(existing);
       }
-      var opts = el('div', { class: 'et-options' });
-      [['yes', T.thirdPage.yes], ['no', T.thirdPage.no]].forEach(function (pair) {
-        var lbl = pair[1];
-        var chip = el('div', { class: 'et-chip' + (state[page][field] === lbl ? ' is-selected' : '') }, [lbl]);
-        chip.addEventListener('click', function () {
-          state[page][field] = lbl;
-          clearErr(state[page].errors, field);
-          render();
-        });
-        opts.appendChild(chip);
-      });
-      wrap.appendChild(opts);
-      if (state[page].errors.indexOf(field) !== -1) wrap.appendChild(err(T.errorMessage));
-      return wrap;
     }
 
-    // ----- page renderers -----
+    // clear `.is-selected` on siblings within a container, set on the clicked node
+    function singleSelect(container, node) {
+      var sel = container.querySelectorAll('.is-selected');
+      Array.prototype.forEach.call(sel, function (n) { n.classList.remove('is-selected'); });
+      node.classList.add('is-selected');
+    }
+
+    // image-card option. Stores `canonical` in state but shows `display` label.
+    function card(display, url, selected, onClick) {
+      return el('div', { class: 'et-card' + (selected ? ' is-selected' : ''), onclick: onClick }, [
+        url ? el('img', { class: 'et-card-img', src: url, alt: display, loading: 'lazy' }) : null,
+        el('div', { class: 'et-card-title', text: display })
+      ]);
+    }
+
+    // ===================== STEP 1 =====================
     function renderFirst() {
       var wrap = el('div', { class: 'et-step is-active' });
       var info = el('div', { class: 'et-info' });
-      info.appendChild(el('p', { text: T.infoText.firstPart }));
-      info.appendChild(el('p', { text: T.infoText.secondPart }));
-      info.appendChild(el('p', { text: T.infoText.thirdPart }));
-      var contact = el('p', {}, [T.infoText.forthPart, el('a', { href: 'mailto:' + T.infoText.mail, text: T.infoText.mail })]);
-      info.appendChild(contact);
+      info.appendChild(el('p', { text: MSG.infoText.firstPart }));
+      info.appendChild(el('p', { text: MSG.infoText.secondPart }));
+      info.appendChild(el('p', { text: MSG.infoText.thirdPart }));
+      info.appendChild(el('p', {}, [MSG.infoText.forthPart, el('a', { href: 'mailto:' + MSG.infoText.mail, text: MSG.infoText.mail })]));
       wrap.appendChild(info);
 
-      // Q1 - key data (date / start / end)
+      // Q1 - date (own question wrapper so its error renders in place)
       var q1 = el('div', { class: 'et-question' });
-      q1.appendChild(el('span', { class: 'et-qlabel', html: '1. <b>' + T.firstPage.startingInfo + '</b>' }));
-
+      q1.appendChild(el('span', { class: 'et-qlabel', html: '1. <b>' + MSG.firstPage.startingInfo + '</b>' }));
       var dF = el('div', { class: 'et-field' });
-      dF.appendChild(el('span', { class: 'et-field-label', text: T.firstPage.dateQuestion }));
-      dF.appendChild(el('span', { class: 'et-qnote', text: T.firstPage.dateNote }));
+      dF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.dateQuestion }));
+      dF.appendChild(el('span', { class: 'et-qnote', text: MSG.firstPage.dateNote }));
       var dInput = el('input', { class: 'et-input', type: 'date', value: state.firstPage.question1 });
-      dInput.addEventListener('input', function () { state.firstPage.question1 = dInput.value; clearErr(state.firstPage.errors, 'question1'); });
+      dInput.addEventListener('input', function () { state.firstPage.question1 = dInput.value; clearErr(state.firstPage.errors, 'question1'); setError(q1, false); });
       dF.appendChild(dInput);
       q1.appendChild(dF);
-      if (state.firstPage.errors.indexOf('question1') !== -1) q1.appendChild(err(T.errorMessage));
-
-      var sF = el('div', { class: 'et-field' });
-      sF.appendChild(el('span', { class: 'et-field-label', text: T.firstPage.startTimeQuestion }));
-      var sInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question2 });
-      sInput.addEventListener('input', function () { state.firstPage.question2 = sInput.value; clearErr(state.firstPage.errors, 'question2'); });
-      sF.appendChild(sInput);
-      q1.appendChild(sF);
-      if (state.firstPage.errors.indexOf('question2') !== -1) q1.appendChild(err(T.errorMessage));
-
-      var eF = el('div', { class: 'et-field' });
-      eF.appendChild(el('span', { class: 'et-field-label', text: T.firstPage.endTimeQuestion }));
-      var eInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question3 });
-      eInput.addEventListener('input', function () { state.firstPage.question3 = eInput.value; clearErr(state.firstPage.errors, 'question3'); });
-      eF.appendChild(eInput);
-      q1.appendChild(eF);
-      if (state.firstPage.errors.indexOf('question3') !== -1) q1.appendChild(err(T.errorMessage));
       wrap.appendChild(q1);
 
-      // Q2 - logo available?
+      // Q2 - start time
       var q2 = el('div', { class: 'et-question' });
-      q2.appendChild(el('span', { class: 'et-qlabel', html: '2. <b>' + T.firstPage.logoQuestion + '</b>' }));
-      var opts = el('div', { class: 'et-options' });
-      [T.firstPage.logoYes, T.firstPage.logoNo].forEach(function (lbl) {
-        var chip = el('div', { class: 'et-chip' + (state.firstPage.question4 === lbl ? ' is-selected' : '') }, [lbl]);
-        chip.addEventListener('click', function () {
-          state.firstPage.question4 = lbl;
-          clearErr(state.firstPage.errors, 'question4');
-          render();
-        });
-        opts.appendChild(chip);
-      });
-      q2.appendChild(opts);
-      if (state.firstPage.errors.indexOf('question4') !== -1) q2.appendChild(err(T.errorMessage));
+      var sF = el('div', { class: 'et-field' });
+      sF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.startTimeQuestion }));
+      var sInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question2 });
+      sInput.addEventListener('input', function () { state.firstPage.question2 = sInput.value; clearErr(state.firstPage.errors, 'question2'); setError(q2, false); });
+      sF.appendChild(sInput);
+      q2.appendChild(sF);
       wrap.appendChild(q2);
+
+      // Q3 - end time
+      var q3 = el('div', { class: 'et-question' });
+      var eF = el('div', { class: 'et-field' });
+      eF.appendChild(el('span', { class: 'et-field-label', text: MSG.firstPage.endTimeQuestion }));
+      var eInput = el('input', { class: 'et-input', type: 'time', value: state.firstPage.question3 });
+      eInput.addEventListener('input', function () { state.firstPage.question3 = eInput.value; clearErr(state.firstPage.errors, 'question3'); setError(q3, false); });
+      eF.appendChild(eInput);
+      q3.appendChild(eF);
+      wrap.appendChild(q3);
+
+      // Q4 - logo available? (single-select chips; canonical = de_CH, display = MSG)
+      var q4 = el('div', { class: 'et-question' });
+      q4.appendChild(el('span', { class: 'et-qlabel', html: '2. <b>' + MSG.firstPage.logoQuestion + '</b>' }));
+      var q4opts = el('div', { class: 'et-options' });
+      ['logoYes', 'logoNo'].forEach(function (key) {
+        var canonical = DE.firstPage[key];
+        var chip = el('div', { class: 'et-chip' + (state.firstPage.question4 === canonical ? ' is-selected' : ''), text: MSG.firstPage[key] });
+        chip.addEventListener('click', function () {
+          state.firstPage.question4 = canonical;
+          clearErr(state.firstPage.errors, 'question4');
+          singleSelect(q4opts, chip);
+          setError(q4, false);
+        });
+        q4opts.appendChild(chip);
+      });
+      q4.appendChild(q4opts);
+      wrap.appendChild(q4);
 
       // Upload zone
       var up = el('div', { class: 'et-question' });
-      up.appendChild(el('span', { class: 'et-qlabel', text: T.firstPage.uploadLogo }));
+      up.appendChild(el('span', { class: 'et-qlabel', text: MSG.firstPage.uploadLogo }));
       var zone = el('div', { class: 'et-upload' });
       var dz = el('div', { class: 'et-upload-zone' }, [
-        el('p', {}, [T.firstPage.dropFilesOr + ' ', el('span', { style: 'text-decoration:underline;cursor:pointer', text: T.firstPage.browse })])
+        el('p', {}, [MSG.firstPage.dropFilesOr + ' ', el('span', { style: 'text-decoration:underline;cursor:pointer', text: MSG.firstPage.browse })])
       ]);
       var fileInput = el('input', { type: 'file', multiple: 'multiple', style: 'display:none' });
       dz.addEventListener('click', function () { fileInput.click(); });
@@ -345,13 +356,8 @@
       zone.appendChild(fileInput);
 
       var list = el('ul', { class: 'et-upload-list' });
-      ui.files.forEach(function (f, idx) {
-        var item = el('li', { class: 'et-upload-item' }, [el('span', { text: f.name })]);
-        var rm = el('button', { type: 'button', text: '×' });
-        rm.addEventListener('click', function () { ui.files.splice(idx, 1); render(); });
-        item.appendChild(rm);
-        list.appendChild(item);
-      });
+      ui.fileListEl = list; // reference for in-place add/remove of rows
+      ui.files.forEach(function (f) { list.appendChild(buildFileRow(f)); });
       zone.appendChild(list);
       up.appendChild(zone);
       wrap.appendChild(up);
@@ -359,31 +365,61 @@
       // nav
       var actions = el('div', { class: 'et-actions' });
       actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: T.next });
-      nextBtn.addEventListener('click', onFirstNext);
+      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.next });
+      nextBtn.addEventListener('click', function () { onFirstNext([q1, q2, q3, q4]); });
       actions.appendChild(nextBtn);
       wrap.appendChild(actions);
       return wrap;
+    }
+
+    function buildFileRow(f) {
+      var item = el('li', { class: 'et-upload-item' }, [el('span', { text: f.name })]);
+      var rm = el('button', { type: 'button', text: '×' });
+      rm.addEventListener('click', function () {
+        var idx = ui.files.indexOf(f);
+        if (idx !== -1) ui.files.splice(idx, 1);
+        if (item.parentNode) item.parentNode.removeChild(item); // remove ONLY this row
+      });
+      item.appendChild(rm);
+      return item;
     }
 
     function addFiles(fileList) {
       var existing = ui.files.map(function (f) { return f.name; });
       Array.prototype.forEach.call(fileList || [], function (file) {
         if (existing.indexOf(file.name) === -1) {
-          ui.files.push({ file: file, name: file.name });
+          var f = { file: file, name: file.name };
+          ui.files.push(f);
           existing.push(file.name);
+          if (ui.fileListEl) ui.fileListEl.appendChild(buildFileRow(f)); // append ONLY this row
         }
       });
-      render();
     }
 
-    function onFirstNext() {
-      var errs = state.firstPage.errors;
-      ['question1', 'question2', 'question3', 'question4'].forEach(function (field) {
-        if (!state.firstPage[field] && errs.indexOf(field) === -1) errs.push(field);
+    function onFirstNext(qEls) {
+      var fields = ['question1', 'question2', 'question3', 'question4'];
+      var errs = state.firstPage.errors, ok = true;
+      fields.forEach(function (field, i) {
+        var invalid = !state.firstPage[field];
+        if (invalid && errs.indexOf(field) === -1) errs.push(field);
+        if (!invalid) clearErr(errs, field);
+        setError(qEls[i], invalid, MSG.errorMessage);
+        if (invalid) ok = false;
       });
-      if (errs.length) { render(); return; }
+      if (!ok) return;
       ui.page = 2; window.scrollTo(0, 0); render();
+    }
+
+    // ===================== STEP 2 =====================
+    function shoeOptions() {
+      // canonical (state) = de_CH text; display = MSG text. They share content
+      // (config Text1..3 are identical across locales) but the split stays intact.
+      return [
+        { canonical: DE.secondPage.shoeText.text1, display: MSG.secondPage.shoeText.text1, url: imgUrl('question5', 'Image1') },
+        { canonical: DE.secondPage.shoeText.text2, display: MSG.secondPage.shoeText.text2, url: imgUrl('question5', 'Image2') },
+        { canonical: DE.secondPage.shoeText.text3, display: MSG.secondPage.shoeText.text3, url: imgUrl('question5', 'Image3') },
+        { canonical: DE.secondPage.secondQuestion.followingShoeModels, display: MSG.secondPage.secondQuestion.followingShoeModels, url: '', isOther: true }
+      ];
     }
 
     function renderSecond() {
@@ -391,177 +427,224 @@
 
       // Q3 - PR text (image cards, single select); option3 reveals extra input
       var q3 = el('div', { class: 'et-question' });
-      q3.appendChild(el('span', { class: 'et-qlabel', html: '3. <b>' + T.secondPage.startPRText + '</b>' }));
-      var prOpts = [T.secondPage.firstQuestion.option1, T.secondPage.firstQuestion.option2, T.secondPage.firstQuestion.option3];
+      q3.appendChild(el('span', { class: 'et-qlabel', html: '3. <b>' + MSG.secondPage.startPRText + '</b>' }));
+      var prCanon = [DE.secondPage.firstQuestion.option1, DE.secondPage.firstQuestion.option2, DE.secondPage.firstQuestion.option3];
+      var prDisp = [MSG.secondPage.firstQuestion.option1, MSG.secondPage.firstQuestion.option2, MSG.secondPage.firstQuestion.option3];
       var prImgs = ['Image1', 'Image2', 'Image3'];
       var cards3 = el('div', { class: 'et-cards' });
-      prOpts.forEach(function (label, idx) {
-        cards3.appendChild(card(label, imgUrl('question3', prImgs[idx]), state.secondPage.question1 === label, function () {
-          if (state.secondPage.question1 === label) {
+
+      // conditional extra built ONCE, only toggled hidden
+      var q3ExtraField = el('div', { class: 'et-field' });
+      q3ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.secondPage.sendDetailsText }));
+      var q3ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question1Extra });
+      q3ExtraIn.addEventListener('input', function () { state.secondPage.question1Extra = q3ExtraIn.value; clearErr(state.secondPage.errors, 'question1Extra'); setError(q3, false); });
+      q3ExtraField.appendChild(q3ExtraIn);
+      q3ExtraField.hidden = !ui.showQ3Extra;
+
+      prCanon.forEach(function (canonical, idx) {
+        var cd = card(prDisp[idx], imgUrl('question3', prImgs[idx]), state.secondPage.question1 === canonical, function () {
+          if (state.secondPage.question1 === canonical) {
             state.secondPage.question1 = '';
-            if (idx === 2) ui.showQ3Extra = false;
+            cd.classList.remove('is-selected');
+            if (idx === 2) { ui.showQ3Extra = false; q3ExtraField.hidden = true; }
           } else {
-            state.secondPage.question1 = label;
+            state.secondPage.question1 = canonical;
+            singleSelect(cards3, cd);
             ui.showQ3Extra = (idx === 2);
+            q3ExtraField.hidden = !ui.showQ3Extra;
           }
           clearErr(state.secondPage.errors, 'question1');
-          render();
-        }));
+          setError(q3, false);
+        });
+        cards3.appendChild(cd);
       });
       q3.appendChild(cards3);
-      if (state.secondPage.errors.indexOf('question1') !== -1) q3.appendChild(err(T.errorMessage));
-      if (ui.showQ3Extra) {
-        var exF = el('div', { class: 'et-field' });
-        exF.appendChild(el('span', { class: 'et-field-label', text: T.secondPage.sendDetailsText }));
-        var exIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question1Extra });
-        exIn.addEventListener('input', function () { state.secondPage.question1Extra = exIn.value; clearErr(state.secondPage.errors, 'question1Extra'); });
-        exF.appendChild(exIn);
-        q3.appendChild(exF);
-        if (state.secondPage.errors.indexOf('question1Extra') !== -1) q3.appendChild(err(T.errorMessage));
-      }
+      q3.appendChild(q3ExtraField);
       wrap.appendChild(q3);
 
-      // Q4 - shoe models (image cards, multi select max 2) + "other" reveals extra input
+      // Q4 - shoe models (image cards, multi select max 2) + "other" reveals extra
       var q4 = el('div', { class: 'et-question' });
-      q4.appendChild(el('span', { class: 'et-qlabel', html: '4. <b>' + T.secondPage.additionalElementsText + '</b>' }));
-      q4.appendChild(el('span', { class: 'et-qnote', text: T.secondPage.chooseMaxImages }));
-      q4.appendChild(el('span', { class: 'et-qnote', text: state.secondPage.question2.length + '/' + MAX_SHOES }));
+      q4.appendChild(el('span', { class: 'et-qlabel', html: '4. <b>' + MSG.secondPage.additionalElementsText + '</b>' }));
+      q4.appendChild(el('span', { class: 'et-qnote', text: MSG.secondPage.chooseMaxImages }));
+      var counter4 = el('span', { class: 'et-qnote', text: state.secondPage.question2.length + '/' + MAX_SHOES });
+      q4.appendChild(counter4);
       var cards4 = el('div', { class: 'et-cards' });
-      var shoeOpts = ['Image1', 'Image2', 'Image3'].map(function (k, i) {
-        return { label: 'a. Laura dark red,b. Dynamo ZIP dark grey,c. Veloce STX pink'.split(',')[i], url: imgUrl('question5', k) };
-      });
-      shoeOpts.push({ label: T.secondPage.secondQuestion.followingShoeModels, url: '' });
-      shoeOpts.forEach(function (opt) {
-        var sel = state.secondPage.question2.indexOf(opt.label) !== -1;
-        cards4.appendChild(card(opt.label, opt.url, sel, function () {
+
+      var q4ExtraField = el('div', { class: 'et-field' });
+      q4ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.secondPage.shoeModelName }));
+      var q4ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question2Extra });
+      q4ExtraIn.addEventListener('input', function () { state.secondPage.question2Extra = q4ExtraIn.value; clearErr(state.secondPage.errors, 'question2Extra'); setError(q4, false); });
+      q4ExtraField.appendChild(q4ExtraIn);
+      q4ExtraField.hidden = !ui.showShoeExtra2;
+
+      shoeOptions().forEach(function (opt) {
+        var sel = state.secondPage.question2.indexOf(opt.canonical) !== -1;
+        var cd = card(opt.display, opt.url, sel, function () {
           var arr = state.secondPage.question2;
-          var idx = arr.indexOf(opt.label);
-          if (idx !== -1) {
-            arr.splice(idx, 1);
-            if (opt.label === T.secondPage.secondQuestion.followingShoeModels) ui.showShoeExtra2 = false;
+          var i = arr.indexOf(opt.canonical);
+          if (i !== -1) {
+            arr.splice(i, 1);
+            cd.classList.remove('is-selected');
+            if (opt.isOther) { ui.showShoeExtra2 = false; q4ExtraField.hidden = true; }
           } else if (arr.length < MAX_SHOES) {
-            arr.push(opt.label);
-            if (opt.label === T.secondPage.secondQuestion.followingShoeModels) ui.showShoeExtra2 = true;
+            arr.push(opt.canonical);
+            cd.classList.add('is-selected');
+            if (opt.isOther) { ui.showShoeExtra2 = true; q4ExtraField.hidden = false; }
           }
+          counter4.textContent = state.secondPage.question2.length + '/' + MAX_SHOES;
           clearErr(state.secondPage.errors, 'question2');
-          render();
-        }));
+          setError(q4, false);
+        });
+        cards4.appendChild(cd);
       });
       q4.appendChild(cards4);
-      if (state.secondPage.errors.indexOf('question2') !== -1) q4.appendChild(err(T.errorMessage));
-      if (ui.showShoeExtra2) {
-        var sF = el('div', { class: 'et-field' });
-        sF.appendChild(el('span', { class: 'et-field-label', text: T.secondPage.shoeModelName }));
-        var sIn = el('input', { class: 'et-input', type: 'text', value: state.secondPage.question2Extra });
-        sIn.addEventListener('input', function () { state.secondPage.question2Extra = sIn.value; clearErr(state.secondPage.errors, 'question2Extra'); });
-        sF.appendChild(sIn);
-        q4.appendChild(sF);
-        if (state.secondPage.errors.indexOf('question2Extra') !== -1) q4.appendChild(err(T.errorMessage));
-      }
+      q4.appendChild(q4ExtraField);
       wrap.appendChild(q4);
 
       var actions = el('div', { class: 'et-actions' });
-      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: T.back });
+      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
       backBtn.addEventListener('click', function () { ui.page = 1; window.scrollTo(0, 0); render(); });
       actions.appendChild(backBtn);
       actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: T.next });
-      nextBtn.addEventListener('click', onSecondNext);
+      var nextBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.next });
+      nextBtn.addEventListener('click', function () { onSecondNext(q3, q4); });
       actions.appendChild(nextBtn);
       wrap.appendChild(actions);
       return wrap;
     }
 
-    function onSecondNext() {
-      var sp = state.secondPage, errs = sp.errors;
-      if (!sp.question1 && errs.indexOf('question1') === -1) errs.push('question1');
-      if (emptyArr(sp.question2) && errs.indexOf('question2') === -1) errs.push('question2');
-      if (!sp.question2Extra && ui.showShoeExtra2 && errs.indexOf('question2Extra') === -1) errs.unshift('question2Extra');
-      if (!sp.question1Extra && ui.showQ3Extra && errs.indexOf('question1Extra') === -1) errs.unshift('question1Extra');
-      if (errs.length) { render(); return; }
+    function onSecondNext(q3, q4) {
+      var sp = state.secondPage, errs = sp.errors, ok = true;
+
+      var q1Bad = !sp.question1;
+      if (q1Bad && errs.indexOf('question1') === -1) errs.push('question1'); else if (!q1Bad) clearErr(errs, 'question1');
+      var q1eBad = !sp.question1Extra && ui.showQ3Extra;
+      if (q1eBad && errs.indexOf('question1Extra') === -1) errs.unshift('question1Extra'); else if (!q1eBad) clearErr(errs, 'question1Extra');
+      setError(q3, q1Bad || q1eBad, MSG.errorMessage);
+      if (q1Bad || q1eBad) ok = false;
+
+      var q2Bad = emptyArr(sp.question2);
+      if (q2Bad && errs.indexOf('question2') === -1) errs.push('question2'); else if (!q2Bad) clearErr(errs, 'question2');
+      var q2eBad = !sp.question2Extra && ui.showShoeExtra2;
+      if (q2eBad && errs.indexOf('question2Extra') === -1) errs.unshift('question2Extra'); else if (!q2eBad) clearErr(errs, 'question2Extra');
+      setError(q4, q2Bad || q2eBad, MSG.errorMessage);
+      if (q2Bad || q2eBad) ok = false;
+
+      if (!ok) return;
       ui.page = 3; window.scrollTo(0, 0); render();
+    }
+
+    // ===================== STEP 3 =====================
+    // yes/no single-select chips. canonical = de_CH yes/no; display = MSG yes/no.
+    function yesNo(field, label, imgQ, qRef) {
+      var wrap = el('div', { class: 'et-question' });
+      wrap.appendChild(el('span', { class: 'et-qlabel', html: label }));
+      if (imgQ) {
+        var u = imgUrl(imgQ, 'Image1');
+        if (u) wrap.appendChild(el('img', { class: 'et-header-img', src: u, alt: '', loading: 'lazy', style: 'max-width:700px;' }));
+      }
+      var opts = el('div', { class: 'et-options' });
+      ['yes', 'no'].forEach(function (key) {
+        var canonical = DE.thirdPage[key];
+        var chip = el('div', { class: 'et-chip' + (state.thirdPage[field] === canonical ? ' is-selected' : ''), text: MSG.thirdPage[key] });
+        chip.addEventListener('click', function () {
+          state.thirdPage[field] = canonical;
+          clearErr(state.thirdPage.errors, field);
+          singleSelect(opts, chip);
+          setError(wrap, false);
+        });
+        opts.appendChild(chip);
+      });
+      wrap.appendChild(opts);
+      qRef[field] = wrap;
+      return wrap;
     }
 
     function renderThird() {
       var wrap = el('div', { class: 'et-step is-active' });
+      var qRef = {}; // field -> question wrapper, for in-place error updates
 
       // Q5 - design variants (image only; thirdPage.question1 stays 'default choice')
       var q5 = el('div', { class: 'et-question' });
-      q5.appendChild(el('span', { class: 'et-qlabel', html: '5. <b>' + T.thirdPage.designVariants + '</b>' }));
+      q5.appendChild(el('span', { class: 'et-qlabel', html: '5. <b>' + MSG.thirdPage.designVariants + '</b>' }));
       var u5 = imgUrl('question8', 'Image1');
-      if (u5) q5.appendChild(el('img', { class: 'et-header-img', src: u5, alt: 'design', loading: 'lazy', style: 'max-width:510px;' }));
+      if (u5) q5.appendChild(el('img', { class: 'et-header-img', src: u5, alt: '', loading: 'lazy', style: 'max-width:510px;' }));
       wrap.appendChild(q5);
 
       // Q6 - current season models (image cards, multi select max 2)
       var q6 = el('div', { class: 'et-question' });
-      q6.appendChild(el('span', { class: 'et-qlabel', html: '6. <b>' + T.thirdPage.currentSeasonModels + '</b>' }));
-      q6.appendChild(el('span', { class: 'et-qnote', text: state.thirdPage.question2.length + '/' + MAX_SHOES }));
+      qRef.question2 = q6;
+      q6.appendChild(el('span', { class: 'et-qlabel', html: '6. <b>' + MSG.thirdPage.currentSeasonModels + '</b>' }));
+      var counter6 = el('span', { class: 'et-qnote', text: state.thirdPage.question2.length + '/' + MAX_SHOES });
+      q6.appendChild(counter6);
       var cards6 = el('div', { class: 'et-cards' });
-      var shoeOpts = ['Image1', 'Image2', 'Image3'].map(function (k, i) {
-        return { label: 'a. Laura dark red,b. Dynamo ZIP dark grey,c. Veloce STX pink'.split(',')[i], url: imgUrl('question5', k) };
-      });
-      shoeOpts.push({ label: T.secondPage.secondQuestion.followingShoeModels, url: '' });
-      shoeOpts.forEach(function (opt) {
-        var sel = state.thirdPage.question2.indexOf(opt.label) !== -1;
-        cards6.appendChild(card(opt.label, opt.url, sel, function () {
+
+      var q6ExtraField = el('div', { class: 'et-field' });
+      qRef.question2Extra = q6ExtraField;
+      q6ExtraField.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.suggestAnotherModel }));
+      var q6ExtraIn = el('input', { class: 'et-input', type: 'text', value: state.thirdPage.question2Extra });
+      q6ExtraIn.addEventListener('input', function () { state.thirdPage.question2Extra = q6ExtraIn.value; clearErr(state.thirdPage.errors, 'question2Extra'); setError(q6ExtraField, false); });
+      q6ExtraField.appendChild(q6ExtraIn);
+      q6ExtraField.hidden = !ui.showShoeExtra3;
+
+      shoeOptions().forEach(function (opt) {
+        var sel = state.thirdPage.question2.indexOf(opt.canonical) !== -1;
+        var cd = card(opt.display, opt.url, sel, function () {
           var arr = state.thirdPage.question2;
-          var idx = arr.indexOf(opt.label);
-          if (idx !== -1) {
-            arr.splice(idx, 1);
-            if (opt.label === T.secondPage.secondQuestion.followingShoeModels) ui.showShoeExtra3 = false;
+          var i = arr.indexOf(opt.canonical);
+          if (i !== -1) {
+            arr.splice(i, 1);
+            cd.classList.remove('is-selected');
+            if (opt.isOther) { ui.showShoeExtra3 = false; q6ExtraField.hidden = true; }
           } else if (arr.length < MAX_SHOES) {
-            arr.push(opt.label);
-            if (opt.label === T.secondPage.secondQuestion.followingShoeModels) ui.showShoeExtra3 = true;
+            arr.push(opt.canonical);
+            cd.classList.add('is-selected');
+            if (opt.isOther) { ui.showShoeExtra3 = true; q6ExtraField.hidden = false; }
           }
+          counter6.textContent = state.thirdPage.question2.length + '/' + MAX_SHOES;
           clearErr(state.thirdPage.errors, 'question2');
-          render();
-        }));
+          setError(q6, false);
+        });
+        cards6.appendChild(cd);
       });
       q6.appendChild(cards6);
-      if (state.thirdPage.errors.indexOf('question2') !== -1) q6.appendChild(err(T.errorMessage));
-      if (ui.showShoeExtra3) {
-        var seF = el('div', { class: 'et-field' });
-        seF.appendChild(el('span', { class: 'et-field-label', text: T.thirdPage.suggestAnotherModel }));
-        var seIn = el('input', { class: 'et-input', type: 'text', value: state.thirdPage.question2Extra });
-        seIn.addEventListener('input', function () { state.thirdPage.question2Extra = seIn.value; clearErr(state.thirdPage.errors, 'question2Extra'); });
-        seF.appendChild(seIn);
-        q6.appendChild(seF);
-        if (state.thirdPage.errors.indexOf('question2Extra') !== -1) q6.appendChild(err(T.errorMessage));
-      }
+      q6.appendChild(q6ExtraField);
       wrap.appendChild(q6);
 
       // Q7 - ad format (width -> question3, height -> question4)
-      var q7 = el('div', { class: 'et-question' });
-      q7.appendChild(el('span', { class: 'et-qlabel', html: '7. <b>' + T.thirdPage.adFormatRequest + '</b>' }));
-      q7.appendChild(el('span', { class: 'et-qnote', text: T.thirdPage.adFormatInfo }));
+      var q7w = el('div', { class: 'et-question' });
+      qRef.question3 = q7w;
+      q7w.appendChild(el('span', { class: 'et-qlabel', html: '7. <b>' + MSG.thirdPage.adFormatRequest + '</b>' }));
+      q7w.appendChild(el('span', { class: 'et-qnote', text: MSG.thirdPage.adFormatInfo }));
       var wF = el('div', { class: 'et-field' });
-      wF.appendChild(el('span', { class: 'et-field-label', text: T.thirdPage.widthInMM }));
+      wF.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.widthInMM }));
       var wIn = el('input', { class: 'et-input', type: 'number', value: state.thirdPage.question3 });
-      wIn.addEventListener('input', function () { state.thirdPage.question3 = wIn.value; clearErr(state.thirdPage.errors, 'question3'); });
+      wIn.addEventListener('input', function () { state.thirdPage.question3 = wIn.value; clearErr(state.thirdPage.errors, 'question3'); setError(q7w, false); });
       wF.appendChild(wIn);
-      q7.appendChild(wF);
-      if (state.thirdPage.errors.indexOf('question3') !== -1) q7.appendChild(err(T.errorMessage));
-      var hF = el('div', { class: 'et-field' });
-      hF.appendChild(el('span', { class: 'et-field-label', text: T.thirdPage.heightInMM }));
-      var hIn = el('input', { class: 'et-input', type: 'number', value: state.thirdPage.question4 });
-      hIn.addEventListener('input', function () { state.thirdPage.question4 = hIn.value; clearErr(state.thirdPage.errors, 'question4'); });
-      hF.appendChild(hIn);
-      q7.appendChild(hF);
-      if (state.thirdPage.errors.indexOf('question4') !== -1) q7.appendChild(err(T.errorMessage));
-      wrap.appendChild(q7);
+      q7w.appendChild(wF);
+      wrap.appendChild(q7w);
 
-      // section header
-      wrap.appendChild(el('p', { style: 'font-size:1.25rem;font-weight:700;margin:2rem 0 1.5rem;', text: T.thirdPage.additionalMarketingMaterials }));
+      var q7h = el('div', { class: 'et-question' });
+      qRef.question4 = q7h;
+      var hF = el('div', { class: 'et-field' });
+      hF.appendChild(el('span', { class: 'et-field-label', text: MSG.thirdPage.heightInMM }));
+      var hIn = el('input', { class: 'et-input', type: 'number', value: state.thirdPage.question4 });
+      hIn.addEventListener('input', function () { state.thirdPage.question4 = hIn.value; clearErr(state.thirdPage.errors, 'question4'); setError(q7h, false); });
+      hF.appendChild(hIn);
+      q7h.appendChild(hF);
+      wrap.appendChild(q7h);
+
+      wrap.appendChild(el('p', { style: 'font-size:1.25rem;font-weight:700;margin:2rem 0 1.5rem;', text: MSG.thirdPage.additionalMarketingMaterials }));
 
       // Q8 flyer -> question5 ; Q9 poster -> question6 ; Q10 social -> question8 ; Q11 google -> question9
-      wrap.appendChild(yesNo('question5', 'thirdPage', null, '8. ' + T.thirdPage.flyerTemplateLabel, 'question8'));
-      wrap.appendChild(yesNo('question6', 'thirdPage', null, '9. ' + T.thirdPage.posterTemplateLabel, 'question9'));
-      wrap.appendChild(yesNo('question8', 'thirdPage', null, '10. ' + T.thirdPage.socialMediaGraphicLabel, 'question10'));
-      wrap.appendChild(yesNo('question9', 'thirdPage', null, '11. ' + T.thirdPage.googleBusinessGraphicLabel, 'question11'));
+      wrap.appendChild(yesNo('question5', '8. ' + MSG.thirdPage.flyerTemplateLabel, 'question8', qRef));
+      wrap.appendChild(yesNo('question6', '9. ' + MSG.thirdPage.posterTemplateLabel, 'question9', qRef));
+      wrap.appendChild(yesNo('question8', '10. ' + MSG.thirdPage.socialMediaGraphicLabel, 'question10', qRef));
+      wrap.appendChild(yesNo('question9', '11. ' + MSG.thirdPage.googleBusinessGraphicLabel, 'question11', qRef));
 
       // Q12 comments -> question10
       var q12 = el('div', { class: 'et-question' });
-      q12.appendChild(el('span', { class: 'et-qlabel', html: '12. <b>' + T.thirdPage.commentSection + '</b>' }));
+      q12.appendChild(el('span', { class: 'et-qlabel', html: '12. <b>' + MSG.thirdPage.commentSection + '</b>' }));
       var ta = el('textarea', { class: 'et-textarea', rows: '4' });
       ta.value = state.thirdPage.question10;
       ta.addEventListener('input', function () { state.thirdPage.question10 = ta.value; });
@@ -569,26 +652,34 @@
       wrap.appendChild(q12);
 
       var actions = el('div', { class: 'et-actions' });
-      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: T.back });
+      var backBtn = el('button', { class: 'et-btn et-btn-back', type: 'button', text: MSG.back });
       backBtn.addEventListener('click', function () { ui.page = 2; window.scrollTo(0, 0); render(); });
       actions.appendChild(backBtn);
       actions.appendChild(el('span', { class: 'et-progress', text: ui.page + ' / 4' }));
-      var submitBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: T.thirdPage.submit });
-      submitBtn.addEventListener('click', onSubmit);
+      var submitBtn = el('button', { class: 'et-btn et-btn-primary', type: 'button', text: MSG.thirdPage.submit });
+      submitBtn.addEventListener('click', function () { onSubmit(qRef); });
       actions.appendChild(submitBtn);
       wrap.appendChild(actions);
       return wrap;
     }
 
-    function onSubmit() {
+    function onSubmit(qRef) {
       var errs = validateThirdPage(state, ui.showShoeExtra3);
       state.thirdPage.errors = errs;
-      if (errs.length) { render(); return; }
+      // update error nodes IN PLACE (don't rebuild the step)
+      ['question2', 'question3', 'question4', 'question5', 'question6', 'question8', 'question9', 'question2Extra'].forEach(function (field) {
+        if (qRef[field]) setError(qRef[field], errs.indexOf(field) !== -1, MSG.errorMessage);
+      });
+      if (errs.length) {
+        var firstEl = qRef[errs[0]];
+        if (firstEl && firstEl.scrollIntoView) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       submit();
     }
 
     function submit() {
-      // sync uploaded files into the description shape (names only) + keep File objects for multipart
+      // sync uploaded file names into the description shape; keep File objects for multipart
       state.uploadedFiles = ui.files.map(function (f) { return { name: f.name }; });
       var description = buildDescription(state, cfg);
       var form = new FormData();
@@ -597,26 +688,26 @@
       fetch(cfg.endpoint, { method: 'POST', body: form, credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('submit failed: ' + res.status);
-          // reset + thank-you
           state = initialState();
-          ui = { page: 4, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [] };
+          ui = { page: 4, showQ3Extra: false, showShoeExtra2: false, showShoeExtra3: false, files: [], fileListEl: null };
           render();
         })
         .catch(function (e) { console.error(e); });
     }
 
+    // ===================== THANK YOU =====================
     function renderThankYou() {
       var wrap = el('div', { class: 'et-step is-active' });
-      var ty = el('div', { class: 'et-thankyou' }, [
-        el('h2', { text: T.forthPage.youMadeIt }),
-        el('p', { text: T.forthPage.successMessageFirst }),
-        el('p', { text: T.forthPage.successMessageSecond }),
+      wrap.appendChild(el('div', { class: 'et-thankyou' }, [
+        el('h2', { text: MSG.forthPage.youMadeIt }),
+        el('p', { text: MSG.forthPage.successMessageFirst }),
+        el('p', { text: MSG.forthPage.successMessageSecond }),
         el('p', { class: 'et-progress', text: '4 / 4' })
-      ]);
-      wrap.appendChild(ty);
+      ]));
       return wrap;
     }
 
+    // Full rebuild ONLY on page navigation.
     function render() {
       mount.innerHTML = '';
       if (ui.page === 1) mount.appendChild(renderFirst());

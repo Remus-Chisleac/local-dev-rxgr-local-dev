@@ -102,8 +102,11 @@
   }
 
   // ---- validation (mirrors the kj *.schema.js) — returns {field:errorMsg} ----
-  function validatePage(pageNum, state, de) {
-    var e = {}, s = state, set = function (f, k) { e[f] = get(de, k); };
+  // `de` drives value comparisons (state stores the de_CH canonical option
+  // strings); `msg` (defaults to `de`) drives the error MESSAGE language so the
+  // UI shows errors in the displayed locale, not always German.
+  function validatePage(pageNum, state, de, msg) {
+    var e = {}, s = state, M = msg || de, set = function (f, k) { e[f] = get(M, k); };
     if (pageNum === 1) {
       var q1 = s.firstPage.question1;
       if (blank(q1.date) || isNaN(new Date(q1.date).getTime())) set('firstPage.question1.date', 'errors.requiredField');
@@ -207,31 +210,21 @@
     var errors = {};              // {fieldPath: msg} from validatePage
     var TOTAL = 4;
 
-    function err(field) { return errors[field] ? errEl(errors[field]) : null; }
-    function maybeAppend(parent, node) { if (node) parent.appendChild(node); }
+    // Per-field error anchors registered while the step is built ONCE.
+    // anchors[field] = the DOM node AFTER which the .et-error span is inserted.
+    var anchors = {};
+    function anchor(field, node) { anchors[field] = node; return node; }
 
-    // ---------- single-select chip group ----------
-    function chipGroup(parent, opts2, current, onPick) {
-      var box = el('div', 'et-options');
-      opts2.forEach(function (o) {
-        var chip = el('span', 'et-chip' + (current === o.value ? ' is-selected' : ''), { text: o.label });
-        chip.addEventListener('click', function () { onPick(current === o.value ? '' : o.value); });
-        box.appendChild(chip);
+    // Clear all current .et-error nodes and (re)insert from the `errors` map,
+    // in place — never rebuilds the step.
+    function applyErrors() {
+      var existing = mount.querySelectorAll('.et-error');
+      Array.prototype.forEach.call(existing, function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+      Object.keys(errors).forEach(function (field) {
+        var a = anchors[field];
+        if (!a || !a.parentNode) return;
+        a.parentNode.insertBefore(errEl(errors[field]), a.nextSibling);
       });
-      parent.appendChild(box);
-    }
-
-    // ---------- image card group ----------
-    function cardGroup(parent, cards, isSelected, onToggle) {
-      var grid = el('div', 'et-cards');
-      cards.forEach(function (c) {
-        var card = el('div', 'et-card' + (isSelected(c.value) ? ' is-selected' : ''));
-        if (c.img) card.appendChild(el('img', 'et-card-img', { src: c.img, alt: '' }));
-        card.appendChild(el('div', 'et-card-title', { text: c.label }));
-        card.addEventListener('click', function () { onToggle(c.value); });
-        grid.appendChild(card);
-      });
-      parent.appendChild(grid);
     }
 
     function question(num, labelText, note) {
@@ -239,6 +232,56 @@
       q.appendChild(el('span', 'et-qlabel', { text: num + '. ' + labelText }));
       if (note) q.appendChild(el('span', 'et-qnote', { text: note }));
       return q;
+    }
+
+    // ---------- single-select chip group (toggles in place) ----------
+    // get()/set() read+write the selected value on state.
+    function singleChipGroup(parent, opts2, getSel, setSel, afterChange) {
+      var box = el('div', 'et-options');
+      var chips = [];
+      function paint() {
+        var cur = getSel();
+        chips.forEach(function (c) {
+          if (c.value === cur) c.node.classList.add('is-selected');
+          else c.node.classList.remove('is-selected');
+        });
+      }
+      opts2.forEach(function (o) {
+        var chip = el('span', 'et-chip', { text: o.label });
+        chip.addEventListener('click', function () {
+          setSel(getSel() === o.value ? '' : o.value);
+          paint();
+          if (afterChange) afterChange();
+        });
+        chips.push({ value: o.value, node: chip });
+        box.appendChild(chip);
+      });
+      parent.appendChild(box);
+      paint();
+      return { box: box, repaint: paint };
+    }
+
+    // ---------- image card group (single or multi, toggles in place) ----------
+    function cardGroup(parent, cards, isSelected, onToggle) {
+      var grid = el('div', 'et-cards');
+      var nodes = [];
+      function paint() {
+        nodes.forEach(function (c) {
+          if (isSelected(c.value)) c.node.classList.add('is-selected');
+          else c.node.classList.remove('is-selected');
+        });
+      }
+      cards.forEach(function (c) {
+        var card = el('div', 'et-card');
+        if (c.img) card.appendChild(el('img', 'et-card-img', { src: c.img, alt: '' }));
+        card.appendChild(el('div', 'et-card-title', { text: c.label }));
+        card.addEventListener('click', function () { onToggle(c.value); paint(); });
+        nodes.push({ value: c.value, node: card });
+        grid.appendChild(card);
+      });
+      parent.appendChild(grid);
+      paint();
+      return grid;
     }
 
     // ============================ PAGE 1 ============================
@@ -270,67 +313,73 @@
         var inp = el('input', 'et-input', { type: f.type, value: dq[f.key] || '' });
         inp.addEventListener('input', function () { dq[f.key] = inp.value; });
         field.appendChild(inp);
-        maybeAppend(field, err('firstPage.question1.' + f.key));
+        anchor('firstPage.question1.' + f.key, inp);
         q1.appendChild(field);
       });
       wrap.appendChild(q1);
 
-      // Q2
+      // Q2 (single chip) — upload zone rendered ONCE, shown/hidden by selection
       var q2 = question('2', L.firstPage.question2.text);
-      chipGroup(q2, [
+      var q2group = singleChipGroup(q2, [
         { value: DE.firstPage.question2.option1, label: L.firstPage.question2.option1 },
         { value: DE.firstPage.question2.option2, label: L.firstPage.question2.option2 }
-      ], state.firstPage.question2, function (v) {
-        state.firstPage.question2 = v;
-        rerender();
-      });
-      maybeAppend(q2, err('firstPage.question2'));
+      ], function () { return state.firstPage.question2; },
+        function (v) { state.firstPage.question2 = v; },
+        function () { toggleUpload(); });
+      // anchor for the q2 required error is the chip box
+      anchor('firstPage.question2', q2group.box);
 
-      // upload zone only when "Nein" (option2)
-      if (state.firstPage.question2 === DE.firstPage.question2.option2) {
-        var up = el('div', 'et-upload');
-        up.appendChild(el('div', 'et-field-label', { text: L.firstPage.question2.uploadText }));
-        var zone = el('div', 'et-upload-zone');
-        zone.appendChild(el('span', null, { text: L.firstPage.question2.dropFilesOr + ' ' + L.firstPage.question2.browse }));
-        var fileInput = el('input', null, { type: 'file', multiple: 'multiple' });
-        fileInput.style.display = 'none';
-        zone.appendChild(fileInput);
-        function addFiles(list) {
-          var existing = (state.firstPage.uploadedFiles || []).map(function (f) { return f.name; });
-          Array.prototype.forEach.call(list, function (file) {
-            if (existing.indexOf(file.name) === -1) {
-              state.firstPage.uploadedFiles.push({ file: file, name: file.name });
-              existing.push(file.name);
-            }
-          });
-          rerender();
-        }
-        zone.addEventListener('click', function () { fileInput.click(); });
-        fileInput.addEventListener('change', function () { addFiles(fileInput.files); });
-        zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('is-dragover'); });
-        zone.addEventListener('dragleave', function () { zone.classList.remove('is-dragover'); });
-        zone.addEventListener('drop', function (e) {
-          e.preventDefault(); zone.classList.remove('is-dragover');
-          if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+      // upload zone (always present, toggled hidden)
+      var up = el('div', 'et-upload');
+      up.appendChild(el('div', 'et-field-label', { text: L.firstPage.question2.uploadText }));
+      var zone = el('div', 'et-upload-zone');
+      zone.appendChild(el('span', null, { text: L.firstPage.question2.dropFilesOr + ' ' + L.firstPage.question2.browse }));
+      var fileInput = el('input', null, { type: 'file', multiple: 'multiple' });
+      fileInput.style.display = 'none';
+      zone.appendChild(fileInput);
+      var ul = el('ul', 'et-upload-list');
+      function addFileRow(f) {
+        var li = el('li', 'et-upload-item');
+        li.appendChild(el('span', null, { text: f.name }));
+        var rm = el('button', null, { type: 'button', text: '×' });
+        rm.addEventListener('click', function () {
+          var i = state.firstPage.uploadedFiles.indexOf(f);
+          if (i !== -1) state.firstPage.uploadedFiles.splice(i, 1);
+          if (li.parentNode) li.parentNode.removeChild(li);  // remove ONLY this row
         });
-        up.appendChild(zone);
-        if ((state.firstPage.uploadedFiles || []).length) {
-          var ul = el('ul', 'et-upload-list');
-          state.firstPage.uploadedFiles.forEach(function (f, i) {
-            var li = el('li', 'et-upload-item');
-            li.appendChild(el('span', null, { text: f.name }));
-            var rm = el('button', null, { type: 'button', text: '×' });
-            rm.addEventListener('click', function () {
-              state.firstPage.uploadedFiles.splice(i, 1); rerender();
-            });
-            li.appendChild(rm);
-            ul.appendChild(li);
-          });
-          up.appendChild(ul);
-        }
-        maybeAppend(up, err('firstPage.uploadedFiles'));
-        q2.appendChild(up);
+        li.appendChild(rm);
+        ul.appendChild(li);
       }
+      function addFiles(list) {
+        var existing = (state.firstPage.uploadedFiles || []).map(function (f) { return f.name; });
+        Array.prototype.forEach.call(list, function (file) {
+          if (existing.indexOf(file.name) === -1) {
+            var rec = { file: file, name: file.name };
+            state.firstPage.uploadedFiles.push(rec);
+            existing.push(file.name);
+            addFileRow(rec);  // append ONLY the new row
+          }
+        });
+      }
+      zone.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function () { addFiles(fileInput.files); fileInput.value = ''; });
+      zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('is-dragover'); });
+      zone.addEventListener('dragleave', function () { zone.classList.remove('is-dragover'); });
+      zone.addEventListener('drop', function (e) {
+        e.preventDefault(); zone.classList.remove('is-dragover');
+        if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+      });
+      up.appendChild(zone);
+      up.appendChild(ul);
+      (state.firstPage.uploadedFiles || []).forEach(addFileRow);
+      // anchor for the upload-required error is the upload block itself
+      anchor('firstPage.uploadedFiles', up);
+      q2.appendChild(up);
+
+      function toggleUpload() {
+        up.hidden = state.firstPage.question2 !== DE.firstPage.question2.option2;
+      }
+      toggleUpload();
       wrap.appendChild(q2);
 
       wrap.appendChild(actions(false, L.next));
@@ -345,26 +394,26 @@
 
       // Q3 image cards (single)
       var q3 = question('3', L.secondPage.question3.text);
-      cardGroup(q3, [
+      var q3grid = cardGroup(q3, [
         { value: DE.secondPage.question3.option1, label: L.secondPage.question3.option1, img: (images.q3 || [])[0] },
         { value: DE.secondPage.question3.option2, label: L.secondPage.question3.option2, img: (images.q3 || [])[1] },
         { value: DE.secondPage.question3.option3, label: L.secondPage.question3.option3, img: (images.q3 || [])[2] }
       ], function (v) { return sp.question3 === v; }, function (v) {
-        sp.question3 = sp.question3 === v ? '' : v; rerender();
+        sp.question3 = sp.question3 === v ? '' : v;
       });
-      maybeAppend(q3, err('secondPage.question3'));
+      anchor('secondPage.question3', q3grid);
       wrap.appendChild(q3);
 
       // Q4 image cards (single)
       var q4 = question('4', L.secondPage.question4.text);
-      cardGroup(q4, [
+      var q4grid = cardGroup(q4, [
         { value: DE.secondPage.question4.option1, label: L.secondPage.question4.option1, img: (images.q4 || [])[0] },
         { value: DE.secondPage.question4.option2, label: L.secondPage.question4.option2, img: (images.q4 || [])[1] },
         { value: DE.secondPage.question4.option3, label: L.secondPage.question4.option3, img: (images.q4 || [])[2] }
       ], function (v) { return sp.question4 === v; }, function (v) {
-        sp.question4 = sp.question4 === v ? '' : v; rerender();
+        sp.question4 = sp.question4 === v ? '' : v;
       });
-      maybeAppend(q4, err('secondPage.question4'));
+      anchor('secondPage.question4', q4grid);
       wrap.appendChild(q4);
 
       // Q5 model text-entry list
@@ -376,92 +425,120 @@
       var q7 = question('7', L.secondPage.question7.text);
       var box = el('div', 'et-options');
       var o1 = DE.secondPage.question7.option1, o2 = DE.secondPage.question7.option2, o3 = DE.secondPage.question7.option3;
+      function paintQ7() {
+        c1.classList.toggle('is-selected', sp.question7 === o1);
+        c2.classList.toggle('is-selected', sp.question7 === o2);
+        c3.classList.toggle('is-selected', sp.question7 === o3);
+        // validity field shown for option2 OR option3, hidden otherwise
+        validityField.hidden = !(sp.question7 === o2 || sp.question7 === o3);
+      }
       // option1
-      var c1 = el('span', 'et-chip' + (sp.question7 === o1 ? ' is-selected' : ''), { text: L.secondPage.question7.option1 });
-      c1.addEventListener('click', function () { sp.question7 = sp.question7 === o1 ? '' : o1; rerender(); });
+      var c1 = el('span', 'et-chip', { text: L.secondPage.question7.option1 });
+      c1.addEventListener('click', function () { sp.question7 = sp.question7 === o1 ? '' : o1; paintQ7(); });
       box.appendChild(c1);
       // option2
-      var c2 = el('span', 'et-chip' + (sp.question7 === o2 ? ' is-selected' : ''), { text: L.secondPage.question7.option2 });
-      c2.addEventListener('click', function () { sp.question7 = sp.question7 === o2 ? '' : o2; rerender(); });
+      var c2 = el('span', 'et-chip', { text: L.secondPage.question7.option2 });
+      c2.addEventListener('click', function () { sp.question7 = sp.question7 === o2 ? '' : o2; paintQ7(); });
       box.appendChild(c2);
       // option3 with inline input (split label on <input/>)
-      var c3 = el('span', 'et-chip' + (sp.question7 === o3 ? ' is-selected' : ''));
+      var c3 = el('span', 'et-chip');
       var parts = String(L.secondPage.question7.option3).split('<input/>');
       c3.appendChild(document.createTextNode(parts[0] || ''));
       var inlineInp = el('input', 'et-inline-input', { type: 'text', value: sp.question7Option3Input || '' });
       inlineInp.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (sp.question7 !== o3) { sp.question7 = o3; rerender(); }
+        if (sp.question7 !== o3) { sp.question7 = o3; paintQ7(); }
       });
       inlineInp.addEventListener('input', function () { sp.question7Option3Input = inlineInp.value; });
       c3.appendChild(inlineInp);
       c3.appendChild(document.createTextNode(parts[1] || ''));
-      c3.addEventListener('click', function () { sp.question7 = sp.question7 === o3 ? '' : o3; rerender(); });
+      c3.addEventListener('click', function () { sp.question7 = sp.question7 === o3 ? '' : o3; paintQ7(); });
       box.appendChild(c3);
       q7.appendChild(box);
-      maybeAppend(q7, err('secondPage.question7Option3Input'));
-      maybeAppend(q7, err('secondPage.question7'));
-      // validity period extra when option2 or option3
-      if (sp.question7 === o2 || sp.question7 === o3) {
-        var field = el('div', 'et-field');
-        field.appendChild(el('label', 'et-field-label', { text: L.secondPage.question7.extraText }));
-        var inp = el('input', 'et-input', { type: 'text', value: sp.question7Extra || '' });
-        inp.addEventListener('input', function () { sp.question7Extra = inp.value; });
-        field.appendChild(inp);
-        maybeAppend(field, err('secondPage.question7Extra'));
-        q7.appendChild(field);
-      }
+      anchor('secondPage.question7Option3Input', inlineInp);
+      anchor('secondPage.question7', box);
+      // validity period field (rendered once, toggled hidden)
+      var validityField = el('div', 'et-field');
+      validityField.appendChild(el('label', 'et-field-label', { text: L.secondPage.question7.extraText }));
+      var vInp = el('input', 'et-input', { type: 'text', value: sp.question7Extra || '' });
+      vInp.addEventListener('input', function () { sp.question7Extra = vInp.value; });
+      validityField.appendChild(vInp);
+      anchor('secondPage.question7Extra', vInp);
+      q7.appendChild(validityField);
+      paintQ7();
       wrap.appendChild(q7);
 
       wrap.appendChild(actions(true, L.next));
       return wrap;
     }
 
-    // model text-entry list (q5/q6): typed names ARE the array; "other" sentinel + extra input
+    // model text-entry list (q5/q6): typed names ARE the array; "other" sentinel + extra input.
+    // Add/remove rows touch only that row's node; the "other" name field is toggled hidden.
     function modelQuestion(num, labelText, arrKey, extraKey, other) {
       var sp = state.secondPage;
       var q = question(num, labelText);
       var list = el('div', 'et-models');
-      // typed model rows (skip the sentinel; it is rendered via the chip below)
-      sp[arrKey].forEach(function (val, idx) {
-        if (val === other) return;
+
+      function addRow(initialVal) {
         var row = el('div', 'et-model-row');
-        var inp = el('input', 'et-input', { type: 'text', value: val, placeholder: L.secondPage.shoeModelName });
-        inp.addEventListener('input', function () { sp[arrKey][idx] = inp.value; });
+        var inp = el('input', 'et-input', { type: 'text', value: initialVal || '', placeholder: L.secondPage.shoeModelName });
+        // each row tracks its own (non-sentinel) value slot
+        var slot = { val: initialVal || '' };
+        inp.addEventListener('input', function () { slot.val = inp.value; syncArray(); });
         row.appendChild(inp);
         var rm = el('button', 'et-btn et-btn-back', { type: 'button', text: '×' });
-        rm.addEventListener('click', function () { sp[arrKey].splice(idx, 1); rerender(); });
+        rm.addEventListener('click', function () {
+          var i = slots.indexOf(slot);
+          if (i !== -1) slots.splice(i, 1);
+          if (row.parentNode) row.parentNode.removeChild(row);  // remove ONLY this row
+          syncArray();
+        });
         row.appendChild(rm);
         list.appendChild(row);
-      });
+        slots.push(slot);
+      }
+
+      // slots = the typed (non-sentinel) values; syncArray rebuilds sp[arrKey]
+      // from slots (+ the sentinel iff the "other" chip is active).
+      var slots = [];
+      function syncArray() {
+        var arr = slots.map(function (s) { return s.val; });
+        if (hasOther()) arr.push(other);
+        sp[arrKey] = arr;
+      }
+      function hasOther() { return chip.classList.contains('is-selected'); }
+
+      // seed rows from existing typed values (skip sentinel)
+      (sp[arrKey] || []).forEach(function (v) { if (v !== other) addRow(v); });
       q.appendChild(list);
-      // add-model button
+
+      // add-model button — appends ONE row
       var add = el('button', 'et-btn', { type: 'button', text: L.secondPage.addModel });
-      add.addEventListener('click', function () { sp[arrKey].push(''); rerender(); });
+      add.addEventListener('click', function () { addRow(''); syncArray(); });
       q.appendChild(add);
-      // "Anderes Schuhmodell" chip + extra input
-      var hasOther = sp[arrKey].indexOf(other) !== -1;
+
+      // "Anderes Schuhmodell" chip + extra input (extra rendered once, toggled hidden)
       var chipBox = el('div', 'et-options');
-      var chip = el('span', 'et-chip' + (hasOther ? ' is-selected' : ''), { text: L.secondPage.otherShoeModel });
+      var chip = el('span', 'et-chip', { text: L.secondPage.otherShoeModel });
+      if ((sp[arrKey] || []).indexOf(other) !== -1) chip.classList.add('is-selected');
+      var extraField = el('div', 'et-field');
+      extraField.appendChild(el('label', 'et-field-label', { text: L.secondPage.shoeModelName }));
+      var extraInp = el('input', 'et-input', { type: 'text', value: sp[extraKey] || '' });
+      extraInp.addEventListener('input', function () { sp[extraKey] = extraInp.value; });
+      extraField.appendChild(extraInp);
+      function toggleExtra() { extraField.hidden = !chip.classList.contains('is-selected'); }
       chip.addEventListener('click', function () {
-        if (hasOther) {
-          sp[arrKey] = sp[arrKey].filter(function (x) { return x !== other; });
-          sp[extraKey] = '';
-        } else { sp[arrKey].push(other); }
-        rerender();
+        chip.classList.toggle('is-selected');
+        if (!chip.classList.contains('is-selected')) { sp[extraKey] = ''; extraInp.value = ''; }
+        toggleExtra();
+        syncArray();
       });
       chipBox.appendChild(chip);
       q.appendChild(chipBox);
-      if (hasOther) {
-        var field = el('div', 'et-field');
-        field.appendChild(el('label', 'et-field-label', { text: L.secondPage.shoeModelName }));
-        var inp2 = el('input', 'et-input', { type: 'text', value: sp[extraKey] || '' });
-        inp2.addEventListener('input', function () { sp[extraKey] = inp2.value; });
-        field.appendChild(inp2);
-        maybeAppend(field, err('secondPage.' + extraKey));
-        q.appendChild(field);
-      }
-      maybeAppend(q, err('secondPage.' + arrKey));
+      anchor('secondPage.' + extraKey, extraInp);
+      q.appendChild(extraField);
+      toggleExtra();
+      anchor('secondPage.' + arrKey, chipBox);
       return q;
     }
 
@@ -470,41 +547,40 @@
       var wrap = el('div', 'et-step is-active');
       var th = state.thirdPage;
 
-      // Q8 multi chips, option6 has inline free-text
+      // Q8 multi chips, option6 has inline free-text (toggles in place)
       var q8 = question('8', L.thirdPage.question8.text, L.thirdPage.question8.note);
       var box = el('div', 'et-options');
-      var opt6De = DE.thirdPage.question8.option6;
       for (var i = 1; i <= 6; i++) {
         (function (n) {
           var deVal = DE.thirdPage.question8['option' + n];
           var label = L.thirdPage.question8['option' + n];
-          var sel = th.question8.indexOf(deVal) !== -1;
-          var chip = el('span', 'et-chip' + (sel ? ' is-selected' : ''));
+          var chip = el('span', 'et-chip');
+          if (th.question8.indexOf(deVal) !== -1) chip.classList.add('is-selected');
           if (n === 6) {
             var parts = String(label).split('<input/>');
             chip.appendChild(document.createTextNode(parts[0] || ''));
             var inl = el('input', 'et-inline-input', { type: 'text', value: th.question8OtherOptionInput || '' });
             inl.addEventListener('click', function (e) {
               e.stopPropagation();
-              if (th.question8.indexOf(deVal) === -1) { th.question8.push(deVal); rerender(); }
+              if (th.question8.indexOf(deVal) === -1) { th.question8.push(deVal); chip.classList.add('is-selected'); }
             });
             inl.addEventListener('input', function () { th.question8OtherOptionInput = inl.value; });
             chip.appendChild(inl);
             chip.appendChild(document.createTextNode(parts[1] || ''));
+            anchor('thirdPage.question8OtherOptionInput', inl);
           } else {
             chip.textContent = label;
           }
           chip.addEventListener('click', function () {
             var idx = th.question8.indexOf(deVal);
-            if (idx !== -1) th.question8.splice(idx, 1); else th.question8.push(deVal);
-            rerender();
+            if (idx !== -1) { th.question8.splice(idx, 1); chip.classList.remove('is-selected'); }
+            else { th.question8.push(deVal); chip.classList.add('is-selected'); }
           });
           box.appendChild(chip);
         })(i);
       }
       q8.appendChild(box);
-      maybeAppend(q8, err('thirdPage.question8OtherOptionInput'));
-      maybeAppend(q8, err('thirdPage.question8'));
+      anchor('thirdPage.question8', box);
       wrap.appendChild(q8);
 
       // Q9 width/height number inputs
@@ -518,14 +594,14 @@
         var inp = el('input', 'et-input', { type: 'number', value: th.question9[f.key] || '' });
         inp.addEventListener('input', function () { th.question9[f.key] = inp.value; });
         field.appendChild(inp);
-        maybeAppend(field, err('thirdPage.question9.' + f.key));
+        anchor('thirdPage.question9.' + f.key, inp);
         q9.appendChild(field);
       });
       wrap.appendChild(q9);
 
       // Q10 image cards (multi)
       var q10 = question('10', L.thirdPage.question10.text, L.thirdPage.question10.note);
-      cardGroup(q10, [
+      var q10grid = cardGroup(q10, [
         { value: DE.thirdPage.question10.option1, label: L.thirdPage.question10.option1, img: (images.q10 || [])[0] },
         { value: DE.thirdPage.question10.option2, label: L.thirdPage.question10.option2, img: (images.q10 || [])[1] },
         { value: DE.thirdPage.question10.option3, label: L.thirdPage.question10.option3, img: (images.q10 || [])[2] },
@@ -533,9 +609,8 @@
       ], function (v) { return th.question10.indexOf(v) !== -1; }, function (v) {
         var idx = th.question10.indexOf(v);
         if (idx !== -1) th.question10.splice(idx, 1); else th.question10.push(v);
-        rerender();
       });
-      maybeAppend(q10, err('thirdPage.question10'));
+      anchor('thirdPage.question10', q10grid);
       wrap.appendChild(q10);
 
       // Q11 textarea
@@ -566,7 +641,7 @@
       var bar = el('div', 'et-actions');
       if (showBack) {
         var back = el('button', 'et-btn et-btn-back', { type: 'button', text: '‹ ' + L.back });
-        back.addEventListener('click', function () { errors = {}; page -= 1; rerender(); window.scrollTo(0, 0); });
+        back.addEventListener('click', function () { errors = {}; page -= 1; buildStep(); window.scrollTo(0, 0); });
         bar.appendChild(back);
       }
       bar.appendChild(el('span', 'et-progress', { text: page + '/' + TOTAL }));
@@ -577,14 +652,16 @@
     }
 
     function onPrimary() {
-      errors = validatePage(page, state, DE);
+      errors = validatePage(page, state, DE, L);
       if (Object.keys(errors).length) {
-        rerender();
+        applyErrors();  // update errors IN PLACE — no step rebuild
         var firstErr = mount.querySelector('.et-error');
         if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      if (page < 3) { page += 1; rerender(); window.scrollTo(0, 0); return; }
+      errors = {};
+      applyErrors();
+      if (page < 3) { page += 1; buildStep(); window.scrollTo(0, 0); return; }
       // page === 3 → submit
       submit();
     }
@@ -605,13 +682,15 @@
           state.userInfo.address = cfg.address || '';
           errors = {};
           page = 4;
-          rerender();
+          buildStep();
           window.scrollTo(0, 0);
         })
         .catch(function (e) { console.error('[aico-events-kybun-joya]', e); });
     }
 
-    function rerender() {
+    // Full rebuild of the active step — ONLY used for page navigation.
+    function buildStep() {
+      anchors = {};
       clear(mount);
       var node;
       if (page === 1) node = renderPage1();
@@ -621,7 +700,7 @@
       mount.appendChild(node);
     }
 
-    rerender();
+    buildStep();
   }
 
   // ---- browser bootstrap ----
