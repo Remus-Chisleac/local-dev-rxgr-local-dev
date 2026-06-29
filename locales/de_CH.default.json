@@ -151,7 +151,14 @@
       "email_label": "E-Mail senden",
       "saving": "Wird gespeichert…",
       "saved": "Gespeichert",
-      "save_error": "Speichern fehlgeschlagen"
+      "save_error": "Speichern fehlgeschlagen",
+      "credit": {
+        "title": "Kreditlimit",
+        "used": "Verwendet",
+        "total": "Total",
+        "available": "Verfügbar"
+      },
+      "payment_terms_text": "Zahlungsbedingungen"
     },
     "addresses": {
       "title": "Meine Adressen",

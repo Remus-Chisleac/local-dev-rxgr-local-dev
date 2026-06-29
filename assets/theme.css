@@ -6825,6 +6825,182 @@ html.aico-preorder-gallery-open {
   cursor: progress;
 }
 
+/* ── Generalized custom dropdown ─────────────────────────────────────────
+   Progressive enhancement of a native <select> (assets/account-page.js).
+   Until JS adds .aico-select-ready the native select renders normally
+   (.aico-account-select fallback); once ready, the native is visually hidden
+   and the styled trigger/listbox take over. */
+.aico-select {
+  position: relative;
+  width: 100%;
+}
+
+.aico-select-ready .aico-select-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.aico-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  color: var(--aico-fg);
+  background-color: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  text-align: left;
+  cursor: pointer;
+}
+
+.aico-select-trigger:hover:not([disabled]) {
+  border-color: var(--aico-account-accent);
+}
+
+.aico-select-trigger:focus-visible {
+  outline: 2px solid var(--aico-account-accent);
+  outline-offset: 1px;
+}
+
+.aico-select-trigger[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.aico-select-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aico-select-chevron {
+  flex-shrink: 0;
+  color: var(--aico-muted-fg);
+  transition: transform 0.15s ease;
+}
+
+.aico-select-open .aico-select-chevron {
+  transform: rotate(180deg);
+}
+
+.aico-select-dropdown {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.25rem;
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  background: var(--aico-card);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+.aico-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.aico-select-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: var(--aico-radius);
+  background: transparent;
+  font: inherit;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+
+.aico-select-option:hover:not([disabled]),
+.aico-select-option:focus-visible {
+  background: var(--aico-muted);
+  outline: none;
+}
+
+.aico-select-option[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.aico-select-option[aria-selected="true"] {
+  background: var(--aico-muted);
+  font-weight: 600;
+  color: var(--aico-account-accent);
+}
+
+/* ── Credit limit + payment terms (sidebar) ─────────────────────────────── */
+.aico-account-credit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--aico-border);
+}
+
+.aico-account-credit-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+
+.aico-account-credit-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.aico-account-credit-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.aico-account-credit-row dt {
+  color: var(--aico-muted-fg);
+}
+
+.aico-account-credit-row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.aico-account-credit-row--available dd {
+  color: var(--aico-account-accent);
+}
+
+.aico-account-payment-terms {
+  font-size: 0.85rem;
+}
+
+.aico-account-payment-terms-link {
+  color: var(--aico-account-accent);
+  text-decoration: underline;
+}
+
 /* Save toast — uses the standard site toast (.aico-toast-wrap / .aico-toast,
    bottom-center). Only the show/hide fade is added here because the profile
    toast is driven by vanilla JS rather than Alpine's x-transition. */

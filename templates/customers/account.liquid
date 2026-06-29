@@ -51,50 +51,102 @@
         <p class="aico-account-greeting-email">{{ customer.email }}</p>
       </div>
 
+      {%- comment -%}
+        Each native <select> is progressively enhanced into a custom dropdown
+        by assets/account-page.js (wrapper [data-aico-select] → trigger +
+        listbox). The native select stays in the DOM (hidden once enhanced,
+        visible as a working fallback when JS is off) and keeps its
+        data-aico-pref hook so the instant-save handlers still fire.
+      {%- endcomment -%}
       <div class="aico-account-settings">
-        <label class="aico-account-field">
+        <div class="aico-account-field">
           <span class="aico-account-field-label">{{ 'customer.account.document_language' | t }}</span>
-          <select class="aico-account-select" data-aico-pref="document_language">
-            {% for option in account.language_options %}
-              <option value="{{ option.id }}"{% if option.id == account.document_language_id %} selected{% endif %}>{{ option.name }}</option>
-            {% endfor %}
-          </select>
-        </label>
+          <div class="aico-select" data-aico-select>
+            <select class="aico-account-select aico-select-native" data-aico-pref="document_language">
+              {% for option in account.language_options %}
+                <option value="{{ option.id }}"{% if option.id == account.document_language_id %} selected{% endif %}>{{ option.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
 
-        <label class="aico-account-field">
+        <div class="aico-account-field">
           <span class="aico-account-field-label">{{ 'customer.account.email_language' | t }}</span>
-          <select class="aico-account-select" data-aico-pref="email_language">
-            {% for option in account.language_options %}
-              <option value="{{ option.id }}"{% if option.id == account.email_language_id %} selected{% endif %}>{{ option.name }}</option>
-            {% endfor %}
-          </select>
-        </label>
+          <div class="aico-select" data-aico-select>
+            <select class="aico-account-select aico-select-native" data-aico-pref="email_language">
+              {% for option in account.language_options %}
+                <option value="{{ option.id }}"{% if option.id == account.email_language_id %} selected{% endif %}>{{ option.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
 
-        <label class="aico-account-field">
+        <div class="aico-account-field">
           <span class="aico-account-field-label">{{ 'customer.account.weekly_exchange_email' | t }}</span>
-          <select class="aico-account-select" data-aico-pref="exchange_subscription">
-            <option value="1"{% if account.exchange_email_subscribed %} selected{% endif %}>{{ 'customer.account.on' | t }}</option>
-            <option value="0"{% unless account.exchange_email_subscribed %} selected{% endunless %}>{{ 'customer.account.off' | t }}</option>
-          </select>
-        </label>
+          <div class="aico-select" data-aico-select>
+            <select class="aico-account-select aico-select-native" data-aico-pref="exchange_subscription">
+              <option value="1"{% if account.exchange_email_subscribed %} selected{% endif %}>{{ 'customer.account.on' | t }}</option>
+              <option value="0"{% unless account.exchange_email_subscribed %} selected{% endunless %}>{{ 'customer.account.off' | t }}</option>
+            </select>
+          </div>
+        </div>
 
-        <label class="aico-account-field">
+        <div class="aico-account-field">
           <span class="aico-account-field-label">{{ 'customer.account.size_region' | t }}</span>
-          <select class="aico-account-select" data-aico-pref="sizes_region">
-            {% for region in account.size_region_options %}
-              <option value="{{ region }}"{% if region == account.size_region %} selected{% endif %}>{{ region }}</option>
-            {% endfor %}
-          </select>
-        </label>
+          <div class="aico-select" data-aico-select>
+            <select class="aico-account-select aico-select-native" data-aico-pref="sizes_region">
+              {% for region in account.size_region_options %}
+                <option value="{{ region }}"{% if region == account.size_region %} selected{% endif %}>{{ region }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
 
-        <label class="aico-account-field">
+        <div class="aico-account-field">
           <span class="aico-account-field-label">{{ 'customer.account.customer_view' | t }}</span>
-          <select class="aico-account-select" data-aico-pref="customer_view">
-            <option value="on">{{ 'customer.account.on' | t }}</option>
-            <option value="off" selected>{{ 'customer.account.off' | t }}</option>
-          </select>
-        </label>
+          <div class="aico-select" data-aico-select>
+            <select class="aico-account-select aico-select-native" data-aico-pref="customer_view">
+              <option value="on">{{ 'customer.account.on' | t }}</option>
+              <option value="off" selected>{{ 'customer.account.off' | t }}</option>
+            </select>
+          </div>
+        </div>
 
+      </div>
+
+      {%- comment -%}
+        ── Credit limit + payment terms ─────────────────────────────────
+        Credit numbers come from the B2B debtor (customer.aico_debtor) — the
+        same source the cart/checkout use to gate the order total
+        (DebtorDrop: credit_limit / current_debit / current_credit). Only
+        rendered for B2B debtors. "Down payment" (Anzahlung) is not implemented
+        yet — the link slot below is intentionally left as a TODO. Payment terms
+        ("Zahlungsbedingungen") link to the same AGB page the footer terms link
+        points to (config/menus.json → footer → /pages/agb).
+      {%- endcomment -%}
+      {% if customer.aico_debtor %}
+        <div class="aico-account-credit">
+          <h3 class="aico-account-credit-title">{{ 'customer.account.credit.title' | t }}</h3>
+          <dl class="aico-account-credit-rows">
+            <div class="aico-account-credit-row">
+              <dt>{{ 'customer.account.credit.used' | t }}</dt>
+              <dd>{{ customer.aico_debtor.current_debit | money }}</dd>
+            </div>
+            <div class="aico-account-credit-row">
+              <dt>{{ 'customer.account.credit.total' | t }}</dt>
+              <dd>{{ customer.aico_debtor.credit_limit | money }}</dd>
+            </div>
+            <div class="aico-account-credit-row aico-account-credit-row--available">
+              <dt>{{ 'customer.account.credit.available' | t }}</dt>
+              <dd>{{ customer.aico_debtor.current_credit | money }}</dd>
+            </div>
+          </dl>
+          {%- comment -%} TODO: down-payment ("Anzahlung") link — add once the down-payment flow ships. {%- endcomment -%}
+        </div>
+      {% endif %}
+
+      <div class="aico-account-payment-terms">
+        <a href="/pages/agb" class="aico-account-payment-terms-link">{{ 'customer.account.payment_terms_text' | t }}</a>
       </div>
     </aside>
 

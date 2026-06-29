@@ -13,6 +13,147 @@
 
   var CUSTOMER_VIEW_STORAGE_KEY = 'customerView';
 
+  var CHEVRON_SVG =
+    '<svg class="aico-select-chevron" xmlns="http://www.w3.org/2000/svg" ' +
+    'width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+  function closeSelect(wrapper) {
+    wrapper.classList.remove('aico-select-open');
+    var dropdown = wrapper.querySelector('.aico-select-dropdown');
+    var trigger = wrapper.querySelector('.aico-select-trigger');
+    if (dropdown) {
+      dropdown.hidden = true;
+    }
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function closeAllSelects(except) {
+    var open = document.querySelectorAll('[data-aico-select].aico-select-open');
+    Array.prototype.forEach.call(open, function (wrapper) {
+      if (wrapper !== except) {
+        closeSelect(wrapper);
+      }
+    });
+  }
+
+  /**
+   * Progressive enhancement: turn each native <select> inside a
+   * [data-aico-select] wrapper into a styled button + listbox. The native
+   * select stays in the DOM (visually hidden once ready) and remains the
+   * source of truth — selecting an option writes to it and dispatches a
+   * native "change" event, so the instant-save handlers keep working and the
+   * page degrades to a usable native select when JS is unavailable.
+   */
+  function enhanceSelects(root) {
+    var wrappers = root.querySelectorAll('[data-aico-select]');
+    Array.prototype.forEach.call(wrappers, function (wrapper) {
+      if (wrapper.dataset.aicoSelectReady === '1') {
+        return;
+      }
+      var native = wrapper.querySelector('select');
+      if (!native) {
+        return;
+      }
+      wrapper.dataset.aicoSelectReady = '1';
+
+      var trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'aico-select-trigger';
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+      var label = document.createElement('span');
+      label.className = 'aico-select-label';
+      trigger.appendChild(label);
+      trigger.insertAdjacentHTML('beforeend', CHEVRON_SVG);
+
+      var dropdown = document.createElement('div');
+      dropdown.className = 'aico-select-dropdown';
+      dropdown.hidden = true;
+      var list = document.createElement('div');
+      list.setAttribute('role', 'listbox');
+      list.className = 'aico-select-list';
+      dropdown.appendChild(list);
+
+      wrapper.appendChild(trigger);
+      wrapper.appendChild(dropdown);
+      wrapper.classList.add('aico-select-ready');
+      // Let the save flow toggle the trigger's busy state.
+      native._aicoSelectTrigger = trigger;
+
+      function syncLabel() {
+        var option = native.options[native.selectedIndex];
+        label.textContent = option ? option.textContent.trim() : '';
+        trigger.disabled = native.disabled;
+      }
+
+      function buildOptions() {
+        list.innerHTML = '';
+        Array.prototype.forEach.call(native.options, function (option, index) {
+          var row = document.createElement('button');
+          row.type = 'button';
+          row.setAttribute('role', 'option');
+          row.className = 'aico-select-option';
+          row.textContent = option.textContent;
+          row.disabled = option.disabled;
+          row.setAttribute(
+            'aria-selected',
+            native.selectedIndex === index ? 'true' : 'false'
+          );
+          row.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (option.value !== native.value) {
+              native.value = option.value;
+              native.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            closeSelect(wrapper);
+            syncLabel();
+          });
+          list.appendChild(row);
+        });
+      }
+
+      function openSelect() {
+        closeAllSelects(wrapper);
+        buildOptions();
+        dropdown.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+        wrapper.classList.add('aico-select-open');
+      }
+
+      trigger.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (native.disabled) {
+          return;
+        }
+        if (wrapper.classList.contains('aico-select-open')) {
+          closeSelect(wrapper);
+        } else {
+          openSelect();
+        }
+      });
+
+      native.addEventListener('change', syncLabel);
+      syncLabel();
+    });
+
+    if (!document.documentElement.dataset.aicoSelectGlobalClose) {
+      document.documentElement.dataset.aicoSelectGlobalClose = '1';
+      document.addEventListener('click', function () {
+        closeAllSelects(null);
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeAllSelects(null);
+        }
+      });
+    }
+  }
+
   function init() {
     var root = document.querySelector('[data-aico-account]');
     if (!root) {
@@ -87,6 +228,9 @@
       body.append(endpoint.field, value);
 
       select.disabled = true;
+      if (select._aicoSelectTrigger) {
+        select._aicoSelectTrigger.disabled = true;
+      }
       setStatus(copy.saving, 'saving');
 
       fetch(endpoint.url, {
@@ -115,6 +259,9 @@
         })
         .then(function () {
           select.disabled = false;
+          if (select._aicoSelectTrigger) {
+            select._aicoSelectTrigger.disabled = false;
+          }
         });
     }
 
@@ -131,6 +278,9 @@
         customerViewSelect.value = stored;
       }
     }
+
+    // Replace the default browser <select> chrome with a custom dropdown.
+    enhanceSelects(root);
 
     var selects = root.querySelectorAll('select[data-aico-pref]');
     Array.prototype.forEach.call(selects, function (select) {

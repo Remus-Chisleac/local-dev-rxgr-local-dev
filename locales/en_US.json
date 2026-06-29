@@ -151,7 +151,14 @@
       "email_label": "Send email",
       "saving": "Saving…",
       "saved": "Saved",
-      "save_error": "Couldn't save"
+      "save_error": "Couldn't save",
+      "credit": {
+        "title": "Credit limit",
+        "used": "Used",
+        "total": "Total",
+        "available": "Available"
+      },
+      "payment_terms_text": "Terms of payment"
     },
     "addresses": {
       "title": "My addresses",
