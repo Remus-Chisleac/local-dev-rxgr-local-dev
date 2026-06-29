@@ -116,21 +116,26 @@
 
       {%- comment -%}
         ── Credit limit + payment terms ─────────────────────────────────
-        Credit numbers come from the B2B debtor (customer.aico_debtor) — the
-        same source the cart/checkout use to gate the order total
-        (DebtorDrop: credit_limit / current_debit / current_credit). Only
-        rendered for B2B debtors. "Down payment" (Anzahlung) is not implemented
-        yet — the link slot below is intentionally left as a TODO. Payment terms
-        ("Zahlungsbedingungen") link to the same AGB page the footer terms link
-        points to (config/menus.json → footer → /pages/agb).
+        Credit numbers come from the B2B debtor (customer.aico_debtor). Mapping
+        matches the production b2b-shop logic in Modules/B2B/DTO/DebtorDTO.php,
+        which sends the spendable limit as (credit_limit - current_credit):
+          • total     = credit_limit       (the ceiling)
+          • used      = current_credit     (amount already consumed)
+          • available = credit_limit - current_credit
+        (current_debit is a separate accounting field and is intentionally not
+        shown here.) Only rendered for B2B debtors. "Down payment" (Anzahlung)
+        is not implemented yet — the link slot below is intentionally a TODO.
+        Payment terms ("Zahlungsbedingungen") link to the same AGB page the
+        footer terms link points to (config/menus.json → footer → /pages/agb).
       {%- endcomment -%}
       {% if customer.aico_debtor %}
+        {%- assign aico_credit_available = customer.aico_debtor.credit_limit | minus: customer.aico_debtor.current_credit -%}
         <div class="aico-account-credit">
           <h3 class="aico-account-credit-title">{{ 'customer.account.credit.title' | t }}</h3>
           <dl class="aico-account-credit-rows">
             <div class="aico-account-credit-row">
               <dt>{{ 'customer.account.credit.used' | t }}</dt>
-              <dd>{{ customer.aico_debtor.current_debit | money }}</dd>
+              <dd>{{ customer.aico_debtor.current_credit | money }}</dd>
             </div>
             <div class="aico-account-credit-row">
               <dt>{{ 'customer.account.credit.total' | t }}</dt>
@@ -138,7 +143,7 @@
             </div>
             <div class="aico-account-credit-row aico-account-credit-row--available">
               <dt>{{ 'customer.account.credit.available' | t }}</dt>
-              <dd>{{ customer.aico_debtor.current_credit | money }}</dd>
+              <dd>{{ aico_credit_available | money }}</dd>
             </div>
           </dl>
           {%- comment -%} TODO: down-payment ("Anzahlung") link — add once the down-payment flow ships. {%- endcomment -%}
