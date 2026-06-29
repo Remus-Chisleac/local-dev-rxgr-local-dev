@@ -28,9 +28,9 @@
   {% if skeleton %}
     <div class="aico-product-card-image-wrap">
       <div class="aico-product-card-image-empty skeleton-block" aria-hidden="true"></div>
+      {% if show_reviews %}<span class="aico-product-card-reviews skeleton-stars" aria-hidden="true"></span>{% endif %}
     </div>
     <div class="aico-product-card-body">
-      {% if show_reviews %}<span class="aico-product-card-reviews skeleton-stars" aria-hidden="true"></span>{% endif %}
       <div class="aico-product-card-prices">
         <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
       </div>
@@ -59,15 +59,16 @@
         {% if discontinued %}
           <span class="aico-product-card-badge aico-product-card-badge-discontinued">{{ 'products.discontinued' | t }}</span>
         {% endif %}
-      </div>
 
-      <div class="aico-product-card-body">
+        {%- comment -%} Star rating overlaid top-right of the image (matches the legacy shop). {%- endcomment -%}
         {% if show_reviews and sku and sku != '' and settings.aico_reviews_enabled %}
           <div class="aico-product-card-reviews">
             <div class="yotpo-widget-instance" data-yotpo-instance-id="{{ settings.aico_yotpo_widget_instance_id }}" data-yotpo-product-id="{{ sku }}"></div>
           </div>
         {% endif %}
+      </div>
 
+      <div class="aico-product-card-body">
         <div class="aico-product-card-prices">
           {% if compare_at_label and compare_at_label != '' %}
             <span class="aico-product-card-price-list">{{ compare_at_label }}</span>

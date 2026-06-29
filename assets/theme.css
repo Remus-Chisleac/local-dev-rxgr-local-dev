@@ -1306,12 +1306,12 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0.125rem;
 }
 .aico-product-card-badge-sale {
-  right: 0.5rem;
+  left: 0.5rem;
   background: #0f766e;
   color: #ffffff;
 }
 .aico-product-card-badge-new {
-  right: 0.5rem;
+  left: 0.5rem;
   background: #15803d;
   color: #ffffff;
 }
@@ -1392,11 +1392,21 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 @media (min-width: 640px) { .aico-product-card-title { font-size: 0.9375rem; } }
 
-/* Reviews (stars) row — sits between the title and the price block.
+/* Reviews (stars) — overlaid in the top-right corner of the product image
+   (matches the legacy shop). Status badges sit top-left, rating top-right.
    Rendered only on the brand page (Yotpo widget) when reviews are enabled. */
 .aico-product-card-reviews {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
   min-height: 1rem;
-  margin: 0.125rem 0;
+  margin: 0;
+  /* The Yotpo star widget carries a "0 Reviews" label, so it can be a touch
+     wide; keep it from overrunning the tile on narrow cards. */
+  max-width: calc(100% - 1rem);
+  text-align: right;
+  line-height: 1;
 }
 
 /* Skeleton state of the shared card (brand page, before real products load).
