@@ -1,14 +1,28 @@
 /**
- * news-neo.js
+ * content-builder-neo.js
  *
- * Renders `contentBuilderNeoJson` (new AICO format). news.js delegates here
- * when `window.NewsNeo.hasContent(data)` is true; otherwise its legacy
- * `contentBuilder` path runs unchanged.
+ * Portable renderer for the AICO Neo content builder (`contentBuilderNeoJson`).
+ * Self-contained: no jQuery, no framework — it reads a JSON blob, emits HTML
+ * for each section/element type (heading, text, image, gallery, media-gallery,
+ * slideshow, video, youtube, columns…), injects its own component CSS, and
+ * hydrates sliders / lightboxes.
  *
- * Public API (window.NewsNeo):
+ * Drop-in usage in ANY theme:
+ *   1. <div id="aico-content"></div>                                  (mount)
+ *   2. <script id="aico-page-data" type="application/json">…</script> (data)
+ *      where the JSON is shaped `{"contentBuilderNeoJson": {sections:[…]}}`
+ *   3. include this file (defer). The bootstrap at the bottom finds the mount +
+ *      data and paints automatically. To render elsewhere, call
+ *      window.NewsNeo.render(data) / .hydrate(mount) yourself.
+ *
+ * Public API (window.NewsNeo — name kept for parity with the source renderer):
  *   - hasContent(data)       → boolean
  *   - render(data)           → HTML string
+ *   - hydrate(root)          → wire sliders/lightboxes inside root
  *   - registerType(type, fn) → add or override an element renderer
+ *
+ * Ported verbatim from the Shopify news-neo.js; only this header and the
+ * bootstrap IIFE at the end of the file are AICO-theme additions.
  */
 (function (window) {
   'use strict';
@@ -878,3 +892,40 @@
   };
 
 })(window);
+
+/**
+ * Bootstrap (AICO-theme addition).
+ *
+ * Reads the inline page-data JSON, renders it into the page mount and hydrates.
+ * Inert when there is no mount, no data, or no Neo content — so an empty page
+ * (or a theme that only sometimes carries Neo content) renders nothing instead
+ * of erroring.
+ */
+(function (window, document) {
+  'use strict';
+
+  function boot() {
+    var mount = document.getElementById('aico-content');
+    var dataEl = document.getElementById('aico-page-data');
+    if (!mount || !dataEl || !window.NewsNeo) return;
+
+    var data;
+    try {
+      data = JSON.parse(dataEl.textContent || dataEl.innerText || '{}');
+    } catch (e) {
+      if (window.console && console.warn) console.warn('content-builder-neo: bad page data JSON', e);
+      return;
+    }
+
+    if (!window.NewsNeo.hasContent(data)) return;
+
+    mount.innerHTML = window.NewsNeo.render(data);
+    window.NewsNeo.hydrate(mount);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})(window, document);

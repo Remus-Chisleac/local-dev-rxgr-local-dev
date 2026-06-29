@@ -1,0 +1,20 @@
+{%- comment -%}
+  Portable Neo render unit for content pages (`/pages/<handle>`).
+
+  When the page carries AICO Neo content-builder data (`page.aico_has_neo_content`),
+  emit the mount element + the inline page-data JSON; assets/content-builder-neo.js
+  finds both on DOMContentLoaded and paints the sections client-side. This is the
+  same renderer/engine the news/article Neo path uses (window.NewsNeo). The layout
+  scaffold (rows/columns/section grid) comes from content-builder.css; the renderer
+  self-injects the per-component CSS (sliders, galleries, lightbox).
+
+  The guard keeps a non-Neo page (or a route that binds no `page` drop) rendering an
+  empty mount instead of an empty/broken data script.
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ 'content-builder.css' | asset_url }}">
+<div id="aico-content" class="aico-neo-page"></div>
+{%- if page.aico_has_neo_content -%}
+  <script>window.current_locale_code = {{ request.locale | default: shop.default_locale | json }};</script>
+  <script id="aico-page-data" type="application/json">{{ page.aico_neo_data }}</script>
+{%- endif -%}
+<script src="{{ 'content-builder-neo.js' | asset_url }}" defer></script>

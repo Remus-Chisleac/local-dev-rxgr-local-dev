@@ -1,0 +1,58 @@
+/* content-builder.css — minimal base for the AICO Neo static-pages theme.
+ *
+ * The Neo renderer (content-builder-neo.js) injects its own *component* CSS
+ * (slideshow / media-gallery / video / youtube …). This file provides only:
+ *   1. a small page reset + centred container, and
+ *   2. the row/column grid the renderer's output relies on
+ *      (.content-row / .content-column / .content / .total-columns-N /
+ *      .fullwidth) — the renderer assumes that grid already exists (see its
+ *      wrapRow / wrapColumn). Mirrors the grid baked into article.liquid so the
+ *      Neo output is laid out identically.
+ */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fff;
+}
+img { max-width: 100%; height: auto; }
+a { color: inherit; }
+
+/* Centred page container. */
+.aico-neo-main { width: 100%; }
+.aico-neo-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+/* Row / column grid emitted by the renderer. A single-column row (the default
+   for stacked content) spans full width; multi-column rows split evenly. */
+.content-row { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1.25rem 0; }
+.content-row.fullwidth { max-width: none; }
+.content-column { flex: 1 1 0; min-width: 0; }
+.content { margin: 0 0 1rem; }
+.content:last-child { margin-bottom: 0; }
+
+/* Typography for the static element types. */
+.content-type-neo-heading h1,
+.content-type-neo-heading h2,
+.content-type-neo-heading h3,
+.content-type-neo-heading h4,
+.content-type-neo-heading h5,
+.content-type-neo-heading h6 { margin: 1.5rem 0 .75rem; line-height: 1.25; }
+.content-type-neo-text { font-size: 1.05rem; }
+.content-type-neo-text > :first-child { margin-top: 0; }
+.content-type-neo-divider hr { border: 0; border-top: 1px solid #e6e6e6; margin: 2rem 0; }
+.content-type-neo-image { margin: 0; }
+.content-type-neo-image .caption { display: block; font-size: .85rem; color: #666; margin-top: .4rem; }
+
+/* 404 fallback. */
+.aico-neo-404 { text-align: center; }
+.aico-neo-404 h1 { font-size: 3rem; margin: 0 0 .5rem; }
+
+@media (max-width: 600px) {
+  .content-row { display: block; }
+  .content-column + .content-column { margin-top: 1.25rem; }
+}

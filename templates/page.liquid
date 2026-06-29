@@ -10,6 +10,14 @@
 {% endcomment %}
 
 <article class="page-builder" data-page-handle="{{ page.handle }}">
+  {%- if page.aico_has_neo_content -%}
+    {%- comment -%}
+      AICO Neo content builder → painted client-side from the inline page-data JSON
+      by assets/content-builder-neo.js (the same Neo engine the news/article path uses).
+      Old Alpine pages have no neo data and fall through to the server-rendered rows below.
+    {%- endcomment -%}
+    {% render 'neo-content', page: page %}
+  {%- else -%}
   {%- comment -%}
     The page title is rendered by the content (a title/heading block) when the
     author wants it, so it is not emitted here — avoids a duplicate heading and
@@ -65,5 +73,6 @@
         {%- endfor -%}
       </ul>
     </section>
+  {%- endif -%}
   {%- endif -%}
 </article>
