@@ -362,6 +362,7 @@
                         <form method="post" action="{{ routes.aico_account_select_brand_url }}" class="aico-drawer-brand-row-form">
                           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
                           <input type="hidden" name="brand_id" value="{{ brand.id }}">
+                          <input type="hidden" name="return_url" value="{{ brand.url }}">
                           {%- assign aico_brand_thumb = brand.logo_url | default: brand.image_url -%}
                           <button type="submit" class="aico-drawer-row aico-drawer-brand-list-row aico-drawer-brand-list-row--logo" title="{{ brand.label | escape }}">
                             {% if aico_brand_thumb %}

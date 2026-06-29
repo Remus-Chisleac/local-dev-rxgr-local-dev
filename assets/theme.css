@@ -887,6 +887,13 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   border-radius: 0;
 }
 
+/* Brand rows (logos / label fallback) sit centred in the dropdown; the
+   "Markenübersicht" overview link keeps its default icon+label left layout. */
+.aico-drawer-brand-list-row--logo {
+  justify-content: center;
+  text-align: center;
+}
+
 /* Icons-first dropdown rows: make the brand logo the dominant element.
    A light muted surface guarantees transparent SVG/PNG logos stay visible. */
 .aico-drawer-brand-list-row .aico-drawer-brand-thumb {
@@ -949,6 +956,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: center;
 }
 
 /* Floating dropdown — sits over the nav rows without moving them. */
@@ -992,6 +1000,7 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
   width: auto;
   max-width: 100%;
   object-fit: contain;
+  margin-inline: auto;
 }
 
 /* Disclosure (`<details>`) chevron rotates when open. */
