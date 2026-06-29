@@ -618,24 +618,26 @@
       </span>
     </div>
 
-    <dl class="aico-preorder-confirmation-details">
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.delivery_address' | t }}</dt>
-        <dd data-aico-confirmation-address>—</dd>
+    <div class="aico-preorder-confirmation-summary">
+      <div class="aico-preorder-confirmation-address">
+        <span class="aico-preorder-confirmation-summary-label">{{ 'aico_preorder.confirmation.delivery_address' | t }}</span>
+        <div class="aico-preorder-confirmation-address-value" data-aico-confirmation-address>—</div>
       </div>
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
-        <dd data-aico-confirmation-item-count>0</dd>
-      </div>
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
-        <dd data-aico-confirmation-total>—</dd>
-      </div>
-      <div class="aico-preorder-confirmation-detail" data-aico-confirmation-discount-row hidden>
-        <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
-        <dd data-aico-confirmation-discount>—</dd>
-      </div>
-    </dl>
+      <dl class="aico-preorder-confirmation-totals">
+        <div class="aico-preorder-confirmation-total-row">
+          <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
+          <dd data-aico-confirmation-item-count>0</dd>
+        </div>
+        <div class="aico-preorder-confirmation-total-row" data-aico-confirmation-discount-row>
+          <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
+          <dd data-aico-confirmation-discount>&ndash;</dd>
+        </div>
+        <div class="aico-preorder-confirmation-total-row aico-preorder-confirmation-total-row--grand">
+          <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
+          <dd data-aico-confirmation-total>&mdash;</dd>
+        </div>
+      </dl>
+    </div>
 
     <div class="aico-preorder-confirmation-dates-wrap">
       <h3 class="aico-preorder-confirmation-dates-title">{{ 'aico_preorder.confirmation.delivery_dates' | t }}</h3>

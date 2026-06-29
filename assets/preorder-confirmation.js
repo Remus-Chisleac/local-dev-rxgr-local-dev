@@ -247,17 +247,18 @@
       formatMoney(confirmation.total_amount, this.currency),
     );
 
+    // The discount row stays visible and shows an en-dash when no discount was
+    // applied (matches the confirmation mockup, where "Angewandter Rabatt" is
+    // always a line in the totals column).
     var discountWrap = root.querySelector('[data-aico-confirmation-discount-row]');
     if (discountWrap) {
-      if (confirmation.discount_percent) {
-        discountWrap.hidden = false;
-        this.setText(
-          '[data-aico-confirmation-discount]',
-          Number(confirmation.discount_percent).toFixed(0) + '%',
-        );
-      } else {
-        discountWrap.hidden = true;
-      }
+      discountWrap.hidden = false;
+      this.setText(
+        '[data-aico-confirmation-discount]',
+        confirmation.discount_percent
+          ? Number(confirmation.discount_percent).toFixed(0) + '%'
+          : '–',
+      );
     }
 
     this.renderPerDate(confirmation.per_date || []);
@@ -340,13 +341,12 @@
     if (!area) return;
     area.removeAttribute('aria-busy');
     var label = copyOf(this.root, 'pdf-download', 'Download confirmation (PDF)');
-    var name = fileName ? ' download="' + escapeHtml(fileName) + '"' : ' download';
+    // Open the PDF in a new tab by default (no `download` attribute) so the
+    // browser's PDF viewer shows it; the user can still download from there.
     area.innerHTML =
       '<a class="aico-preorder-confirmation-pdf-link aico-btn aico-btn-primary" href="' +
       escapeHtml(fileUrl) +
-      '"' +
-      name +
-      ' rel="noopener">' +
+      '" target="_blank" rel="noopener">' +
       escapeHtml(label) +
       '</a>';
     if (this._timer) {

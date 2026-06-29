@@ -9,6 +9,13 @@
   (generating… → download link, broadcast-driven when a pusher key is set,
   polling otherwise).
 
+  Background color: the page gutters take the current selected brand's
+  `color_schema.preorderConfirmation.bg` (exposed on
+  `customer.aico_selected_brand.aico_preorder_confirmation_bg_color`), applied
+  at render time as the `--aico-confirmation-bg` custom property so there is no
+  flash. The centered white card stays readable on any brand color; when the
+  brand sets no color we fall back to the default page background.
+
   All names on this surface are aico_*-prefixed — there is no Shopify equivalent
   for a B2B preorder confirmation PDF. The pusher publics are NOT theme settings:
   the backend embeds them (key / cluster / channel) in the confirmation payload,
@@ -20,7 +27,9 @@
   on templates/aico-preorder.liquid.
 {% endcomment %}
 
-<main class="aico-preorder-thank-you aico-page-container" role="main">
+{%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_preorder_confirmation_bg_color -%}
+
+<main class="aico-preorder-thank-you" role="main"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
   <section
     class="aico-preorder-confirmation"
     data-aico-preorder-confirmation
@@ -51,24 +60,26 @@
       </span>
     </div>
 
-    <dl class="aico-preorder-confirmation-details">
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.delivery_address' | t }}</dt>
-        <dd data-aico-confirmation-address>—</dd>
+    <div class="aico-preorder-confirmation-summary">
+      <div class="aico-preorder-confirmation-address">
+        <span class="aico-preorder-confirmation-summary-label">{{ 'aico_preorder.confirmation.delivery_address' | t }}</span>
+        <div class="aico-preorder-confirmation-address-value" data-aico-confirmation-address>—</div>
       </div>
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
-        <dd data-aico-confirmation-item-count>0</dd>
-      </div>
-      <div class="aico-preorder-confirmation-detail">
-        <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
-        <dd data-aico-confirmation-total>—</dd>
-      </div>
-      <div class="aico-preorder-confirmation-detail" data-aico-confirmation-discount-row hidden>
-        <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
-        <dd data-aico-confirmation-discount>—</dd>
-      </div>
-    </dl>
+      <dl class="aico-preorder-confirmation-totals">
+        <div class="aico-preorder-confirmation-total-row">
+          <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
+          <dd data-aico-confirmation-item-count>0</dd>
+        </div>
+        <div class="aico-preorder-confirmation-total-row" data-aico-confirmation-discount-row>
+          <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
+          <dd data-aico-confirmation-discount>&ndash;</dd>
+        </div>
+        <div class="aico-preorder-confirmation-total-row aico-preorder-confirmation-total-row--grand">
+          <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
+          <dd data-aico-confirmation-total>&mdash;</dd>
+        </div>
+      </dl>
+    </div>
 
     <div class="aico-preorder-confirmation-dates-wrap">
       <h2 class="aico-preorder-confirmation-dates-title">{{ 'aico_preorder.confirmation.delivery_dates' | t }}</h2>

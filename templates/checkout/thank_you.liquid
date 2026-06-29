@@ -6,7 +6,9 @@
   confirmation email, return-to-shop CTA.
 {% endcomment %}
 
-<main class="aico-checkout-thank-you">
+{%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_checkout_confirmation_bg_color -%}
+
+<main class="aico-checkout-thank-you"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
   <div class="aico-page-container">
     <div class="aico-checkout-thank-you-card">
       <div class="aico-checkout-thank-you-icon" aria-hidden="true">
