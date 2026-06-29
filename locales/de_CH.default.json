@@ -9,8 +9,10 @@
     "tagline": "Mit Aico Storefront betrieben"
   },
   "errors": {
-    "not_found": "Diese Seite wurde nicht gefunden.",
-    "back_home": "Zurück zur Startseite"
+    "not_found_title": "Seite nicht gefunden",
+    "not_found": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "back_home": "Zurück zur Startseite",
+    "browse_products": "Produkte ansehen"
   },
   "brand_page": {
     "aria_main": "Marken-Shop",

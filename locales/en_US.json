@@ -9,8 +9,10 @@
     "tagline": "Powered by Aico Storefront"
   },
   "errors": {
-    "not_found": "We couldn't find that page.",
-    "back_home": "Return home"
+    "not_found_title": "Page not found",
+    "not_found": "The page you're looking for doesn't exist or has moved.",
+    "back_home": "Return home",
+    "browse_products": "Browse products"
   },
   "brand_page": {
     "aria_main": "Brand storefront",

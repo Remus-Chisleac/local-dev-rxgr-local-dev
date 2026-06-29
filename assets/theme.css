@@ -4427,6 +4427,49 @@ button.aico-home-brand-card {
 .aico-cart-empty-heading { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
 .aico-cart-empty-body { margin: 0 0 1.5rem; color: var(--aico-muted-fg, #6b7280); }
 
+/* ── 404 / page-not-found ────────────────────────────────────────────────── */
+.aico-404 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+.aico-404-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 3rem;
+  padding-bottom: 4rem;
+}
+.aico-404-code {
+  margin: 0;
+  font-size: clamp(5rem, 18vw, 9rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--color-accent, #2563eb);
+}
+.aico-404-heading {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--aico-fg, #1a1a1a);
+}
+.aico-404-body {
+  margin: 0.4rem 0 0;
+  max-width: 30rem;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-404-actions {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
 .aico-cart-grid {
   display: grid;
   grid-template-columns: 1fr;

@@ -1,5 +1,17 @@
-<section class="not-found">
-  <h1>404</h1>
-  <p>{{ 'errors.not_found' | t }}</p>
-  <a href="{{ routes.root_url }}">{{ 'errors.back_home' | t }}</a>
-</section>
+{%- comment -%}
+  404 — page not found. Rendered by LiquidRendererService when resolveTemplate()
+  returns '404' (HTTP 404). Wrapped by layout/theme.liquid, so this is just the
+  page body. All standard globals (routes, settings, customer, linklists) are
+  available here.
+{%- endcomment -%}
+<main class="aico-404" role="main">
+  <div class="aico-page-container aico-404-inner">
+    <p class="aico-404-code" aria-hidden="true">404</p>
+    <h1 class="aico-404-heading">{{ 'errors.not_found_title' | t }}</h1>
+    <p class="aico-404-body">{{ 'errors.not_found' | t }}</p>
+    <div class="aico-404-actions">
+      <a href="{{ routes.root_url }}" class="aico-button aico-button-primary">{{ 'errors.back_home' | t }}</a>
+      <a href="{{ routes.products_url }}" class="aico-button aico-button-outline">{{ 'errors.browse_products' | t }}</a>
+    </div>
+  </div>
+</main>
