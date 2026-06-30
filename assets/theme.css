@@ -5340,6 +5340,62 @@ button.aico-home-brand-card {
   background: #d5631f;
 }
 
+/* Eligibility hard-block: red, non-dismissable. Shown when the selected context
+   (debtor seller/currency, price list, addresses, tax) can't place a preorder. */
+.aico-preorder-eligibility-notice[hidden] {
+  display: none;
+}
+
+.aico-preorder-eligibility-notice {
+  margin: 2rem auto;
+}
+
+.aico-preorder-eligibility-notice-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.75rem 2rem;
+  background: #fdecea;
+  border: 1px solid #f1b0a8;
+  border-left: 4px solid #c0392b;
+  border-radius: var(--aico-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  text-align: left;
+}
+
+.aico-preorder-eligibility-notice-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #8a1c12;
+}
+
+.aico-preorder-eligibility-notice-intro {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #6b2018;
+}
+
+.aico-preorder-eligibility-notice-list {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.aico-preorder-eligibility-notice-item {
+  margin: 0 0 0.4rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: #6b2018;
+}
+
+.aico-preorder-eligibility-notice-support {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #8a1c12;
+}
+
 /* Product image preview modal (opened by clicking a product image) */
 .aico-preorder-product-media {
   cursor: zoom-in;

@@ -50,6 +50,7 @@
       data-aico-preorder-cart-submit-url="{{ routes.aico_preorder_cart_submit_url }}"
       data-aico-preorder-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
       data-aico-preorder-addresses-url="{{ routes.aico_preorder_addresses_url }}"
+      data-aico-preorder-eligibility-url="{{ routes.aico_preorder_eligibility_url }}"
       data-aico-preorder-b2bs-url="{{ routes.aico_preorder_b2bs_url }}"
       data-aico-preorder-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
       data-aico-preorder-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
@@ -427,6 +428,39 @@
       <h2 class="aico-preorder-reopen-notice-title">{{ 'aico_preorder.reopen_notice.title' | t }}</h2>
       <p class="aico-preorder-reopen-notice-body">{{ 'aico_preorder.reopen_notice.body' | t }}</p>
       <button type="button" class="aico-preorder-reopen-notice-btn" data-aico-preorder-reopen-ack>{{ 'aico_preorder.reopen_notice.acknowledge' | t }}</button>
+    </div>
+  </section>
+
+  {%- comment -%}
+    Eligibility hard-block: shown (red) when the selected (customer, delivery,
+    billing) context is not configured to place a preorder — e.g. a debtor with
+    no seller/currency, a missing price list, or an incomplete address. The
+    catalog + checkout stay hidden until the configuration is fixed; there is no
+    acknowledge button (unlike the reopen notice) — only support can clear it.
+    The per-problem sentence is selected client-side by the problem `code` from
+    the data-aico-elig-msg-* templates below ({label} = the affected
+    address/customer), so copy lives in locales and stays Shopify-compatible.
+  {%- endcomment -%}
+  <section
+    class="aico-preorder-eligibility-notice aico-page-container"
+    data-aico-preorder-eligibility-notice
+    hidden
+    aria-live="assertive"
+    role="alert"
+    data-aico-elig-msg-debtor-missing="{{ 'aico_preorder.eligibility.debtor_missing' | t }}"
+    data-aico-elig-msg-debtor-missing-seller="{{ 'aico_preorder.eligibility.debtor_missing_seller' | t }}"
+    data-aico-elig-msg-debtor-missing-currency="{{ 'aico_preorder.eligibility.debtor_missing_currency' | t }}"
+    data-aico-elig-msg-missing-price-list="{{ 'aico_preorder.eligibility.missing_price_list' | t }}"
+    data-aico-elig-msg-delivery-address-invalid="{{ 'aico_preorder.eligibility.delivery_address_invalid' | t }}"
+    data-aico-elig-msg-billing-address-invalid="{{ 'aico_preorder.eligibility.billing_address_invalid' | t }}"
+    data-aico-elig-msg-tax-not-configured="{{ 'aico_preorder.eligibility.tax_not_configured' | t }}"
+    data-aico-elig-msg-fallback="{{ 'aico_preorder.eligibility.fallback' | t }}"
+  >
+    <div class="aico-preorder-eligibility-notice-inner">
+      <h2 class="aico-preorder-eligibility-notice-title">{{ 'aico_preorder.eligibility.title' | t }}</h2>
+      <p class="aico-preorder-eligibility-notice-intro">{{ 'aico_preorder.eligibility.intro' | t }}</p>
+      <ul class="aico-preorder-eligibility-notice-list" data-aico-preorder-eligibility-list></ul>
+      <p class="aico-preorder-eligibility-notice-support">{{ 'aico_preorder.eligibility.contact_support' | t }}</p>
     </div>
   </section>
 

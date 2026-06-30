@@ -605,6 +605,19 @@
       "body": "Ihre bestehende Bestellung wird geöffnet. Bereits bestellte Mengen können nicht mehr reduziert werden – Sie können jedoch jederzeit weitere Paare hinzufügen.",
       "acknowledge": "Bestätigen"
     },
+    "eligibility": {
+      "title": "Diese Auswahl kann nicht für eine PreOrder verwendet werden",
+      "intro": "Folgendes muss zuerst korrigiert werden, bevor Sie eine PreOrder aufgeben können:",
+      "contact_support": "Bitte kontaktieren Sie den Support, um dies zu beheben.",
+      "debtor_missing": "Es ist kein Kunde für diese PreOrder ausgewählt.",
+      "debtor_missing_seller": "Dem Kunden {label} ist kein Verkäufer zugeordnet, daher können Preise und Währung nicht bestimmt werden.",
+      "debtor_missing_currency": "Für die Lieferadresse {label} ist keine Währung konfiguriert, daher können die Preise nicht berechnet werden.",
+      "missing_price_list": "Für den Kunden {label} ist keine Preisliste konfiguriert, daher können die Produktpreise nicht berechnet werden.",
+      "delivery_address_invalid": "Die Lieferadresse {label} ist unvollständig (kein Land hinterlegt).",
+      "billing_address_invalid": "Die Rechnungsadresse {label} ist unvollständig (kein Land hinterlegt).",
+      "tax_not_configured": "Für diesen Shop ist keine Mehrwertsteuer konfiguriert.",
+      "fallback": "Diese Auswahl ist nicht korrekt konfiguriert."
+    },
     "flyers": {
       "section_aria": "Flyer",
       "title": "Wählen Sie Ihre Flyer aus",

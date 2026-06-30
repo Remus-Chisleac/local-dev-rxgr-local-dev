@@ -411,6 +411,19 @@
     var promptTitleEl = promptEl ? promptEl.querySelector('.aico-preorder-prompt-title') : null;
     var reopenNoticeEl = root.querySelector('[data-aico-preorder-reopen-notice]');
     var reopenAckBtn = root.querySelector('[data-aico-preorder-reopen-ack]');
+    // Eligibility hard-block: the selected (debtor, billing, delivery) context
+    // must be configured to place a preorder (debtor seller/currency, a price
+    // list, valid addresses, tax). Problems are fetched per context change and
+    // replace the catalog/checkout with a red, non-acknowledgeable notice.
+    var eligibilityNoticeEl = root.querySelector('[data-aico-preorder-eligibility-notice]');
+    var eligibilityListEl = root.querySelector('[data-aico-preorder-eligibility-list]');
+    var eligibilityUrl = root.getAttribute('data-aico-preorder-eligibility-url');
+    // Empty = eligible. `eligibilityResolved` guards against blocking before the
+    // first check returns. The check fails OPEN (a transient endpoint error never
+    // blocks the user — the submit endpoint re-validates as the hard backstop).
+    var eligibilityProblems = [];
+    var eligibilityResolved = false;
+    var lastEligibilityKey = null;
     // Already-placed preorder gate: when a submitted preorder exists for the
     // current (debtor, billing, delivery) context, show the notice panel and
     // keep the catalog hidden until the user acknowledges. Reset per context.
@@ -690,7 +703,7 @@
       // would otherwise yank the checkout out from under the user before the
       // thank-you redirect.
       checkoutEl.hidden =
-        !cartEnabled || !addressesReady() || (reopenPending() && !isSubmitting);
+        !cartEnabled || !addressesReady() || (reopenPending() && !isSubmitting) || ineligible();
       // The sticky cart-summary panel rides with the checkout section. When it
       // hides, also collapse any open off-canvas drawer so it can't linger.
       if (cartPanel) {
@@ -726,6 +739,69 @@
       return addressesReady() && !reopenAcked && cartHasPlacedPreorder();
     }
 
+    // True when the resolved context cannot place a preorder. Requires the check
+    // to have returned at least once so the catalog isn't blocked on first paint.
+    function ineligible() {
+      return addressesReady() && eligibilityResolved && eligibilityProblems.length > 0;
+    }
+
+    // Build the localized red-notice sentence for one problem: pick the template
+    // by problem `code` from the notice's data-aico-elig-msg-* attributes (rendered
+    // from locales), fall back to the generic template then the server's English
+    // default, and inject the affected address/customer label.
+    function eligibilityMessage(problem) {
+      if (!problem) return '';
+      var code = String(problem.code || '');
+      var tmpl =
+        (eligibilityNoticeEl &&
+          eligibilityNoticeEl.getAttribute('data-aico-elig-msg-' + code.replace(/_/g, '-'))) ||
+        (eligibilityNoticeEl &&
+          eligibilityNoticeEl.getAttribute('data-aico-elig-msg-fallback')) ||
+        problem.default_message ||
+        '';
+      var label = problem.target_label || '';
+      return tmpl.replace(/\{label\}/g, label).replace(/\s{2,}/g, ' ').trim();
+    }
+
+    function renderEligibilityNotice() {
+      if (!eligibilityListEl) return;
+      eligibilityListEl.innerHTML = '';
+      eligibilityProblems.forEach(function (problem) {
+        var li = document.createElement('li');
+        li.className = 'aico-preorder-eligibility-notice-item';
+        li.textContent = eligibilityMessage(problem);
+        eligibilityListEl.appendChild(li);
+      });
+    }
+
+    // Re-check whether the current (debtor, billing, delivery) context can place a
+    // preorder. Fails open (see eligibilityProblems above).
+    function fetchEligibility() {
+      if (!eligibilityUrl || !addressesReady()) {
+        eligibilityProblems = [];
+        eligibilityResolved = true;
+        return Promise.resolve();
+      }
+      var url = new URL(eligibilityUrl, window.location.origin);
+      if (debtorId()) url.searchParams.set('debtor_id', String(debtorId()));
+      if (buyerId()) url.searchParams.set('delivery_address_id', String(buyerId()));
+      if (billingId()) url.searchParams.set('billing_address_id', String(billingId()));
+      return fetch(url.toString(), {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          eligibilityProblems = (json && json.problems) || [];
+          eligibilityResolved = true;
+          renderEligibilityNotice();
+        })
+        .catch(function () {
+          eligibilityProblems = [];
+          eligibilityResolved = true;
+        });
+    }
+
     // No active preorder session resolved for this shop/customer: show only the
     // countdown ("clock") and a "no active preorder" notice; hide the hero
     // title/image and everything below the hero (filters, prompt, catalog,
@@ -754,6 +830,7 @@
         reopenNoticeEl.hidden = true;
         reopenNoticeEl.classList.remove('aico-preorder-reopen-notice-loading');
       }
+      if (eligibilityNoticeEl) eligibilityNoticeEl.hidden = true;
       if (resolvingEl) resolvingEl.hidden = true;
       clearCatalog();
     }
@@ -773,6 +850,7 @@
       if (promptEl) promptEl.hidden = true;
       if (mainEl) mainEl.hidden = true;
       if (checkoutEl) checkoutEl.hidden = true;
+      if (eligibilityNoticeEl) eligibilityNoticeEl.hidden = true;
       // While the cart resolves, the notice card shows as a skeleton (shimmer
       // bars, neutral accent). If a preorder exists it morphs in place into
       // the warning (applyReopenVisibility drops the loading class without
@@ -802,6 +880,16 @@
       if (filtersWrapEl) filtersWrapEl.hidden = false;
       if (catalogToolsEl) catalogToolsEl.hidden = false;
       updatePrompt();
+      // Eligibility hard-block takes precedence over the reopen notice and the
+      // catalog: an ineligible context can't proceed to any next step.
+      var blocked = ineligible();
+      if (eligibilityNoticeEl) eligibilityNoticeEl.hidden = !blocked;
+      if (blocked) {
+        if (reopenNoticeEl) reopenNoticeEl.hidden = true;
+        if (mainEl) mainEl.hidden = true;
+        updateCheckoutVisibility();
+        return;
+      }
       var addressesOk = addressesReady();
       var pending = reopenPending();
       if (reopenNoticeEl) reopenNoticeEl.hidden = !pending;
@@ -844,6 +932,16 @@
         if (key !== lastCartContextKey) {
           reopenAcked = false;
           lastCartContextKey = key;
+        }
+        // Re-validate eligibility on context change, in parallel with the cart
+        // fetch. Whichever resolves last re-applies visibility, so the red block
+        // shows regardless of fetch ordering.
+        if (key !== lastEligibilityKey) {
+          lastEligibilityKey = key;
+          eligibilityResolved = false;
+          fetchEligibility().then(function () {
+            if (!cartResolving) applyReopenVisibility(true);
+          });
         }
         // Enter the resolving state: hide everything below the hero and show only
         // the spinner until the cart fetch reveals whether a preorder exists.
@@ -897,6 +995,10 @@
     function resetReopenCheck() {
       reopenAcked = false;
       lastCartContextKey = null;
+      // Force the eligibility check to re-run for the new context too.
+      lastEligibilityKey = null;
+      eligibilityResolved = false;
+      eligibilityProblems = [];
     }
 
     // Toggle the B2B selector's loading state (spinner instead of the disabled
@@ -1871,6 +1973,12 @@
 
     if (cartEnabled && submitBtn) {
       submitBtn.addEventListener('click', function () {
+        // Eligibility gate: an ineligible context can never submit (the server
+        // re-validates too). Surface the red block instead of submitting.
+        if (ineligible()) {
+          applyReopenVisibility(true);
+          return;
+        }
         // Terms gate: let the click through, but if the AGB box isn't ticked,
         // flag it and stop — don't submit.
         if (termsCheckbox && !termsCheckbox.checked) {
@@ -1915,6 +2023,10 @@
               summaryStatus.textContent =
                 root.getAttribute('data-aico-preorder-copy-error') || 'Error';
             }
+            // The submit endpoint re-validates eligibility (422 'ineligible') — if
+            // the context became invalid, refresh the check so the red block shows.
+            lastEligibilityKey = null;
+            fetchEligibility().then(function () { applyReopenVisibility(true); });
           });
       });
     }
