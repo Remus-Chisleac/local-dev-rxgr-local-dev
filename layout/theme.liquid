@@ -743,5 +743,9 @@
     <script src="{{ 'theme.js' | asset_url }}" defer></script>
     <script src="{{ 'customer-view.js' | asset_url }}" defer></script>
   {% endif %}
+
+  {%- comment -%} Global error collector — captures JS errors + failed requests into
+    localStorage and shows them in a floating bubble. Loaded on every page. {%- endcomment -%}
+  <script src="{{ 'aico-error-manager.js' | asset_url }}" defer></script>
 </body>
 </html>
