@@ -30,6 +30,7 @@
 {%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_preorder_confirmation_bg_color -%}
 
 <main class="aico-preorder-thank-you" role="main"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
+  <div class="aico-page-container">
   <section
     class="aico-preorder-confirmation"
     data-aico-preorder-confirmation
@@ -96,6 +97,7 @@
       <a class="aico-btn aico-btn-secondary" href="{{ routes.root_url }}">{{ 'aico_preorder.thank_you.continue_shopping' | t }}</a>
     </p>
   </section>
+  </div>
 
   <script src="{{ 'preorder-confirmation.js' | asset_url }}" defer></script>
 </main>

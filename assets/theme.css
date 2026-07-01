@@ -5037,25 +5037,39 @@ button.aico-home-brand-card {
 .aico-checkout-processing-fallback { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
 
 .aico-checkout-thank-you {
-  /* Full-bleed background coloured by the selected brand, matching the preorder
-     confirmation. --aico-confirmation-bg is set inline from the brand's
-     color_schema.checkoutConfirmation.bg; falls back to the page background. */
-  background: var(--aico-confirmation-bg, var(--color-bg));
-  padding: 1.5rem 0 4rem;
+  /* Neutral page background in the side gutters; the brand confirmation colour
+     is painted on the inner page-width panel below, so it reads as a centred
+     band spanning the full height from header to footer rather than a harsh
+     full-bleed block. --aico-confirmation-bg is set inline from the brand's
+     color_schema.checkoutConfirmation.bg. */
+  background: var(--color-bg);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.aico-checkout-thank-you > .aico-page-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .aico-checkout-thank-you-card {
-  max-width: 32rem;
+  /* Not a card: no border/radius/shadow. The brand colour fills this
+     full-width (var(--max-width)) panel top-to-bottom and the content sits
+     directly on it. */
+  flex: 1 1 auto;
+  width: 100%;
   margin: 0 auto;
-  background: var(--aico-card, #ffffff);
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: var(--aico-radius, 2px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  padding: 2.5rem;
+  background: var(--aico-confirmation-bg, var(--color-bg));
+  padding: 2.5rem 1.5rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   align-items: center;
+  justify-content: center;
 }
 .aico-checkout-thank-you-icon {
   width: 4rem; height: 4rem;
@@ -6431,13 +6445,23 @@ html.aico-preorder-gallery-open {
   color: #007b8e;
 }
 .aico-preorder-thank-you {
-  /* Full-bleed background coloured by the selected brand. --aico-confirmation-bg
-     is set inline on this element from the brand's
-     color_schema.preorderConfirmation.bg; it falls back to the default page
-     background when the brand sets no colour. The centred .aico-preorder-confirmation
-     card stays white so the content is readable on any brand colour. */
-  background: var(--aico-confirmation-bg, var(--color-bg));
-  padding: 1.5rem 1rem 4rem;
+  /* Neutral page background in the side gutters; the brand confirmation colour
+     is painted on the inner page-width panel (.aico-preorder-confirmation),
+     which spans the full height from header to footer. --aico-confirmation-bg is
+     set inline on this element from the brand's color_schema.preorderConfirmation.bg
+     and inherits down to the panel. */
+  background: var(--color-bg);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.aico-preorder-thank-you > .aico-page-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .aico-preorder-thank-you-title {
   font-size: 1.75rem;
@@ -9039,6 +9063,23 @@ html.aico-preorder-gallery-open {
   border: 1px solid var(--aico-border, #e5e7eb);
   border-radius: var(--aico-radius, 2px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+/* On the standalone thank-you page there is NO card: the brand colour fills a
+   full-width (var(--max-width), applied by the enclosing .aico-page-container),
+   full-height panel from header to footer and the content sits directly on it.
+   The inline post-submit reveal on the preorder page keeps its compact 640px
+   white card from the base rule above; only the thank-you scope is overridden. */
+.aico-preorder-thank-you .aico-preorder-confirmation {
+  max-width: none;
+  width: 100%;
+  flex: 1 1 auto;
+  background: var(--aico-confirmation-bg, var(--color-bg));
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 @media (max-width: 480px) {
   .aico-preorder-confirmation { padding: 2rem 1.125rem 2.25rem; }
