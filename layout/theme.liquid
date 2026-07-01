@@ -51,6 +51,9 @@
         currency: {{ cart.currency_code | default: 'CHF' | json }},
         locale: {{ request.locale | default: shop.default_locale | json }}
       };
+      {%- comment -%} Recipient for the error manager's "contact support" mailto — the
+        shopper's assigned B2B contact person (no shop-wide support address exists yet). {%- endcomment -%}
+      window.__AICO_SUPPORT_EMAIL__ = {{ customer.aico_account_contact.email | default: '' | json }};
       window.__AICO_ROUTES__ = {
         cart: {
           url: {{ routes.cart_url | json }},
