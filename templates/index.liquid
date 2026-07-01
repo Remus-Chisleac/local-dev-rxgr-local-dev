@@ -43,10 +43,11 @@
                   class="aico-home-brand-card aico-home-brand-card-accessible"
                   aria-label="{{ brand.label }}"
                 >
+                  {%- assign aico_card_photo = brand.aico_image_tile_url | default: brand.image_url -%}
                   <div class="aico-home-brand-card-photo-wrap">
-                    {% if brand.image_url %}
+                    {% if aico_card_photo %}
                       <img
-                        src="{{ brand.image_url }}"
+                        src="{{ aico_card_photo }}"
                         alt=""
                         class="aico-home-brand-card-photo"
                         loading="lazy"
@@ -77,10 +78,11 @@
                 aria-disabled="true"
                 title="{{ 'home_page.brand_inaccessible' | t }}"
               >
+                {%- assign aico_card_photo = brand.aico_image_tile_url | default: brand.image_url -%}
                 <div class="aico-home-brand-card-photo-wrap">
-                  {% if brand.image_url %}
+                  {% if aico_card_photo %}
                     <img
-                      src="{{ brand.image_url }}"
+                      src="{{ aico_card_photo }}"
                       alt=""
                       class="aico-home-brand-card-photo"
                       loading="lazy"
