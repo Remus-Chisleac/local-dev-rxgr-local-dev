@@ -11,11 +11,7 @@
 <main class="aico-checkout-thank-you"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
   <div class="aico-page-container">
     <div class="aico-checkout-thank-you-card">
-      <div class="aico-checkout-thank-you-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 6 9 17l-5-5"/>
-        </svg>
-      </div>
+      <div class="aico-checkout-thank-you-icon" aria-hidden="true">&#10003;</div>
       <h1 class="aico-checkout-thank-you-title">{{ 'checkout.thank_you.title' | t }}</h1>
 
       {% if request.query.order_number %}

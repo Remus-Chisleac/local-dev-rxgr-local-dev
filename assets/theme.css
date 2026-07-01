@@ -5058,14 +5058,12 @@ button.aico-home-brand-card {
   background: var(--color-bg);
 }
 .aico-checkout-thank-you-card {
-  /* White content card centred on the coloured band. */
+  /* Content sheet centred on the coloured page; no border/shadow so it blends
+     into the neutral centre sheet. */
   max-width: 32rem;
   width: 100%;
   margin: 0 auto;
   background: var(--aico-card, #ffffff);
-  border: 1px solid var(--aico-border, #e5e7eb);
-  border-radius: var(--aico-radius, 2px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding: 2.5rem;
   text-align: center;
   display: flex;
@@ -5074,16 +5072,24 @@ button.aico-home-brand-card {
   align-items: center;
 }
 .aico-checkout-thank-you-icon {
-  width: 4rem; height: 4rem;
-  background: #ecfdf5;
-  color: #047857;
-  border-radius: 999px;
+  /* Same success check as the preorder thank-you (.aico-preorder-confirmation-check):
+     solid-green circle with a white checkmark. */
+  width: 3rem; height: 3rem;
+  background: #1f9d55;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .aico-checkout-thank-you-title { font-size: 1.5rem; font-weight: 700; margin: 0; }
 .aico-checkout-thank-you-order { margin: 0; font-size: 1rem; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-thank-you-order strong { color: var(--aico-fg, #1a1a1a); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .aico-checkout-thank-you-totals { width: 100%; margin: 0; display: flex; flex-direction: column; gap: 0.375rem; text-align: left; }
+/* Each summary line keeps its label and value on the SAME row (label left, value right). */
+.aico-checkout-thank-you-totals .aico-checkout-summary-row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.aico-checkout-thank-you-totals dt { margin: 0; color: var(--aico-muted-fg, #6b7280); }
+.aico-checkout-thank-you-totals dd { margin: 0; font-weight: 600; }
 .aico-checkout-thank-you-email { margin: 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
 
 /* ───── Preorder catalog + checkout (b2b-shop parity) ───── */
@@ -9070,9 +9076,13 @@ html.aico-preorder-gallery-open {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 /* On the thank-you page the same white card is centred (both axes) on the brand
-   coloured band; the band + centering come from
-   `.aico-preorder-thank-you > .aico-page-container`, so no per-card override is
-   needed here — the card keeps its compact 640px width like the inline reveal. */
+   coloured page; the centering comes from `.aico-preorder-thank-you >
+   .aico-page-container`. Drop the border/shadow here so the card blends into the
+   neutral centre sheet (the inline post-submit reveal keeps its bordered card). */
+.aico-preorder-thank-you .aico-preorder-confirmation {
+  border: 0;
+  box-shadow: none;
+}
 @media (max-width: 480px) {
   .aico-preorder-confirmation { padding: 2rem 1.125rem 2.25rem; }
 }
