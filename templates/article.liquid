@@ -25,6 +25,9 @@
 
   /* Neo hero band (first converted section): breathing room below the full-bleed color band. */
   .aico-news--detail .neo-section--full { margin-bottom: 2rem; }
+  /* The shared page-renderer mount brings its own page paddings — the article container
+     already provides them, so neutralise inside the article column. */
+  .aico-news--detail .aico-neo-page { max-width: none; padding: 0; }
 
   /* Legacy client-rendered header (no article drop, e.g. presentation tenant). */
   .aico-news--detail .title-wrapper h1,
@@ -113,14 +116,42 @@
   {%- endif -%}
 
   {%- if article.content != blank -%}
-    {%- comment -%} Server-rendered body — no JS needed. {%- endcomment -%}
+    {%- comment -%} Server-rendered legacy body — no JS needed. {%- endcomment -%}
     <article class="news-content-wrapper">
       {%- if article.image -%}
         <div class="news-hero"><img src="{{ article.image }}" alt="{{ article.title | escape }}" style="object-position: {{ article.aico_object_position }};"></div>
       {%- endif -%}
       <div class="description-wrapper">{{ article.content }}</div>
     </article>
+  {%- elsif article.aico_has_neo -%}
+    {%- comment -%}
+      Neo article — same complete renderer as /pages/<handle> (neo-content pattern):
+      content-builder-neo.js finds the #aico-content mount + #aico-page-data JSON on
+      DOMContentLoaded and paints every section/element type, including the full-bleed
+      hero color band. The inline payload is the article attributes object, which
+      carries `contentBuilderNeoJson` — exactly what the renderer's bootstrap expects.
+      No jQuery / news.js on this path.
+    {%- endcomment -%}
+    <link rel="stylesheet" href="{{ 'content-builder.css' | asset_url }}">
+    <div id="aico-content" class="aico-neo-page aico-neo-article"></div>
+    <script>window.current_locale_code = {{ request.locale | default: shop.default_locale | json }};</script>
+    <script id="aico-page-data" type="application/json">{{ aico_article_data }}</script>
+    <script src="{{ 'content-builder-neo.js' | asset_url }}" defer></script>
+  {%- else -%}
+    {%- comment -%} Client fallback for unhandled legacy content / presentation tenant. {%- endcomment -%}
+    {%- if article -%}
+      <script>window.__AICO_ARTICLE_HEADER_SSR__ = true;</script>
+    {%- endif -%}
+    <div id="status" class="aico-news-status" aria-hidden="true"></div>
+    <div id="preloader" class="aico-news-preloader" aria-hidden="true"></div>
+    <div class="page-wrapper"></div>
+    <div id="news-container" class="aico-news-detail">
+      <div id="news-details-container" class="hidden"></div>
+    </div>
+  {%- endif -%}
 
+  {%- comment -%} Server-rendered "more news" strip — legacy-server AND neo paths. {%- endcomment -%}
+  {%- if article.content != blank or article.aico_has_neo -%}
     {%- assign related_count = aico_related_articles | size -%}
     {%- if related_count > 0 -%}
       <section class="aico-related">
@@ -140,17 +171,6 @@
         </div>
       </section>
     {%- endif -%}
-  {%- else -%}
-    {%- comment -%} Client fallback for Neo / unhandled content. {%- endcomment -%}
-    {%- if article -%}
-      <script>window.__AICO_ARTICLE_HEADER_SSR__ = true;</script>
-    {%- endif -%}
-    <div id="status" class="aico-news-status" aria-hidden="true"></div>
-    <div id="preloader" class="aico-news-preloader" aria-hidden="true"></div>
-    <div class="page-wrapper"></div>
-    <div id="news-container" class="aico-news-detail">
-      <div id="news-details-container" class="hidden"></div>
-    </div>
   {%- endif -%}
 
   <p class="aico-news-back">
@@ -159,9 +179,10 @@
 </section>
 
 {%- comment -%}
-  Client fallback assets — loaded only when the body wasn't server-rendered.
+  Legacy client-fallback assets — only when the body was neither server-rendered
+  nor painted by the neo page renderer above.
 {%- endcomment -%}
-{%- if article.content == blank -%}
+{%- if article.content == blank and article.aico_has_neo != true -%}
   {%- if aico_article_data -%}
     <script id="aico-article-data" type="application/json">{{ aico_article_data }}</script>
   {%- endif -%}
