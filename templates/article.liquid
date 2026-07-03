@@ -14,12 +14,25 @@
 
 <style>
   .aico-news--detail { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* kj article header: kicker → title → short rule + date (server-rendered). */
+  .aico-article-header { margin: 0 0 1.75rem; }
+  .aico-article-kicker { font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #111; margin: 0 0 1.1rem; }
+  .aico-article-kicker a { color: inherit; text-decoration: none; }
+  .aico-article-title { font-size: 2.1rem; line-height: 1.2; margin: 0 0 1.4rem; }
+  .aico-article-meta { font-size: .85rem; color: #444; }
+  .aico-article-meta::before { content: ''; display: block; width: 2.5rem; border-top: 1px solid #111; margin-bottom: .8rem; }
+
+  /* Neo hero band (first converted section): breathing room below the full-bleed color band. */
+  .aico-news--detail .neo-section--full { margin-bottom: 2rem; }
+
+  /* Legacy client-rendered header (no article drop, e.g. presentation tenant). */
   .aico-news--detail .title-wrapper h1,
   .aico-news--detail .title-wrapper h2 { font-size: 2rem; line-height: 1.2; margin: 0 0 1rem; }
   .aico-news--detail .tag-wrapper { color: #888; font-size: .9rem; margin-bottom: 1.5rem; }
   .aico-news--detail .tag-wrapper a, .aico-news--detail .tag-wrapper .news-cat { color: #888; text-decoration: none; }
   .aico-news--detail .news-hero { margin: 0 0 2rem; }
-  .aico-news--detail .news-hero img { width: 100%; height: auto; display: block; border-radius: 10px; }
+  .aico-news--detail .news-hero img { width: 100%; height: auto; display: block; border-radius: var(--aico-radius, 2px); }
   .aico-news--detail .description-wrapper { font-size: 1.05rem; line-height: 1.65; color: #222; }
   .aico-news--detail .description-wrapper img,
   .aico-news--detail .image-wrapper img,
@@ -77,15 +90,31 @@
 </style>
 
 <section class="aico-news aico-news--detail" data-aico-news="article">
+  {%- if article -%}
+    {%- comment -%}
+      Server-rendered header for BOTH body paths (kj article design: kicker → title →
+      rule + date). The client renderer (news.js) skips its own title/tag markup when
+      window.__AICO_ARTICLE_HEADER_SSR__ is set below.
+    {%- endcomment -%}
+    <header class="aico-article-header" data-aico-article-header>
+      <p class="aico-article-kicker">
+        {%- if article.aico_category_name -%}
+          <a href="{{ article.aico_category_url }}">{{ article.aico_category_name | upcase }}</a>
+        {%- else -%}NEWS{%- endif -%}
+      </p>
+      <h1 class="aico-article-title">{{ article.title }}</h1>
+      {%- if article.published_at or article.author -%}
+        <div class="aico-article-meta">
+          {%- if article.published_at -%}<span class="news-date">{{ article.published_at }}</span>{%- endif -%}
+          {%- if article.author -%}<span class="news-author">{% if article.published_at %}, {% endif %}{{ article.author }}</span>{%- endif -%}
+        </div>
+      {%- endif -%}
+    </header>
+  {%- endif -%}
+
   {%- if article.content != blank -%}
     {%- comment -%} Server-rendered body — no JS needed. {%- endcomment -%}
     <article class="news-content-wrapper">
-      <div class="title-wrapper"><h1>{{ article.title }}</h1></div>
-      <div class="tag-wrapper">
-        {%- if article.aico_category_name -%}<a href="{{ article.aico_category_url }}" class="news-cat">{{ article.aico_category_name }}</a>{%- endif -%}
-        {%- if article.published_at -%}<span class="news-date">{% if article.aico_category_name %}, {% endif %}{{ article.published_at }}</span>{%- endif -%}
-        {%- if article.author -%}<span class="news-author">, {{ article.author }}</span>{%- endif -%}
-      </div>
       {%- if article.image -%}
         <div class="news-hero"><img src="{{ article.image }}" alt="{{ article.title | escape }}" style="object-position: {{ article.aico_object_position }};"></div>
       {%- endif -%}
@@ -113,6 +142,9 @@
     {%- endif -%}
   {%- else -%}
     {%- comment -%} Client fallback for Neo / unhandled content. {%- endcomment -%}
+    {%- if article -%}
+      <script>window.__AICO_ARTICLE_HEADER_SSR__ = true;</script>
+    {%- endif -%}
     <div id="status" class="aico-news-status" aria-hidden="true"></div>
     <div id="preloader" class="aico-news-preloader" aria-hidden="true"></div>
     <div class="page-wrapper"></div>

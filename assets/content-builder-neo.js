@@ -527,6 +527,31 @@
     return { html: html, rowCount: rowIndex - startRowIndex };
   }
 
+  // Section wrapper — carries the builder's section-level design across:
+  // styles.desktop (backgroundColor, padding, color, …) go inline on the wrapper;
+  // layout.mode 'full' makes the background span the entire viewport width
+  // (breakout from any centered container, e.g. the 960px .aico-neo-page column)
+  // while layout.innerContainer re-contains the content inside the full-bleed
+  // band. Mirrors the aiconeo builder's section semantics (SectionPropertiesPanel).
+  function wrapSection(section, innerHtml) {
+    if (!innerHtml) return '';
+    var layout = (section && section.layout) || {};
+    var mode = layout.mode || ((section && section.fullWidth) ? 'full' : 'contained');
+    var styleStr = USE_API_INLINE_STYLES ? stylesToInline(pickStyles(section)) : '';
+
+    var inner = innerHtml;
+    var innerContainer = layout.innerContainer || {};
+    if (mode === 'full' && innerContainer.enabled !== false) {
+      var maxWidth = innerContainer.maxWidth || layout.maxWidth || '';
+      inner = '<div class="neo-section__inner"' +
+        (maxWidth ? ' style="max-width:' + escapeAttr(maxWidth) + '"' : '') +
+        '>' + innerHtml + '</div>';
+    }
+
+    var classes = 'neo-section' + (mode === 'full' ? ' neo-section--full' : '');
+    return '<section class="' + classes + '"' + (styleStr ? ' style="' + styleStr + '"' : '') + '>' + inner + '</section>';
+  }
+
   function render(data) {
     if (!hasNeoContent(data)) return '';
     var neo = data.contentBuilderNeoJson;
@@ -535,7 +560,7 @@
     var nextRowIndex = 1;
     for (var i = 0; i < neo.sections.length; i++) {
       var result = renderSection(neo.sections[i], nextRowIndex);
-      html += result.html;
+      html += wrapSection(neo.sections[i], result.html);
       nextRowIndex += result.rowCount;
     }
     return html;
@@ -548,6 +573,13 @@
 
   var STYLES_INJECTED = false;
   var NEO_STYLES = [
+    // Section shell: full-bleed color band + re-contained inner (see wrapSection).
+    // 100vw includes the scrollbar gutter, so clip the body's x-overflow while a
+    // full-bleed section is on the page to avoid a phantom horizontal scrollbar.
+    '.neo-section{position:relative;}',
+    '.neo-section--full{width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);}',
+    '.neo-section__inner{margin:0 auto;}',
+    'body:has(.neo-section--full){overflow-x:clip;}',
     '.neo-slideshow__viewport{position:relative;overflow:hidden;border-radius:inherit;}',
     '.neo-slideshow__track{display:flex;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;}',
     '.neo-slideshow__track::-webkit-scrollbar{display:none;}',

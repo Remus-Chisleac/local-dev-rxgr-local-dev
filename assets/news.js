@@ -328,6 +328,9 @@ $(document).ready(function(){
         html += '</div>';
       }*/
      
+      // article.liquid server-renders the kj header (kicker/title/rule+date) whenever the
+      // article drop is bound and sets this flag — emitting it here again would double it.
+      if (!window.__AICO_ARTICLE_HEADER_SSR__) {
       html += '<div class="title-wrapper">';
         html += '<h2>'+news_title+'</h2>';
       html += '</div>';
@@ -355,6 +358,7 @@ $(document).ready(function(){
           }
           html += '</div>';
         html += '</div>';
+      }
          
         html += '<div class="description-wrapper">';
         var showcontentBuilder = 'false';
