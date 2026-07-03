@@ -17,7 +17,9 @@
      (var(--max-width), centered like the header), and inside it the content —
      header, hero media, body — is LEFT-aligned in a 880px column instead of
      being page-centered. Only the hero band's color bleeds to the viewport. */
-  .aico-news--detail { max-width: var(--max-width); margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  /* width:100% because the layout shell is a flex column that would otherwise
+     shrink-wrap the section to its content instead of the store width. */
+  .aico-news--detail { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 2rem 1.25rem 4rem; }
   .aico-news--detail .aico-article-header,
   .aico-news--detail .news-content-wrapper,
   .aico-news--detail .aico-neo-page .neo-section:not(.neo-section--full),
