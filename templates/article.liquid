@@ -13,15 +13,31 @@
 {%- endcomment -%}
 
 <style>
-  /* kj article design: the whole content column is anchored to the LEFT of the page
-     (not centered) — header, hero media and body share the same left edge. */
-  .aico-news--detail { max-width: 880px; margin: 0; padding: 2rem 1.25rem 4rem; }
-  /* The renderer's generic full-bleed breakout (calc(50% - 50vw)) assumes a centered
-     parent; with the left-anchored column the band's containing block starts at the
-     container's 1.25rem padding, so pull back exactly that instead. */
-  .aico-news--detail .neo-section--full { margin-left: -1.25rem; margin-right: 0; }
-  /* Media aligns with the text column's left edge inside the band (no centering);
-     the converter's section side-padding matches the container's 1.25rem. */
+  /* kj article design: the article lives in the store's normal page container
+     (var(--max-width), centered like the header), and inside it the content —
+     header, hero media, body — is LEFT-aligned in a 880px column instead of
+     being page-centered. Only the hero band's color bleeds to the viewport. */
+  .aico-news--detail { max-width: var(--max-width); margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .aico-news--detail .aico-article-header,
+  .aico-news--detail .news-content-wrapper,
+  .aico-news--detail .aico-neo-page .neo-section:not(.neo-section--full),
+  .aico-news--detail .aico-related,
+  .aico-news--detail #news-container,
+  .aico-news--detail .aico-news-back { max-width: 880px; }
+  /* Hero band: keep the SECTION in normal flow at container width (so its media
+     column stays pixel-aligned with the title/text), and paint the color band
+     full-bleed via a ::before layer instead of moving the box — this avoids the
+     centered-parent assumption of the renderer's generic 100vw breakout. */
+  .aico-news--detail .neo-section--full {
+    width: auto; margin-left: 0; margin-right: 0; position: relative; isolation: isolate;
+  }
+  .aico-news--detail .neo-section--full::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw;
+    transform: translateX(-50%); background: inherit; z-index: -1;
+  }
+  /* Media column: left-aligned inside the band (the inline max-width 880px from
+     the converter still caps it); the converter emits no section side padding —
+     the article container's own 1.25rem gutter provides the mobile inset. */
   .aico-news--detail .neo-section__inner { margin: 0; }
 
   /* kj article header: kicker → title → short rule + date (server-rendered). */
