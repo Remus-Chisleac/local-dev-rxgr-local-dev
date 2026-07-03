@@ -13,7 +13,16 @@
 {%- endcomment -%}
 
 <style>
-  .aico-news--detail { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  /* kj article design: the whole content column is anchored to the LEFT of the page
+     (not centered) — header, hero media and body share the same left edge. */
+  .aico-news--detail { max-width: 880px; margin: 0; padding: 2rem 1.25rem 4rem; }
+  /* The renderer's generic full-bleed breakout (calc(50% - 50vw)) assumes a centered
+     parent; with the left-anchored column the band's containing block starts at the
+     container's 1.25rem padding, so pull back exactly that instead. */
+  .aico-news--detail .neo-section--full { margin-left: -1.25rem; margin-right: 0; }
+  /* Media aligns with the text column's left edge inside the band (no centering);
+     the converter's section side-padding matches the container's 1.25rem. */
+  .aico-news--detail .neo-section__inner { margin: 0; }
 
   /* kj article header: kicker → title → short rule + date (server-rendered). */
   .aico-article-header { margin: 0 0 1.75rem; }
