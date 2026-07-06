@@ -1165,6 +1165,24 @@ html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
 }
 
 /* Account contact card (inside the contact disclosure). */
+/* Smooth expand/collapse for the contact disclosure. Uses the modern
+   ::details-content height transition (interpolate-size); browsers
+   without support just toggle instantly. */
+.aico-drawer-contact { interpolate-size: allow-keywords; }
+.aico-drawer-contact::details-content {
+  height: 0;
+  opacity: 0;
+  overflow: clip;
+  transition: height 0.22s ease, opacity 0.18s ease, content-visibility 0.22s allow-discrete;
+}
+.aico-drawer-contact[open]::details-content {
+  height: auto;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aico-drawer-contact::details-content { transition: none; }
+}
+
 .aico-drawer-contact-card {
   padding: 0 1rem 0.75rem;
 }
