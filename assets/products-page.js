@@ -335,6 +335,25 @@
 
   // ---- URL sync ---------------------------------------------------
 
+  // Pathname up to and including the `products` segment — keeps the
+  // `__storefront-preview/<slug>` (or any locale) prefix intact and
+  // drops a `/filter/...` tail from a previous sync.
+  function productsBasePath() {
+    var segs = window.location.pathname.split('/');
+    var idx = segs.indexOf('products');
+    if (idx === -1) {
+      return window.location.pathname;
+    }
+    return segs.slice(0, idx + 1).join('/');
+  }
+
+  // Applied facets ride the URL PATH, b2b-shop style:
+  // /products/filter/<facetId>/<value>/... — pairs of segments, one per
+  // selected value. The server parses the same shape back into
+  // config.initial.appliedFacets (ProductCatalogLoader::appliedFacetsFromPath).
+  // A value with a literal `/` can't be a path segment (the server's route
+  // param is URL-decoded, which would split it), so it stays on the legacy
+  // ?facet[id][]= query form the server still accepts.
   function syncUrl() {
     var params = new URLSearchParams();
     if (state.query) {
@@ -343,13 +362,21 @@
     if (state.sort && state.sort !== '-date') {
       params.set('sort', state.sort);
     }
+    var filterSegs = [];
     Object.keys(state.appliedFacets).forEach(function (facetId) {
       (state.appliedFacets[facetId] || []).forEach(function (v) {
-        params.append('facet[' + facetId + '][]', v);
+        var value = String(v);
+        if (value.indexOf('/') !== -1) {
+          params.append('facet[' + facetId + '][]', value);
+          return;
+        }
+        filterSegs.push(encodeURIComponent(facetId) + '/' + encodeURIComponent(value));
       });
     });
     var qs = params.toString();
-    var path = window.location.pathname + (qs ? '?' + qs : '');
+    var path = productsBasePath()
+      + (filterSegs.length ? '/filter/' + filterSegs.join('/') : '')
+      + (qs ? '?' + qs : '');
     try {
       window.history.replaceState(window.history.state, '', path);
     } catch (e) {
