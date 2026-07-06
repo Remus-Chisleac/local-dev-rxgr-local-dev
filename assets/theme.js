@@ -90,3 +90,36 @@
     });
   }
 })();
+
+// Smart back links: a [data-aico-back] anchor prefers the browser history
+// (so "back" returns to the page the shopper actually came from — brand
+// page, search, another product …) and only follows its href fallback when
+// there is no same-origin page behind it (direct entry, external referrer).
+(function () {
+  'use strict';
+
+  document.addEventListener('click', function (event) {
+    var link = event.target && event.target.closest ? event.target.closest('[data-aico-back]') : null;
+    if (!link) {
+      return;
+    }
+    var referrer = document.referrer;
+    var sameOrigin = false;
+    try {
+      sameOrigin = !!referrer && new URL(referrer).origin === window.location.origin;
+    } catch (error) {
+      sameOrigin = false;
+    }
+    if (!sameOrigin || referrer === window.location.href) {
+      return;
+    }
+    event.preventDefault();
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Same-origin referrer but nothing to pop (e.g. opened in a new tab):
+      // navigate to the referrer instead of the generic fallback.
+      window.location.href = referrer;
+    }
+  });
+})();

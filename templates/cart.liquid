@@ -23,14 +23,12 @@
       id="aico-cart-page">
   <div class="aico-page-container">
     <header class="aico-cart-header">
-      <button type="button"
-              class="aico-page-back"
-              @click="history.length > 1 ? history.back() : (window.location.href = {{ routes.products_url | json }})">
+      <a href="{{ routes.products_url }}" class="aico-page-back" data-aico-back>
         <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="m15 18-6-6 6-6"></path>
         </svg>
         <span>{{ 'cart.back' | t }}</span>
-      </button>
+      </a>
       <h1 class="aico-cart-title">{{ 'cart.title' | t }}</h1>
       <p class="aico-cart-count" x-show="$store.cart.data" x-cloak>
         <span x-text="$store.cart.itemCountLabel()"></span>
