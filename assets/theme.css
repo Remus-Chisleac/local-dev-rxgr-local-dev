@@ -7260,6 +7260,53 @@ html.aico-preorder-gallery-open {
 .aico-account-contact-line:hover { color: var(--aico-account-accent); }
 .aico-account-contact-icon { color: var(--aico-muted-fg); flex: 0 0 auto; }
 
+/* Sales-agent card extras: main badge + covered-brand marks */
+.aico-account-contact-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.15rem;
+}
+
+.aico-account-contact-head .aico-account-contact-name { margin: 0; }
+
+.aico-account-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--aico-bg, #fff);
+  background: var(--aico-fg, #111);
+  border-radius: var(--aico-radius, 2px);
+}
+
+/* Small square brand mark(s) the agent covers — same asset as the
+   search-result brand icon (brands.store_locator_square_icon). */
+.aico-account-contact-brands {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.aico-account-contact-brand-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+  border-radius: var(--aico-radius, 2px);
+}
+
+.aico-account-contact-brand-chip {
+  font-size: 0.6875rem;
+  color: var(--aico-muted-fg, #6b7280);
+  border: 1px solid var(--aico-border);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--aico-radius, 2px);
+}
+
 /* Address cards */
 .aico-account-address-grid {
   display: grid;

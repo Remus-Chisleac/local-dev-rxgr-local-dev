@@ -9,7 +9,7 @@
       same backend services the v2 API uses. "Endkundenansicht" is
       localStorage-only (no backend consumer yet, matching b2b-shop).
 
-    - Right column: contact person (KAM), billing addresses, delivery
+    - Right column: contact persons (B2B sales agents), billing addresses, delivery
       addresses, store-locator addresses. All server-rendered via drops. Each
       address card carries the same change-request control as the dedicated
       customers/addresses page (pending badge + request button + shared modal,
@@ -21,7 +21,6 @@
 {% endcomment %}
 
 {%- assign account = aico_account -%}
-{%- assign contact = customer.aico_account_contact -%}
 {%- assign change_request_base = routes.aico_address_change_request_url -%}
 {%- assign change_request_update_base = routes.aico_address_change_request_update_url -%}
 
@@ -161,35 +160,63 @@
       <section class="aico-account-section">
         <h2 class="aico-account-section-title">{{ 'customer.account.contact_person_title' | t }}</h2>
         <div class="aico-account-address-grid">
-        {% if contact %}
+        {% if customer.aico_sales_agents.size > 0 %}
+          {%- comment -%}
+            One card per sales agent of the organisation (b2b_sales_agents),
+            main agent first. The main agent carries the "main" badge; brand
+            agents show the small square brand mark(s) they cover — the same
+            icon the search results use.
+          {%- endcomment -%}
+          {% for agent in customer.aico_sales_agents %}
           <div class="aico-account-card aico-account-contact-card">
-            {% if contact.photo_url %}
-              <img class="aico-account-contact-photo" src="{{ contact.photo_url }}" alt="{{ contact.full_name | escape }}" loading="lazy">
+            {% if agent.photo_url %}
+              <img class="aico-account-contact-photo" src="{{ agent.photo_url }}" alt="{{ agent.full_name | escape }}" loading="lazy">
+            {% else %}
+              <div class="aico-account-contact-photo aico-account-contact-photo--placeholder" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
             {% endif %}
             <div class="aico-account-contact-body">
-              <p class="aico-account-contact-name">{{ contact.full_name }}</p>
-              {% if contact.job_title %}<p class="aico-account-contact-role">{{ contact.job_title }}</p>{% endif %}
+              <div class="aico-account-contact-head">
+                <p class="aico-account-contact-name">{{ agent.full_name }}</p>
+                {% if agent.is_main %}
+                  <span class="aico-account-contact-badge">{{ 'customer.account.contact_main_badge' | t }}</span>
+                {% endif %}
+                {% if agent.brands.size > 0 %}
+                  <span class="aico-account-contact-brands">
+                    {% for agent_brand in agent.brands %}
+                      {% if agent_brand.icon_url %}
+                        <img class="aico-account-contact-brand-icon" src="{{ agent_brand.icon_url }}" alt="{{ agent_brand.name | escape }}" title="{{ agent_brand.name | escape }}" loading="lazy">
+                      {% elsif agent_brand.name %}
+                        <span class="aico-account-contact-brand-chip">{{ agent_brand.name }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </span>
+                {% endif %}
+              </div>
+              {% if agent.job_title %}<p class="aico-account-contact-role">{{ agent.job_title }}</p>{% endif %}
               <div class="aico-account-contact-lines">
-                {% if contact.phone %}
-                  <a class="aico-account-contact-line" href="tel:{{ contact.phone | replace: ' ', '' }}" aria-label="{{ 'customer.account.call_label' | t }}">
+                {% if agent.phone %}
+                  <a class="aico-account-contact-line" href="tel:{{ agent.phone | replace: ' ', '' }}" aria-label="{{ 'customer.account.call_label' | t }}">
                     <svg class="aico-account-contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"></path></svg>
-                    <span>{{ contact.phone }}</span>
+                    <span>{{ agent.phone }}</span>
                   </a>
                 {% endif %}
-                {% if contact.email %}
-                  <a class="aico-account-contact-line" href="mailto:{{ contact.email }}" aria-label="{{ 'customer.account.email_label' | t }}">
+                {% if agent.email %}
+                  <a class="aico-account-contact-line" href="mailto:{{ agent.email }}" aria-label="{{ 'customer.account.email_label' | t }}">
                     <svg class="aico-account-contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-                    <span>{{ contact.email }}</span>
+                    <span>{{ agent.email }}</span>
                   </a>
                 {% endif %}
               </div>
             </div>
           </div>
+          {% endfor %}
         {% else %}
           {%- comment -%}
-            Placeholder card: the real KAM/Ansprechperson data source is not
-            wired up yet (the B2B main_contact relation is NOT it). Renders the
-            design slot with a neutral avatar + hint until the source is known.
+            Placeholder card: the organisation has no sales agents assigned
+            yet (b2b_sales_agents is empty). Renders the design slot with a
+            neutral avatar + hint.
           {%- endcomment -%}
           <div class="aico-account-card aico-account-contact-card aico-account-contact-card--placeholder">
             <div class="aico-account-contact-photo aico-account-contact-photo--placeholder" aria-hidden="true">
