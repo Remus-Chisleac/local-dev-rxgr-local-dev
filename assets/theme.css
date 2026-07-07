@@ -602,10 +602,15 @@ body.aico-template-customers {
 /* Right-side drawer (nav + later: search)                          */
 /* ---------------------------------------------------------------- */
 
-/* Body-scroll lock when the drawer is open. `scrollbar-gutter: stable`
-   on html keeps the scrollbar slot reserved so the page does not
-   shift right as overflow flips. */
-html.aico-no-scroll, body.aico-no-scroll { overflow: hidden; }
+/* Scroll lock when a drawer is open. `scrollbar-gutter: stable` on html
+   keeps the scrollbar slot reserved so the page does not shift right as
+   overflow flips. Lock on html ONLY: `overflow: hidden` on body would
+   make body a scroll container between the viewport and the sticky
+   header (.aico-chrome-sticky), re-basing the sticky against body's
+   never-scrolling box — the header visibly vanished when a drawer was
+   opened while scrolled down. (The JS still toggles the class on both
+   elements; the body selector is deliberately absent here.) */
+html.aico-no-scroll { overflow: hidden; }
 
 /* ── Side panels (menu + search) ───────────────────────────────── */
 /* Generic right-edge drawer shell shared by the menu and search       */
