@@ -1,0 +1,13 @@
+{
+  "routes": [
+    { "page": "products", "path": "products" },
+    { "page": "products", "path": "products/filter/*" },
+    { "page": "product",  "path": "products/:handle" },
+
+    { "page": "products", "path": "shop" },
+    { "page": "products", "path": "shop/filter/*" },
+    { "page": "product",  "path": "shop/:handle" },
+
+    { "page": "contact",  "path": "kontakt" }
+  ]
+}

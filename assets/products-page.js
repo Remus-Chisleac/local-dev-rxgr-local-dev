@@ -335,16 +335,18 @@
 
   // ---- URL sync ---------------------------------------------------
 
-  // Pathname up to and including the `products` segment — keeps the
-  // `__storefront-preview/<slug>` (or any locale) prefix intact and
-  // drops a `/filter/...` tail from a previous sync.
+  // The listing's base pathname: the current path with any `/filter/...`
+  // tail from a previous sync cut off. Anchoring on the `filter` segment
+  // (not on a literal `products`) keeps the `__storefront-preview/<slug>`
+  // / locale prefix intact AND works when the theme's route map serves
+  // the listing under a custom prefix (e.g. `/shop`).
   function productsBasePath() {
     var segs = window.location.pathname.split('/');
-    var idx = segs.indexOf('products');
+    var idx = segs.indexOf('filter');
     if (idx === -1) {
       return window.location.pathname;
     }
-    return segs.slice(0, idx + 1).join('/');
+    return segs.slice(0, idx).join('/');
   }
 
   // Applied facets ride the URL PATH, b2b-shop style:
