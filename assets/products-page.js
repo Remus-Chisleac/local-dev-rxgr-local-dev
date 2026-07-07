@@ -919,6 +919,15 @@
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
+  // Localized display label for a canonical (EN/hex) facet value — the
+  // server ships config.facetValueLabels for non-English locales; values
+  // without an entry (and English) display as-is.
+  var FACET_VALUE_LABELS = config.facetValueLabels || {};
+  function facetValueLabel(facetId, value) {
+    var m = FACET_VALUE_LABELS[facetId];
+    return (m && m[value]) || value;
+  }
+
   function isFacetValueActive(facetId, value) {
     var arr = state.appliedFacets[facetId] || [];
     for (var i = 0; i < arr.length; i++) {
@@ -960,7 +969,7 @@
         var active = isFacetValueActive(facetId, v);
         html += '<button type="button"';
         html += ' class="aico-swatch' + (active ? ' aico-swatch-active' : '') + '"';
-        html += ' title="' + escapeAttr(v) + ' (' + (distribution[v] || 0) + ')"';
+        html += ' title="' + escapeAttr(facetValueLabel(facetId, v)) + ' (' + (distribution[v] || 0) + ')"';
         html += ' data-aico-facet-checkbox data-facet-id="' + facetId + '"';
         html += ' data-facet-value="' + escapeAttr(v) + '"';
         html += ' data-checked="' + (active ? '1' : '0') + '">';
@@ -977,7 +986,7 @@
         html += ' data-aico-facet-checkbox data-facet-id="' + facetId + '"';
         html += ' data-facet-value="' + escapeAttr(v) + '"';
         html += ' data-checked="' + (active ? '1' : '0') + '">';
-        html += '<span class="aico-filtercol-item-label">' + escapeHtml(v) + '</span>';
+        html += '<span class="aico-filtercol-item-label">' + escapeHtml(facetValueLabel(facetId, v)) + '</span>';
         html += '<span class="aico-filtercol-item-count">(' + (distribution[v] || 0) + ')</span>';
         html += '</button></li>';
       });
