@@ -8,10 +8,8 @@
     { "template": "products", "path": "shop/filter/*" },
     { "template": "product",  "path": "shop/:handle" },
 
-    { "template": "deals", "path": "deals",
-      "drops": ["aico_products", "aico_products_config"] },
-    { "template": "deals", "path": "deals/filter/*",
-      "drops": ["aico_products", "aico_products_config"] },
+    { "template": "deals", "path": "deals" },
+    { "template": "deals", "path": "deals/filter/*" },
 
     { "template": "contact", "path": "kontakt" }
   ]
