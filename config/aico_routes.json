@@ -1,13 +1,18 @@
 {
   "routes": [
-    { "page": "products", "path": "products" },
-    { "page": "products", "path": "products/filter/*" },
-    { "page": "product",  "path": "products/:handle" },
+    { "template": "products", "path": "products" },
+    { "template": "products", "path": "products/filter/*" },
+    { "template": "product",  "path": "products/:handle" },
 
-    { "page": "products", "path": "shop" },
-    { "page": "products", "path": "shop/filter/*" },
-    { "page": "product",  "path": "shop/:handle" },
+    { "template": "products", "path": "shop" },
+    { "template": "products", "path": "shop/filter/*" },
+    { "template": "product",  "path": "shop/:handle" },
 
-    { "page": "contact",  "path": "kontakt" }
+    { "template": "deals", "path": "deals",
+      "drops": ["aico_products", "aico_products_config"] },
+    { "template": "deals", "path": "deals/filter/*",
+      "drops": ["aico_products", "aico_products_config"] },
+
+    { "template": "contact", "path": "kontakt" }
   ]
 }
