@@ -64,6 +64,7 @@
         chooseMaxImages: 'Es sind maximal zwei Bilder von A-Ansichten möglich, sowie ein Portrait des Interview-Partners bei den Interview-Texten',
         adDesignVariant: 'Wähle die Gestaltungsvariante für deine Anzeige *',
         modelsOfSeason: 'Welche Modelle der aktuellen Saison sollen abgebildet werden? *',
+        modelsOfSeasonNumber1: '(Ein Modell wählbar)',
         modelsOfSeasonNumber2: '(Bis zu zwei Modelle wählbar)',
         exactAdFormat: 'Bitte gib das genaue Format der Anzeige an. Erst nach Erhalt der exakten Maße kann mit der Erstellung deiner Werbeanzeige begonnen werden. *',
         widthInMM: 'Breite in mm',
@@ -109,6 +110,7 @@
         chooseMaxImages: 'A maximum of two pictures of A-views are possible, as well as a portrait of the interview partner in the interview texts.',
         adDesignVariant: 'Choose the design variant for your advertisement *',
         modelsOfSeason: 'Which models of the current season should be shown? *',
+        modelsOfSeasonNumber1: '(One model can be selected)',
         modelsOfSeasonNumber2: '(Up to two models can be selected)',
         exactAdFormat: 'Please specify the exact format of the ad. We can only start creating your advertisement once we have received the exact dimensions. *',
         widthInMM: 'Width in mm',
@@ -323,8 +325,18 @@
     this.showSecondQuestionInput = false;
     // config-driven option text for q-design-variant + q-models (each has de_CH + en maps)
     var qj = (cfg.optionText || {});
-    this.q5Text = qj.question5 || {};   // 8 design-variant texts
+    this.q5Text = qj.question5 || {};   // design-variant texts
     this.q6Text = qj.question6 || {};   // 4 model texts
+    // index (0-based) of the design variant that only fits ONE season model; -1 = none.
+    // Selecting it caps Q6 (season models) to 1 and clears any already-picked models,
+    // mirroring the b2b "Medical Fersensporn mit FOREVERFOAM" enforceMaxOne behaviour.
+    this.singleModelDesignIndex = (typeof cfg.singleModelDesignIndex === 'number') ? cfg.singleModelDesignIndex : -1;
+    var q5DE = this.q5Text.de_CH || this.q5Text.en || {};
+    this.singleModelValue = (this.singleModelDesignIndex >= 0)
+      ? (q5DE['Text' + (this.singleModelDesignIndex + 1)] || null)
+      : null;
+    // whether the currently-selected design caps season models to 1 (derived in syncRevealFlags)
+    this.enforceMaxOne = false;
   }
 
   // persist the in-progress answers (excluding uploadedFiles + errors) to localStorage.
@@ -356,6 +368,7 @@
     var sp = this.state.secondPage;
     this.showFirstQuestionInput = (sp.question1 === this.DE.secondPage.firstQuestion.option3);
     this.showSecondQuestionInput = (sp.question2 || []).indexOf(this.DE.secondPage.secondQuestion.option4) !== -1;
+    this.enforceMaxOne = (this.singleModelValue != null && sp.question3 === this.singleModelValue);
   };
 
   // navigate between input pages; mirror the page in ?step=<n>.
@@ -611,8 +624,11 @@
       addOtherCard();
     });
 
-    // --- Q5 (state question3): design variant — 8 image cards, single select ---
+    // --- Q5 (state question3): design variant — image cards, single select ---
     // value = de_CH text from config; label = active-locale text from config.
+    // forward-declared: re-applies the season-model cap (note text + card selection)
+    // when the design selection changes it. Assigned when Q6 is built below.
+    var applySeasonCap = null;
     var qDesign = el('div', 'et-question');
     var qDl = el('div', 'et-qlabel'); qDl.appendChild(document.createTextNode('5. '));
     qDl.appendChild(el('strong', null, t.secondPage.adDesignVariant));
@@ -633,10 +649,15 @@
         card.appendChild(el('div', 'et-card-title', label));
         card.classList.toggle('is-selected', sp.question3 === value);
         card.addEventListener('click', function () {
-          sp.question3 = (sp.question3 === value) ? '' : value;
+          var selecting = (sp.question3 !== value);
+          sp.question3 = selecting ? value : '';
+          // the single-model design caps Q6 to 1 and drops any already-picked models
+          self.enforceMaxOne = (selecting && idx === self.singleModelDesignIndex);
+          if (self.enforceMaxOne) sp.question5 = [];
           Array.prototype.forEach.call(designCards.children, function (c, ci) {
             c.classList.toggle('is-selected', sp.question3 === designVals[ci]);
           });
+          if (applySeasonCap) applySeasonCap();
           self.persist();
           self.clearErr(qDesign);
         });
@@ -647,12 +668,14 @@
     step.appendChild(qDesign);
 
     // --- Q6 (state question5): season models — q6 cards, multi up to 2 ---
-    // image1 exists; options 2-4 are text-only.
+    // image1 exists; options 2-4 are text-only. Cap drops to 1 when the design
+    // variant flagged singleModelDesignIndex is selected (self.enforceMaxOne).
     var qSeason = el('div', 'et-question');
     var qSl = el('div', 'et-qlabel'); qSl.appendChild(document.createTextNode('6. '));
     qSl.appendChild(el('strong', null, t.secondPage.modelsOfSeason));
     qSeason.appendChild(qSl);
-    qSeason.appendChild(el('span', 'et-qnote', t.secondPage.modelsOfSeasonNumber2));
+    var seasonNote = el('span', 'et-qnote', t.secondPage.modelsOfSeasonNumber2);
+    qSeason.appendChild(seasonNote);
     var seasonImgs = this.images.question6 || []; // only image1 present
     var seasonDE = this.q6Text.de_CH || this.q6Text.en || {};
     var seasonDisp = this.q6Text[loc] || this.q6Text.en || this.q6Text.de_CH || {};
@@ -670,8 +693,9 @@
         card.classList.toggle('is-selected', sp.question5.indexOf(value) !== -1);
         card.addEventListener('click', function () {
           var i = sp.question5.indexOf(value);
+          var cap = self.enforceMaxOne ? 1 : MAX_MODELS;
           if (i !== -1) { sp.question5.splice(i, 1); card.classList.remove('is-selected'); }
-          else if (sp.question5.length < MAX_MODELS) { sp.question5.push(value); card.classList.add('is-selected'); }
+          else if (sp.question5.length < cap) { sp.question5.push(value); card.classList.add('is-selected'); }
           self.persist();
           self.clearErr(qSeason);
         });
@@ -680,6 +704,16 @@
     }
     qSeason.appendChild(seasonCards);
     step.appendChild(qSeason);
+
+    // re-apply the season cap after a design change: swap the note text and resync
+    // each card's selected state from sp.question5 (design change may have cleared it).
+    applySeasonCap = function () {
+      seasonNote.textContent = self.enforceMaxOne ? t.secondPage.modelsOfSeasonNumber1 : t.secondPage.modelsOfSeasonNumber2;
+      Array.prototype.forEach.call(seasonCards.children, function (c, ci) {
+        c.classList.toggle('is-selected', sp.question5.indexOf(seasonVals[ci]) !== -1);
+      });
+    };
+    applySeasonCap(); // set the initial note per the restored enforceMaxOne
 
     // --- Q7 (state question6 width / question7 height): exact ad format ---
     var qFormat = el('div', 'et-question');
