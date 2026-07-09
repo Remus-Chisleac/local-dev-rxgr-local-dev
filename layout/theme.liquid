@@ -27,7 +27,16 @@
     {%- assign aico_is_auth_shell = true -%}
   {%- endif -%}
   {% if aico_is_auth_shell %}
-    <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
+    {%- comment -%}
+      Login background from the aico_auth_background_image image_picker setting
+      (a media-gallery image, aico://media-gallery/files/<id>); falls back to
+      the committed theme asset when the setting is unset or unresolvable.
+    {%- endcomment -%}
+    {%- if settings.aico_auth_background_image != blank -%}
+      <style>:root { --aico-auth-bg-image: url('{{ settings.aico_auth_background_image | image_url }}'); }</style>
+    {%- else -%}
+      <style>:root { --aico-auth-bg-image: url('{{ 'auth-background.webp' | asset_url }}'); }</style>
+    {%- endif -%}
   {% else %}
     <script>
       // Restore the customer-view ("Endkundenansicht") preference before first
