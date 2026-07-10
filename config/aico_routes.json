@@ -8,6 +8,6 @@
     { "template": "products", "path": "shop/filter/*" },
     { "template": "product",  "path": "shop/:handle" },
 
-    { "template": "contact", "path": "kontakt" }
+    { "template": "contact", "path": "hilfe" }
   ]
 }
