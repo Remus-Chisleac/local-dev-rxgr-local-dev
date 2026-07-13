@@ -2,12 +2,6 @@
   "routes": [
     { "template": "products", "path": "products" },
     { "template": "products", "path": "products/filter/*" },
-    { "template": "product",  "path": "products/:handle" },
-
-    { "template": "products", "path": "shop" },
-    { "template": "products", "path": "shop/filter/*" },
-    { "template": "product",  "path": "shop/:handle" },
-
-    { "template": "contact", "path": "kontakt" }
+    { "template": "product",  "path": "products/:handle" }
   ]
 }
