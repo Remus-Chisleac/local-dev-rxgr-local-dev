@@ -31,10 +31,13 @@
 
 <main class="et-page" data-aico-eventtool="events-joya">
   {%- if is_de -%}
-    <img class="et-header-img" src="{{ 'et-joya-events-header-de_CH.jpg' | asset_url }}" alt="Joya Erlebnistag">
+    {%- assign et_header_fallback = 'et-joya-events-header-de_CH.jpg' -%}
+    {%- assign et_header_alt_fallback = 'Joya Erlebnistag' -%}
   {%- else -%}
-    <img class="et-header-img" src="{{ 'et-joya-events-header-en.jpg' | asset_url }}" alt="Joya Experience Day">
+    {%- assign et_header_fallback = 'et-joya-events-header-en.jpg' -%}
+    {%- assign et_header_alt_fallback = 'Joya Experience Day' -%}
   {%- endif -%}
+  <img class="et-header-img" src="{% render 'aico-image-src', image: settings.aico_et_joya_events_header, fallback: et_header_fallback %}" alt="{{ settings.aico_et_joya_events_header.alt | default: et_header_alt_fallback }}">
 
   <div data-et-mount></div>
 
@@ -49,26 +52,26 @@
       "address": {{ user_address | strip | json }},
       "images": {
         "question3": {
-          "Image1": {{ 'et-joya-events-question3-image1.jpg' | asset_url | json }},
-          "Image2": {{ 'et-joya-events-question3-image2.jpg' | asset_url | json }},
-          "Image3": {{ 'et-joya-events-question3-image3.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question3_image1, fallback: 'et-joya-events-question3-image1.jpg' %}",
+          "Image2": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question3_image2, fallback: 'et-joya-events-question3-image2.jpg' %}",
+          "Image3": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question3_image3, fallback: 'et-joya-events-question3-image3.jpg' %}"
         },
         "question5": {
-          "Image1": {{ 'et-joya-events-question5-image1.jpg' | asset_url | json }},
-          "Image2": {{ 'et-joya-events-question5-image2.jpg' | asset_url | json }},
-          "Image3": {{ 'et-joya-events-question5-image3.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question5_image1, fallback: 'et-joya-events-question5-image1.jpg' %}",
+          "Image2": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question5_image2, fallback: 'et-joya-events-question5-image2.jpg' %}",
+          "Image3": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question5_image3, fallback: 'et-joya-events-question5-image3.jpg' %}"
         },
         "question8": {
-          "Image1": {{ 'et-joya-events-question8-image1.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question8_image1, fallback: 'et-joya-events-question8-image1.jpg' %}"
         },
         "question9": {
-          "Image1": {{ 'et-joya-events-question9-image1.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question9_image1, fallback: 'et-joya-events-question9-image1.jpg' %}"
         },
         "question10": {
-          "Image1": {{ 'et-joya-events-question10-image1.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question10_image1, fallback: 'et-joya-events-question10-image1.jpg' %}"
         },
         "question11": {
-          "Image1": {{ 'et-joya-events-question11-image1.jpg' | asset_url | json }}
+          "Image1": "{% render 'aico-image-src', image: settings.aico_et_joya_events_question11_image1, fallback: 'et-joya-events-question11-image1.jpg' %}"
         }
       }
     }

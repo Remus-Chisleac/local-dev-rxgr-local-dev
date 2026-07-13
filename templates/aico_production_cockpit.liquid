@@ -32,7 +32,7 @@
 
   <div class="aico-page-container aico-cockpit-shell">
 
-    <img class="aico-cockpit-banner" src="{{ 'cockpit-banner.webp' | asset_url }}" alt="" loading="eager">
+    <img class="aico-cockpit-banner" src="{% render 'aico-image-src', image: settings.aico_cockpit_banner_image, fallback: 'cockpit-banner.webp' %}" alt="{{ settings.aico_cockpit_banner_image.alt }}" loading="eager">
 
     <header class="aico-cockpit-head">
       <h1 class="aico-cockpit-title">{{ 'aico_production_cockpit.title' | t }}</h1>

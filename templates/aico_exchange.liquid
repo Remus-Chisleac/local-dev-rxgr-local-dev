@@ -33,7 +33,7 @@
 
   <div class="aico-page-container aico-exchange-shell">
 
-    <img class="aico-exchange-banner" src="{{ 'exchange-banner.jpg' | asset_url }}" alt="" loading="eager">
+    <img class="aico-exchange-banner" src="{% render 'aico-image-src', image: settings.aico_exchange_banner_image, fallback: 'exchange-banner.jpg' %}" alt="{{ settings.aico_exchange_banner_image.alt }}" loading="eager">
 
     <h1 class="aico-exchange-title">{{ 'aico_exchange.title' | t }}</h1>
 
@@ -182,9 +182,9 @@
       {%- comment -%} Small square brand marks shown in the requests table (matches
           the legacy b2b-shop brand icons). Keyed by lower-cased brand name. {%- endcomment -%}
       <script type="application/json" data-aico-exchange-brand-logos>{
-        "kybun": {{ 'brand-logo-kybun.svg' | asset_url | json }},
-        "joya": {{ 'brand-logo-joya.svg' | asset_url | json }},
-        "kandahar": {{ 'brand-logo-kandahar.svg' | asset_url | json }}
+        "kybun": "{% render 'aico-image-src', image: settings.aico_exchange_logo_kybun, fallback: 'brand-logo-kybun.svg' %}",
+        "joya": "{% render 'aico-image-src', image: settings.aico_exchange_logo_joya, fallback: 'brand-logo-joya.svg' %}",
+        "kandahar": "{% render 'aico-image-src', image: settings.aico_exchange_logo_kandahar, fallback: 'brand-logo-kandahar.svg' %}"
       }</script>
 
     {% endunless %}

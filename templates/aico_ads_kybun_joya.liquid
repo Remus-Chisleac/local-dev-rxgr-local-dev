@@ -24,7 +24,7 @@
 {%- endif -%}
 
 <main class="et-page" data-aico-eventtool="ads-kybun-joya">
-  <img class="et-header-img" src="{{ 'et-kj-ads-header-de_CH.jpg' | asset_url }}" alt="kybun Joya Werbeanzeige">
+  <img class="et-header-img" src="{% render 'aico-image-src', image: settings.aico_et_kj_ads_header, fallback: 'et-kj-ads-header-de_CH.jpg' %}" alt="{{ settings.aico_et_kj_ads_header.alt | default: 'kybun Joya Werbeanzeige' }}">
 
   <div data-et-mount></div>
 
@@ -39,14 +39,14 @@
       "address": {{ et_addr | default: '' | json }},
       "images": {
         "q3": [
-          {{ 'et-kj-ads-question3-image1.jpg' | asset_url | json }},
-          {{ 'et-kj-ads-question3-image2.jpg' | asset_url | json }},
-          {{ 'et-kj-ads-question3-image3.jpg' | asset_url | json }}
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question3_image1, fallback: 'et-kj-ads-question3-image1.jpg' %}",
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question3_image2, fallback: 'et-kj-ads-question3-image2.jpg' %}",
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question3_image3, fallback: 'et-kj-ads-question3-image3.jpg' %}"
         ],
         "q4": [
-          {{ 'et-kj-ads-question4-image1.jpg' | asset_url | json }},
-          {{ 'et-kj-ads-question4-image2.jpg' | asset_url | json }},
-          {{ 'et-kj-ads-question4-image3.jpg' | asset_url | json }}
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question4_image1, fallback: 'et-kj-ads-question4-image1.jpg' %}",
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question4_image2, fallback: 'et-kj-ads-question4-image2.jpg' %}",
+          "{% render 'aico-image-src', image: settings.aico_et_kj_ads_question4_image3, fallback: 'et-kj-ads-question4-image3.jpg' %}"
         ]
       }
     }

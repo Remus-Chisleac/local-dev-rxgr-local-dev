@@ -1,0 +1,14 @@
+{%- comment -%}
+  URL for a media-gallery image_picker setting with a theme-asset fallback.
+
+  Usage:
+    {% render 'aico-image-src', image: settings.aico_x_image, fallback: 'x.jpg' %}
+
+  Outputs the resolved gallery CDN URL (already locale-variant-aware — the
+  settings hydrator picks the current storefront locale's image variant) when
+  the setting resolves, else the legacy theme asset via asset_url — so an
+  unset or dangling aico:// ref never breaks the page. Fallbacks are
+  transitional: they go away one release after the asset files are deleted
+  (M1 Phase D).
+{%- endcomment -%}
+{%- if image != blank -%}{{ image | image_url }}{%- else -%}{{ fallback | asset_url }}{%- endif -%}

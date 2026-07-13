@@ -1,12 +1,12 @@
 <link rel="stylesheet" href="{{ 'eventtool.css' | asset_url }}">
 
-{%- assign et_header = 'et-joya-ads-header-en.jpg' -%}
+{%- assign et_header_fallback = 'et-joya-ads-header-en.jpg' -%}
 {%- if request.locale contains 'de' -%}
-  {%- assign et_header = 'et-joya-ads-header-de_CH.jpg' -%}
+  {%- assign et_header_fallback = 'et-joya-ads-header-de_CH.jpg' -%}
 {%- endif -%}
 
 <main class="et-page" data-aico-eventtool="ads-joya">
-  <img class="et-header-img" src="{{ et_header | asset_url }}" alt="">
+  <img class="et-header-img" src="{% render 'aico-image-src', image: settings.aico_et_joya_ads_header, fallback: et_header_fallback %}" alt="{{ settings.aico_et_joya_ads_header.alt }}">
   <div data-et-mount></div>
 </main>
 
@@ -20,9 +20,9 @@
   "singleModelDesignIndex": 1,
   "email": {{ customer.email | default: '' | json }},
   "images": {
-    "question3": ["{{ 'et-joya-ads-question3-image1.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image2.jpg' | asset_url }}","{{ 'et-joya-ads-question3-image3.jpg' | asset_url }}"],
-    "question5": ["{{ 'et-joya-ads-question5-image1.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image2.jpg' | asset_url }}","{{ 'et-joya-ads-question5-image3.jpg' | asset_url }}"],
-    "question6": ["{{ 'et-joya-ads-question6-image1.jpg' | asset_url }}"]
+    "question3": ["{% render 'aico-image-src', image: settings.aico_et_joya_ads_question3_image1, fallback: 'et-joya-ads-question3-image1.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_joya_ads_question3_image2, fallback: 'et-joya-ads-question3-image2.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_joya_ads_question3_image3, fallback: 'et-joya-ads-question3-image3.jpg' %}"],
+    "question5": ["{% render 'aico-image-src', image: settings.aico_et_joya_ads_question5_image1, fallback: 'et-joya-ads-question5-image1.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_joya_ads_question5_image2, fallback: 'et-joya-ads-question5-image2.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_joya_ads_question5_image3, fallback: 'et-joya-ads-question5-image3.jpg' %}"],
+    "question6": ["{% render 'aico-image-src', image: settings.aico_et_joya_ads_question6_image1, fallback: 'et-joya-ads-question6-image1.jpg' %}"]
   },
   "optionText": {
     "question5": {

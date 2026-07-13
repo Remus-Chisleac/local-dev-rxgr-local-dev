@@ -8,7 +8,7 @@
 {%- endfor -%}
 
 <main class="et-page" data-aico-eventtool="events-kybun-joya">
-  <img class="et-header-img" src="{{ 'et-kj-events-header-de_CH.jpg' | asset_url }}" alt="">
+  <img class="et-header-img" src="{% render 'aico-image-src', image: settings.aico_et_kj_events_header, fallback: 'et-kj-events-header-de_CH.jpg' %}" alt="{{ settings.aico_et_kj_events_header.alt }}">
   <div data-et-mount></div>
 </main>
 
@@ -22,9 +22,9 @@
   "email": {{ customer.email | default: '' | json }},
   "address": {{ et_address | json }},
   "images": {
-    "q3": ["{{ 'et-kj-events-question3-image1.jpg' | asset_url }}","{{ 'et-kj-events-question3-image2.jpg' | asset_url }}","{{ 'et-kj-events-question3-image3.jpg' | asset_url }}"],
-    "q4": ["{{ 'et-kj-events-question4-image1.jpg' | asset_url }}","{{ 'et-kj-events-question4-image2.jpg' | asset_url }}","{{ 'et-kj-events-question4-image3.jpg' | asset_url }}"],
-    "q10": ["{{ 'et-kj-events-question10-image1.jpg' | asset_url }}","{{ 'et-kj-events-question10-image2.jpg' | asset_url }}","{{ 'et-kj-events-question10-image3.jpg' | asset_url }}","{{ 'et-kj-events-question10-image4.jpg' | asset_url }}"]
+    "q3": ["{% render 'aico-image-src', image: settings.aico_et_kj_events_question3_image1, fallback: 'et-kj-events-question3-image1.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question3_image2, fallback: 'et-kj-events-question3-image2.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question3_image3, fallback: 'et-kj-events-question3-image3.jpg' %}"],
+    "q4": ["{% render 'aico-image-src', image: settings.aico_et_kj_events_question4_image1, fallback: 'et-kj-events-question4-image1.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question4_image2, fallback: 'et-kj-events-question4-image2.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question4_image3, fallback: 'et-kj-events-question4-image3.jpg' %}"],
+    "q10": ["{% render 'aico-image-src', image: settings.aico_et_kj_events_question10_image1, fallback: 'et-kj-events-question10-image1.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question10_image2, fallback: 'et-kj-events-question10-image2.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question10_image3, fallback: 'et-kj-events-question10-image3.jpg' %}","{% render 'aico-image-src', image: settings.aico_et_kj_events_question10_image4, fallback: 'et-kj-events-question10-image4.jpg' %}"]
   }
 }
 </script>
