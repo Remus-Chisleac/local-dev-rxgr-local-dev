@@ -70,16 +70,15 @@
       },
       {
         "id": "aico_yotpo_app_key",
-        "type": "text",
+        "type": "aico_secret",
         "label": "Yotpo store App Key",
-        "default": "",
-        "info": "Found in your Yotpo account. Required to load the reviews widget — leave empty to keep reviews off."
+        "info": "Found in your Yotpo account. Required to load the reviews widget — leave unset to keep reviews off. Stored privately on the shop, never in the theme repository."
       },
       {
         "id": "aico_yotpo_widget_instance_id",
-        "type": "text",
+        "type": "aico_secret",
         "label": "Yotpo widget instance id",
-        "default": "1336299"
+        "info": "Stored privately on the shop, never in the theme repository."
       }
     ]
   },
