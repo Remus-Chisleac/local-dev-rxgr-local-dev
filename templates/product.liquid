@@ -366,6 +366,21 @@
             <input type="hidden" name="id" value="" data-aico-variant-id-input>
           {% endif %}
 
+          {%- comment -%}
+            The matrix submits ABSOLUTE quantities (routes.cart_update_url),
+            but "Update cart" only reads right once the cart already holds
+            this product — before that the action is an add. The server picks
+            the initial label from the cart; product-detail.js re-syncs it
+            after each successful bulk update via the data-label-* attributes.
+          {%- endcomment -%}
+          {%- assign product_cart_qty = 0 -%}
+          {%- if cart -%}
+            {%- for line in cart.items -%}
+              {%- if line.product_id == product.id -%}
+                {%- assign product_cart_qty = product_cart_qty | plus: line.quantity -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endif -%}
           <div class="aico-pdp-buy-actions">
             <button
               type="submit"
@@ -378,10 +393,14 @@
                 <path d="M3 6h18"></path>
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
-              <span>
+              <span
+                data-aico-buy-label
+                data-label-add="{{ 'product.add_to_cart' | t | escape }}"
+                data-label-update="{{ 'product.update_cart' | t | escape }}"
+              >
                 {% if product.aico_shipping_blocked? %}
                   {{ 'product.restricted' | t }}
-                {% elsif product.aico_has_size_matrix? %}
+                {% elsif product.aico_has_size_matrix? and product_cart_qty > 0 %}
                   {{ 'product.update_cart' | t }}
                 {% else %}
                   {{ 'product.add_to_cart' | t }}

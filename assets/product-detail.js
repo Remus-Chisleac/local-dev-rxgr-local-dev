@@ -445,6 +445,9 @@
         var cartT = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
         store.flash(cartT.updated || 'Cart updated.', 'success');
       }
+      if (ok !== false && hasMatrix) {
+        syncMatrixBaseline();
+      }
       // Clear any stale inline pre-flight message.
       clearMessage();
     }).catch(function () {
@@ -462,6 +465,26 @@
     var hint = form.querySelector('[data-aico-pdp-message]') || createMessage();
     hint.textContent = messageFor(kind);
     hint.dataset.kind = 'error';
+  }
+
+  // After a successful bulk update the cart holds exactly what the matrix
+  // shows, so re-baseline the inputs (data-aico-initial feeds the "anything
+  // changed?" pre-flight) and flip the button label between "Add to cart"
+  // and "Update cart" to match the new cart state (server only stamps the
+  // label at render time).
+  function syncMatrixBaseline() {
+    var anyInCart = false;
+    Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]')).forEach(function (input) {
+      var n = parseInt(input.value, 10);
+      if (isNaN(n) || n < 0) { n = 0; }
+      input.setAttribute('data-aico-initial', String(n));
+      if (n > 0) { anyInCart = true; }
+    });
+    var label = form.querySelector('[data-aico-buy-label]');
+    if (label) {
+      var next = label.getAttribute(anyInCart ? 'data-label-update' : 'data-label-add');
+      if (next) { label.textContent = next; }
+    }
   }
 
   // Successful adds surface via the cart store's toast now, so clear any

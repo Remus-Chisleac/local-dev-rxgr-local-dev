@@ -3419,9 +3419,11 @@ button.aico-home-brand-card {
   width: 100%;
   min-height: 3rem;
   padding: 0.75rem 1.125rem;
-  background: var(--aico-fg);
-  color: var(--aico-bg);
-  border: 1px solid var(--aico-fg);
+  /* kybun orange (legacy-shop accent, same as the cockpit) — not
+     --color-accent, which is blue on kj. */
+  background: #e8702d;
+  color: #fff;
+  border: 1px solid #e8702d;
   border-radius: 0.125rem;
   font-size: 1rem;
   font-weight: 600;
@@ -3431,8 +3433,8 @@ button.aico-home-brand-card {
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .aico-pdp-buy-button:hover:not([disabled]) {
-  background: #2d2d2d;
-  border-color: #2d2d2d;
+  background: #d4611f;
+  border-color: #d4611f;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 .aico-pdp-buy-button:active:not([disabled]) {
