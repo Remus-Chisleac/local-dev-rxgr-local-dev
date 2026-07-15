@@ -47,7 +47,6 @@
   "aico_hotjar_enabled": true,
   "aico_hotjar_embed_code": "aico://secrets/aico_hotjar_embed_code",
   "aico_search_brand_ids": "3,6,7",
-  "aico_auth_background_image": "aico://media-gallery/files/105",
   "aico_preorder_hero_bg_asset": "preorder.png",
   "heading": "Welcome to your new shop",
   "subheading": "This storefront is powered by Aico. Edit your theme to make it yours.",
