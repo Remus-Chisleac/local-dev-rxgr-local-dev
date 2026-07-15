@@ -51,6 +51,9 @@
     { "template": "blog", "path": "blogs/news", "page_type": "blog" },
     { "template": "article", "path": "blogs/news/:handle", "page_type": "article" },
 
+    { "template": "blog", "path": "news", "page_type": "blog", "menu": false },
+    { "template": "article", "path": "news/:handle", "page_type": "article", "menu": false },
+
     { "template": "list-collections", "path": "collections", "page_type": "list-collections" },
     { "template": "collection", "path": "collections/:handle", "page_type": "collection" },
     { "template": "search", "path": "search", "page_type": "search" }
