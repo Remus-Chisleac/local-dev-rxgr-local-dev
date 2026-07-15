@@ -93,10 +93,10 @@
         "default": false
       },
       {
-        "id": "aico_hotjar_site_id",
+        "id": "aico_hotjar_embed_code",
         "type": "aico_secret",
-        "label": "Hotjar Site ID / tag id",
-        "info": "Either a legacy numeric Hotjar site id (e.g. 3616738) or, for Hotjar sites on the Contentsquare platform, the tag id from the install snippet's URL (https://t.contentsquare.net/uxa/<tag id>.js). Stored privately on the shop, never in the theme repository."
+        "label": "Hotjar tracking code",
+        "info": "The full <script>…</script> embed code from Hotjar's install page (Site settings → Installation), pasted verbatim. Emitted as-is into the <head> of every page, so it keeps working if Hotjar changes its tag format. Stored privately on the shop, never in the theme repository."
       }
     ]
   },
