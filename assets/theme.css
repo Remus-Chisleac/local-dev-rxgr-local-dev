@@ -10331,3 +10331,18 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-customer-view .aico-pdp-price-block {
   display: none !important;
 }
+
+/* ── Yotpo polish ──────────────────────────────────────────────
+   Cards: stars only — hide the "N Reviews" text the star-rating
+   widget appends. PDP: Yotpo ships pill-shaped buttons; flatten
+   them to the theme radius so they sit in the kj design. */
+.aico-product-card .yotpo-widget-instance .yotpo-sr-bottom-line-text,
+.aico-product-card .yotpo-widget-instance [class*="bottom-line-text"] {
+  display: none !important;
+}
+.aico-pdp-reviews .yotpo-widget-instance button,
+.aico-pdp-reviews .yotpo-widget-instance [role="button"],
+.aico-pdp-reviews .yotpo-widget-instance input[type="button"],
+.aico-pdp-reviews .yotpo-widget-instance input[type="submit"] {
+  border-radius: var(--aico-radius, 2px) !important;
+}
