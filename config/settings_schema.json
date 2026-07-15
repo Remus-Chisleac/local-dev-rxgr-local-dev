@@ -83,6 +83,24 @@
     ]
   },
   {
+    "name": "Hotjar",
+    "info": "Hotjar behavior analytics (session recordings, heatmaps) on every storefront page. Loads only when tracking is enabled AND the environment has a Hotjar Site ID secret — environments without the secret never load Hotjar, so recordings can be limited to production.",
+    "settings": [
+      {
+        "id": "aico_hotjar_enabled",
+        "type": "checkbox",
+        "label": "Enable Hotjar tracking",
+        "default": false
+      },
+      {
+        "id": "aico_hotjar_site_id",
+        "type": "aico_secret",
+        "label": "Hotjar Site ID",
+        "info": "Found in Hotjar under Sites & Organizations (a numeric id, e.g. 3616738). Stored privately on the shop, never in the theme repository."
+      }
+    ]
+  },
+  {
       "name": "Page banners",
       "info": "Media-gallery images for the fixed page banners. Managed in the shop's linked galleries.",
       "settings": [

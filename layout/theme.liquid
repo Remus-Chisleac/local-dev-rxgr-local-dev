@@ -157,6 +157,7 @@
     <script src="{{ 'header-panels.js' | asset_url }}" defer></script>
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
+  {% render 'hotjar-loader' %}
 </head>
 <body class="{% if aico_is_auth_shell %}aico-template-customers{% endif %}">
   {% if aico_is_auth_shell %}

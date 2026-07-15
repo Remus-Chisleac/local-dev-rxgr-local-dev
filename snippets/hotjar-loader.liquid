@@ -1,0 +1,20 @@
+{% comment %}
+  Hotjar tracking loader. Emits the standard Hotjar bootstrap that queues
+  `hj()` calls and injects the async site script. Gated on the tracking flag
+  + a configured Hotjar Site ID (a per-shop secret, aico://secrets/…), so it
+  is inert until a merchant enables it and the environment has a site id —
+  environments without the secret (local/preview) never load Hotjar.
+  Rendered once from layout/theme.liquid so it covers every page.
+{% endcomment %}
+{% if settings.aico_hotjar_enabled and settings.aico_hotjar_site_id and settings.aico_hotjar_site_id != '' %}
+  <script>
+    (function (h, o, t, j, a, r) {
+      h.hj = h.hj || function () { (h.hj.q = h.hj.q || []).push(arguments); };
+      h._hjSettings = { hjid: {{ settings.aico_hotjar_site_id | json }}, hjsv: 6 };
+      a = o.getElementsByTagName('head')[0];
+      r = o.createElement('script'); r.async = 1;
+      r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+      a.appendChild(r);
+    })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
+  </script>
+{% endif %}
