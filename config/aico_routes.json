@@ -1,7 +1,7 @@
 {
   "routes": [
-    { "template": "products", "path": "products" },
-    { "template": "products", "path": "products/filter/*" },
-    { "template": "product",  "path": "products/:handle" }
+    { "template": "products", "path": "products", "page_type": "collection" },
+    { "template": "products", "path": "products/filter/*", "page_type": "collection", "menu": false },
+    { "template": "product",  "path": "products/:handle", "page_type": "product" }
   ]
 }
