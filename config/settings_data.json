@@ -41,7 +41,7 @@
   "aico_et_kj_events_question4_image1": "aico://media-gallery/files/149",
   "aico_et_kj_events_question4_image2": "aico://media-gallery/files/150",
   "aico_et_kj_events_question4_image3": "aico://media-gallery/files/151",
-  "aico_reviews_enabled": false,
+  "aico_reviews_enabled": true,
   "aico_yotpo_app_key": "aico://secrets/aico_yotpo_app_key",
   "aico_yotpo_widget_instance_id": "aico://secrets/aico_yotpo_widget_instance_id",
   "aico_hotjar_enabled": true,
