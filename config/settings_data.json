@@ -56,14 +56,24 @@
       "hero_cta_label": "Zum Burgdorf beige",
       "hero_cta_url": "/products",
       "hero_image": "",
-      "featured_skus": ["KY001A", "KY002A", "KY003A", "KY000A"]
+      "featured_skus": [
+        "KY001A",
+        "KY002A",
+        "KY003A",
+        "KY000A"
+      ]
     },
     "joya-brand": {
       "hero_title": "Joya – Schweizer Komfortschuhe.",
       "hero_cta_label": "Zur Kollektion",
       "hero_cta_url": "/products",
       "hero_image": "",
-      "featured_skus": ["JY124A", "JY126A", "JY572A", "JY570A"]
+      "featured_skus": [
+        "JY124A",
+        "JY126A",
+        "JY572A",
+        "JY570A"
+      ]
     }
   }
 }
