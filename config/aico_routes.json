@@ -1,7 +1,58 @@
 {
   "routes": [
+    { "template": "index", "path": "", "page_type": "index" },
+
+    { "template": "customers/account", "path": "account", "page_type": "customers/account" },
+    { "template": "customers/login", "path": "account/login", "page_type": "customers/login", "menu": false },
+    { "template": "customers/register", "path": "account/register", "page_type": "customers/register", "menu": false },
+    { "template": "customers/recover_password", "path": "account/recover", "page_type": "customers/reset_password", "menu": false },
+    { "template": "customers/addresses", "path": "account/addresses", "page_type": "customers/addresses" },
+    { "template": "customers/aico_store_locator", "path": "account/store-locator", "page_type": "custom", "name": "StoreLocator" },
+    { "template": "customers/orders", "path": "account/orders", "page_type": "custom", "name": "Orders" },
+
+    { "template": "aico_exchange", "path": "exchange-platform", "page_type": "custom", "name": "ExchangePlatform" },
+    { "template": "aico_production_cockpit", "path": "production-cockpit", "page_type": "custom", "name": "ProductionCockpit" },
+    { "template": "aico_events_joya", "path": "events/joya", "page_type": "custom", "name": "EventsJoya" },
+    { "template": "aico_events_kybun_joya", "path": "events/kybun-joya", "page_type": "custom", "name": "EventsKybunJoya" },
+    { "template": "aico_ads_joya", "path": "ads/joya", "page_type": "custom", "name": "AdsJoya" },
+    { "template": "aico_ads_kybun_joya", "path": "ads/kybun-joya", "page_type": "custom", "name": "AdsKybunJoya" },
+
+    { "template": "cart", "path": "cart", "page_type": "cart" },
+    { "template": "cart2", "path": "cart2", "page_type": "custom", "name": "Cart2", "menu": false },
+    { "template": "cart-reconcile", "path": "cart/reconcile", "page_type": "custom", "name": "CartReconcile", "menu": false },
+    { "template": "checkout", "path": "checkout", "page_type": "custom", "name": "Checkout", "menu": false },
+    { "template": "checkout/processing", "path": "checkout/processing", "page_type": "custom", "name": "CheckoutProcessing", "menu": false },
+    { "template": "checkout/thank_you", "path": "checkout/thank-you", "page_type": "custom", "name": "CheckoutThankYou", "menu": false },
+
     { "template": "products", "path": "products", "page_type": "collection" },
     { "template": "products", "path": "products/filter/*", "page_type": "collection", "menu": false },
-    { "template": "product",  "path": "products/:handle", "page_type": "product" }
+    { "template": "product", "path": "products/:handle", "page_type": "product" },
+    { "template": "product", "path": "products/*", "page_type": "product", "menu": false },
+
+    { "template": "products", "path": "shop", "page_type": "collection", "menu": false },
+    { "template": "products", "path": "shop/filter/*", "page_type": "collection", "menu": false },
+    { "template": "product", "path": "shop/:handle", "page_type": "product", "menu": false },
+
+    { "template": "aico-preorder", "path": "preorder", "page_type": "custom", "name": "Preorder" },
+    { "template": "aico-preorder-thank-you", "path": "preorder/thank-you", "page_type": "custom", "name": "PreorderThankYou", "menu": false },
+
+    { "template": "contact", "path": "kontakt", "page_type": "custom", "name": "Contact" },
+    { "template": "contact", "path": "contact", "page_type": "custom", "name": "ContactEn", "menu": false },
+
+    { "template": "brand", "path": "brand/:handle", "page_type": "custom", "name": "Brand", "params": { "handle": "brand" } },
+
+    { "template": "page.terms", "path": "pages/terms", "page_type": "page" },
+    { "template": "page.privacy", "path": "pages/privacy", "page_type": "page" },
+    { "template": "page.imprint", "path": "pages/imprint", "page_type": "page" },
+    { "template": "page.versandkosten", "path": "pages/versandkosten", "page_type": "page" },
+    { "template": "page", "path": "pages/:handle", "page_type": "page" },
+    { "template": "page", "path": "pages/:handle/*", "page_type": "page", "menu": false },
+
+    { "template": "blog", "path": "blogs/news", "page_type": "blog" },
+    { "template": "article", "path": "blogs/news/:handle", "page_type": "article" },
+
+    { "template": "list-collections", "path": "collections", "page_type": "list-collections" },
+    { "template": "collection", "path": "collections/:handle", "page_type": "collection" },
+    { "template": "search", "path": "search", "page_type": "search" }
   ]
 }
