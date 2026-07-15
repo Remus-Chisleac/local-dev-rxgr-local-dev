@@ -95,8 +95,8 @@
       {
         "id": "aico_hotjar_site_id",
         "type": "aico_secret",
-        "label": "Hotjar Site ID",
-        "info": "Found in Hotjar under Sites & Organizations (a numeric id, e.g. 3616738). Stored privately on the shop, never in the theme repository."
+        "label": "Hotjar Site ID / tag id",
+        "info": "Either a legacy numeric Hotjar site id (e.g. 3616738) or, for Hotjar sites on the Contentsquare platform, the tag id from the install snippet's URL (https://t.contentsquare.net/uxa/<tag id>.js). Stored privately on the shop, never in the theme repository."
       }
     ]
   },
