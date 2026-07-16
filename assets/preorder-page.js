@@ -1590,7 +1590,16 @@
     function setFlyerQuantity(flyerId, quantity) {
       if (cartEnabled && cartCtrl) {
         flyerPendingSave[flyerId] = quantity;
-        cartCtrl.updateFlyerQuantity(flyerId, quantity);
+        // Once the write settles, re-adopt server truth whatever it is — a
+        // rejected or clamped write must win over the optimistic slider value.
+        // Skip the clear when a newer edit has already replaced the marker.
+        var settle = function () {
+          if (flyerPendingSave[flyerId] === quantity) {
+            delete flyerPendingSave[flyerId];
+          }
+          renderFlyers(sessionData && sessionData.flyers);
+        };
+        cartCtrl.updateFlyerQuantity(flyerId, quantity).then(settle, settle);
         return;
       }
       flyerQtyLocal[flyerId] = quantity;

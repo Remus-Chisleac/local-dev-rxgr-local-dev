@@ -328,7 +328,7 @@
   CartController.prototype.updateFlyerQuantity = function (flyerId, quantity) {
     var self = this;
     quantity = Math.max(0, Math.min(FLYER_MAX, Math.floor(quantity) || 0));
-    this._enqueue(function () {
+    return this._enqueue(function () {
       return self._saveFlyerCell(flyerId, quantity);
     });
   };
