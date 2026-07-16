@@ -1569,6 +1569,8 @@
     var PCS_PER_FLYER = 25;
     var flyerQtyLocal = {};
     var flyerDebounceTimers = {};
+    var flyerDragActive = {};
+    var flyerPendingSave = {};
 
     function getFlyerCopy() {
       return {
@@ -1587,6 +1589,7 @@
 
     function setFlyerQuantity(flyerId, quantity) {
       if (cartEnabled && cartCtrl) {
+        flyerPendingSave[flyerId] = quantity;
         cartCtrl.updateFlyerQuantity(flyerId, quantity);
         return;
       }
@@ -1607,10 +1610,19 @@
       var grid = root.querySelector('[data-aico-preorder-flyers-grid]');
       if (!grid) return;
       grid.querySelectorAll('[data-aico-preorder-flyer-range]').forEach(function (range) {
+        var flyerId = parseInt(range.getAttribute('data-flyer-id'), 10);
         function syncTrack() {
           range.style.setProperty('--flyer-value', String(range.value));
         }
         syncTrack();
+        range.addEventListener('pointerdown', function () {
+          flyerDragActive[flyerId] = true;
+        });
+        ['pointerup', 'pointercancel'].forEach(function (evt) {
+          range.addEventListener(evt, function () {
+            flyerDragActive[flyerId] = false;
+          });
+        });
         range.addEventListener('input', function () {
           syncTrack();
           var card = range.closest('[data-aico-preorder-flyer-card]');
@@ -1618,12 +1630,12 @@
           if (card) updateFlyerCardTotals(card, qty);
         });
         range.addEventListener('change', function () {
-          var flyerId = parseInt(range.getAttribute('data-flyer-id'), 10);
           var qty = parseInt(range.value, 10) || 0;
           if (flyerDebounceTimers[flyerId]) {
             clearTimeout(flyerDebounceTimers[flyerId]);
           }
           flyerDebounceTimers[flyerId] = setTimeout(function () {
+            delete flyerDebounceTimers[flyerId];
             setFlyerQuantity(flyerId, qty);
           }, 300);
         });
@@ -1639,6 +1651,34 @@
       }
       var copy = getFlyerCopy();
       section.hidden = false;
+      // A cart echo landing mid-interaction must not rebuild the grid: replacing
+      // the <input> under the user's pointer kills the drag (its change event
+      // never fires on the detached element), silently discarding the edit. When
+      // the flyer set is unchanged, update the existing cards in place and leave
+      // any slider the user is still editing (drag, debounce, unsettled save) alone.
+      var existingCards = grid.querySelectorAll('[data-aico-preorder-flyer-card]');
+      var sameFlyerSet =
+        existingCards.length === flyers.length &&
+        flyers.every(function (f) {
+          return grid.querySelector('[data-aico-preorder-flyer-card][data-flyer-id="' + f.id + '"]');
+        });
+      if (sameFlyerSet) {
+        flyers.forEach(function (f) {
+          var card = grid.querySelector('[data-aico-preorder-flyer-card][data-flyer-id="' + f.id + '"]');
+          var range = card && card.querySelector('[data-aico-preorder-flyer-range]');
+          if (!range) return;
+          if (flyerDragActive[f.id] || flyerDebounceTimers[f.id]) return;
+          var qty = getFlyerQuantity(f.id);
+          if (flyerPendingSave[f.id] != null) {
+            if (qty !== flyerPendingSave[f.id]) return;
+            delete flyerPendingSave[f.id];
+          }
+          range.value = String(qty);
+          range.style.setProperty('--flyer-value', String(qty));
+          updateFlyerCardTotals(card, qty);
+        });
+        return;
+      }
       grid.innerHTML = flyers
         .map(function (f) {
           var flyerId = f.id;
