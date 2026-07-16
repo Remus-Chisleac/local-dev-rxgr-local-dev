@@ -5007,6 +5007,13 @@ button.aico-home-brand-card {
 .aico-checkout-submit { width: 100%; padding: 0.875rem 1.25rem; font-size: 1rem; }
 .aico-checkout-submit--inactive { opacity: 0.55; cursor: not-allowed; }
 
+/* Checkout CTAs (cart page + checkout submit) use the kj orange, not the accent blue */
+.aico-cart-checkout-cta,
+.aico-checkout-submit {
+  background: #ea580c;
+  border-color: #ea580c;
+}
+
 .aico-checkout-summary {
   background: #ffffff;
   border: 1px solid var(--aico-border, #e5e7eb);
