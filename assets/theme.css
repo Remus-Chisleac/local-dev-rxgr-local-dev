@@ -565,8 +565,9 @@ body.aico-template-customers {
   justify-content: center;
   width: 100%;
   padding: 0.625rem 1rem;
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
+  /* kybun orange (same as .aico-button-primary) — not the blue accent. */
+  border: 1px solid #e8702d;
+  background: #e8702d;
   color: #ffffff;
   font: inherit;
   font-weight: 500;
@@ -577,7 +578,7 @@ body.aico-template-customers {
 .aico-auth-button:hover { filter: brightness(0.95); }
 .aico-auth-button-outline {
   background: transparent;
-  color: var(--color-accent);
+  color: #e8702d;
   margin-top: 0.5rem;
 }
 
@@ -4350,9 +4351,11 @@ button.aico-home-brand-card {
 .aico-button:hover { filter: brightness(0.95); }
 .aico-button:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
 .aico-button-primary {
-  background: var(--color-accent, #2563eb);
+  /* kybun orange (legacy-shop primary, same as the cockpit and PDP buy
+     button) — NOT --color-accent, which stays blue for links/focus rings. */
+  background: #e8702d;
   color: #ffffff;
-  border-color: var(--color-accent, #2563eb);
+  border-color: #e8702d;
 }
 .aico-button-outline {
   background: #ffffff;
@@ -5007,12 +5010,8 @@ button.aico-home-brand-card {
 .aico-checkout-submit { width: 100%; padding: 0.875rem 1.25rem; font-size: 1rem; }
 .aico-checkout-submit--inactive { opacity: 0.55; cursor: not-allowed; }
 
-/* Checkout CTAs (cart page + checkout submit) use the kj orange, not the accent blue */
-.aico-cart-checkout-cta,
-.aico-checkout-submit {
-  background: #ea580c;
-  border-color: #ea580c;
-}
+/* Checkout CTAs (cart page + checkout submit) inherit the kj orange from
+   .aico-button-primary — no per-surface override needed. */
 
 .aico-checkout-summary {
   background: #ffffff;
