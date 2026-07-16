@@ -420,7 +420,16 @@
         }
       },
 
+      // Credit-card orders carry the Adyen hosted-page URL (`url` on the
+      // Pusher event, `hosted_page_url` on the poll response) — the shopper
+      // must be sent THERE to pay, mirroring the legacy b2b-shop
+      // `redirectToUrl`. Only URL-less orders go straight to thank-you.
       navigateToThankYou: function (data) {
+        var hostedPageUrl = data.url || data.hosted_page_url;
+        if (hostedPageUrl) {
+          window.location = hostedPageUrl;
+          return;
+        }
         var thankYou = routes.thankYouUrl || '/checkout/thank-you';
         var query = new URLSearchParams(window.location.search);
         if (data.ecommerce_order_number) query.set('order_number', data.ecommerce_order_number);
@@ -439,7 +448,10 @@
               if (!body) return;
               var status = body.status || body.payment_status;
               if (status && status !== 'SAVING' && status !== 'paymentPending') {
-                self.navigateToThankYou({ ecommerce_order_number: null });
+                self.navigateToThankYou({
+                  hosted_page_url: body.hosted_page_url,
+                  ecommerce_order_number: body.ecommerce_order_number,
+                });
               } else if (attempts < 60) {
                 setTimeout(tick, 2000);
               }
@@ -449,6 +461,66 @@
             });
         };
         setTimeout(tick, 2000);
+      },
+    };
+  }
+
+  /**
+   * Thank-you page payment verification. Adyen's Hosted Checkout redirects
+   * back with `sessionId` + `sessionResult` in the query string; those are
+   * verified against Adyen via /checkout/payment-status before the success
+   * card is shown (mirrors the legacy b2b-shop thank-you page, which called
+   * `/orders/payment-session-status/handle`). Without session params — the
+   * non-credit-card flow — the template renders statically and this
+   * component is never mounted.
+   *
+   * States: 'verifying' → 'success' | 'cancelled' (session verified but not
+   * completed — includes paymentPending, expired, refused) | 'unverified'
+   * (verification unavailable after retries; neutral copy, no false claims).
+   */
+  function buildCheckoutThankYouPage() {
+    return {
+      state: 'verifying',
+
+      init: function () {
+        var query = new URLSearchParams(window.location.search);
+        var sessionId = query.get('sessionId');
+        var sessionResult = query.get('sessionResult');
+        if (!sessionId || !sessionResult) {
+          this.state = 'success';
+          return;
+        }
+        this.verify(sessionId, sessionResult, 0);
+      },
+
+      verify: function (sessionId, sessionResult, attempt) {
+        var self = this;
+        var statusUrl = routes.paymentStatusUrl || '/checkout/payment-status';
+        var retry = function () {
+          if (attempt < 2) {
+            setTimeout(function () { self.verify(sessionId, sessionResult, attempt + 1); }, 2000);
+          } else {
+            self.state = 'unverified';
+          }
+        };
+        fetch(
+          statusUrl
+            + '?session_id=' + encodeURIComponent(sessionId)
+            + '&session_result=' + encodeURIComponent(sessionResult),
+          { headers: jsonHeaders(), credentials: 'same-origin' }
+        )
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (body) {
+            var status = body && body.payment_session_status;
+            if (!status) {
+              retry();
+            } else if (status === 'completed') {
+              self.state = 'success';
+            } else {
+              self.state = 'cancelled';
+            }
+          })
+          .catch(retry);
       },
     };
   }
@@ -465,6 +537,10 @@
 
     Alpine.data('aicoCheckoutProcessingPage', function () {
       return buildCheckoutProcessingPage();
+    });
+
+    Alpine.data('aicoCheckoutThankYouPage', function () {
+      return buildCheckoutThankYouPage();
     });
   }
 

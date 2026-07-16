@@ -112,6 +112,17 @@
         {%- comment -%} Flip to true when B2B credit-limit gating should block checkout again. {%- endcomment -%}
         credit_limit_enforcement: false
       };
+      {% if aico_pusher %}
+      {%- comment -%} Public Pusher credentials (key + cluster only) for the
+        checkout processing page's order-saved listener in checkout.js.
+        Absent when the backend has no Pusher broadcasting configured —
+        checkout.js then falls back to polling /checkout/payment-status. {%- endcomment -%}
+      window.__AICO_PUSHER__ = {
+        key: {{ aico_pusher.key | json }},
+        cluster: {{ aico_pusher.cluster | json }},
+        appSlug: {{ aico_pusher.app_slug | json }}
+      };
+      {% endif %}
     </script>
     {% if cart %}
       {%- comment -%}
@@ -147,6 +158,11 @@
       <script src="{{ 'cart2.js' | asset_url }}" defer></script>
     {% endif %}
     {% if template.name == 'checkout' or template.directory == 'checkout' %}
+      {% if aico_pusher and template.name == 'checkout/processing' %}
+        {%- comment -%} Vendored pusher-js (v8.5.0, assets/pusher.min.js) — only the
+          processing page listens for AicoShopOrderCreatedEvent. {%- endcomment -%}
+        <script src="{{ 'pusher.min.js' | asset_url }}" defer></script>
+      {% endif %}
       <script src="{{ 'checkout.js' | asset_url }}" defer></script>
     {% endif %}
     {%- comment -%}

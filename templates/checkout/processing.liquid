@@ -1,11 +1,13 @@
 {% comment %}
-  Post-Adyen-redirect waiting page. Subscribes via Pusher to the
-  `AicoShopOrderCreatedEvent` for the order id passed in the URL query
-  (`?order_id=...&session_id=...&session_result=...`), and navigates
-  to /checkout/thank-you when the event lands.
-
-  Falls back to the b2b-shop's plain Pusher pattern — no defensive
-  polling layer in v1 (per your "make it like b2b-shop" call).
+  Pre-payment waiting page for credit-card orders whose save runs async
+  (large carts: the submit response has no hosted_page_url yet). The URL
+  query carries `?order_id=...` only. checkout.js subscribes via Pusher
+  (`window.__AICO_PUSHER__`, emitted by the layout when the backend has
+  Pusher configured) to `AicoShopOrderCreatedEvent` for that order; the
+  event's `url` is the Adyen hosted payment page and the shopper is
+  redirected there. Without Pusher it polls /checkout/payment-status,
+  whose response carries `hosted_page_url` once the order is saved.
+  Only URL-less events/orders go straight to /checkout/thank-you.
 {% endcomment %}
 
 <main class="aico-checkout-processing"

@@ -5123,6 +5123,10 @@ button.aico-home-brand-card {
 .aico-checkout-thank-you-totals dt { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-thank-you-totals dd { margin: 0; font-weight: 600; }
 .aico-checkout-thank-you-email { margin: 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
+/* Adyen return-leg error card (payment cancelled / status unverified). */
+.aico-checkout-payment-error { gap: 0.75rem; }
+.aico-checkout-payment-error p { margin: 0; font-size: 0.9375rem; color: var(--aico-fg, #1a1a1a); }
+.aico-checkout-payment-error a { color: inherit; text-decoration: underline; }
 
 /* ───── Preorder catalog + checkout (b2b-shop parity) ───── */
 .aico-preorder-main-wrap {

@@ -521,7 +521,21 @@
       "title": "Vielen Dank für Ihre Bestellung",
       "order_number": "Bestellnummer",
       "email_confirmation": "Eine Bestellbestätigung wurde Ihnen per E-Mail zugesendet.",
-      "continue": "Weiter einkaufen"
+      "continue": "Weiter einkaufen",
+      "verifying": "Wir bestätigen deine Zahlung…"
+    },
+    "payment_error": {
+      "title": "Zahlung nicht abgeschlossen",
+      "cancelled": "Die Kreditkarten-Zahlung wurde nicht abgeschlossen.",
+      "reference_number": "Mit dieser Referenz-Nummer",
+      "customer_service": " kannst du dich bei unserem Innendienst melden, sie können die Bestellung damit finden.",
+      "order_not_placed": "Bitte beachte, dass diese Nummer lediglich eine Referenz ist und deine Bestellung noch nicht abgeschlossen ist.",
+      "no_reservation": "Bis zur endgültigen Bestätigung erfolgt keine automatische Reservierung oder Versandvorbereitung.",
+      "questions_before_email": "Bei Fragen sind wir gerne für dich da, einfach eine E-Mail an",
+      "questions_after_email": " senden.",
+      "thank_you": "Vielen Dank.",
+      "unverified_title": "Zahlungsstatus unbekannt",
+      "unverified": "Wir konnten den Status deiner Zahlung nicht bestätigen. Bitte prüfe deinen Posteingang auf eine Bestellbestätigung oder melde dich bei deinem Ansprechpartner, bevor du erneut bestellst."
     }
   },
   "aico_preorder": {

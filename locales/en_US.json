@@ -521,7 +521,21 @@
       "title": "Thank you for your order",
       "order_number": "Order number",
       "email_confirmation": "An order confirmation has been sent to you by email.",
-      "continue": "Continue shopping"
+      "continue": "Continue shopping",
+      "verifying": "We're confirming your payment…"
+    },
+    "payment_error": {
+      "title": "Payment not completed",
+      "cancelled": "The credit card payment was not completed.",
+      "reference_number": "With this reference number",
+      "customer_service": ", you can contact our customer service; they can identify the order with it.",
+      "order_not_placed": "Please note that this number is only a reference and your order is not completed yet.",
+      "no_reservation": "Until final confirmation, no automatic reservation or shipping preparation will take place.",
+      "questions_before_email": "If you have any questions, we are happy to help, just send an email to",
+      "questions_after_email": ".",
+      "thank_you": "Thank you.",
+      "unverified_title": "Payment status unknown",
+      "unverified": "We could not confirm the status of your payment. Please check your inbox for an order confirmation email or contact your sales representative before ordering again."
     }
   },
   "aico_preorder": {

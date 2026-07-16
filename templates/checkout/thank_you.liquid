@@ -1,23 +1,47 @@
 {% comment %}
-  Order-confirmation page. Render-only — reads order details off the
-  URL query string (the submit response and Pusher event both
-  redirect here with the relevant fields). Mirrors b2b-shop's
-  thank-you page: order number, total, message about the
-  confirmation email, return-to-shop CTA.
+  Order-confirmation page. Reads order details off the URL query string.
+  Three producers redirect here, with two param dialects:
+    - the checkout submit + processing pages use order_number / shipping /
+      cc_fee (see assets/checkout.js);
+    - Adyen's Hosted Checkout returnUrl (built server-side in
+      AdyenIntegrationService::createPaymentSession) uses the legacy
+      b2b-shop names orderRef / shippingCost / fee, and Adyen appends
+      sessionId + sessionResult.
+  Both dialects are accepted via the fallback assigns below.
+
+  When sessionId + sessionResult are present (the Adyen return leg) the
+  page mounts the `aicoCheckoutThankYouPage` Alpine component, which
+  verifies the payment session via /checkout/payment-status before
+  showing the success card — a cancelled/refused payment renders the
+  payment-error card instead (mirrors the legacy b2b-shop thank-you).
+  Without session params the success card renders statically.
+
+  Background color: the page gutters take the current selected brand's
+  `color_schema.checkoutConfirmation.bg` (exposed on
+  `customer.aico_selected_brand.aico_checkout_confirmation_bg_color`), applied at
+  render time as `--aico-confirmation-bg` so there is no flash. Same treatment as
+  the preorder confirmation; the centered white card stays readable on any brand
+  color and falls back to the default page background when the brand sets none.
 {% endcomment %}
 
 {%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_checkout_confirmation_bg_color -%}
+{%- assign ty_order_number = request.query.order_number | default: request.query.orderRef -%}
+{%- assign ty_shipping = request.query.shipping | default: request.query.shippingCost -%}
+{%- assign ty_cc_fee = request.query.cc_fee | default: request.query.fee -%}
+{%- assign ty_needs_verification = false -%}
+{%- if request.query.sessionId and request.query.sessionResult -%}
+  {%- assign ty_needs_verification = true -%}
+{%- endif -%}
 
-<main class="aico-checkout-thank-you"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
-  <div class="aico-page-container">
+{% capture ty_success_card %}
     <div class="aico-checkout-thank-you-card">
       <div class="aico-checkout-thank-you-icon" aria-hidden="true">&#10003;</div>
       <h1 class="aico-checkout-thank-you-title">{{ 'checkout.thank_you.title' | t }}</h1>
 
-      {% if request.query.order_number %}
+      {% if ty_order_number %}
         <p class="aico-checkout-thank-you-order">
           {{ 'checkout.thank_you.order_number' | t }}:
-          <strong>{{ request.query.order_number }}</strong>
+          <strong>{{ ty_order_number }}</strong>
         </p>
       {% endif %}
 
@@ -28,10 +52,10 @@
             <dd>{{ request.query.subtotal | money_with_currency: request.query.currency }}</dd>
           </div>
         {% endif %}
-        {% if request.query.shipping %}
+        {% if ty_shipping %}
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.shipping' | t }}</dt>
-            <dd>{{ request.query.shipping | money_with_currency: request.query.currency }}</dd>
+            <dd>{{ ty_shipping | money_with_currency: request.query.currency }}</dd>
           </div>
         {% endif %}
         {% if request.query.vat %}
@@ -40,10 +64,10 @@
             <dd>{{ request.query.vat | money_with_currency: request.query.currency }}</dd>
           </div>
         {% endif %}
-        {% if request.query.cc_fee %}
+        {% if ty_cc_fee %}
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
-            <dd>{{ request.query.cc_fee | money_with_currency: request.query.currency }}</dd>
+            <dd>{{ ty_cc_fee | money_with_currency: request.query.currency }}</dd>
           </div>
         {% endif %}
         {% if request.query.total %}
@@ -60,5 +84,66 @@
         {{ 'checkout.thank_you.continue' | t }}
       </a>
     </div>
+{% endcapture %}
+
+<main class="aico-checkout-thank-you"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
+  <div class="aico-page-container">
+    {% if ty_needs_verification %}
+      <div x-data="aicoCheckoutThankYouPage" x-init="init()">
+        <template x-if="state === 'verifying'">
+          <div class="aico-checkout-thank-you-card">
+            <div class="aico-checkout-processing-spinner" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            </div>
+            <p class="aico-checkout-thank-you-email">{{ 'checkout.thank_you.verifying' | t }}</p>
+          </div>
+        </template>
+
+        <template x-if="state === 'success'">
+          {{ ty_success_card }}
+        </template>
+
+        <template x-if="state === 'cancelled'">
+          <div class="aico-checkout-thank-you-card aico-checkout-payment-error">
+            <h1 class="aico-checkout-thank-you-title">{{ 'checkout.payment_error.title' | t }}</h1>
+            <p>{{ 'checkout.payment_error.cancelled' | t }}</p>
+            {% if ty_order_number %}
+              <p>
+                {{ 'checkout.payment_error.reference_number' | t }}
+                <strong>{{ ty_order_number }}</strong>{{ 'checkout.payment_error.customer_service' | t }}
+              </p>
+            {% endif %}
+            <p>{{ 'checkout.payment_error.order_not_placed' | t }}</p>
+            <p>{{ 'checkout.payment_error.no_reservation' | t }}</p>
+            <p>
+              {{ 'checkout.payment_error.questions_before_email' | t }}
+              <a href="mailto:partner@kybunjoya.swiss"><strong>partner@kybunjoya.swiss</strong></a>{{ 'checkout.payment_error.questions_after_email' | t }}
+            </p>
+            <p>{{ 'checkout.payment_error.thank_you' | t }}</p>
+          </div>
+        </template>
+
+        <template x-if="state === 'unverified'">
+          <div class="aico-checkout-thank-you-card aico-checkout-payment-error">
+            <h1 class="aico-checkout-thank-you-title">{{ 'checkout.payment_error.unverified_title' | t }}</h1>
+            <p>{{ 'checkout.payment_error.unverified' | t }}</p>
+            {% if ty_order_number %}
+              <p>
+                {{ 'checkout.payment_error.reference_number' | t }}
+                <strong>{{ ty_order_number }}</strong>{{ 'checkout.payment_error.customer_service' | t }}
+              </p>
+            {% endif %}
+            <p>
+              {{ 'checkout.payment_error.questions_before_email' | t }}
+              <a href="mailto:partner@kybunjoya.swiss"><strong>partner@kybunjoya.swiss</strong></a>{{ 'checkout.payment_error.questions_after_email' | t }}
+            </p>
+          </div>
+        </template>
+      </div>
+    {% else %}
+      {{ ty_success_card }}
+    {% endif %}
   </div>
 </main>
