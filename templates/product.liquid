@@ -40,7 +40,14 @@
     <div class="aico-pdp-hero">
 
       {%- comment -%} ──── product-gallery (inline) ──── {%- endcomment -%}
-      <section class="aico-pdp-gallery" data-aico-pdp-gallery aria-label="{{ 'product.gallery.aria' | t }}">
+      <section
+        class="aico-pdp-gallery"
+        data-aico-pdp-gallery
+        {% if product.sku and product.sku != '' %}data-aico-product-sku="{{ product.sku }}"{% endif %}
+        data-aico-360-aria="{{ 'product.gallery.three_sixty_aria' | t }}"
+        data-aico-360-hint="{{ 'product.gallery.rotate_hint' | t }}"
+        aria-label="{{ 'product.gallery.aria' | t }}"
+      >
         {% if product.images.size > 0 %}
           <div class="aico-pdp-gallery-frame">
             {% for image in product.images %}
@@ -589,13 +596,12 @@
 
     {%- comment -%} ──── product-more-colors (inline) ──── {%- endcomment -%}
     {%- comment -%}
-      Until a true sibling-by-color endpoint lands, "More colors" reuses
-      the related-product set: prepend the current product as the
-      always-active tile, then render the first N related entries so the
-      grid feels alive. When PIM ships per-product color siblings we'll
-      swap this loop to `product.aico_color_siblings`.
+      Colour siblings come from the PIM connected-products relation
+      (`product.aico_color_siblings`) — the same source the legacy b2b-shop
+      rendered as its "More colors" strip. The current product is prepended
+      as the always-active tile.
     {%- endcomment -%}
-    {% if product.aico_related_products.size > 0 %}
+    {% if product.aico_color_siblings.size > 0 %}
       <section class="aico-pdp-colors" aria-labelledby="aico-pdp-colors-heading">
         <h2 id="aico-pdp-colors-heading" class="aico-pdp-section-heading">{{ 'product.more_colors' | t }}</h2>
         <div class="aico-pdp-color-grid">
@@ -604,7 +610,7 @@
               <img src="{{ product.featured_image }}" alt="" loading="lazy" decoding="async">
             {% endif %}
           </a>
-          {% for sibling in product.aico_related_products limit: 7 %}
+          {% for sibling in product.aico_color_siblings limit: 11 %}
             <a class="aico-pdp-color-tile" href="{{ sibling.url }}" title="{{ sibling.title }}" aria-label="{{ sibling.title }}">
               {% if sibling.featured_image %}
                 <img src="{{ sibling.featured_image }}" alt="" loading="lazy" decoding="async">

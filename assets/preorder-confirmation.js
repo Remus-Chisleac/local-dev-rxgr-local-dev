@@ -19,11 +19,18 @@
  *
  * Backend contract (GET /preorder/cart/confirmation.js?cart_id=):
  *   { aico_confirmation: {
+ *       processing: false,
  *       order_numbers: string[], preorder_id, cart_id, status,
  *       delivery_address, item_count, total_amount, discount_percent|null,
  *       per_date: [ { order_number, delivery_date, quantity, total_amount } ],
  *       pdf: { file_url|null, file_name|null }, pdf_ready
  *     } | null }
+ *
+ * While a dispatched submit/edit is still running, the backend instead returns
+ * a slim processing block — { processing: true, cart_id, status, pusher } —
+ * NEVER the previous submission's stale orders/PDF. The panel then shows a
+ * "we are processing your preorder" spinner state and re-fetches when
+ * PreorderProcessedEvent arrives on the pusher channel (or via polling).
  *
  * Framework-free, matches the other preorder-*.js modules (no Alpine).
  */
@@ -32,6 +39,7 @@
 
   var POLL_INTERVAL = 2000; // legacy parity (2s)
   var MAX_DETAIL_POLLS = 60; // ~2 min waiting for the umbrella preorder
+  var MAX_PROCESSING_POLLS = 300; // ~10 min while the submit/edit is processing
   var MAX_PDF_POLLS = 90; // ~3 min waiting for the PDF render
   var PUSHER_FALLBACK_MS = 20000; // if the live socket delivers nothing in 20s, poll instead
 
@@ -88,6 +96,7 @@
     this.currency = root.getAttribute('data-aico-confirmation-currency') || '';
 
     this.detailPolls = 0;
+    this.processingPolls = 0;
     this.pdfPolls = 0;
     this.pdfReady = false;
     this.detailLoaded = false;
@@ -117,12 +126,28 @@
     this.poll();
   };
 
+  /**
+   * The "we are processing your preorder" state: spinner + processing copy,
+   * details hidden (via the --processing class) so a re-submit never shows the
+   * PREVIOUS submission's numbers while the queue is still merging the new one.
+   */
   Confirmation.prototype.renderPending = function () {
+    this.root.classList.add('aico-preorder-confirmation--processing');
+    this.root.setAttribute('aria-busy', 'true');
     var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
     if (headerEl) {
-      headerEl.textContent = copyOf(this.root, 'title', 'Thank you');
+      headerEl.textContent = copyOf(this.root, 'processing-title', 'We are processing your preorder…');
+    }
+    var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
+    if (messageEl) {
+      messageEl.textContent = copyOf(this.root, 'processing-message', '');
     }
     this.setPdfState('generating');
+  };
+
+  Confirmation.prototype.clearPending = function () {
+    this.root.classList.remove('aico-preorder-confirmation--processing');
+    this.root.removeAttribute('aria-busy');
   };
 
   Confirmation.prototype.poll = function () {
@@ -153,17 +178,25 @@
     // Stop once we have details AND the PDF (or a delivered broadcast).
     if (this.detailLoaded && this.pdfReady) return;
 
-    // Pusher is primary when available: once we have the details and the backend
-    // offers a live channel, STOP polling and let the broadcast deliver the PDF.
-    // A single fallback timer resumes polling if the socket delivers nothing —
-    // so we never poll in parallel with a working pusher connection.
+    var processing = !!(confirmation && confirmation.processing);
+
+    // Pusher is primary when available: while we wait on the processed details
+    // or (details in hand) on the PDF, STOP polling and let the broadcast drive
+    // the update. A single fallback timer resumes polling if the socket
+    // delivers nothing — so we never poll in parallel with a working pusher
+    // connection.
     var pusherOffered = !!(confirmation && confirmation.pusher && confirmation.pusher.key && confirmation.pusher.channel);
-    if (this.detailLoaded && !this.pdfReady && (pusherOffered || this._pusherActive)) {
+    if ((processing || (this.detailLoaded && !this.pdfReady)) && (pusherOffered || this._pusherActive)) {
       this.armPusherFallback();
       return;
     }
 
-    if (!confirmation) {
+    if (processing) {
+      this.processingPolls += 1;
+      // Give up tight-polling eventually; the spinner stays and a late pusher
+      // event (still bound) can resolve the page.
+      if (this.processingPolls >= MAX_PROCESSING_POLLS) return;
+    } else if (!confirmation) {
       this.detailPolls += 1;
       if (this.detailPolls >= MAX_DETAIL_POLLS) return; // submission likely still queued
     } else if (!this.pdfReady) {
@@ -216,7 +249,21 @@
   /** Render the full confirmation from a payload (poll or broadcast-merged). */
   Confirmation.prototype.apply = function (confirmation) {
     if (!confirmation || typeof confirmation !== 'object') return;
+
+    // Submit/edit still running on the queue: show (or keep) the processing
+    // spinner — the payload carries no details yet, only the pusher block.
+    // Subscribe now so PreorderProcessedEvent can flip us to the real data.
+    if (confirmation.processing) {
+      this.root.hidden = false;
+      this.renderPending();
+      if (!this._pusherSubscribed && confirmation.pusher) {
+        this.subscribePusher(confirmation.pusher);
+      }
+      return;
+    }
+
     this.detailLoaded = true;
+    this.clearPending();
     this.root.hidden = false;
 
     var root = this.root;
@@ -371,6 +418,7 @@
     if (!config || !config.key || !config.channel) return;
     this._pusherSubscribed = true;
     var eventName = config.event || 'PreorderPdfCreatedEvent';
+    var processedEventName = config.processed_event || 'PreorderProcessedEvent';
     this.loadPusher()
       .then(function (Pusher) {
         if (!Pusher) { self.resumePolling(); return; } // script blocked → poll
@@ -387,11 +435,17 @@
             self.stopPolling();
             if (!self.pdfReady) self.poll();
           });
+          // The async submit/edit finished processing — the details are final;
+          // re-fetch the confirmation to swap the processing spinner for them.
+          channel.bind(processedEventName, function () {
+            self.poll();
+          });
           channel.bind(eventName, function (data) {
-            if (data && data.fileUrl) {
+            if (data && data.fileUrl && self.detailLoaded) {
               self.showPdfLink(data.fileUrl, data.fileName);
             } else {
-              // Trust the event arrival; re-poll to pull the stored locator.
+              // No locator in the event, or the details themselves are still
+              // pending (processed event missed?) — re-poll for the full block.
               self.poll();
             }
           });

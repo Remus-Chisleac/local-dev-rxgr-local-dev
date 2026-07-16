@@ -344,7 +344,9 @@
       "previous": "Vorheriges Bild",
       "next": "Nächstes Bild",
       "thumb_aria": "Dieses Bild anzeigen",
-      "no_image": "Kein Bild verfügbar"
+      "no_image": "Kein Bild verfügbar",
+      "three_sixty_aria": "360°-Ansicht anzeigen",
+      "rotate_hint": "Ziehen zum Drehen"
     },
     "size_matrix": {
       "aria": "Grössenraster",
@@ -674,6 +676,8 @@
       "message": "Wir haben Ihre Vorbestellung erhalten und mit der Bearbeitung begonnen. Ein Bestätigungsdokument ist unterwegs.",
       "update_title": "Ihre Vorbestellung wurde aktualisiert",
       "update_message": "Sie haben keine neue Vorbestellung aufgegeben — Ihre bestehende Vorbestellung wurde aktualisiert. Das neue Bestätigungsdokument ersetzt das vorherige.",
+      "processing_title": "Ihre Vorbestellung wird verarbeitet…",
+      "processing_message": "Das dauert nur einen Moment — die Seite aktualisiert sich automatisch, sobald Ihre Vorbestellung verarbeitet wurde.",
       "number_label": "Bestellnummer",
       "number_pending": "Wird zugewiesen…",
       "reference_label": "Vorbestellungsreferenz",

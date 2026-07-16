@@ -9,6 +9,12 @@
   (generating… → download link, broadcast-driven when a pusher key is set,
   polling otherwise).
 
+  While the queued submit/edit is still processing, the endpoint returns a slim
+  `processing: true` block instead of the previous submission's (stale) data;
+  the panel then shows a "we are processing your preorder" spinner state and
+  swaps to the real details when PreorderProcessedEvent arrives on the pusher
+  channel (or the poll sees processing end).
+
   Background color: the page gutters take the current selected brand's
   `color_schema.preorderConfirmation.bg` (exposed on
   `customer.aico_selected_brand.aico_preorder_confirmation_bg_color`), applied
@@ -38,6 +44,8 @@
     data-aico-confirmation-url="{{ routes.aico_preorder_cart_confirmation_url }}"
     data-aico-confirmation-title="{{ 'aico_preorder.confirmation.title' | t | escape }}"
     data-aico-confirmation-message="{{ 'aico_preorder.confirmation.message' | t | escape }}"
+    data-aico-confirmation-processing-title="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
+    data-aico-confirmation-processing-message="{{ 'aico_preorder.confirmation.processing_message' | t | escape }}"
     data-aico-confirmation-update-title="{{ 'aico_preorder.confirmation.update_title' | t | escape }}"
     data-aico-confirmation-update-message="{{ 'aico_preorder.confirmation.update_message' | t | escape }}"
     data-aico-confirmation-number-pending="{{ 'aico_preorder.confirmation.number_pending' | t | escape }}"
@@ -48,6 +56,7 @@
 
     <header class="aico-preorder-confirmation-head">
       <span class="aico-preorder-confirmation-check" aria-hidden="true">&#10003;</span>
+      <span class="aico-preorder-confirmation-processing-spinner" aria-hidden="true"></span>
       <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h1>
       <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
     </header>

@@ -72,29 +72,43 @@
     if (!gallery) {
       return;
     }
+    var frame = gallery.querySelector('.aico-pdp-gallery-frame');
     var slides = Array.prototype.slice.call(gallery.querySelectorAll('[data-aico-gallery-slide]'));
     var thumbs = Array.prototype.slice.call(gallery.querySelectorAll('[data-aico-gallery-thumb]'));
     var prev = gallery.querySelector('[data-aico-gallery-prev]');
     var next = gallery.querySelector('[data-aico-gallery-next]');
     var index = 0;
-
-    if (slides.length <= 1) {
-      return;
-    }
+    // Slides can announce interest in activation changes (the 360 rotator
+    // autoplays only while its slide is visible).
+    var activateListeners = [];
 
     function activate(target) {
       // Wrap around so prev on slide 0 lands on the last slide. Mirrors
       // aico-commerce's `Carousel` behaviour without the loop option
       // (which has its own focus-ring oddities).
       var len = slides.length;
-      var next = ((target % len) + len) % len;
+      if (len === 0) {
+        return;
+      }
+      var nextIndex = ((target % len) + len) % len;
       slides.forEach(function (slide, i) {
-        slide.classList.toggle('aico-pdp-gallery-slide-active', i === next);
+        slide.classList.toggle('aico-pdp-gallery-slide-active', i === nextIndex);
       });
       thumbs.forEach(function (thumb, i) {
-        thumb.classList.toggle('aico-pdp-gallery-thumb-active', i === next);
+        thumb.classList.toggle('aico-pdp-gallery-thumb-active', i === nextIndex);
       });
-      index = next;
+      index = nextIndex;
+      activateListeners.forEach(function (listener) { listener(nextIndex); });
+    }
+
+    function bindThumb(thumb) {
+      thumb.addEventListener('click', function () {
+        var raw = thumb.getAttribute('data-aico-gallery-index');
+        var idx = parseInt(raw, 10);
+        if (!isNaN(idx)) {
+          activate(idx);
+        }
+      });
     }
 
     if (prev) {
@@ -103,15 +117,129 @@
     if (next) {
       next.addEventListener('click', function () { activate(index + 1); });
     }
-    thumbs.forEach(function (thumb) {
-      thumb.addEventListener('click', function () {
-        var raw = thumb.getAttribute('data-aico-gallery-index');
-        var idx = parseInt(raw, 10);
-        if (!isNaN(idx)) {
-          activate(idx);
+    thumbs.forEach(bindThumb);
+
+    // -------- 360° rotator -------------------------------------------------
+    //
+    // Port of b2b-shop's `Product360Rotator` + `useProduct360`: frames come
+    // from the kybunjoya file server keyed by SKU; when available, an extra
+    // slide + badge thumbnail are appended to the gallery. Autoplays while
+    // the slide is active; pointer-drag scrubs frames (20px per frame, both
+    // directions wrap around).
+    var GET360_ENDPOINT = 'https://files.kybunjoya.swiss/product-images/get360.php';
+    var GET360_PWD = 'XdvfS'; // ships in the public b2b-shop bundle today
+    var AUTOROTATE_INTERVAL_MS = 100;
+    var PIXELS_PER_FRAME = 20;
+
+    var sku = gallery.getAttribute('data-aico-product-sku') || '';
+    if (sku === '' || !frame || typeof fetch !== 'function') {
+      return;
+    }
+
+    fetch(GET360_ENDPOINT + '?pwd=' + GET360_PWD + '&artno=' + encodeURIComponent(sku))
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        var frames = data && data.available && Array.isArray(data.imageurls) ? data.imageurls : [];
+        if (frames.length === 0) {
+          return;
+        }
+        frames.forEach(function (src) { new Image().src = src; });
+        append360(frames);
+      })
+      .catch(function () { /* no 360 set for this product — nothing to do */ });
+
+    function append360(frames) {
+      var slideIndex = slides.length;
+      var current = 0;
+      var autoplayTimer = null;
+      var dragging = false;
+      var lastPointerX = 0;
+
+      var slide = document.createElement('figure');
+      slide.className = 'aico-pdp-gallery-slide aico-pdp-gallery-slide-360';
+      slide.setAttribute('data-aico-gallery-slide', '');
+      slide.setAttribute('data-aico-gallery-index', String(slideIndex));
+
+      var img = document.createElement('img');
+      img.src = frames[0];
+      img.alt = '';
+      img.draggable = false;
+      slide.appendChild(img);
+
+      var hint = document.createElement('span');
+      hint.className = 'aico-pdp-360-hint';
+      hint.textContent = gallery.getAttribute('data-aico-360-hint') || '';
+      slide.appendChild(hint);
+
+      frame.appendChild(slide);
+      slides.push(slide);
+
+      var thumbsWrap = gallery.querySelector('.aico-pdp-gallery-thumbs');
+      if (!thumbsWrap) {
+        thumbsWrap = document.createElement('div');
+        thumbsWrap.className = 'aico-pdp-gallery-thumbs';
+        thumbsWrap.setAttribute('role', 'tablist');
+        frame.insertAdjacentElement('afterend', thumbsWrap);
+      }
+      var thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.className = 'aico-pdp-gallery-thumb aico-pdp-gallery-thumb-360';
+      thumb.setAttribute('data-aico-gallery-thumb', '');
+      thumb.setAttribute('data-aico-gallery-index', String(slideIndex));
+      thumb.setAttribute('aria-label', gallery.getAttribute('data-aico-360-aria') || '360°');
+      thumb.innerHTML = '<span class="aico-pdp-thumb-360-label" aria-hidden="true">360°</span>';
+      thumbsWrap.appendChild(thumb);
+      thumbs.push(thumb);
+      bindThumb(thumb);
+
+      function showFrame(frameIndex) {
+        var len = frames.length;
+        current = ((frameIndex % len) + len) % len;
+        img.src = frames[current];
+      }
+
+      function startAutoplay() {
+        if (autoplayTimer !== null) {
+          return;
+        }
+        autoplayTimer = window.setInterval(function () { showFrame(current + 1); }, AUTOROTATE_INTERVAL_MS);
+      }
+
+      function stopAutoplay() {
+        if (autoplayTimer !== null) {
+          window.clearInterval(autoplayTimer);
+          autoplayTimer = null;
+        }
+      }
+
+      activateListeners.push(function (activeIndex) {
+        if (activeIndex === slideIndex) {
+          startAutoplay();
+        } else {
+          stopAutoplay();
         }
       });
-    });
+
+      slide.addEventListener('pointerdown', function (event) {
+        stopAutoplay();
+        hint.classList.add('aico-pdp-360-hint-hidden');
+        dragging = true;
+        lastPointerX = event.pageX;
+        event.preventDefault();
+      });
+      document.addEventListener('pointermove', function (event) {
+        if (!dragging) {
+          return;
+        }
+        var delta = Math.round((event.pageX - lastPointerX) / PIXELS_PER_FRAME);
+        if (delta !== 0) {
+          showFrame(current + delta);
+          lastPointerX = event.pageX;
+        }
+      });
+      document.addEventListener('pointerup', function () { dragging = false; });
+      document.addEventListener('pointercancel', function () { dragging = false; });
+    }
   })();
 
   // -------- Size region tabs --------------------------------------------

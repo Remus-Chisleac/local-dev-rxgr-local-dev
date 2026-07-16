@@ -344,7 +344,9 @@
       "previous": "Previous image",
       "next": "Next image",
       "thumb_aria": "Show this image",
-      "no_image": "No image available"
+      "no_image": "No image available",
+      "three_sixty_aria": "Show 360° view",
+      "rotate_hint": "Drag to rotate"
     },
     "size_matrix": {
       "aria": "Size matrix",
@@ -674,6 +676,8 @@
       "message": "We have received your preorder and started processing it. A confirmation document is on its way.",
       "update_title": "Your preorder has been updated",
       "update_message": "You did not place a new preorder — your existing preorder was updated. The new confirmation document replaces the previous one.",
+      "processing_title": "We are processing your preorder…",
+      "processing_message": "This will only take a moment — the page updates automatically as soon as your preorder has been processed.",
       "number_label": "Order number",
       "number_pending": "Assigning…",
       "reference_label": "Preorder reference",
