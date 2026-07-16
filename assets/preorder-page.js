@@ -1406,7 +1406,20 @@
       // PLUS everything already preordered for (debtor, shop, session). Matches the
       // backend resolveDiscount (G4a) + the legacy PreorderService::getTotalQuantity.
       var priorItemsCount = (sessionData && sessionData.aicoPriorItemsCount) || 0;
-      var discountQty = totalQty + priorItemsCount;
+      // The prior count also contains THIS cart's own already-submitted lines when
+      // a submitted preorder is reopened (the live badge cannot pass an
+      // excludePreorderId) — subtract the cart's committed quantities or the
+      // reopened pieces count twice and the badge shows a tier ~2 levels too high.
+      // Mirrors resolveDiscount's excludePreorderId on the edit/re-submit path.
+      var committedQty = 0;
+      if (cartCtrl && cartCtrl.localCart) {
+        (cartCtrl.localCart.preorderItemLists || []).forEach(function (list) {
+          (list.preorderItems || []).forEach(function (it) {
+            committedQty += it.committedQuantity || 0;
+          });
+        });
+      }
+      var discountQty = totalQty + Math.max(0, priorItemsCount - committedQty);
       var discPct = cartCtrl ? cartCtrl.getDiscount(discounts, discountQty) : 0;
       var discAmount = discPct ? (discPct * subtotal) / 100 : 0;
       var grandTotal = subtotal - discAmount;
