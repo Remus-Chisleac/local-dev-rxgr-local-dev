@@ -9407,6 +9407,32 @@ html.aico-preorder-gallery-open {
   text-decoration: none;
 }
 
+/* Processing state — a dispatched submit/edit is still running on the queue.
+   preorder-confirmation.js toggles the --processing class; the details stay
+   hidden so a re-submit never shows the previous submission's numbers. */
+.aico-preorder-confirmation-processing-spinner {
+  display: none;
+}
+
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-check,
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-number-box,
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-summary,
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-dates-wrap,
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-pdf-area {
+  display: none;
+}
+
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-processing-spinner {
+  display: inline-block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(0, 0, 0, 0.12);
+  border-top-color: #e8702d;
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  margin-bottom: 1rem;
+}
+
 .aico-preorder-confirmation-links {
   display: flex;
   flex-wrap: wrap;
