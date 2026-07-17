@@ -498,6 +498,12 @@
   }
 
   form.addEventListener('submit', function (event) {
+    // This handler owns the buy form's submit end-to-end. Stop the event
+    // here so cart.js's document-level [data-aico-cart-add] delegate does
+    // not ALSO handle it (preventDefault doesn't stop bubbling) — that
+    // double-handling added every line twice (store.add + delegate add).
+    event.stopPropagation();
+
     // Pre-flight: in matrix mode we need at least one row > 0; in
     // legacy mode we need at least one option resolved. The browser's
     // native required-field handling covers some of this, but matrix
