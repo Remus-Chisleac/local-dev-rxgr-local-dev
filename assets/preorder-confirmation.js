@@ -121,7 +121,15 @@
   /** Start with a known confirmation payload (e.g. seeded from submit response). */
   Confirmation.prototype.start = function (seed) {
     if (!this.confirmationUrl || !this.cartId) {
-      // Nothing to confirm against — leave whatever static copy is in the panel.
+      // Nothing to confirm against. The thank-you template now server-renders
+      // the PROCESSING state (so the checkmark never flashes before the data
+      // is verified) — swap the spinner for the generic thank-you copy, since
+      // no confirmation will ever be fetched for a bare visit.
+      this.clearPending();
+      var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
+      if (headerEl) headerEl.textContent = copyOf(this.root, 'title', 'Thank you');
+      var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
+      if (messageEl) messageEl.textContent = copyOf(this.root, 'message', '');
       return;
     }
     this.root.hidden = false;
@@ -209,7 +217,7 @@
           // The processing marker cleared but there is nothing to show: the
           // submit failed without committing anything (e.g. a version conflict
           // left the cart DRAFT). Error state, not an endless spinner.
-          self.renderError();
+          self._swapToState(self.renderError.bind(self));
         }
         self.scheduleNextPoll(confirmation);
       })
@@ -292,15 +300,58 @@
     if (!this._timer) this.poll();
   };
 
+  /**
+   * Animated processing → final swap. When the panel currently shows the
+   * processing spinner, fade/slide the panel out, run `render` (which swaps
+   * the DOM to the confirmed/error state), then fade/slide it back in — the
+   * state change reads as a transition, not an abrupt replace. When the panel
+   * is not in the processing state (later PDF updates, re-applies) or the
+   * user prefers reduced motion, `render` runs immediately with no animation
+   * (the CSS classes are also inert under prefers-reduced-motion: reduce).
+   */
+  Confirmation.prototype._swapToState = function (render) {
+    var root = this.root;
+    var reduced = false;
+    try {
+      reduced = global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (_) {}
+    var processing = root.classList.contains('aico-preorder-confirmation--processing');
+    if (!processing || reduced) {
+      render();
+      return;
+    }
+    // A newer payload while mid-swap just replaces what gets rendered.
+    if (this._swapping) {
+      this._pendingSwapRender = render;
+      return;
+    }
+    this._swapping = true;
+    this._pendingSwapRender = render;
+    root.classList.add('aico-preorder-confirmation--swap-out');
+    var self = this;
+    setTimeout(function () {
+      var run = self._pendingSwapRender;
+      self._pendingSwapRender = null;
+      if (run) run();
+      root.classList.remove('aico-preorder-confirmation--swap-out');
+      root.classList.add('aico-preorder-confirmation--swap-in');
+      setTimeout(function () {
+        root.classList.remove('aico-preorder-confirmation--swap-in');
+        self._swapping = false;
+      }, 300);
+    }, 190);
+  };
+
   /** Render the full confirmation from a payload (poll or broadcast-merged). */
   Confirmation.prototype.apply = function (confirmation) {
     if (!confirmation || typeof confirmation !== 'object') return;
 
     // The queued submit failed with nothing committed (pre-batch stock check,
     // batch failure with a full compensation): no details will ever arrive for
-    // this cart — show the error state instead of spinning forever.
+    // this cart — show the error state instead of spinning forever. Shares the
+    // animated swap with the confirmed path.
     if (confirmation.error) {
-      this.renderError();
+      this._swapToState(this.renderError.bind(this));
       return;
     }
 
@@ -317,9 +368,19 @@
       return;
     }
 
+    // Flags flip synchronously (scheduleNextPoll reads them right after this
+    // returns); only the DOM swap below is deferred by the animation.
     this.detailLoaded = true;
-    this.root.classList.remove('aico-preorder-confirmation--error');
     this._errored = false;
+    var self = this;
+    this._swapToState(function () {
+      self.renderDetails(confirmation);
+    });
+  };
+
+  /** The confirmed-state DOM swap (called directly or via the animated swap). */
+  Confirmation.prototype.renderDetails = function (confirmation) {
+    this.root.classList.remove('aico-preorder-confirmation--error');
     this.clearPending();
     this.root.hidden = false;
 

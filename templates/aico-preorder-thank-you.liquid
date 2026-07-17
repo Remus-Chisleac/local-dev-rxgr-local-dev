@@ -37,8 +37,16 @@
 
 <main class="aico-preorder-thank-you" role="main"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
   <div class="aico-page-container">
+  {%- comment -%}
+    The panel server-renders in the PROCESSING state (--processing class +
+    processing copy + aria-busy) so the page never flashes the confirmed
+    checkmark before preorder-confirmation.js has verified the data: the JS
+    swaps to the confirmed details only once confirmation.js returns them
+    (or to the generic thank-you copy when there is no cart id to confirm).
+  {%- endcomment -%}
   <section
-    class="aico-preorder-confirmation"
+    class="aico-preorder-confirmation aico-preorder-confirmation--processing"
+    aria-busy="true"
     data-aico-preorder-confirmation
     data-aico-confirmation-autostart="1"
     data-aico-confirmation-url="{{ routes.aico_preorder_cart_confirmation_url }}"
@@ -59,8 +67,8 @@
     <header class="aico-preorder-confirmation-head">
       <span class="aico-preorder-confirmation-check" aria-hidden="true">&#10003;</span>
       <span class="aico-preorder-confirmation-processing-spinner" aria-hidden="true"></span>
-      <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h1>
-      <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
+      <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.processing_title' | t }}</h1>
+      <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.processing_message' | t }}</p>
     </header>
 
     <div class="aico-preorder-confirmation-number-box">
