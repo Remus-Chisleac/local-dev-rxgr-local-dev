@@ -5752,13 +5752,31 @@ button.aico-home-brand-card {
 .aico-preorder-gallery-thumb {
   flex: none;
   width: 3.5rem;
-  height: 3.5rem;
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: 4px;
+  /* Match the PDP gallery thumbs (board #115): no box outline — the active
+     state is a kybun-orange underline (::after) + full opacity; non-active
+     thumbs stay dimmed. 3.5rem image square + 4px underline gutter. */
+  height: calc(3.5rem + 4px);
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: var(--aico-radius, 2px);
   background: #f5f5f5;
   cursor: pointer;
   overflow: hidden;
+  opacity: 0.7;
+  position: relative;
+  transition: opacity 0.15s ease;
+}
+
+.aico-preorder-gallery-thumb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #e8702d; /* kybun orange (same as .aico-button-primary) */
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
 .aico-preorder-gallery-thumb img {
@@ -5768,8 +5786,16 @@ button.aico-home-brand-card {
   display: block;
 }
 
+.aico-preorder-gallery-thumb:hover {
+  opacity: 1;
+}
+
 .aico-preorder-gallery-thumb.is-active {
-  border-color: #e8702d;
+  opacity: 1;
+}
+
+.aico-preorder-gallery-thumb.is-active::after {
+  opacity: 1;
 }
 
 .aico-preorder-gallery-thumb--skeleton {
