@@ -1473,12 +1473,16 @@ html.aico-no-scroll { overflow: hidden; }
 
 .aico-filterbar-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.625rem 0.75rem;
+}
+@media (min-width: 640px) {
+  .aico-filterbar-row { flex-wrap: nowrap; gap: 0.75rem; padding: 0.75rem 1rem; }
 }
 @media (min-width: 1024px) {
-  .aico-filterbar-row { flex-direction: row; align-items: center; gap: 1rem; padding: 0.75rem 1.25rem; }
+  .aico-filterbar-row { gap: 1rem; padding: 0.75rem 1.25rem; }
 }
 
 .aico-filterbar-heading {
@@ -1491,6 +1495,25 @@ html.aico-no-scroll { overflow: hidden; }
   letter-spacing: 0.04em;
 }
 @media (min-width: 640px) { .aico-filterbar-heading { font-size: 0.875rem; } }
+
+/* Compact toolbar below the desktop breakpoint: on phones the heading
+   takes a slim row of its own while search + Filter + sort share one
+   controls row; on tablets everything sits on a single line and a long
+   preset-category heading ellipsizes instead of crushing the search. */
+@media (max-width: 639.98px) {
+  .aico-filterbar-heading { flex-basis: 100%; }
+  .aico-filterbar-search { flex-basis: 0; }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .aico-filterbar-heading {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 
 .aico-filterbar-search {
   position: relative;
