@@ -797,8 +797,13 @@
     <script src="{{ 'customer-view.js' | asset_url }}" defer></script>
   {% endif %}
 
-  {%- comment -%} Global error collector — captures JS errors + failed requests into
-    localStorage and shows them in a floating bubble. Loaded on every page. {%- endcomment -%}
-  <script src="{{ 'aico-error-manager.js' | asset_url }}" defer></script>
+  {%- comment -%} Error manager — surfaces failures of user actions (add-to-cart,
+    preorder/checkout submit) as actionable messages. Display is gated behind the
+    aico_show_error_messages theme setting (default off): when disabled, the script
+    is not emitted at all, so shoppers see no error UI. The asset stays in the theme
+    so the feature can be re-enabled from theme settings without a code change. {%- endcomment -%}
+  {% if settings.aico_show_error_messages %}
+    <script src="{{ 'aico-error-manager.js' | asset_url }}" defer></script>
+  {% endif %}
 </body>
 </html>

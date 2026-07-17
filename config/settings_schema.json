@@ -101,6 +101,18 @@
     ]
   },
   {
+    "name": "Error messages",
+    "info": "Shopper-facing error messages (toast + error list bubble) for failed actions like add-to-cart or preorder/checkout submit. Hidden by default; the code stays in the theme but nothing is shown unless enabled.",
+    "settings": [
+      {
+        "id": "aico_show_error_messages",
+        "type": "checkbox",
+        "label": "Show error messages to shoppers",
+        "default": false
+      }
+    ]
+  },
+  {
       "name": "Page banners",
       "info": "Media-gallery images for the fixed page banners. Managed in the shop's linked galleries.",
       "settings": [
