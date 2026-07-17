@@ -369,8 +369,16 @@
               Hidden field for the resolved variant id. The vanilla JS
               fills this in when the user picks options; the server can
               also resolve it from the option map as a fallback.
+              Products WITHOUT any option axis (e.g. single-variant sets)
+              have nothing to pick, so prefill the resolved variant id —
+              otherwise the client-side pre-flight misreads the blank id
+              as "no size selected" and blocks add-to-cart.
             {% endcomment %}
-            <input type="hidden" name="id" value="" data-aico-variant-id-input>
+            {% if product.options.size == 0 %}
+              <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-aico-variant-id-input>
+            {% else %}
+              <input type="hidden" name="id" value="" data-aico-variant-id-input>
+            {% endif %}
           {% endif %}
 
           {%- comment -%}
@@ -648,6 +656,16 @@
   {%- comment -%} Yotpo widgets loader — hydrates the reviews widget above (gated on the reviews flag + store App Key). {%- endcomment -%}
   {% render 'yotpo-loader' %}
 
+  {%- comment -%}
+    Localised copy for product-detail.js's post-submit hints. Without this
+    blob the script falls back to its hardcoded English strings.
+  {%- endcomment -%}
+  <script>
+    window.AICO_PDP_LOCALE = {
+      select_quantity: {{ 'product.aico_pdp_message.select_quantity' | t | json }},
+      error: {{ 'product.aico_pdp_message.error' | t | json }}
+    };
+  </script>
   <script src="{{ 'product-detail.js' | asset_url }}" defer></script>
   {%- comment -%} Hydrates the production-cockpit restock block above (PDP integration). {%- endcomment -%}
   <script src="{{ 'aico-production-cockpit.js' | asset_url }}" defer></script>
