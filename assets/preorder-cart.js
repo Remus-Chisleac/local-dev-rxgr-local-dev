@@ -364,9 +364,14 @@
   };
 
   /**
-   * Place the preorder: flush pending writes, POST submit.js, then poll cart.js
-   * until status leaves DRAFT. Resolves with the final snapshot on SUBMITTED,
-   * rejects on ERROR / conflict.
+   * Place the preorder: flush pending writes, POST submit.js. Resolves as soon
+   * as the backend has accepted + queued the submission (the heavy work runs
+   * async on the queue) — the caller then redirects straight to the thank-you/
+   * processing page, which shows the "we are processing your preorder" state
+   * and swaps to the final details when PreorderProcessedEvent arrives on the
+   * pusher channel (see preorder-confirmation.js). No client-side status
+   * polling here: first submits and edit re-submits share that one mechanism.
+   * Rejects on synchronous failures (version conflict, ineligibility, 5xx).
    */
   CartController.prototype.submitPreorder = function (notes) {
     var self = this;
@@ -393,29 +398,6 @@
           err.payload = payload;
           throw err;
         });
-      });
-    }).then(function () {
-      // Confirm the submit actually completed: poll the cart until it leaves
-      // DRAFT. Only resolve (→ thank-you) on SUBMITTED; ERROR/timeout reject so a
-      // failed submit surfaces instead of a false success. The checkout is kept
-      // visible meanwhile via the isSubmitting guard in preorder-page.js.
-      return self.pollUntilSubmitted();
-    });
-  };
-
-  CartController.prototype.pollUntilSubmitted = function (attempts) {
-    var self = this;
-    attempts = attempts || 0;
-    var MAX_ATTEMPTS = 40; // ~60s at 1.5s
-    return this.fetchCart().then(function (snapshot) {
-      var status = snapshot && snapshot.status;
-      if (status === 'SUBMITTED') return snapshot;
-      if (status === 'ERROR') throw new Error('submit_error');
-      if (attempts >= MAX_ATTEMPTS) throw new Error('submit_timeout');
-      return new Promise(function (resolve) {
-        setTimeout(resolve, 1500);
-      }).then(function () {
-        return self.pollUntilSubmitted(attempts + 1);
       });
     });
   };

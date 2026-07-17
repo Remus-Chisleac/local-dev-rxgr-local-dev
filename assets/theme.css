@@ -9527,6 +9527,18 @@ html.aico-preorder-gallery-open {
   margin-bottom: 1rem;
 }
 
+/* Error state — the queued submit failed and no details will arrive
+   (preorder-confirmation.js toggles the --error class). Hide the success
+   check + detail placeholders and the PDF area; only the error copy shows. */
+.aico-preorder-confirmation--error .aico-preorder-confirmation-check,
+.aico-preorder-confirmation--error .aico-preorder-confirmation-processing-spinner,
+.aico-preorder-confirmation--error .aico-preorder-confirmation-number-box,
+.aico-preorder-confirmation--error .aico-preorder-confirmation-summary,
+.aico-preorder-confirmation--error .aico-preorder-confirmation-dates-wrap,
+.aico-preorder-confirmation--error .aico-preorder-confirmation-pdf-area {
+  display: none;
+}
+
 .aico-preorder-confirmation-links {
   display: flex;
   flex-wrap: wrap;

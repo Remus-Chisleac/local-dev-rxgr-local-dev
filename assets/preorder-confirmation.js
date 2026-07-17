@@ -31,6 +31,14 @@
  * NEVER the previous submission's stale orders/PDF. The panel then shows a
  * "we are processing your preorder" spinner state and re-fetches when
  * PreorderProcessedEvent arrives on the pusher channel (or via polling).
+ * Both FIRST submits and edit re-submits land here the same way: the preorder
+ * page redirects right after the submit is queued (no status polling there).
+ *
+ * If the queued submit fails with nothing committed, the backend returns
+ * { processing: false, error: true, cart_id, status } — the panel then swaps
+ * the spinner for an error state instead of polling for details forever. The
+ * same happens when a processing block was seen but a later fetch reports no
+ * confirmation at all (e.g. a version conflict left the cart DRAFT).
  *
  * Framework-free, matches the other preorder-*.js modules (no Alpine).
  */
@@ -100,6 +108,8 @@
     this.pdfPolls = 0;
     this.pdfReady = false;
     this.detailLoaded = false;
+    this._sawProcessing = false; // a processing block was seen at least once
+    this._errored = false; // terminal error state rendered — transports stopped
     this._pusherClient = null;
     this._pusherSubscribed = false; // attempted a subscription
     this._pusherActive = false; // channel subscription confirmed live
@@ -150,6 +160,36 @@
     this.root.removeAttribute('aria-busy');
   };
 
+  /**
+   * Terminal error state: the queued submit failed and no details will arrive.
+   * Swap the spinner for the error copy and stop every transport (polling +
+   * fallback timers) — a spinner that never resolves is worse than bad news.
+   */
+  Confirmation.prototype.renderError = function () {
+    if (this._errored) return;
+    this._errored = true;
+    this.clearPending();
+    this.root.hidden = false;
+    this.root.classList.add('aico-preorder-confirmation--error');
+    var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
+    if (headerEl) {
+      headerEl.textContent = copyOf(this.root, 'error-title', 'We could not process your preorder');
+    }
+    var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
+    if (messageEl) {
+      messageEl.textContent = copyOf(
+        this.root,
+        'error-message',
+        'Something went wrong while processing your preorder. Please go back to the preorder page and try again.',
+      );
+    }
+    this.stopPolling();
+    if (this._fallbackTimer) {
+      clearTimeout(this._fallbackTimer);
+      this._fallbackTimer = null;
+    }
+  };
+
   Confirmation.prototype.poll = function () {
     var self = this;
     var url = new URL(this.confirmationUrl, global.location.origin);
@@ -165,6 +205,11 @@
         var confirmation = payload && payload.aico_confirmation;
         if (confirmation) {
           self.apply(confirmation);
+        } else if (payload && self._sawProcessing && !self.detailLoaded) {
+          // The processing marker cleared but there is nothing to show: the
+          // submit failed without committing anything (e.g. a version conflict
+          // left the cart DRAFT). Error state, not an endless spinner.
+          self.renderError();
         }
         self.scheduleNextPoll(confirmation);
       })
@@ -175,6 +220,7 @@
 
   Confirmation.prototype.scheduleNextPoll = function (confirmation) {
     var self = this;
+    if (this._errored) return; // terminal — nothing left to fetch
     // Stop once we have details AND the PDF (or a delivered broadcast).
     if (this.detailLoaded && this.pdfReady) return;
 
@@ -250,10 +296,19 @@
   Confirmation.prototype.apply = function (confirmation) {
     if (!confirmation || typeof confirmation !== 'object') return;
 
+    // The queued submit failed with nothing committed (pre-batch stock check,
+    // batch failure with a full compensation): no details will ever arrive for
+    // this cart — show the error state instead of spinning forever.
+    if (confirmation.error) {
+      this.renderError();
+      return;
+    }
+
     // Submit/edit still running on the queue: show (or keep) the processing
     // spinner — the payload carries no details yet, only the pusher block.
     // Subscribe now so PreorderProcessedEvent can flip us to the real data.
     if (confirmation.processing) {
+      this._sawProcessing = true;
       this.root.hidden = false;
       this.renderPending();
       if (!this._pusherSubscribed && confirmation.pusher) {
@@ -263,6 +318,8 @@
     }
 
     this.detailLoaded = true;
+    this.root.classList.remove('aico-preorder-confirmation--error');
+    this._errored = false;
     this.clearPending();
     this.root.hidden = false;
 

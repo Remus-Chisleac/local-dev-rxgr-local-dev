@@ -2057,9 +2057,11 @@
             var cartId = cartCtrl.cartId;
             var thankYou = root.getAttribute('data-aico-preorder-thank-you-url');
             if (thankYou) {
-              // Carry the cart id so the thank-you page can confirm against it
-              // (preorder-confirmation.js reads ?cart=). The umbrella preorder +
-              // PDF are created asynchronously; the confirmation page polls.
+              // Redirect immediately — the submit is queued, not finished. Carry
+              // the cart id so the thank-you page can confirm against it
+              // (preorder-confirmation.js reads ?cart=). That page shows the
+              // processing state and swaps to the final details on
+              // PreorderProcessedEvent (pusher), for first submits and edits alike.
               try {
                 var url = new URL(thankYou, window.location.origin);
                 if (cartId) url.searchParams.set('cart', String(cartId));
