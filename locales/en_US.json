@@ -682,6 +682,7 @@
       "update_message": "You did not place a new preorder — your existing preorder was updated. The new confirmation document replaces the previous one.",
       "processing_title": "We are processing your preorder…",
       "processing_message": "This will only take a moment — the page updates automatically as soon as your preorder has been processed.",
+      "progress_count": "{{ processed }} of {{ total }} items processed",
       "error_title": "We could not process your preorder",
       "error_message": "Something went wrong while processing your preorder. Your preorder was not placed — please go back to the preorder page and try again, or contact us if the problem persists.",
       "number_label": "Order number",

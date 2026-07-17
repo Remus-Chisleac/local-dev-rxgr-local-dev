@@ -108,6 +108,7 @@
     this.pdfPolls = 0;
     this.pdfReady = false;
     this.detailLoaded = false;
+    this._progressSeen = 0; // highest processed count rendered (monotonic guard)
     this._sawProcessing = false; // a processing block was seen at least once
     this._errored = false; // terminal error state rendered — transports stopped
     this._pusherClient = null;
@@ -298,6 +299,55 @@
       this._fallbackTimer = null;
     }
     if (!this._timer) this.poll();
+  };
+
+  /**
+   * Live submit progress (PreorderSubmitProgressEvent — first submits only):
+   * the backend's chunk jobs feed a redis counter and broadcast a throttled
+   * { processed, total } line-item pair on the same channel. Reveal the bar on
+   * the FIRST event (the edit flow emits none, so its plain spinner stays) and
+   * advance it; only meaningful while the panel still shows the processing
+   * state. Progress never moves backwards (pusher gives no ordering promise),
+   * and a live stream re-arms the polling fallback — events prove the socket
+   * is healthy, so the fallback poll should not fire mid-submit.
+   */
+  Confirmation.prototype.applyProgress = function (data) {
+    if (this.detailLoaded || this._errored || !data) return;
+    if (!this.root.classList.contains('aico-preorder-confirmation--processing')) return;
+    var processed = Number(data.processed);
+    var total = Number(data.total);
+    if (!isFinite(processed) || !isFinite(total) || total <= 0) return;
+    processed = Math.max(0, Math.min(Math.round(processed), Math.round(total)));
+    total = Math.round(total);
+    if (processed < this._progressSeen) return;
+    this._progressSeen = processed;
+
+    var wrap = this.root.querySelector('[data-aico-confirmation-progress]');
+    if (!wrap) return;
+    wrap.hidden = false;
+
+    var percent = Math.round((processed / total) * 100);
+    var fill = wrap.querySelector('[data-aico-confirmation-progress-fill]');
+    if (fill) fill.style.width = percent + '%';
+    var track = wrap.querySelector('[data-aico-confirmation-progress-track]');
+    if (track) track.setAttribute('aria-valuenow', String(percent));
+    var countEl = wrap.querySelector('[data-aico-confirmation-progress-count]');
+    if (countEl) {
+      var template =
+        wrap.getAttribute('data-aico-confirmation-progress-template') ||
+        '{{ processed }} / {{ total }}';
+      countEl.textContent = template
+        .replace(/\{\{\s*processed\s*\}\}/g, String(processed))
+        .replace(/\{\{\s*total\s*\}\}/g, String(total));
+    }
+
+    // Push the pusher-silence fallback out: the stream is alive.
+    if (this._fallbackTimer) {
+      clearTimeout(this._fallbackTimer);
+      this._fallbackTimer = null;
+    }
+    this._pusherFallbackArmed = false;
+    this.armPusherFallback();
   };
 
   /**
@@ -537,6 +587,7 @@
     this._pusherSubscribed = true;
     var eventName = config.event || 'PreorderPdfCreatedEvent';
     var processedEventName = config.processed_event || 'PreorderProcessedEvent';
+    var progressEventName = config.progress_event || 'PreorderSubmitProgressEvent';
     this.loadPusher()
       .then(function (Pusher) {
         if (!Pusher) { self.resumePolling(); return; } // script blocked → poll
@@ -557,6 +608,10 @@
           // re-fetch the confirmation to swap the processing spinner for them.
           channel.bind(processedEventName, function () {
             self.poll();
+          });
+          // Live first-submit progress → drive the processing-state bar.
+          channel.bind(progressEventName, function (data) {
+            self.applyProgress(data);
           });
           channel.bind(eventName, function (data) {
             if (data && data.fileUrl && self.detailLoaded) {

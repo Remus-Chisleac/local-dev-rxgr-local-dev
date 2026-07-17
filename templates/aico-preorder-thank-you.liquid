@@ -69,6 +69,29 @@
       <span class="aico-preorder-confirmation-processing-spinner" aria-hidden="true"></span>
       <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.processing_title' | t }}</h1>
       <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.processing_message' | t }}</p>
+      {%- comment -%}
+        Real submit progress (first submit only): hidden until the first
+        PreorderSubmitProgressEvent arrives on the pusher channel, then
+        preorder-confirmation.js reveals it and advances the fill +
+        "X von Y" count (processed/total cart line items). The EDIT flow
+        broadcasts no progress, so this stays hidden and the plain spinner
+        above carries the state, exactly as before. The count template keeps
+        its {{ processed }}/{{ total }} placeholders (the t filter only
+        interpolates args it is given) for client-side substitution.
+      {%- endcomment -%}
+      <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
+        data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
+        <div class="aico-preorder-confirmation-progress-track"
+          data-aico-confirmation-progress-track
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}">
+          <div class="aico-preorder-confirmation-progress-fill" data-aico-confirmation-progress-fill></div>
+        </div>
+        <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
+      </div>
     </header>
 
     <div class="aico-preorder-confirmation-number-box">

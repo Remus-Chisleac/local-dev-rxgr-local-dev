@@ -9596,6 +9596,51 @@ html.aico-preorder-gallery-open {
   margin-bottom: 1rem;
 }
 
+/* Live submit progress (first submits only) — hidden until the first
+   PreorderSubmitProgressEvent arrives (preorder-confirmation.js removes the
+   [hidden] attribute), and only rendered inside the processing state, so the
+   #113 processing → confirmed swap hides it automatically and the EDIT flow
+   (which broadcasts no progress) keeps the plain spinner. */
+.aico-preorder-confirmation-progress {
+  display: none;
+}
+
+.aico-preorder-confirmation--processing .aico-preorder-confirmation-progress:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.aico-preorder-confirmation-progress-track {
+  width: min(320px, 100%);
+  height: 0.5rem;
+  background: #f0f0f0;
+  border-radius: var(--aico-radius, 2px);
+  overflow: hidden;
+}
+
+.aico-preorder-confirmation-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #e8702d;
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.aico-preorder-confirmation-progress-count {
+  font-size: 0.8125rem;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-preorder-confirmation-progress-fill {
+    transition: none;
+  }
+}
+
 /* Animated processing → confirmed/error swap (preorder-confirmation.js):
    --swap-out fades/slides the processing panel away, the DOM swaps, then
    --swap-in fades/slides the final state in. Timings match the theme's
