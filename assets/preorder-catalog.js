@@ -777,6 +777,28 @@
     var self = this;
     if (!this.catalogEl) return;
 
+    // The full innerHTML rebuild below destroys the input the user may be
+    // typing in right now (e.g. when a paginated page merge lands mid-typing,
+    // board #114). Live typing is already committed into the stock state on
+    // every keystroke (see bindQuantityInputs), so the VALUE survives the
+    // rebuild — but the focus and the exact in-progress text must be carried
+    // over to the rebuilt input explicitly.
+    var focusedCell = null;
+    var activeEl = document.activeElement;
+    if (
+      activeEl &&
+      activeEl.hasAttribute &&
+      activeEl.hasAttribute('data-aico-preorder-qty') &&
+      this.catalogEl.contains(activeEl)
+    ) {
+      focusedCell = {
+        productId: activeEl.getAttribute('data-product-id'),
+        variantId: activeEl.getAttribute('data-variant-id'),
+        date: activeEl.getAttribute('data-date'),
+        value: activeEl.value,
+      };
+    }
+
     var copy = this.getCopy();
     var session = this.getSession() || {};
     var charts = normalizeShoeSizeCharts(session.shoeSizeCharts || {});
@@ -933,6 +955,32 @@
     this.bindGroupToggles();
     this.bindMatrixScrollSync();
     this.syncMatrixScrollPositions();
+    if (focusedCell) this.restoreFocusedCell(focusedCell);
+  };
+
+  // Re-focus (and restore the in-progress text of) the qty input captured
+  // before a full render rebuild, so a catalog re-render never yanks the cell
+  // away from under the user mid-typing. The focus listener re-adds the
+  // editing style; blur later commits the value exactly as before.
+  CatalogController.prototype.restoreFocusedCell = function (cell) {
+    if (!this.catalogEl) return;
+    var inputs = this.catalogEl.querySelectorAll('[data-aico-preorder-qty]');
+    for (var i = 0; i < inputs.length; i++) {
+      var input = inputs[i];
+      if (
+        input.getAttribute('data-product-id') === cell.productId &&
+        input.getAttribute('data-variant-id') === cell.variantId &&
+        input.getAttribute('data-date') === cell.date
+      ) {
+        if (input.value !== cell.value) input.value = cell.value;
+        try {
+          input.focus({ preventScroll: true });
+        } catch (_) {
+          try { input.focus(); } catch (__) {}
+        }
+        return;
+      }
+    }
   };
 
   // Collapse/expand a category in place (no re-render, so quantity inputs keep

@@ -586,6 +586,10 @@
     // reseedCatalogIfPending). A cross-country switch still refetches: prices
     // and currency legitimately change.
     var lastCatalogPricingKey = null;
+    // Cart context (debtor|delivery) of the last stock seed — a paginated page
+    // merge in the SAME context preserves the user's typed quantities across
+    // the stock reset (see onProductsLoaded); a context switch drops them.
+    var lastStockSeedContextKey = null;
     var pendingCatalogReseed = false;
 
     function buyerCountry() {
@@ -1776,11 +1780,37 @@
         return cartEnabled && cartCtrl ? cartCtrl.localCart : null;
       },
       onProductsLoaded: function (products, dates) {
+        // A paginated page merge re-runs the stock reset + cart re-seed below,
+        // but the cart lags behind live typing (stock-relevant writes are slim
+        // and never update localCart) — so a merge used to visually wipe every
+        // quantity entered since the initial cart fetch (board #114). Snapshot
+        // the optimistic quantities and re-apply them after the seed. Only
+        // within the SAME cart context: after a debtor/delivery switch the new
+        // cart is authoritative and stale optimistic values must drop.
+        var stockContextKey = [debtorId() || '', buyerId() || ''].join('|');
+        var typedQuantities = null;
         if (window.AicoPreorderStock) {
+          if (
+            stockContextKey === lastStockSeedContextKey &&
+            window.AicoPreorderStock.snapshotQuantities
+          ) {
+            typedQuantities = window.AicoPreorderStock.snapshotQuantities();
+          }
+          lastStockSeedContextKey = stockContextKey;
           window.AicoPreorderStock.setSizeStockFromProducts(products);
         }
         renderDateSelect(dates);
         seedStockFromCart();
+        if (typedQuantities && typedQuantities.length && window.AicoPreorderStock) {
+          typedQuantities.forEach(function (row) {
+            window.AicoPreorderStock.adjustStock(
+              row.productId,
+              row.variantId,
+              row.dateLabel,
+              row.quantity,
+            );
+          });
+        }
         // Recompute the checkout summary now that this batch's products (and
         // their prices) are in catalog.products — the cart fetch that first ran
         // updateSummary may have fired before the catalog finished loading.

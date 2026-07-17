@@ -370,9 +370,33 @@
     return total;
   }
 
+  // Every (product, variant, date) quantity currently tracked, as flat rows.
+  // The page snapshots these right before a catalog stock reset (a paginated
+  // page merge re-runs setSizeStockFromProducts, which clears qty) and
+  // re-applies them after the cart re-seed — the cart lags behind live typing
+  // (stock-relevant writes are slim and never update localCart), so without
+  // this every appended page visually wipes the quantities the user entered.
+  function snapshotQuantities() {
+    var rows = [];
+    Object.keys(state.qty).forEach(function (pid) {
+      Object.keys(state.qty[pid]).forEach(function (vid) {
+        Object.keys(state.qty[pid][vid]).forEach(function (dk) {
+          rows.push({
+            productId: pid,
+            variantId: vid,
+            dateLabel: dk,
+            quantity: state.qty[pid][vid][dk],
+          });
+        });
+      });
+    });
+    return rows;
+  }
+
   global.AicoPreorderStock = {
     MAX_QUANTITY: MAX_QUANTITY,
     setSizeStockFromProducts: setSizeStockFromProducts,
+    snapshotQuantities: snapshotQuantities,
     adjustStock: adjustStock,
     setCommitted: setCommitted,
     getCommitted: getCommitted,
