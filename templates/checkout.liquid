@@ -194,8 +194,8 @@
         </fieldset>
 
         {%- comment -%} ─── Discount code (standalone form — avoids invalid nested forms) ─── {%- endcomment -%}
-        <div class="aico-checkout-section">
-          <h2 class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</h2>
+        <fieldset class="aico-checkout-section">
+          <legend class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</legend>
           <form action="{{ routes.aico_cart_discount_url }}" method="post" class="aico-checkout-discount-form">
             <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
             <input type="hidden" name="return_url" value="{{ routes.checkout_url }}">
@@ -214,7 +214,7 @@
           {% if form.posted_successfully? and form.form_type == 'cart_discount' %}
             <p class="aico-checkout-discount-success">{{ 'checkout.discount.applied' | t }}</p>
           {% endif %}
-        </div>
+        </fieldset>
 
         {%- comment -%} ─── Terms & conditions ─── {%- endcomment -%}
         <fieldset class="aico-checkout-section aico-checkout-section-terms"
