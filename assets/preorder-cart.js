@@ -318,10 +318,25 @@
 
   CartController.prototype.getFlyerQuantity = function (flyerId) {
     var items = (this.localCart && this.localCart.flyers && this.localCart.flyers.preorderItems) || [];
-    var item = items.find(function (it) {
+    var rows = items.filter(function (it) {
       return it.productId === flyerId;
     });
-    return item ? item.quantity || 0 : 0;
+    if (!rows.length) return 0;
+    // Mirror the backend's deterministic flyer-line target (setItem's FLYER
+    // match): the committed row first, then a row with a server-resolved
+    // variant, then the first. Duplicate rows for one flyer are a legacy fork
+    // (variant-null write next to the committed variant row) that the next
+    // write absorbs — never first-match blindly, or the slider snaps back to
+    // the stray row's quantity.
+    var item =
+      rows.find(function (it) {
+        return it.committedQuantity != null;
+      }) ||
+      rows.find(function (it) {
+        return it.productVariantId != null;
+      }) ||
+      rows[0];
+    return item.quantity || 0;
   };
 
   /** Auto-save a flyer quantity (FLYER list; server derives the date). */
