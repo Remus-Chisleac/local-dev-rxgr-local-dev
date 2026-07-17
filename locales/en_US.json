@@ -693,7 +693,7 @@
       "total": "Total (excl. VAT)",
       "discount": "Discount applied",
       "delivery_dates": "Delivery dates",
-      "pdf_generating": "Generating your confirmation PDF…",
+      "pdf_generating": "Generating your confirmation PDF – this can take a little longer…",
       "pdf_download": "Download confirmation (PDF)",
       "pdf_unavailable": "The confirmation PDF will be emailed to you shortly."
     }

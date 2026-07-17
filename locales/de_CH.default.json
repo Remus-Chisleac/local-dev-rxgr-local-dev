@@ -693,7 +693,7 @@
       "total": "Total (exkl. MwSt.)",
       "discount": "Angewandter Rabatt",
       "delivery_dates": "Liefertermine",
-      "pdf_generating": "Ihr Bestätigungs-PDF wird erstellt…",
+      "pdf_generating": "Ihr Bestätigungs-PDF wird erstellt – dies kann etwas länger dauern…",
       "pdf_download": "Bestätigung herunterladen (PDF)",
       "pdf_unavailable": "Das Bestätigungs-PDF wird Ihnen in Kürze per E-Mail zugesandt."
     }
