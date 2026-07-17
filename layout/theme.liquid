@@ -15,6 +15,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ shop.name }}</title>
+  {%- comment -%}
+    Favicon — Shopify contract: the standard `settings.favicon` image_picker
+    (Dawn's render shape). Falls back to the theme-bundled kj favicon when
+    the merchant hasn't picked one.
+  {%- endcomment -%}
+  {%- if settings.favicon != blank -%}
+    <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+  {%- else -%}
+    <link rel="icon" href="{{ 'favicon.ico' | asset_url }}">
+  {%- endif -%}
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
   {%- comment -%}
     Only the unauthenticated auth pages (login / recover / register) use the

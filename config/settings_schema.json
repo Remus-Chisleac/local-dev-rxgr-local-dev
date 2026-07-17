@@ -1,5 +1,16 @@
 [
   {
+    "name": "Favicon",
+    "info": "Shown at 32 x 32px in browser tabs and bookmarks. When unset, the theme's bundled favicon is used.",
+    "settings": [
+      {
+        "id": "favicon",
+        "type": "image_picker",
+        "label": "Favicon image"
+      }
+    ]
+  },
+  {
     "name": "Branding",
     "settings": [
       { "id": "heading", "type": "text", "label": "Hero heading", "default": "Welcome to your new shop" },
