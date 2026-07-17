@@ -306,7 +306,9 @@
     els.count.textContent = n > 99 ? '99+' : String(n);
     var sev = worstSeverity();
     els.count.className = 'aico-errmgr-count' + (sev === 'user' ? ' user' : '');
-    els.icon.className = 'aico-errmgr-ic' + (sev === 'user' ? ' user' : '');
+    // SVG elements expose className as a read-only SVGAnimatedString —
+    // assigning it throws; setAttribute is the safe write.
+    els.icon.setAttribute('class', 'aico-errmgr-ic' + (sev === 'user' ? ' user' : ''));
     if (n === 0) { setPanel(false); els.list.innerHTML = ''; return; }
     els.list.innerHTML = entries.map(itemHtml).join('');
   }
