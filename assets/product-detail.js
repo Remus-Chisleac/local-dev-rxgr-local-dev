@@ -653,4 +653,87 @@
     }
     return window.AICO_PDP_LOCALE[key];
   }
+
+  // -------- Colour-sibling strip -----------------------------------------
+  // Single row under the add-to-cart block (templates/product.liquid).
+  // Native overflow-x already handles touch panning; this adds
+  // vertical-wheel → horizontal scroll and mouse drag-to-scroll (the
+  // legacy b2b-shop strip was a free-mode swiper). Clicks still navigate:
+  // they are only suppressed after an actual drag.
+
+  (function setupColorStrip() {
+    var strip = document.querySelector('[data-aico-color-strip]');
+    if (!strip) {
+      return;
+    }
+
+    strip.addEventListener('wheel', function (event) {
+      if (strip.scrollWidth <= strip.clientWidth) {
+        return;
+      }
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return; // trackpads already scroll horizontally
+      }
+      strip.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }, { passive: false });
+
+    var pointerDown = false;
+    var dragged = false;
+    var startX = 0;
+    var startScrollLeft = 0;
+
+    strip.addEventListener('pointerdown', function (event) {
+      if (event.pointerType !== 'mouse') {
+        return; // touch pans natively
+      }
+      pointerDown = true;
+      dragged = false;
+      startX = event.clientX;
+      startScrollLeft = strip.scrollLeft;
+    });
+
+    strip.addEventListener('pointermove', function (event) {
+      if (!pointerDown) {
+        return;
+      }
+      var delta = event.clientX - startX;
+      if (!dragged) {
+        if (Math.abs(delta) < 5) {
+          return; // still a click, not a drag
+        }
+        dragged = true;
+        strip.classList.add('aico-pdp-color-strip-dragging');
+        try { strip.setPointerCapture(event.pointerId); } catch (e) { /* noop */ }
+      }
+      strip.scrollLeft = startScrollLeft - delta;
+    });
+
+    function endDrag() {
+      if (!pointerDown) {
+        return;
+      }
+      pointerDown = false;
+      strip.classList.remove('aico-pdp-color-strip-dragging');
+    }
+    strip.addEventListener('pointerup', endDrag);
+    strip.addEventListener('pointercancel', endDrag);
+
+    // After a drag, swallow the click so the tile under the cursor
+    // doesn't navigate; plain clicks (and keyboard activation on the
+    // tabbable tiles) pass through untouched.
+    strip.addEventListener('click', function (event) {
+      if (dragged) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragged = false;
+      }
+    }, true);
+
+    // Links are draggable by default; a native HTML5 drag would eat the
+    // pointermove stream mid-drag.
+    strip.addEventListener('dragstart', function (event) {
+      event.preventDefault();
+    });
+  })();
 })();
