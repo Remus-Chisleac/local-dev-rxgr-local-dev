@@ -1890,6 +1890,91 @@ html.aico-no-scroll { overflow: hidden; }
   color: #c2410c;
 }
 
+/* Per-facet accordions on narrow screens (b2b-shop parity) --------- */
+/* The facet title is a button (see templates/products.liquid). On wide
+   viewports it renders exactly like the old <h3> text and stays inert;
+   below the first grid breakpoint each facet collapses into its own
+   disclosure row — tap the title to expand (products-page.js toggles
+   `.aico-filtercol-open` on the section). */
+
+.aico-filtercol-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  cursor: default;
+}
+.aico-filtercol-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-radius: var(--aico-radius);
+}
+.aico-filtercol-toggle-label { flex: 1; min-width: 0; }
+.aico-filtercol-chevron {
+  display: none;
+  flex: 0 0 auto;
+  color: var(--aico-muted-fg);
+  transition: transform 0.2s ease-out;
+}
+
+@media (max-width: 639.98px) {
+  .aico-filterbar-columns { gap: 0; }
+
+  .aico-filtercol {
+    gap: 0;
+    border-bottom: 1px solid var(--aico-border);
+  }
+  .aico-filtercol-title { margin: 0; }
+  .aico-filtercol-toggle {
+    cursor: pointer;
+    min-height: 3rem; /* b2b's 48px accordion summary */
+  }
+  .aico-filtercol-chevron { display: block; }
+
+  /* Collapsed by default; the section-level class reveals the values. */
+  .aico-filtercol [data-aico-facet-values] { display: none; }
+  .aico-filtercol.aico-filtercol-open [data-aico-facet-values] {
+    display: grid;
+    padding-bottom: 0.875rem;
+  }
+  .aico-filtercol.aico-filtercol-open .aico-filtercol-chevron { transform: rotate(180deg); }
+  /* Facet values in a 2-column grid like b2b's xs=6 rows. */
+  .aico-filtercol.aico-filtercol-open .aico-filtercol-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.75rem;
+  }
+
+  /* Sizes section joins the accordion list (no separator band). */
+  .aico-filterbar-sizes {
+    margin-top: 0;
+    border-top: 0;
+    padding-top: 0;
+    border-bottom: 1px solid var(--aico-border);
+  }
+  .aico-filterbar-sizes [data-aico-size-chips] { display: none; }
+  .aico-filterbar-sizes.aico-filtercol-open [data-aico-size-chips] {
+    display: flex;
+    margin-top: 0;
+    padding-bottom: 0.875rem;
+  }
+  .aico-filterbar-sizes.aico-filtercol-open .aico-filtercol-chevron { transform: rotate(180deg); }
+
+  /* A facet with active selections highlights its title (b2b parity). */
+  .aico-filtercol-has-active .aico-filtercol-toggle { color: #ea580c; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aico-filtercol-chevron { transition: none; }
+}
+
 /* Main grid + infinite scroll states ------------------------------ */
 
 .aico-products-meta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }

@@ -148,9 +148,27 @@
           <div class="aico-filterbar-columns" data-aico-facet-columns>
             {% for facet in aico_products.facets %}
               <section class="aico-filtercol" data-facet-id="{{ facet.id }}"{% if facet.id == 'category' and aico_preset_category_count > 0 %} hidden{% endif %}>
-                <h3 class="aico-filtercol-title">{{ facet.label_key | t }}</h3>
+                {% comment %}
+                  The title doubles as a per-facet accordion toggle on narrow
+                  screens (b2b-shop parity: below the first grid breakpoint each
+                  facet collapses into its own disclosure). On wider screens the
+                  chevron is hidden and the button is inert — the CSS only
+                  collapses values inside the mobile media query.
+                {% endcomment %}
+                <h3 class="aico-filtercol-title">
+                  <button type="button"
+                          class="aico-filtercol-toggle"
+                          data-aico-filtercol-toggle
+                          aria-expanded="true"
+                          aria-controls="aico-filtercol-values-{{ facet.id }}">
+                    <span class="aico-filtercol-toggle-label">{{ facet.label_key | t }}</span>
+                    <svg class="aico-icon aico-filtercol-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                  </button>
+                </h3>
                 {% if facet.id == 'color' %}
-                  <div class="aico-filtercol-swatches" data-aico-facet-values>
+                  <div id="aico-filtercol-values-{{ facet.id }}" class="aico-filtercol-swatches" data-aico-facet-values>
                     {% for value in facet %}
                       <button
                         type="button"
@@ -165,7 +183,7 @@
                     {% endfor %}
                   </div>
                 {% else %}
-                  <ul class="aico-filtercol-list" data-aico-facet-values>
+                  <ul id="aico-filtercol-values-{{ facet.id }}" class="aico-filtercol-list" data-aico-facet-values>
                     {% for value in facet %}
                       <li>
                         <button
@@ -187,9 +205,20 @@
           </div>
 
           {% assign aico_size_chip_count = aico_products.size_chips | size %}
-          <section class="aico-filterbar-sizes" data-aico-sizes-section{% if aico_size_chip_count == 0 %} hidden{% endif %}>
-            <h3 class="aico-filtercol-title">{{ 'products.facet_sizes' | t }}</h3>
-            <div class="aico-filterbar-sizes-row" data-aico-size-chips>
+          <section class="aico-filterbar-sizes" data-aico-sizes-section data-facet-id="sizes"{% if aico_size_chip_count == 0 %} hidden{% endif %}>
+            <h3 class="aico-filtercol-title">
+              <button type="button"
+                      class="aico-filtercol-toggle"
+                      data-aico-filtercol-toggle
+                      aria-expanded="true"
+                      aria-controls="aico-filtercol-values-sizes">
+                <span class="aico-filtercol-toggle-label">{{ 'products.facet_sizes' | t }}</span>
+                <svg class="aico-icon aico-filtercol-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+            </h3>
+            <div id="aico-filtercol-values-sizes" class="aico-filterbar-sizes-row" data-aico-size-chips>
               {% for chip in aico_products.size_chips %}
                 <button
                   type="button"

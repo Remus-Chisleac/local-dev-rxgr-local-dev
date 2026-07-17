@@ -1063,6 +1063,19 @@
     countEl.textContent = (template || '{count}').replace('{count}', total);
   }
 
+  // Mark facet sections that carry active values so the accordion titles
+  // can highlight on narrow screens (mirrors b2b-shop's primary-colored
+  // summary when a facet has selections).
+  function updateFacetActiveMarkers() {
+    var sections = rootEl.querySelectorAll('.aico-filtercol[data-facet-id], [data-aico-sizes-section]');
+    for (var i = 0; i < sections.length; i++) {
+      var section = sections[i];
+      var facetId = section.getAttribute('data-facet-id') || 'sizes';
+      var active = (state.appliedFacets[facetId] || []).length > 0;
+      section.classList.toggle('aico-filtercol-has-active', active);
+    }
+  }
+
   function updateFilterCountBadge() {
     var n = 0;
     Object.keys(state.appliedFacets).forEach(function (k) {
@@ -1073,6 +1086,7 @@
       }
       n += (state.appliedFacets[k] || []).length;
     });
+    updateFacetActiveMarkers();
     if (filterCountBadge) {
       filterCountBadge.textContent = String(n);
       if (n > 0) {
@@ -1463,6 +1477,46 @@
       fetchAndRender({}).then(function () { fillViewport(); });
     }
   }
+
+  // Per-facet accordions on narrow screens (b2b-shop-style progressive
+  // disclosure): below the first grid breakpoint each facet's values are
+  // CSS-collapsed until its title button toggles `.aico-filtercol-open` on
+  // the section. On wider viewports the same CSS keeps everything visible,
+  // so the toggle is inert there and aria-expanded reads true.
+  var facetAccordionMq = window.matchMedia('(max-width: 639.98px)');
+
+  function syncFacetToggleAria() {
+    var toggles = rootEl.querySelectorAll('[data-aico-filtercol-toggle]');
+    for (var i = 0; i < toggles.length; i++) {
+      var btn = toggles[i];
+      var section = btn.closest('section');
+      var open = !facetAccordionMq.matches || !!(section && section.classList.contains('aico-filtercol-open'));
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  }
+
+  rootEl.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-aico-filtercol-toggle]');
+    if (!btn) {
+      return;
+    }
+    if (!facetAccordionMq.matches) {
+      return; // wide screens: all facets stay expanded, the toggle is inert
+    }
+    var section = btn.closest('section');
+    if (!section) {
+      return;
+    }
+    section.classList.toggle('aico-filtercol-open');
+    syncFacetToggleAria();
+  });
+
+  if (typeof facetAccordionMq.addEventListener === 'function') {
+    facetAccordionMq.addEventListener('change', syncFacetToggleAria);
+  } else if (typeof facetAccordionMq.addListener === 'function') {
+    facetAccordionMq.addListener(syncFacetToggleAria);
+  }
+  syncFacetToggleAria();
 
   if (sentinel && 'IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function (entries) {
