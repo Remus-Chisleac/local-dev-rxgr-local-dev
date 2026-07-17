@@ -33,6 +33,9 @@
   "nav": {
     "welcome_prefix": "Willkommen zurück,",
     "welcome_guest": "Willkommen",
+    "aico_greeting_morning": "Guten Morgen,",
+    "aico_greeting_day": "Guten Tag,",
+    "aico_greeting_evening": "Guten Abend,",
     "search_aria": "Suchen",
     "cart_aria": "Warenkorb öffnen",
     "open_menu": "Menü",

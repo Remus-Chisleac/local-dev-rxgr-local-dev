@@ -16,9 +16,38 @@
   <div class="aico-page-container aico-products-shell">
     <h1 class="aico-sr-only">{{ 'products.title' | t }}</h1>
 
+    {% comment %}
+      Active category — any category facet value already applied when the
+      page renders came from the URL (e.g. arriving via a menu link), i.e.
+      it is a "preset". The heading then shows the category's display name
+      instead of the all-products fallback, and the category facet column
+      is hidden (it would only repeat the single selected item). The JS
+      controller mirrors both behaviours and keeps the preset sticky
+      across "clear all".
+    {% endcomment %}
+    {% assign aico_active_category_label = '' %}
+    {% assign aico_preset_category_count = 0 %}
+    {% for facet in aico_products.facets %}
+      {% if facet.id == 'category' %}
+        {% for value in facet %}
+          {% if value.active %}
+            {% assign aico_preset_category_count = aico_preset_category_count | plus: 1 %}
+            {% if aico_active_category_label == '' %}
+              {% assign aico_active_category_label = value.label %}
+            {% else %}
+              {% assign aico_active_category_label = aico_active_category_label | append: ', ' | append: value.label %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% assign aico_visible_facet_count = aico_products.applied_facet_count | minus: aico_preset_category_count %}
+
     <div class="aico-filterbar">
       <div class="aico-filterbar-row">
-        <p class="aico-filterbar-heading" data-aico-category-heading>{{ 'products.all_categories' | t }}</p>
+        <p class="aico-filterbar-heading" data-aico-category-heading data-all-categories-label="{{ 'products.all_categories' | t }}">
+          {%- if aico_active_category_label != '' -%}{{ aico_active_category_label }}{%- else -%}{{ 'products.all_categories' | t }}{%- endif -%}
+        </p>
 
         <label class="aico-filterbar-search">
           <span class="aico-sr-only">{{ 'products.search_label' | t }}</span>
@@ -50,7 +79,7 @@
             </svg>
             <span>{{ 'products.filters_title' | t }}</span>
             <span class="aico-filterbar-badge" data-aico-filter-count>
-              {{ aico_products.applied_facet_count }}
+              {{ aico_visible_facet_count }}
             </span>
             <svg class="aico-filterbar-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"></path>
@@ -118,7 +147,7 @@
 
           <div class="aico-filterbar-columns" data-aico-facet-columns>
             {% for facet in aico_products.facets %}
-              <section class="aico-filtercol" data-facet-id="{{ facet.id }}">
+              <section class="aico-filtercol" data-facet-id="{{ facet.id }}"{% if facet.id == 'category' and aico_preset_category_count > 0 %} hidden{% endif %}>
                 <h3 class="aico-filtercol-title">{{ facet.label_key | t }}</h3>
                 {% if facet.id == 'color' %}
                   <div class="aico-filtercol-swatches" data-aico-facet-values>

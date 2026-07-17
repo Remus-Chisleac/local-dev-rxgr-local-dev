@@ -79,6 +79,17 @@
     lastDistribution: {},
   };
 
+  // Preset category — the category facet values already present in the
+  // URL at page init (before any user interaction), e.g. arriving from a
+  // menu link. A preset hides the category facet group entirely and is
+  // sticky: "clear all" re-applies it. Categories picked by the user on
+  // an unfiltered listing stay clearable as before.
+  var PRESET_CATEGORIES = (state.appliedFacets.category || []).slice();
+
+  function hasPresetCategory() {
+    return PRESET_CATEGORIES.length > 0;
+  }
+
   function copyAppliedFacets(obj) {
     var out = {};
     if (!obj || typeof obj !== 'object') {
@@ -943,6 +954,12 @@
     if (!section) {
       return;
     }
+    // A preset category keeps its facet column hidden — it would only
+    // repeat the single (locked) selection.
+    if (facetId === 'category' && hasPresetCategory()) {
+      section.hidden = true;
+      return;
+    }
     var values = Object.keys(distribution || {});
     if (!values.length) {
       section.hidden = true;
@@ -1049,6 +1066,11 @@
   function updateFilterCountBadge() {
     var n = 0;
     Object.keys(state.appliedFacets).forEach(function (k) {
+      // The preset category is locked (its facet group is hidden and
+      // "clear all" keeps it) — don't count it as an active filter.
+      if (k === 'category' && hasPresetCategory()) {
+        return;
+      }
       n += (state.appliedFacets[k] || []).length;
     });
     if (filterCountBadge) {
@@ -1153,9 +1175,33 @@
     });
   }
 
+  // ---- Category heading -------------------------------------------
+
+  // The filter-bar heading mirrors the category selection: the selected
+  // category's display name (localized via config.facetValueLabels) when
+  // one is applied — preset or user-picked — and the all-products label
+  // otherwise.
+  var categoryHeadingEl = rootEl.querySelector('[data-aico-category-heading]');
+
+  function updateCategoryHeading() {
+    if (!categoryHeadingEl) {
+      return;
+    }
+    var values = state.appliedFacets.category || [];
+    if (values.length) {
+      var labels = values.map(function (v) {
+        return facetValueLabel('category', v);
+      });
+      categoryHeadingEl.textContent = labels.join(', ');
+    } else {
+      categoryHeadingEl.textContent = categoryHeadingEl.getAttribute('data-all-categories-label') || '';
+    }
+  }
+
   function refresh() {
     syncUrl();
     updateFilterCountBadge();
+    updateCategoryHeading();
     return fetchAndRender({ replace: true, includeFacets: true });
   }
 
@@ -1365,6 +1411,11 @@
   if (clearAllBtn) {
     clearAllBtn.addEventListener('click', function () {
       state.appliedFacets = {};
+      // A category preset from the URL survives "clear all" — only
+      // filters the user added during the session are cleared.
+      if (hasPresetCategory()) {
+        state.appliedFacets.category = PRESET_CATEGORIES.slice();
+      }
       // Reset every checkbox + button in the panel.
       rootEl.querySelectorAll('[data-aico-facet-checkbox]').forEach(function (el) {
         if (el.tagName === 'INPUT') {
@@ -1453,7 +1504,18 @@
     }
   }
 
+  // Preset category boot state — the server hides the column when it can
+  // see the applied category in the facet distribution; force it here too
+  // so edge cases (e.g. a preset with zero hits) behave identically.
+  if (hasPresetCategory() && facetColumnsEl) {
+    var presetCategorySection = facetColumnsEl.querySelector('section.aico-filtercol[data-facet-id="category"]');
+    if (presetCategorySection) {
+      presetCategorySection.hidden = true;
+    }
+  }
+
   updateFilterCountBadge();
+  updateCategoryHeading();
 
   // Boot the grid. Two modes:
   //  - The products page hydrates entirely client-side (no SSR cards): render

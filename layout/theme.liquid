@@ -206,13 +206,39 @@
         <div class="aico-page-container">
           <p class="aico-welcome-text">
             {% if customer %}
-              {{ 'nav.welcome_prefix' | t }} {{ customer.first_name }}
+              {%- comment -%}
+                Time-of-day greeting. The server can't know the shopper's
+                timezone, so it renders the neutral welcome_prefix as the
+                SSR fallback and the inline script below swaps in the
+                local-time greeting before first paint (script sits right
+                after the element). Buckets: 05–10 morning, 11–16 day,
+                17–04 evening (late night reuses the evening copy).
+              {%- endcomment -%}
+              <span data-aico-greeting
+                    data-greeting-morning="{{ 'nav.aico_greeting_morning' | t }}"
+                    data-greeting-day="{{ 'nav.aico_greeting_day' | t }}"
+                    data-greeting-evening="{{ 'nav.aico_greeting_evening' | t }}">{{ 'nav.welcome_prefix' | t }}</span>
+              {{ customer.first_name }}
             {% else %}
               {{ 'nav.welcome_guest' | t }}
             {% endif %}
           </p>
         </div>
       </div>
+      {% if customer %}
+        <script>
+          (function () {
+            var el = document.querySelector('[data-aico-greeting]');
+            if (!el) { return; }
+            var h = new Date().getHours();
+            var key = (h >= 5 && h < 11) ? 'greetingMorning'
+              : (h >= 11 && h < 17) ? 'greetingDay'
+              : 'greetingEvening';
+            var text = el.dataset[key];
+            if (text) { el.textContent = text; }
+          })();
+        </script>
+      {% endif %}
 
       <header class="aico-header" role="banner">
         <div class="aico-page-container aico-header-row">
