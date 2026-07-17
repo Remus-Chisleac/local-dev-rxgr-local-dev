@@ -285,7 +285,7 @@
             <dd x-text="formatMoney(creditCardFlatFee)"></dd>
           </div>
           <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.vat' | t }}</dt>
+            <dt x-text="vatLabel()">{{ 'checkout.summary.vat' | t }}</dt>
             <dd x-text="vatDisplay()"></dd>
           </div>
         </dl>

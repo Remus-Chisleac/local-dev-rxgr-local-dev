@@ -506,6 +506,7 @@
       "discount_percentage": "Rabatt (%)",
       "shipping": "Versand",
       "vat": "MwSt.",
+      "vat_with_rate": "MwSt. ({{ rate }}%)",
       "cc_fee": "Kreditkartengebühr",
       "cc_fee_percent": "Kreditkartengebühr (%)",
       "total": "Gesamt"

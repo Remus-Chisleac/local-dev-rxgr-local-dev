@@ -81,6 +81,7 @@
       cart: readInitialCart(),
       shippingAmount: null,
       vatAmount: null,
+      vatRate: null,
       creditCardFlatFee: 0,
       creditCardFeePercent: 0,
       totalsLoaded: false,
@@ -147,6 +148,11 @@
             if (vatBody) {
               self.vatAmount = Number(vatBody.vat || 0);
               self.creditCardFlatFee = Number(vatBody.credit_card_flat_fee || 0);
+              // AICO extension: the single VAT percentage applied to the cart's
+              // items (null when rates are mixed -> plain "VAT" label).
+              self.vatRate = (vatBody.vat_rate === null || vatBody.vat_rate === undefined || isNaN(Number(vatBody.vat_rate)))
+                ? null
+                : Number(vatBody.vat_rate);
             }
             self.totalsLoaded = true;
           })
@@ -254,6 +260,19 @@
       vatDisplay: function () {
         if (!this.totalsLoaded || this.totalsLoading) return '…';
         return formatMoneyValue(this.vatAmount || 0);
+      },
+
+      // "VAT (8.1%)" / "MwSt. (8.1%)" once the rate is known; plain label
+      // before the totals load or when the cart mixes VAT rates.
+      vatLabel: function () {
+        var base = translations.vat || 'VAT';
+        if (this.vatRate === null || this.vatRate === undefined) return base;
+        var rate = String(Number(this.vatRate));
+        var template = translations.vat_with_rate;
+        if (template && template.indexOf('{{') !== -1) {
+          return template.replace(/\{\{\s*rate\s*\}\}/g, rate);
+        }
+        return base + ' (' + rate + '%)';
       },
 
       totalDisplay: function () {

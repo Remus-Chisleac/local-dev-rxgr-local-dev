@@ -506,6 +506,7 @@
       "discount_percentage": "Discount (%)",
       "shipping": "Shipping",
       "vat": "VAT",
+      "vat_with_rate": "VAT ({{ rate }}%)",
       "cc_fee": "Credit-card fee",
       "cc_fee_percent": "Credit-card fee (%)",
       "total": "Total"

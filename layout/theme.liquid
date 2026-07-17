@@ -115,7 +115,9 @@
           missing_fields: {{ 'checkout.errors.missing_fields' | t | json }},
           submit_failed: {{ 'checkout.errors.submit_failed' | t | json }},
           cart_modified: {{ 'checkout.errors.cart_modified' | t | json }},
-          login_required: {{ 'checkout.login_required' | t | json }}
+          login_required: {{ 'checkout.login_required' | t | json }},
+          vat: {{ 'checkout.summary.vat' | t | json }},
+          vat_with_rate: {{ 'checkout.summary.vat_with_rate' | t | json }}
         }{% endif %}
       };
       window.__AICO_FLAGS__ = {
