@@ -2804,14 +2804,28 @@ button.aico-home-brand-card {
 }
 .aico-pdp-gallery-thumb {
   flex: 0 0 auto;
-  padding: 0;
-  border: 2px solid transparent;
+  /* No box outline (user feedback) — the active state is a kybun-orange
+     underline (::after) + full opacity; non-active thumbs stay dimmed. */
+  padding: 0 0 4px;
+  border: 0;
   background: var(--aico-bg);
-  border-radius: 0.125rem;
+  border-radius: var(--aico-radius, 2px);
   overflow: hidden;
   cursor: pointer;
   opacity: 0.7;
-  transition: opacity 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  transition: opacity 0.15s ease;
+}
+.aico-pdp-gallery-thumb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #e8702d; /* kybun orange (same as .aico-button-primary) */
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 .aico-pdp-gallery-thumb img {
   display: block;
@@ -2823,9 +2837,9 @@ button.aico-home-brand-card {
 }
 .aico-pdp-gallery-thumb:hover { opacity: 1; }
 .aico-pdp-gallery-thumb-active {
-  border-color: var(--aico-muted-fg);
   opacity: 1;
 }
+.aico-pdp-gallery-thumb-active::after { opacity: 1; }
 .aico-pdp-gallery-thumb:focus-visible,
 .aico-pdp-gallery-nav:focus-visible {
   outline: 2px solid var(--color-accent);
@@ -2854,7 +2868,8 @@ button.aico-home-brand-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: calc(4rem + 4px);
+  /* Match the photo thumbs: 4rem image square + the 4px underline gutter. */
+  width: 4rem;
   height: calc(4rem + 4px);
 }
 .aico-pdp-thumb-360-label {
@@ -4362,17 +4377,16 @@ button.aico-home-brand-card {
   display: flex; align-items: center; justify-content: center;
   width: 7.5rem; height: 5.625rem;  /* 120×90 — the legacy b2b-shop card size */
   padding: 0.375rem;
-  background: var(--aico-card, #fff); border: 2px solid transparent;
+  /* Borderless (user feedback): the strip only lists *other* colours now
+     (the current product is excluded in the template), so no active box is
+     needed — hover feedback is a soft lift + shadow. */
+  background: var(--aico-card, #fff); border: 0;
   border-radius: var(--aico-radius, 2px); overflow: hidden;
-  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
-.aico-pdp-color-tile:hover { border-color: var(--aico-border, #e5e7eb); transform: translateY(-1px); }
+.aico-pdp-color-tile:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
 .aico-pdp-color-tile:focus-visible { outline: 2px solid var(--aico-fg, #1a1a1a); outline-offset: 1px; }
 .aico-pdp-color-tile img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; pointer-events: none; }
-.aico-pdp-color-tile-active {
-  border-color: var(--aico-fg, #1a1a1a);
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-}
 
 /* ---------------------------------------------------------------- */
 /*  PDP — Reviews (mock)                                             */

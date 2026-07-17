@@ -487,18 +487,16 @@
           under the add-to-cart block: a single horizontal row that scrolls
           sideways with a hidden scrollbar (wheel/drag glue lives in
           product-detail.js; touch scrolls natively). The current product
-          is prepended as the always-active tile.
+          is NOT shown in the strip — the shopper is already on it, so the
+          row lists only the *other* colours (the url guard below is
+          belt-and-braces on top of the backend's own SKU exclusion).
         {%- endcomment -%}
         {% if product.aico_color_siblings.size > 0 %}
           <section class="aico-pdp-colors" aria-labelledby="aico-pdp-colors-heading">
             <h2 id="aico-pdp-colors-heading" class="aico-pdp-section-heading">{{ 'product.more_colors' | t }}</h2>
             <div class="aico-pdp-color-strip" data-aico-color-strip>
-              <a class="aico-pdp-color-tile aico-pdp-color-tile-active" href="{{ product.url }}" aria-current="page" aria-label="{{ product.title }}">
-                {% if product.featured_image %}
-                  <img src="{{ product.featured_image }}" alt="" loading="lazy" decoding="async">
-                {% endif %}
-              </a>
               {% for sibling in product.aico_color_siblings limit: 11 %}
+                {% if sibling.url == product.url %}{% continue %}{% endif %}
                 <a class="aico-pdp-color-tile" href="{{ sibling.url }}" title="{{ sibling.title }}" aria-label="{{ sibling.title }}">
                   {% if sibling.featured_image %}
                     <img src="{{ sibling.featured_image }}" alt="" loading="lazy" decoding="async">
