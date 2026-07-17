@@ -101,6 +101,7 @@
     "facet_soleTechnology": "Sohlentechnologie",
     "facet_fitting": "Passform",
     "facet_productionStatus": "Status",
+    "facet_allergens": "Allergene",
     "facet_sizes": "Grösse",
     "facet_sale": "Nur Sale",
     "clear_all": "Alle löschen",

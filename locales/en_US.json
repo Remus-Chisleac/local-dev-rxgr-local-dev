@@ -101,6 +101,7 @@
     "facet_soleTechnology": "Sole technology",
     "facet_fitting": "Fit",
     "facet_productionStatus": "Status",
+    "facet_allergens": "Allergens",
     "facet_sizes": "Size",
     "facet_sale": "On sale only",
     "clear_all": "Clear all",
