@@ -1496,25 +1496,6 @@ html.aico-no-scroll { overflow: hidden; }
 }
 @media (min-width: 640px) { .aico-filterbar-heading { font-size: 0.875rem; } }
 
-/* Compact toolbar below the desktop breakpoint: on phones the heading
-   takes a slim row of its own while search + Filter + sort share one
-   controls row; on tablets everything sits on a single line and a long
-   preset-category heading ellipsizes instead of crushing the search. */
-@media (max-width: 639.98px) {
-  .aico-filterbar-heading { flex-basis: 100%; }
-  .aico-filterbar-search { flex-basis: 0; }
-}
-@media (min-width: 640px) and (max-width: 1023.98px) {
-  .aico-filterbar-heading {
-    flex-shrink: 1;
-    min-width: 0;
-    max-width: 40%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
 .aico-filterbar-search {
   position: relative;
   flex: 1 1 16rem;
@@ -1557,6 +1538,26 @@ html.aico-no-scroll { overflow: hidden; }
   justify-content: flex-end;
 }
 @media (min-width: 640px) { .aico-filterbar-actions { gap: 0.5rem; } }
+
+/* Compact toolbar below the desktop breakpoint: on phones the heading
+   takes a slim row of its own while search + Filter + sort share one
+   controls row; on tablets everything sits on a single line and a long
+   preset-category heading ellipsizes instead of crushing the search.
+   (Placed after the base search/heading rules so the overrides win.) */
+@media (max-width: 639.98px) {
+  .aico-filterbar-heading { flex-basis: 100%; }
+  .aico-filterbar-search { flex-basis: 0; }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .aico-filterbar-heading {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 
 .aico-filterbar-toggle {
   display: inline-flex;
