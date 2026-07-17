@@ -10424,3 +10424,43 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-pdp-reviews .yotpo-widget-instance input[type="submit"] {
   border-radius: var(--aico-radius, 2px) !important;
 }
+
+/* Reviews toolbar pills — the "Search reviews" field (div.yotpo-search-filter
+   wrapping input.yotpo-search-input), the "Rating" dropdown (its visible pill
+   is span.yotpo-dropdown-base, not a button) and the "With media" toggle
+   (button.yotpo-media-select, already 2px via the button rule above but kept
+   here for robustness) all ship border-radius:100px. Flatten to the theme
+   token. Yotpo's own rules are data-v scoped; the 3-class scope out-ranks
+   them, !important matches the button rule above. */
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-search-filter,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-search-filter .yotpo-search-input,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-dropdown-base,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-media-select {
+  border-radius: var(--aico-radius, 2px) !important;
+}
+
+/* Hover: Yotpo draws a SECOND ring on hover via an absolutely-inset ::after
+   with a hardcoded border-radius:100px + offset outline in --primary-color —
+   on a 2px control that reads as a wrong, doubled outline. Drop the hover
+   rings and keep one affordance: the border tinting to the widget accent
+   (Yotpo already does this for the search field; add it for the other two). */
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-search-filter:hover::after,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-search-filter--focus::after,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-media-select:hover::after {
+  content: none;
+}
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-media-select:hover,
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-dropdown-closable:hover .yotpo-dropdown-base {
+  border-color: var(--primary-color, var(--color-accent, #2563eb));
+}
+
+/* Keyboard focus stays visible, just aligned to the 2px rounding: the
+   dropdown's focus-visible outline hardcodes a 100px radius, and the media
+   toggle's focus-visible ::after ring hardcodes 100px too. Native focus
+   rings on .yotpo-search-filter follow the element's (now 2px) radius. */
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-dropdown-closable:focus-visible {
+  border-radius: var(--aico-radius, 2px);
+}
+.aico-pdp-reviews .yotpo-widget-instance .yotpo-media-select:focus-visible::after {
+  border-radius: var(--aico-radius, 2px);
+}
