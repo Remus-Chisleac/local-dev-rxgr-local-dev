@@ -973,6 +973,11 @@
         input.getAttribute('data-date') === cell.date
       ) {
         if (input.value !== cell.value) input.value = cell.value;
+        // The input was focused (= in the editing state) before the rebuild;
+        // re-add the editing style explicitly — the focus event that would
+        // normally add it may not fire synchronously in an unfocused window.
+        var box = input.closest('.aico-preorder-qty-box');
+        if (box) box.classList.add('aico-preorder-qty-box--editing');
         try {
           input.focus({ preventScroll: true });
         } catch (_) {
