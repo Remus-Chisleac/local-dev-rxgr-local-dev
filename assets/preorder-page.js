@@ -1903,6 +1903,14 @@
             if (catalog) catalog.render();
           }
           renderFlyers(sessionData && sessionData.flyers);
+          // While a context change's cart fetch is resolving, localCart already
+          // holds the NEW context's cart but the stock module still holds the
+          // PREVIOUS one's quantities — updateSummary would mix the two and
+          // paint a transiently wrong total/discount tier (the address-change
+          // flicker). Skip the repaint; the authoritative one follows from
+          // reseedCatalogIfPending() / onProductsLoaded() once the stock module
+          // has been re-seeded from this cart.
+          if (cartResolving) return;
           updateSummary();
         },
         onDirtyChange: function (dirty) {
