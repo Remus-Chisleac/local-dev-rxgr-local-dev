@@ -206,7 +206,8 @@
         theme.css) — see storefront cart2.liquid / product.liquid, which
         already gate on the same flag to disable add-to-cart/checkout.
       {%- endcomment -%}
-      {%- if customer.aico_shipping_block -%}
+      {%- comment -%} TEMP: hardcoded for UI review — drop before merge {%- endcomment -%}
+      {%- if true -%}
         <div class="aico-system-banner aico-shipping-block-banner" role="alert" aria-live="assertive" data-aico-shipping-block-banner>
           <div class="aico-system-banner-rule" aria-hidden="true"></div>
           <div class="aico-system-banner-tab-wrap">
