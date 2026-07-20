@@ -112,19 +112,24 @@
             <div class="aico-pdp-header-meta">
               {%- comment -%}
                 Star rating on the title row, right side — same Yotpo star
-                widget as the product cards (snippets/star-rating); its
-                "N Reviews" bottom line jumps to the reviews section below.
+                widget as the product cards (snippets/star-rating), stars
+                only (the widget's review-count text is hidden in CSS, like
+                on the cards). SKU + status sit on their own line below.
               {%- endcomment -%}
               {% if settings.aico_reviews_enabled and product.sku and product.sku != '' %}
                 <div class="aico-pdp-rating" aria-label="{{ 'product.reviews.title' | t }}">
                   {% render 'star-rating', sku: product.sku %}
                 </div>
               {% endif %}
-              {% if product.sku %}
-                <span class="aico-pdp-sku" aria-label="{{ 'product.sku_aria' | t }}">{{ product.sku }}</span>
-              {% endif %}
-              {% if product.aico_production_status_label %}
-                <span class="aico-pdp-status-pill">{{ product.aico_production_status_label }}</span>
+              {% if product.sku or product.aico_production_status_label %}
+                <div class="aico-pdp-header-meta-row">
+                  {% if product.sku %}
+                    <span class="aico-pdp-sku" aria-label="{{ 'product.sku_aria' | t }}">{{ product.sku }}</span>
+                  {% endif %}
+                  {% if product.aico_production_status_label %}
+                    <span class="aico-pdp-status-pill">{{ product.aico_production_status_label }}</span>
+                  {% endif %}
+                </div>
               {% endif %}
             </div>
           </div>

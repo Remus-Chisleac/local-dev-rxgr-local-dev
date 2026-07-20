@@ -2914,15 +2914,22 @@ button.aico-home-brand-card {
 @media (min-width: 768px) { .aico-pdp-title { font-size: 1.875rem; } }
 .aico-pdp-header-meta {
   display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.aico-pdp-header-meta-row {
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.75rem;
   justify-content: flex-end;
 }
 /* Star rating on the title row (Yotpo star widget, shared with the product
-   cards via snippets/star-rating). Sits first in the header-meta cluster,
-   right of the title; wraps below it with the rest of the meta on narrow
-   viewports. Widget-internal overrides live in the "Yotpo polish" block. */
+   cards via snippets/star-rating). Stars-only, right of the title; the
+   SKU/status meta-row sits on its own line below it. The whole meta column
+   wraps under the title on narrow viewports. Widget-internal overrides
+   (count-text hide, margin flatten) live in the "Yotpo polish" block. */
 .aico-pdp-rating {
   display: inline-flex;
   align-items: center;
@@ -10716,10 +10723,14 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-product-card .yotpo-widget-instance [class*="bottom-line-text"] {
   display: none !important;
 }
-/* PDP title-row stars: the star widget ships an inline 5px bottom margin on
-   its root — flatten it so the stars sit level with the SKU/status meta. The
-   "N Reviews" bottom-line text stays visible here (it jumps to the reviews
-   section), unlike on cards where it's hidden above. */
+/* PDP title-row stars: stars only, same as the cards — hide the widget's
+   "N Reviews" count text (the full reviews section below the fold carries
+   the count) and flatten the widget root's inline 5px bottom margin so the
+   stars sit level on the title row. */
+.aico-pdp-rating .yotpo-widget-instance .yotpo-sr-bottom-line-text,
+.aico-pdp-rating .yotpo-widget-instance [class*="bottom-line-text"] {
+  display: none !important;
+}
 .aico-pdp-rating .yotpo-widget-instance > div {
   margin-bottom: 0 !important;
 }
