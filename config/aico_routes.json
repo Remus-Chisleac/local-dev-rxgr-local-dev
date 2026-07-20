@@ -41,10 +41,6 @@
 
     { "template": "brand", "path": "brand/:handle", "page_type": "custom", "name": "Brand", "params": { "handle": "brand" } },
 
-    { "template": "page.terms", "path": "pages/terms", "page_type": "page" },
-    { "template": "page.privacy", "path": "pages/privacy", "page_type": "page" },
-    { "template": "page.imprint", "path": "pages/imprint", "page_type": "page" },
-    { "template": "page.versandkosten", "path": "pages/versandkosten", "page_type": "page" },
     { "template": "page", "path": "pages/:handle", "page_type": "page" },
     { "template": "page", "path": "pages/:handle/*", "page_type": "page", "menu": false },
 
