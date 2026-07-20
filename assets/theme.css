@@ -10599,32 +10599,51 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 }
 
 /* ---------------------------------------------------------------- */
-/* Customer view ("Endkundenansicht") — salesperson price-hide mode  */
+/* System banner — customer-view mode + org-level shipping block     */
 /* ---------------------------------------------------------------- */
+
+/*
+  ONE element serves all three states, driven by two independent, orthogonal
+  flags (no stacking — a second bar collided with the welcome-bar greeting
+  underneath it):
+
+    - `.aico-system-banner-ship-block` — permanent class emitted server-side
+      whenever `customer.aico_shipping_block` is true (see layout/theme.liquid).
+    - `.aico-customer-view` — client-toggled class on <html>, set by
+      assets/customer-view.js from the salesperson's saved preference.
+
+  Combinations:
+    shipping-block only -> red arm + red tab, "Liefersperre!" + warning icon
+    customer-view only  -> blue arm + blue tab, "Endkundenansicht" + eye icon
+    both active          -> diagonal red/blue arm ("combine the colours");
+                            tab stays blue and leads with "Endkundenansicht"
+                            (label priority), plus a small red dot appended
+                            so the block is still telegraphed.
+*/
 
 :root {
   --aico-customer-view-accent: var(--color-accent);
   --aico-shipping-block-accent: #dc2626;
-  --aico-system-banner-height: 26px;
 }
 
-/* System banner: a FIXED overlay at the very top of the viewport (modeled on
-   aico-commerce's SystemBanner `inline` variant) — a full-width hairline plus
-   a small centered tab with a flat top and rounded bottom. Because it is
-   position:fixed + pointer-events:none it telegraphs the mode WITHOUT shifting
-   document flow or intercepting clicks. Hidden until <html> carries
-   `aico-customer-view` (set client-side from the saved preference). */
+/* FIXED overlay at the very top of the viewport (modeled on aico-commerce's
+   SystemBanner `inline` variant) — a full-width hairline plus a small
+   centered tab with a flat top and rounded bottom. position:fixed +
+   pointer-events:none telegraphs the mode WITHOUT shifting document flow or
+   intercepting clicks. */
 .aico-system-banner {
   display: none;
-}
-.aico-customer-view .aico-customer-view-banner {
-  display: block;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
   pointer-events: none;
+}
+/* Visible whenever either state is active. */
+.aico-system-banner.aico-system-banner-ship-block,
+.aico-customer-view .aico-system-banner {
+  display: block;
 }
 .aico-system-banner-rule {
   height: 2px;
@@ -10659,33 +10678,70 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   opacity: 0.85;
 }
 
-/* ---------------------------------------------------------------- */
-/* Shipping block ("Liefersperre") — org-level delivery block        */
-/* ---------------------------------------------------------------- */
-
-/* Server-rendered (see layout/theme.liquid: `{% if customer.aico_shipping_block %}`),
-   so unlike the customer-view banner it needs no JS-toggled gating class —
-   it is only in the DOM at all when the flag is true. Same
-   `.aico-system-banner` structure, red accent instead of the brand accent. */
-.aico-shipping-block-banner {
-  display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 101; /* above the customer-view banner if both are present */
-  pointer-events: none;
-}
-.aico-shipping-block-banner .aico-system-banner-rule,
-.aico-shipping-block-banner .aico-system-banner-tab {
-  background: var(--aico-shipping-block-accent, #dc2626);
+/* Shipping-block-only colouring (arm + tab red). Overridden on the arm by
+   the diagonal rule, and on the tab by the customer-view rule below, when
+   both states are active. */
+.aico-system-banner-ship-block .aico-system-banner-rule,
+.aico-system-banner-ship-block .aico-system-banner-tab {
+  background: var(--aico-shipping-block-accent);
 }
 
-/* If the customer-view banner also renders (staff viewing a blocked
-   customer's org), push it below the shipping-block banner instead of
-   overlapping at the same fixed offset. */
-.aico-shipping-block-banner + .aico-customer-view-banner {
-  top: var(--aico-system-banner-height, 26px);
+/* Customer-view colouring — wins on the tab whenever active (label
+   priority), same source-order precedence keeps it winning in the
+   both-active case since this rule comes after the ship-block one above. */
+.aico-customer-view .aico-system-banner-rule,
+.aico-customer-view .aico-system-banner-tab {
+  background: var(--aico-customer-view-accent);
+}
+
+/* Both active: diagonal red/blue arm. Three-class selector gives this the
+   highest specificity so it always wins regardless of source order. */
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-rule {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--aico-shipping-block-accent) 0 6px,
+    var(--aico-customer-view-accent) 6px 12px
+  );
+}
+/* Same specificity bump for the tab, so it stays blue even if the rule
+   order above is ever reshuffled. */
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-tab {
+  background: var(--aico-customer-view-accent);
+}
+
+/* Label/icon priority: "Endkundenansicht" always leads once customer-view
+   is active, with or without a shipping block. The shipping-block label
+   is the default (shown for the ship-block-only state) and is swapped out
+   the moment `.aico-customer-view` is present. */
+.aico-system-banner-tab-label-cv,
+.aico-system-banner-icon-cv {
+  display: none;
+}
+.aico-system-banner-tab-label-ship,
+.aico-system-banner-icon-ship {
+  display: inline;
+}
+.aico-customer-view .aico-system-banner-tab-label-cv,
+.aico-customer-view .aico-system-banner-icon-cv {
+  display: inline;
+}
+.aico-customer-view .aico-system-banner-tab-label-ship,
+.aico-customer-view .aico-system-banner-icon-ship {
+  display: none;
+}
+
+/* Small red dot appended to the (blue, "Endkundenansicht") tab only when
+   both states are active — keeps the block visible without a second bar. */
+.aico-system-banner-tab-glyph {
+  display: none;
+}
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-tab-glyph {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aico-shipping-block-accent);
+  flex: none;
 }
 
 /* Eye toggle: swap open-eye <-> eye-off with the state; tint when active. */
