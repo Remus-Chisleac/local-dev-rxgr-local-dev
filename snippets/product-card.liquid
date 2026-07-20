@@ -63,7 +63,7 @@
         {%- comment -%} Star rating overlaid top-right of the image (matches the legacy shop). {%- endcomment -%}
         {% if show_reviews and sku and sku != '' and settings.aico_reviews_enabled %}
           <div class="aico-product-card-reviews">
-            <div class="yotpo-widget-instance" data-yotpo-instance-id="{{ settings.aico_yotpo_widget_instance_id }}" data-yotpo-product-id="{{ sku }}"></div>
+            {% render 'star-rating', sku: sku %}
           </div>
         {% endif %}
       </div>

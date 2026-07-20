@@ -2919,6 +2919,16 @@ button.aico-home-brand-card {
   gap: 0.5rem 0.75rem;
   justify-content: flex-end;
 }
+/* Star rating on the title row (Yotpo star widget, shared with the product
+   cards via snippets/star-rating). Sits first in the header-meta cluster,
+   right of the title; wraps below it with the rest of the meta on narrow
+   viewports. Widget-internal overrides live in the "Yotpo polish" block. */
+.aico-pdp-rating {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.25rem;
+  line-height: 1;
+}
 
 /* ───── Preorder (step 1: addresses + filters) ───── */
 .aico-preorder {
@@ -10705,6 +10715,13 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-product-card .yotpo-widget-instance .yotpo-sr-bottom-line-text,
 .aico-product-card .yotpo-widget-instance [class*="bottom-line-text"] {
   display: none !important;
+}
+/* PDP title-row stars: the star widget ships an inline 5px bottom margin on
+   its root — flatten it so the stars sit level with the SKU/status meta. The
+   "N Reviews" bottom-line text stays visible here (it jumps to the reviews
+   section), unlike on cards where it's hidden above. */
+.aico-pdp-rating .yotpo-widget-instance > div {
+  margin-bottom: 0 !important;
 }
 .aico-pdp-reviews .yotpo-widget-instance button,
 .aico-pdp-reviews .yotpo-widget-instance [role="button"],

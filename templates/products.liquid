@@ -251,7 +251,13 @@
       {{ 'products.no_results' | t }}
     </p>
 
-    <ul class="aico-products-grid" data-aico-products-grid{% if aico_products.empty? %} hidden{% endif %}>
+    {%- comment -%}
+      data-aico-reviews-instance: hands the Yotpo star-widget instance id to
+      products-page.js so JS-built infinite-scroll cards carry the same star
+      rating as the server-rendered cards (snippets/product-card). Absent when
+      reviews are disabled — the JS then skips the widget entirely.
+    {%- endcomment -%}
+    <ul class="aico-products-grid" data-aico-products-grid{% if settings.aico_reviews_enabled %} data-aico-reviews-instance="{{ settings.aico_yotpo_widget_instance_id }}"{% endif %}{% if aico_products.empty? %} hidden{% endif %}>
       {% for product in aico_products %}
         {% assign aico_card_eager = false %}
         {% if forloop.index0 < 8 %}{% assign aico_card_eager = true %}{% endif %}
@@ -268,7 +274,7 @@
             is_new: product.aico_is_new?,
             discontinued: product.aico_is_discontinued?,
             eager: aico_card_eager,
-            show_reviews: false %}
+            show_reviews: true %}
         </li>
       {% endfor %}
     </ul>
@@ -284,6 +290,9 @@
 
     <div class="aico-products-sentinel" data-aico-products-sentinel aria-hidden="true"></div>
   </div>
+
+  {%- comment -%} Yotpo widgets loader — hydrates the per-card star ratings (gated on the reviews flag + store App Key). {%- endcomment -%}
+  {% render 'yotpo-loader' %}
 
   <script id="aico-products-config" type="application/json">{{ aico_products_config.json }}</script>
   <script src="{{ 'products-page.js' | asset_url }}" defer></script>

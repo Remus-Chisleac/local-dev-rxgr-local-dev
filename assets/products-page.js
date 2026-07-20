@@ -748,6 +748,11 @@
   var labelNew = configLabels.new || 'New';
   var newWithinDays = (typeof config.newWithinDays === 'number' && config.newWithinDays > 0) ? config.newWithinDays : 30;
 
+  // Yotpo star-widget instance id — emitted by templates/products.liquid on
+  // the grid (only when reviews are enabled), so JS-built infinite-scroll
+  // cards carry the same star rating as the SSR cards (snippets/star-rating).
+  var reviewsInstanceId = grid ? (grid.getAttribute('data-aico-reviews-instance') || '') : '';
+
   // Mirror ProductCatalogLoader::isWithinNewWindow — a hit is "new" when its
   // createdAt is within `newWithinDays` of now. Accepts the ISO string the
   // index stores or a numeric unix timestamp; bad values are simply not new.
@@ -861,6 +866,21 @@
       discBadge.className = 'aico-product-card-badge aico-product-card-badge-discontinued';
       discBadge.textContent = labelDiscontinued;
       imgWrap.appendChild(discBadge);
+    }
+
+    // Star rating overlaid top-right of the image — mirrors the SSR card's
+    // reviews block (snippets/product-card → snippets/star-rating). Hydrated
+    // by yotpoWidgetsContainer.initWidgets() after the batch is appended.
+    var reviewsSku = nonEmpty(hit.sku);
+    if (reviewsInstanceId && reviewsSku) {
+      var reviewsWrap = document.createElement('div');
+      reviewsWrap.className = 'aico-product-card-reviews';
+      var reviewsWidget = document.createElement('div');
+      reviewsWidget.className = 'yotpo-widget-instance';
+      reviewsWidget.setAttribute('data-yotpo-instance-id', reviewsInstanceId);
+      reviewsWidget.setAttribute('data-yotpo-product-id', reviewsSku);
+      reviewsWrap.appendChild(reviewsWidget);
+      imgWrap.appendChild(reviewsWrap);
     }
 
     var body = document.createElement('div');
@@ -1126,13 +1146,23 @@
       return;
     }
     var frag = document.createDocumentFragment();
+    var appended = 0;
     hits.forEach(function (hit, i) {
       var card = buildCard(hit, eagerStart + i < 8);
       if (card) {
         frag.appendChild(card);
+        appended++;
       }
     });
     grid.appendChild(frag);
+    // Hydrate the star widgets on the just-appended cards — the Yotpo loader
+    // only auto-initializes instances present at script load, so dynamically
+    // inserted cards need an explicit (idempotent) re-init.
+    if (appended > 0 && reviewsInstanceId
+      && window.yotpoWidgetsContainer
+      && typeof window.yotpoWidgetsContainer.initWidgets === 'function') {
+      window.yotpoWidgetsContainer.initWidgets();
+    }
   }
 
   // ---- Fetch + render --------------------------------------------

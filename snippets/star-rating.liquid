@@ -1,0 +1,17 @@
+{% comment %}
+  Shared Yotpo star-rating widget — the single source of truth for the
+  per-product rating stars (product cards + PDP header). Emits the Yotpo
+  star-ratings widget instance div; the per-store loader
+  (snippets/yotpo-loader) hydrates every `.yotpo-widget-instance` on the
+  page, so any template rendering this snippet must also
+  `{% render 'yotpo-loader' %}` once.
+
+  Self-gated on the reviews flag + a SKU — renders nothing otherwise, so
+  callers may include it unconditionally.
+
+  Params:
+    sku   product SKU — Yotpo's per-product identifier (required)
+{% endcomment %}
+{% if settings.aico_reviews_enabled and sku and sku != '' %}
+  <div class="yotpo-widget-instance" data-yotpo-instance-id="{{ settings.aico_yotpo_widget_instance_id }}" data-yotpo-product-id="{{ sku }}"></div>
+{% endif %}
