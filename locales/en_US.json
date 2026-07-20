@@ -42,6 +42,8 @@
     "customer_view_toggle": "Toggle customer view",
     "customer_view_active": "Customer view",
     "customer_view_active_hint": "Prices are hidden",
+    "shipping_block_active": "Delivery block!",
+    "shipping_block_active_hint": "Shipping is blocked for your account",
     "menu_title": "Menu",
     "close_menu": "Close menu",
     "current_brand": "Selected brand",

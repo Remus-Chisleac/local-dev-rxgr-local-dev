@@ -10587,6 +10587,8 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 
 :root {
   --aico-customer-view-accent: var(--color-accent);
+  --aico-shipping-block-accent: #dc2626;
+  --aico-system-banner-height: 26px;
 }
 
 /* System banner: a FIXED overlay at the very top of the viewport (modeled on
@@ -10638,6 +10640,35 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-system-banner-tab-hint {
   font-weight: 500;
   opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------- */
+/* Shipping block ("Liefersperre") — org-level delivery block        */
+/* ---------------------------------------------------------------- */
+
+/* Server-rendered (see layout/theme.liquid: `{% if customer.aico_shipping_block %}`),
+   so unlike the customer-view banner it needs no JS-toggled gating class —
+   it is only in the DOM at all when the flag is true. Same
+   `.aico-system-banner` structure, red accent instead of the brand accent. */
+.aico-shipping-block-banner {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101; /* above the customer-view banner if both are present */
+  pointer-events: none;
+}
+.aico-shipping-block-banner .aico-system-banner-rule,
+.aico-shipping-block-banner .aico-system-banner-tab {
+  background: var(--aico-shipping-block-accent, #dc2626);
+}
+
+/* If the customer-view banner also renders (staff viewing a blocked
+   customer's org), push it below the shipping-block banner instead of
+   overlapping at the same fixed offset. */
+.aico-shipping-block-banner + .aico-customer-view-banner {
+  top: var(--aico-system-banner-height, 26px);
 }
 
 /* Eye toggle: swap open-eye <-> eye-off with the state; tint when active. */

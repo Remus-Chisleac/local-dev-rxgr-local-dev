@@ -195,6 +195,33 @@
   {% else %}
     <div class="aico-chrome-sticky">
       {%- comment -%}
+        System banner — org-level shipping block ("Liefersperre"). Server-
+        rendered (not a client-toggled preference like the customer-view
+        banner below): renders whenever `customer.aico_shipping_block` is
+        true for the signed-in shopper's selected debtor. Mirrors b2b-shop's
+        TopNav delivery-blocked message (`infoMessageDeliveryBlocked`,
+        "Liefersperre!"/"Delivery block!"). Reuses the same
+        `.aico-system-banner` markup/structure as the customer-view banner
+        below, with a red accent (`.aico-shipping-block-banner` in
+        theme.css) — see storefront cart2.liquid / product.liquid, which
+        already gate on the same flag to disable add-to-cart/checkout.
+      {%- endcomment -%}
+      {%- if customer.aico_shipping_block -%}
+        <div class="aico-system-banner aico-shipping-block-banner" role="alert" aria-live="assertive" data-aico-shipping-block-banner>
+          <div class="aico-system-banner-rule" aria-hidden="true"></div>
+          <div class="aico-system-banner-tab-wrap">
+            <span class="aico-system-banner-tab">
+              <svg class="aico-system-banner-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+                <line x1="12" x2="12" y1="9" y2="13"></line>
+                <line x1="12" x2="12.01" y1="17" y2="17"></line>
+              </svg>
+              <span class="aico-system-banner-tab-label">{{ 'nav.shipping_block_active' | t }}</span>
+            </span>
+          </div>
+        </div>
+      {%- endif -%}
+      {%- comment -%}
         System banner — telegraphs the active customer view ("Endkundenansicht").
         Hidden until <html> carries `aico-customer-view` (see assets/customer-view.js).
       {%- endcomment -%}
