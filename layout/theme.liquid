@@ -210,9 +210,10 @@
         gate on `customer.aico_shipping_block` to disable
         add-to-cart/checkout.
       {%- endcomment -%}
-      <div class="aico-system-banner{% if customer.aico_shipping_block %} aico-system-banner-ship-block{% endif %}"
-           role="{% if customer.aico_shipping_block %}alert{% else %}status{% endif %}"
-           aria-live="{% if customer.aico_shipping_block %}assertive{% else %}polite{% endif %}"
+      {%- comment -%} TEMP: " or true" below forces the ship-block state on for UI review — drop before merge {%- endcomment -%}
+      <div class="aico-system-banner{% if customer.aico_shipping_block or true %} aico-system-banner-ship-block{% endif %}"
+           role="{% if customer.aico_shipping_block or true %}alert{% else %}status{% endif %}"
+           aria-live="{% if customer.aico_shipping_block or true %}assertive{% else %}polite{% endif %}"
            data-aico-system-banner>
         {%- comment -%} Full-width hairline — colour/pattern driven by the state classes. {%- endcomment -%}
         <div class="aico-system-banner-rule" aria-hidden="true"></div>
