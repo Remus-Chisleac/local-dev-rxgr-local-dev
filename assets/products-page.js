@@ -1286,7 +1286,13 @@
     syncUrl();
     updateFilterCountBadge();
     updateCategoryHeading();
-    return fetchAndRender({ replace: true, includeFacets: true });
+    // Chain fillViewport: a short filtered result can leave the sentinel
+    // permanently inside the IntersectionObserver's margin, where it never
+    // re-fires — keep fetching until the viewport is filled or the result
+    // set is exhausted, same as the boot path.
+    return fetchAndRender({ replace: true, includeFacets: true }).then(function () {
+      fillViewport();
+    });
   }
 
   // ---- Event wiring -----------------------------------------------
