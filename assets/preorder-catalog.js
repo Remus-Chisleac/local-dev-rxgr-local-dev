@@ -501,9 +501,9 @@
     if (price == null || price < 0) return '';
     var cur = currency || 'CHF';
     var amount = Number(price);
-    // CHF prices display rounded UP to the nearest 0.05 (display only).
+    // CHF prices display rounded DOWN to the nearest 0.05 (display only).
     if (String(cur).toUpperCase() === 'CHF') {
-      amount = Math.ceil(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+      amount = Math.floor(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
     }
     return amount.toFixed(2) + ' ' + cur;
   }

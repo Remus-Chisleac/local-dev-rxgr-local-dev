@@ -377,9 +377,9 @@
   function formatMoney(amount, currency, exclVat) {
     var cur = currency || 'CHF';
     var number = amount || 0;
-    // CHF prices display rounded UP to the nearest 0.05 (display only).
+    // CHF prices display rounded DOWN to the nearest 0.05 (display only).
     if (String(cur).toUpperCase() === 'CHF') {
-      number = Math.ceil(Math.round((number / 0.05) * 1e6) / 1e6) * 0.05;
+      number = Math.floor(Math.round((number / 0.05) * 1e6) / 1e6) * 0.05;
     }
     var value = number.toFixed(2) + ' ' + cur;
     return exclVat ? value + ' ' + exclVat : value;

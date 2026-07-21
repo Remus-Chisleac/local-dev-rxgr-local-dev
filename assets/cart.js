@@ -21,11 +21,11 @@
 (function () {
   'use strict';
 
-  // CHF prices display rounded UP to the nearest 0.05 (display only —
+  // CHF prices display rounded DOWN to the nearest 0.05 (display only —
   // stored/charged amounts stay exact).
-  function ceilChfDisplay(amount, currency) {
+  function floorChfDisplay(amount, currency) {
     if (String(currency || '').toUpperCase() !== 'CHF') return amount;
-    return Math.ceil(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+    return Math.floor(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
   }
 
   function registerCartStore() {
@@ -492,7 +492,7 @@
       },
 
       formatMoney(value) {
-        var amount = ceilChfDisplay(Number(value || 0), currencyCode);
+        var amount = floorChfDisplay(Number(value || 0), currencyCode);
         if (moneyFormatter) {
           try { return moneyFormatter.format(amount); } catch (_) { /* fall through */ }
         }

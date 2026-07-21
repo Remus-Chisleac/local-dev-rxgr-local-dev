@@ -721,14 +721,14 @@
 
   var moneyCache = {};
   function formatMoney(amount, currencyCode, locale) {
-    // CHF displays round UP to the nearest 0.05 (display only); other
+    // CHF displays round DOWN to the nearest 0.05 (display only); other
     // currencies keep exact values. Currency AFTER the amount (EUR shown
     // as €, others as the ISO code) — NOT Intl's currency style, which
     // puts the symbol first.
     var value = Number(amount) || 0;
     var code = (typeof currencyCode === 'string') ? currencyCode.toUpperCase() : '';
     if (code === 'CHF') {
-      value = Math.ceil(Math.round((value / 0.05) * 1e6) / 1e6) * 0.05;
+      value = Math.floor(Math.round((value / 0.05) * 1e6) / 1e6) * 0.05;
     }
     var rounded = value.toFixed(2);
     var symbol = code === 'EUR' ? '€' : code;
