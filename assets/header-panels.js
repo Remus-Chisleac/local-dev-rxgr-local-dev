@@ -195,92 +195,42 @@
     return null;
   }
 
-  function rowCurrencyName(row) {
-    var c = row && row.currency;
-    if (c && typeof c === 'object' && typeof c.name === 'string') {
-      var t = c.name.trim();
-      return t === '' ? null : t;
-    }
-    return null;
+  // Prices are resolved SERVER-SIDE only: the drawer sends the hit scout ids
+  // to the prices endpoint (config.pricesApi) and each hit gets back the one
+  // price this shopper is entitled to (`hit.pricing`). There is deliberately
+  // NO client-side priceLists extraction or fallback — a hit without a
+  // server-resolved price simply shows no price.
+  function fetchServerPrices(hits, cfg) {
+    var url = cfg && cfg.pricesApi;
+    if (!url || !hits.length) { return Promise.resolve(); }
+    var ids = [];
+    hits.forEach(function (h) { if (h && h.id != null) { ids.push(h.id); } });
+    if (!ids.length) { return Promise.resolve(); }
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return fetch(url + sep + 'ids=' + encodeURIComponent(ids.join(',')), {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin',
+    }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (priced) {
+      hits.forEach(function (h) {
+        var p = (priced[h.id] != null) ? priced[h.id] : priced[String(h.id)];
+        if (p) { h.pricing = p; }
+      });
+    }).catch(function () { /* no price shown for unresolved hits */ });
   }
 
-  function pickBestRow(rows, preferredCurrency) {
-    var objectRows = (rows || []).filter(function (r) { return r && typeof r === 'object'; });
-    var hasSelling = function (row) { return toNumber(row.sellingPrice) !== null; };
-    if (preferredCurrency) {
-      var needle = preferredCurrency.toUpperCase();
-      for (var i = 0; i < objectRows.length; i++) {
-        var cn = rowCurrencyName(objectRows[i]);
-        if (cn && cn.toUpperCase() === needle && hasSelling(objectRows[i])) { return objectRows[i]; }
-      }
-    }
-    for (var j = 0; j < objectRows.length; j++) {
-      if (hasSelling(objectRows[j])) { return objectRows[j]; }
-    }
-    return null;
-  }
-
-  function tryPriceFromRows(entry, preferred) {
-    var rows = entry.priceListRows;
-    if (!Array.isArray(rows) || !rows.length) { return null; }
-    var row = pickBestRow(rows, preferred);
-    if (!row) { return null; }
-    var sp = toNumber(row.sellingPrice);
+  function extractPricing(hit) {
+    var p = hit && hit.pricing;
+    if (!p || typeof p !== 'object') { return null; }
+    var sp = toNumber(p.sellingPrice);
     if (sp == null) { return null; }
-    var dp = toNumber(row.discountPrice) || 0;
-    var isOnSale = dp > 0 && dp < sp;
-    return { sellingPrice: sp, discountPrice: isOnSale ? dp : null, isOnSale: isOnSale, currencyCode: rowCurrencyName(row) };
-  }
-
-  function tryPriceFromGross(entry, preferred) {
-    var cur = typeof entry.currency === 'string' ? nonEmpty(entry.currency) : null;
-    var curU = cur ? cur.toUpperCase() : null;
-    if (preferred && curU && curU !== preferred.toUpperCase()) { return null; }
-    var dg = toNumber(entry.discountedGross);
-    var bg = toNumber(entry.gross);
-    if (dg != null && bg != null && dg < bg) {
-      return { sellingPrice: bg, discountPrice: dg, isOnSale: true, currencyCode: cur };
-    }
-    var useGross = dg != null ? dg : bg;
-    if (useGross == null) { return null; }
-    return { sellingPrice: useGross, discountPrice: null, isOnSale: false, currencyCode: cur };
-  }
-
-  function preferredKeys(debtor) {
-    if (!debtor || debtor.priceListId == null || !debtor.debtorName) { return []; }
-    var base = 'priceList' + debtor.priceListId + debtor.debtorName;
-    var code = debtor.currencyCode;
-    return code ? [base + code, base] : [base];
-  }
-
-  function orderedKeys(map, debtor) {
-    var keys = Object.keys(map).filter(function (k) { return k !== 'retailPriceList'; });
-    keys.sort();
-    var ordered = [];
-    var pref = preferredKeys(debtor);
-    for (var i = 0; i < pref.length; i++) {
-      if (map[pref[i]] != null && ordered.indexOf(pref[i]) === -1) { ordered.push(pref[i]); }
-    }
-    for (var j = 0; j < keys.length; j++) {
-      if (ordered.indexOf(keys[j]) === -1) { ordered.push(keys[j]); }
-    }
-    return ordered;
-  }
-
-  function extractPricing(hit, debtor) {
-    var lists = hit.priceLists;
-    if (!lists || typeof lists !== 'object') { return null; }
-    var preferred = debtor && debtor.currencyCode ? debtor.currencyCode : null;
-    var keys = orderedKeys(lists, debtor);
-    for (var i = 0; i < keys.length; i++) {
-      var entry = lists[keys[i]];
-      if (!entry || typeof entry !== 'object') { continue; }
-      var fromRows = tryPriceFromRows(entry, preferred);
-      if (fromRows) { return fromRows; }
-      var fromGross = tryPriceFromGross(entry, preferred);
-      if (fromGross) { return fromGross; }
-    }
-    return null;
+    var dp = toNumber(p.discountPrice);
+    var isOnSale = !!p.isOnSale && dp != null && dp > 0 && dp < sp;
+    return {
+      sellingPrice: sp,
+      discountPrice: isOnSale ? dp : null,
+      isOnSale: isOnSale,
+      currencyCode: typeof p.currencyCode === 'string' ? p.currencyCode : null,
+    };
   }
 
   var moneyCache = {};
@@ -312,7 +262,7 @@
   function mapHit(hit, cfg) {
     var id = String(hit.productId != null ? hit.productId : (hit.id != null ? hit.id : (hit.urlHandle || '')));
     var urlHandle = (typeof hit.urlHandle === 'string' && hit.urlHandle.trim()) ? hit.urlHandle.trim() : id;
-    var pricing = extractPricing(hit, cfg.debtor);
+    var pricing = extractPricing(hit);
     var displayed = pricing ? (pricing.isOnSale && pricing.discountPrice != null ? pricing.discountPrice : pricing.sellingPrice) : null;
     var prefix = cfg.productUrlPrefix || '/products/';
     var suffix = cfg.productUrlQuery || '';
@@ -441,8 +391,14 @@
             if (!r.ok) { throw new Error('meilisearch ' + r.status); }
             return r.json();
           }).then(function (data) {
-            if (seq !== self._seq) { return; } // a newer query superseded this one
             var hits = (data && Array.isArray(data.hits)) ? data.hits : [];
+            // Attach the server-resolved entitled price to each hit before
+            // mapping — the only price source for the drawer.
+            return fetchServerPrices(hits, cfg).then(function () { return { data: data, hits: hits }; });
+          }).then(function (priced) {
+            if (seq !== self._seq) { return; } // a newer query superseded this one
+            var data = priced.data;
+            var hits = priced.hits;
             var products = hits.map(function (h) { return mapHit(h, cfg); });
             var estimated = (data && typeof data.estimatedTotalHits === 'number')
               ? data.estimatedTotalHits
