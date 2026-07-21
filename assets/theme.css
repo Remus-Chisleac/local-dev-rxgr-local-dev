@@ -10614,10 +10614,10 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   Combinations:
     shipping-block only -> red arm + red tab, "Liefersperre!" + warning icon
     customer-view only  -> blue arm + blue tab, "Endkundenansicht" + eye icon
-    both active          -> diagonal red/blue arm ("combine the colours");
-                            tab stays blue and leads with "Endkundenansicht"
-                            (label priority), plus a small red dot appended
-                            so the block is still telegraphed.
+    both active          -> solid red arm + red tab, "Liefersperre!" leads
+                            (the block outranks the view preference), plus a
+                            small blue dot appended so customer-view is still
+                            telegraphed.
 */
 
 :root {
@@ -10677,41 +10677,34 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   opacity: 0.85;
 }
 
-/* Shipping-block-only colouring (arm + tab red). Overridden on the arm by
-   the diagonal rule, and on the tab by the customer-view rule below, when
-   both states are active. */
+/* Shipping-block colouring (arm + tab red). The customer-view rule below
+   outranks it by source order, so the three-class both-active rule further
+   down restores red whenever the block is present. */
 .aico-system-banner-ship-block .aico-system-banner-rule,
 .aico-system-banner-ship-block .aico-system-banner-tab {
   background: var(--aico-shipping-block-accent);
 }
 
-/* Customer-view colouring — wins on the tab whenever active (label
-   priority), same source-order precedence keeps it winning in the
-   both-active case since this rule comes after the ship-block one above. */
+/* Customer-view colouring — wins over the ship-block rule above by source
+   order in the view-only state; the both-active override below takes it
+   back whenever the block is present. */
 .aico-customer-view .aico-system-banner-rule,
 .aico-customer-view .aico-system-banner-tab {
   background: var(--aico-customer-view-accent);
 }
 
-/* Both active: diagonal red/blue arm. Three-class selector gives this the
-   highest specificity so it always wins regardless of source order. */
-.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-rule {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--aico-shipping-block-accent) 0 6px,
-    var(--aico-customer-view-accent) 6px 12px
-  );
-}
-/* Same specificity bump for the tab, so it stays blue even if the rule
-   order above is ever reshuffled. */
+/* Both active: the shipping block outranks the view preference — arm and
+   tab go solid red. Three-class selectors give these the highest
+   specificity so they always win regardless of source order. */
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-rule,
 .aico-customer-view .aico-system-banner-ship-block .aico-system-banner-tab {
-  background: var(--aico-customer-view-accent);
+  background: var(--aico-shipping-block-accent);
 }
 
-/* Label/icon priority: "Endkundenansicht" always leads once customer-view
-   is active, with or without a shipping block. The shipping-block label
-   is the default (shown for the ship-block-only state) and is swapped out
-   the moment `.aico-customer-view` is present. */
+/* Label/icon priority: "Liefersperre!" always leads while the block is
+   active; "Endkundenansicht" shows only in the view-only state. The
+   ship label/icon is the default, swapped out by `.aico-customer-view`
+   and swapped back in by the three-class both-active override. */
 .aico-system-banner-tab-label-cv,
 .aico-system-banner-icon-cv {
   display: none;
@@ -10728,9 +10721,17 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-customer-view .aico-system-banner-icon-ship {
   display: none;
 }
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-tab-label-cv,
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-icon-cv {
+  display: none;
+}
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-tab-label-ship,
+.aico-customer-view .aico-system-banner-ship-block .aico-system-banner-icon-ship {
+  display: inline;
+}
 
-/* Small red dot appended to the (blue, "Endkundenansicht") tab only when
-   both states are active — keeps the block visible without a second bar. */
+/* Small blue dot appended to the (red, "Liefersperre!") tab only when
+   both states are active — keeps customer-view visible without a second bar. */
 .aico-system-banner-tab-glyph {
   display: none;
 }
@@ -10739,7 +10740,7 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--aico-shipping-block-accent);
+  background: var(--aico-customer-view-accent);
   flex: none;
 }
 
