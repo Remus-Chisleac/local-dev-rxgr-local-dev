@@ -8,20 +8,25 @@
   mirrors this exact markup so server- and client-rendered cards are
   identical — keep the two in sync when changing structure/classes.
 
+  Card order: name first, then the two price rows (struck regular row +
+  current row, each optionally with an RRP), matching the b2b-shop card.
+
   Params (all optional):
-    url               product detail href
-    image             featured image URL
-    title             product title
-    sku               product SKU (drives the reviews widget id)
-    price_label       formatted current price (e.g. "CHF 149.00")
-    compare_at_label  formatted list/RRP price (struck) — price row 1
-    discount_percent  integer percent off (badge next to the price)
-    on_sale           true → "Sale" badge
-    is_new            true → "New" badge (only when not on_sale)
-    discontinued      true → "Discontinued" badge
-    eager             true → loading="eager" on the image (above-the-fold)
-    show_reviews      true → render the per-product reviews widget (needs sku)
-    skeleton          true → render placeholder shapes (no real data yet)
+    url                product detail href
+    image              featured image URL
+    title              product title
+    sku                product SKU (drives the reviews widget id)
+    price_label        formatted current price (e.g. "CHF 149.00")
+    compare_at_label   formatted struck regular price (sale) — top price row
+    compare_rrp_label  formatted RRP shown struck on the regular row
+    rrp_label          formatted RRP shown on the current row
+    discount_percent   integer percent off (shown on the sale badge)
+    on_sale            true → sale badge ("−NN%" when discount_percent, else "Sale")
+    is_new             true → "New" badge (only when not on_sale)
+    discontinued       true → "Discontinued" badge
+    eager              true → loading="eager" on the image (above-the-fold)
+    show_reviews       true → render the per-product reviews widget (needs sku)
+    skeleton           true → render placeholder shapes (no real data yet)
 {% endcomment %}
 
 <article class="aico-product-card{% if skeleton %} aico-product-card-skeleton{% endif %}">
@@ -31,10 +36,10 @@
       {% if show_reviews %}<span class="aico-product-card-reviews skeleton-stars" aria-hidden="true"></span>{% endif %}
     </div>
     <div class="aico-product-card-body">
-      <div class="aico-product-card-prices">
-        <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
-      </div>
       <span class="skeleton-line skeleton-line-title" aria-hidden="true"></span>
+      <p class="aico-product-card-price">
+        <span class="skeleton-line skeleton-line-price" aria-hidden="true"></span>
+      </p>
     </div>
   {% else %}
     <a href="{{ url }}" class="aico-product-card-link" aria-label="{{ title }}">
@@ -52,7 +57,7 @@
         {% endif %}
 
         {% if on_sale %}
-          <span class="aico-product-card-badge aico-product-card-badge-sale">{{ 'products.sale' | t }}</span>
+          <span class="aico-product-card-badge aico-product-card-badge-sale">{% if discount_percent %}−{{ discount_percent }}%{% else %}{{ 'products.sale' | t }}{% endif %}</span>
         {% elsif is_new %}
           <span class="aico-product-card-badge aico-product-card-badge-new">{{ 'products.new' | t }}</span>
         {% endif %}
@@ -69,21 +74,29 @@
       </div>
 
       <div class="aico-product-card-body">
-        <div class="aico-product-card-prices">
-          {% if compare_at_label and compare_at_label != '' %}
-            <span class="aico-product-card-price-list">{{ compare_at_label }}</span>
-          {% endif %}
-          {% if price_label and price_label != '' %}
-            <span class="aico-product-card-price">
+        <h3 class="aico-product-card-title">{{ title }}</h3>
+
+        {% if price_label and price_label != '' %}
+          <p class="aico-product-card-price">
+            {% if compare_at_label and compare_at_label != '' %}
+              <span class="aico-product-card-price-was">
+                <span class="aico-product-card-price-list">{{ compare_at_label }}</span>
+                {% if compare_rrp_label and compare_rrp_label != '' %}
+                  <span class="aico-product-card-rrp aico-product-card-rrp-was">({{ 'product.rrp' | t }} {{ compare_rrp_label }})</span>
+                {% endif %}
+              </span>
+            {% endif %}
+            <span class="aico-product-card-price-now">
               <span class="aico-product-card-price-current">{{ price_label }}</span>
               {% if discount_percent %}<span class="aico-product-card-discount">−{{ discount_percent }}%</span>{% endif %}
+              {% if rrp_label and rrp_label != '' %}
+                <span class="aico-product-card-rrp">({{ 'product.rrp' | t }} {{ rrp_label }})</span>
+              {% endif %}
             </span>
-          {% else %}
-            <span class="aico-product-card-price aico-product-card-price-on-request">{{ 'product.price_on_request' | t }}</span>
-          {% endif %}
-        </div>
-
-        <h3 class="aico-product-card-title">{{ title }}</h3>
+          </p>
+        {% else %}
+          <p class="aico-product-card-price aico-product-card-price-on-request">{{ 'product.price_on_request' | t }}</p>
+        {% endif %}
       </div>
     </a>
   {% endif %}
