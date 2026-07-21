@@ -1209,16 +1209,32 @@
 
   // ---- Fetch + render --------------------------------------------
 
+  // Monotonic id of the newest fetch. A replace (search/filter/sort change)
+  // always starts a new request — even while an infinite-scroll load is in
+  // flight — and any response belonging to a superseded request is dropped
+  // wholesale so it can't render stale hits or clear the newer load's flags.
+  var requestGeneration = 0;
+
   function fetchAndRender(opts) {
-    if (state.loading) {
+    var replace = !!(opts && opts.replace);
+    if (state.loading && !replace) {
       return Promise.resolve();
     }
+    var generation = ++requestGeneration;
     state.loading = true;
     if (loaderEl) {
       loaderEl.hidden = false;
     }
+    if (replace) {
+      // Reset paging BEFORE computing the offset — a query/filter change
+      // must fetch from offset 0, not from the current scroll depth.
+      state.page = 1;
+    }
     var offset = (state.page - 1) * config.meilisearch.hitsPerPage;
     return meiliSearch({ offset: offset, includeFacets: !!(opts && opts.includeFacets) }).then(function (resp) {
+      if (generation !== requestGeneration) {
+        return;
+      }
       var hits = Array.isArray(resp.hits) ? resp.hits : [];
       var total = typeof resp.estimatedTotalHits === 'number' ? resp.estimatedTotalHits : (typeof resp.nbHits === 'number' ? resp.nbHits : hits.length);
 
@@ -1255,13 +1271,36 @@
         renderFacetColumns(resp.facetDistribution);
       }
     }).catch(function (err) {
+      if (generation !== requestGeneration) {
+        return;
+      }
       console.warn('aico-products: meilisearch error', err);
     }).then(function () {
+      if (generation !== requestGeneration) {
+        return;
+      }
       state.loading = false;
       if (loaderEl) {
         loaderEl.hidden = true;
       }
+      maybeLoadMore();
     });
+  }
+
+  // The sentinel's last known visibility. IntersectionObserver only fires
+  // on TRANSITIONS in/out of view — if the sentinel is already in view
+  // while a load is skipped (loading/exhausted, e.g. an empty search
+  // result collapsed the page), no further event ever comes and infinite
+  // scroll stays dead until a resize forces a re-evaluation. So every
+  // render re-checks the last known visibility itself.
+  var sentinelInView = false;
+
+  function maybeLoadMore() {
+    if (!sentinelInView || state.loading || state.exhausted) {
+      return;
+    }
+    state.page += 1;
+    fetchAndRender({});
   }
 
   // ---- Category heading -------------------------------------------
@@ -1601,16 +1640,9 @@
 
   if (sentinel && 'IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) {
-          return;
-        }
-        if (state.loading || state.exhausted) {
-          return;
-        }
-        state.page += 1;
-        fetchAndRender({});
-      });
+      // Entries are chronological — the last one is the current state.
+      sentinelInView = entries[entries.length - 1].isIntersecting;
+      maybeLoadMore();
     }, { rootMargin: '400px 0px' });
     observer.observe(sentinel);
   }
