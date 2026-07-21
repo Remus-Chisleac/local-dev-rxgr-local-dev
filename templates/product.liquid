@@ -649,19 +649,15 @@
       Product reviews (Yotpo). Replaces the previous static mock block. Shown
       only when reviews are configured (the same gate as the loader below:
       reviews enabled + a store App Key) so there's no empty section until
-      then. product-id is the SKU, matching the per-card star widget
-      (snippets/product-card); currency uses cart.currency_code.
+      then. Yotpo receives ONLY the SKU (product-id) to look up the stars —
+      never name/url/image/price, so widget output can't diverge from the
+      server-rendered price.
     {%- endcomment -%}
     {% if settings.aico_reviews_enabled and settings.aico_yotpo_app_key and settings.aico_yotpo_app_key != '' and product.sku and product.sku != '' %}
       <section class="aico-pdp-reviews" aria-label="{{ 'product.reviews.title' | t }}">
         <div class="yotpo-widget-instance"
              data-yotpo-instance-id="639491"
-             data-yotpo-product-id="{{ product.sku }}"
-             data-yotpo-name="{{ product.title | escape }}"
-             data-yotpo-url="{{ product.url }}"
-             data-yotpo-image-url="{{ product.featured_image }}"
-             data-yotpo-price="{{ product.price }}"
-             data-yotpo-currency="{{ cart.currency_code | default: 'CHF' }}"></div>
+             data-yotpo-product-id="{{ product.sku }}"></div>
       </section>
     {% endif %}
   </div>
