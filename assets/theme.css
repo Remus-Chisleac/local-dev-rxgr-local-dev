@@ -10759,14 +10759,17 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 
 /* Price hiding — covers both the server-rendered and the JS-built product
    cards (scaffold uses <p class="aico-product-card-price">; the mirror wraps
-   prices in .aico-product-card-prices) and the PDP price block. Sale/discount
-   badges are price signals too, so they go as well; "new"/"discontinued"
-   badges stay. */
+   prices in .aico-product-card-prices), the PDP price block, and the header
+   search drawer's result rows. Sale/discount badges are price signals too,
+   so they go as well; "new"/"discontinued" badges stay. */
 .aico-customer-view .aico-product-card-price,
 .aico-customer-view .aico-product-card-prices,
 .aico-customer-view .aico-product-card-badge-sale,
 .aico-customer-view .aico-product-card-discount,
-.aico-customer-view .aico-pdp-price-block {
+.aico-customer-view .aico-pdp-price-block,
+.aico-customer-view .aico-search-result-price,
+.aico-customer-view .aico-search-result-badge,
+.aico-customer-view .aico-search-result-discount {
   display: none !important;
 }
 
