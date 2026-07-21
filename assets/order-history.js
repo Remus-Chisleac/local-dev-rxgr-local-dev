@@ -394,6 +394,95 @@
       || (f.search && f.search.length >= SEARCH_MIN_CHARS);
   }
 
+  // ---- URL <-> filter state sync ----------------------------------
+
+  // Mirrors the b2b-shop /orders/history query-param contract so old links
+  // keep working after the migration: type=reorder|preorder,
+  // period=30d|ytd|custom (+ from/to), search, createdBy=1,2,unassigned.
+  // Unknown params (cb cache busters, agent tags, …) are preserved.
+
+  var FILTER_PARAM_KEYS = ['type', 'period', 'from', 'to', 'search', 'createdBy'];
+
+  function readFiltersFromUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var f = state.filters;
+
+    var type = params.get('type');
+    if (type === 'reorder' || type === 'order') {
+      f.type = 'order';
+    } else if (type === 'preorder') {
+      f.type = 'preorder';
+    }
+
+    var period = params.get('period');
+    if (period === '30d' || period === 'last30') {
+      f.period = 'last30';
+    } else if (period === 'ytd' || period === '365d') {
+      f.period = 'ytd';
+    } else if (period === 'custom') {
+      var from = params.get('from');
+      var to = params.get('to');
+      if (from && to && from <= to) {
+        f.period = 'custom';
+        f.from = from;
+        f.to = to;
+      }
+    }
+
+    var search = (params.get('search') || '').trim();
+    if (search.length >= SEARCH_MIN_CHARS) {
+      f.search = search;
+    }
+
+    var createdBy = params.get('createdBy');
+    if (createdBy) {
+      createdBy.split(',').forEach(function (raw) {
+        var token = raw.trim();
+        if (token === '') { return; }
+        var lower = token.toLowerCase();
+        if (lower === 'unassigned' || lower === 'null' || token === '0') {
+          token = 'unassigned';
+        } else if (!/^\d+$/.test(token)) {
+          return;
+        }
+        if (f.createdBy.indexOf(token) === -1) {
+          f.createdBy.push(token);
+        }
+      });
+    }
+  }
+
+  function writeFiltersToUrl() {
+    var params = new URLSearchParams(window.location.search);
+    FILTER_PARAM_KEYS.forEach(function (key) { params.delete(key); });
+
+    var f = state.filters;
+    if (f.type === 'order') {
+      params.set('type', 'reorder');
+    } else if (f.type === 'preorder') {
+      params.set('type', 'preorder');
+    }
+    if (f.period === 'last30') {
+      params.set('period', '30d');
+    } else if (f.period === 'ytd') {
+      params.set('period', 'ytd');
+    } else if (f.period === 'custom' && f.from && f.to) {
+      params.set('period', 'custom');
+      params.set('from', f.from);
+      params.set('to', f.to);
+    }
+    if (f.search && f.search.length >= SEARCH_MIN_CHARS) {
+      params.set('search', f.search);
+    }
+    if (f.createdBy.length) {
+      params.set('createdBy', f.createdBy.join(','));
+    }
+
+    var query = params.toString();
+    var url = window.location.pathname + (query ? '?' + query : '') + window.location.hash;
+    try { window.history.replaceState(null, '', url); } catch (e) {}
+  }
+
   // ---- Toolbar dropdowns ------------------------------------------
 
   // Floating popups (filter dropdowns + per-order document menus) are
@@ -509,7 +598,8 @@
   }
 
   function buildTypeDropdown() {
-    var dd = createDropdown(typeLabel('all'));
+    var dd = createDropdown(typeLabel(state.filters.type));
+    dd.setActive(state.filters.type !== 'all');
     var options = [
       { value: 'all', label: typeLabel('all') },
       { value: 'order', label: typeLabel('order') },
@@ -634,6 +724,11 @@
     range.appendChild(toInput);
     dd.panel.appendChild(range);
 
+    if (state.filters.period === 'custom') {
+      fromInput.value = state.filters.from || '';
+      toInput.value = state.filters.to || '';
+    }
+
     refresh();
     dd._refresh = refresh;
     return dd;
@@ -728,6 +823,7 @@
     userSearch.addEventListener('input', render);
     userSearch.addEventListener('click', function (e) { e.stopPropagation(); });
     render();
+    dd.setActive(state.filters.createdBy.length > 0);
     dd._render = render;
     return dd;
   }
@@ -777,7 +873,10 @@
       .then(function (payload) {
         if (payload && Array.isArray(payload.data)) {
           state.userCounts = payload.data;
-          if (createdByDropdown && createdByDropdown._render) { createdByDropdown._render(); }
+          if (createdByDropdown) {
+            createdByDropdown.setLabel(createdByLabel());
+            if (createdByDropdown._render) { createdByDropdown._render(); }
+          }
         }
       })
       .catch(function () {});
@@ -1231,6 +1330,7 @@
     if (listEl) { listEl.innerHTML = ''; }
     if (endEl) { endEl.hidden = true; }
     if (emptyEl) { emptyEl.hidden = true; }
+    writeFiltersToUrl();
     updateResetVisibility();
     loadNextPage();
   }
@@ -1263,7 +1363,11 @@
 
   // ---- Init -------------------------------------------------------
 
+  readFiltersFromUrl();
+  if (searchInput && state.filters.search) { searchInput.value = state.filters.search; }
   if (filtersEl) { buildToolbar(); }
+  // Normalize legacy param aliases (reorder/order, 30d/last30, 365d) in place.
+  writeFiltersToUrl();
   loadUserCounts();
   loadNextPage();
 })();
