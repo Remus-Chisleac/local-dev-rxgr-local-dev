@@ -326,7 +326,7 @@
     }
   },
   "product": {
-    "back_to_products": "Products",
+    "back_to_products": "Back",
     "sku_aria": "SKU",
     "rrp": "RRP",
     "price_on_request": "Price on request",
