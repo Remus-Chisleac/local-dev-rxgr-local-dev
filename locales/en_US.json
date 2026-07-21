@@ -417,7 +417,8 @@
       "kids": "Kids",
       "boys": "Boys",
       "girls": "Girls"
-    }
+    },
+    "free": "Free"
   },
   "cart": {
     "title": "Shopping cart",

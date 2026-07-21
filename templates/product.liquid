@@ -147,7 +147,11 @@
                 {% if product.aico_compare_at_price_label %}
                   <span class="aico-pdp-price-list">{{ product.aico_compare_at_price_label }}</span>
                 {% endif %}
-                <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
+                {% if product.aico_is_free %}
+                  <span class="aico-pdp-price-current aico-pdp-price-free">{{ 'product.free' | t }}</span>
+                {% else %}
+                  <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
+                {% endif %}
                 {% if product.aico_discount_percent %}
                   <span class="aico-pdp-discount">−{{ product.aico_discount_percent }}%</span>
                 {% endif %}

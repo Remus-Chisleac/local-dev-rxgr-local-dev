@@ -417,7 +417,8 @@
       "kids": "Kinder",
       "boys": "Jungen",
       "girls": "Mädchen"
-    }
+    },
+    "free": "Gratis"
   },
   "cart": {
     "title": "Warenkorb",
