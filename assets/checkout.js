@@ -251,9 +251,9 @@
       },
 
       shippingDisplay: function () {
-        if (!this.totalsLoaded || this.totalsLoading) {
-          return translations.shipping_at_checkout || 'Calculated at checkout';
-        }
+        // Same pending placeholder as vatDisplay so the two rows never mix
+        // "…" with the calculated-at-checkout text while totals reload.
+        if (!this.totalsLoaded || this.totalsLoading) return '…';
         return formatMoneyValue(this.shippingAmount || 0);
       },
 
