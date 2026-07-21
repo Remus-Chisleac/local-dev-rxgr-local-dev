@@ -50,10 +50,31 @@
     return params;
   }
 
-  function formatMoneyValue(value) {
+  // Per-currency Intl formatters: the checkout currency FOLLOWS the selected
+  // delivery address (the refreshed /cart.js?delivery_address_id=… response
+  // carries the address-mapped currency, e.g. Austrian address → EUR), so the
+  // fixed cart-store formatter (page-load currency) is only the fallback.
+  var moneyFormatters = {};
+  function formatMoneyValue(value, currencyCode) {
+    var amount = Number(value || 0);
+    if (currencyCode) {
+      if (!(currencyCode in moneyFormatters)) {
+        var locale = ((window.__AICO_SHOP__ && window.__AICO_SHOP__.locale) || 'en').replace('_', '-');
+        try {
+          moneyFormatters[currencyCode] = new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode });
+        } catch (_) {
+          moneyFormatters[currencyCode] = null;
+        }
+      }
+      var formatter = moneyFormatters[currencyCode];
+      if (formatter) {
+        try { return formatter.format(amount); } catch (_) { /* fall through */ }
+      }
+      return amount.toFixed(2) + ' ' + currencyCode;
+    }
     var store = window.Alpine && window.Alpine.store('cart');
     if (store) return store.formatMoney(value);
-    return Number(value || 0).toFixed(2);
+    return amount.toFixed(2);
   }
 
   function readInitialCart() {
@@ -107,7 +128,10 @@
           return Promise.resolve();
         }
 
-        return self.refreshTotals();
+        // Refresh the cart with the PRESELECTED delivery address too — the
+        // SSR'd cart seed is priced in the debtor currency, which can differ
+        // from the address-mapped checkout currency on first paint.
+        return Promise.all([self.refreshCart(), self.refreshTotals()]);
       },
 
       syncCreditCardFeePercent: function () {
@@ -254,12 +278,21 @@
         // Same pending placeholder as vatDisplay so the two rows never mix
         // "…" with the calculated-at-checkout text while totals reload.
         if (!this.totalsLoaded || this.totalsLoading) return '…';
-        return formatMoneyValue(this.shippingAmount || 0);
+        return formatMoneyValue(this.shippingAmount || 0, this.cartCurrency());
       },
 
       vatDisplay: function () {
         if (!this.totalsLoaded || this.totalsLoading) return '…';
-        return formatMoneyValue(this.vatAmount || 0);
+        return formatMoneyValue(this.vatAmount || 0, this.cartCurrency());
+      },
+
+      // The checkout's display currency: the (possibly address-remapped)
+      // currency of the last /cart.js snapshot, falling back to the shop's
+      // page-load currency.
+      cartCurrency: function () {
+        return (this.cart && this.cart.currency)
+          || (window.__AICO_SHOP__ && window.__AICO_SHOP__.currency)
+          || null;
       },
 
       // "VAT (8.1%)" / "MwSt. (8.1%)" once the rate is known; plain label
@@ -289,7 +322,7 @@
       },
 
       formatMoney: function (value) {
-        return formatMoneyValue(value);
+        return formatMoneyValue(value, this.cartCurrency());
       },
 
       // Collapse line items that share a product so the order summary shows
