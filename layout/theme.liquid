@@ -528,11 +528,8 @@
                   </a>
                 {% endif %}
               {% endfor %}
-            {% else %}
-              <div class="aico-drawer-nav-empty" role="alert">
-                {{ 'nav.menu_load_error' | t }}
-              </div>
             {% endif %}
+            {%- comment -%} Empty/broken navigation renders nothing — no placeholder rows, no error text. {%- endcomment -%}
           </nav>
           </div>
 
