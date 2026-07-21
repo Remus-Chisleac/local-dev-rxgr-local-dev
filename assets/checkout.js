@@ -59,7 +59,10 @@
     var amount = Number(value || 0);
     if (currencyCode) {
       if (!(currencyCode in moneyFormatters)) {
-        var locale = ((window.__AICO_SHOP__ && window.__AICO_SHOP__.locale) || 'en').replace('_', '-');
+        // __AICO_SHOP__.locale may be a locale DROP object (request.locale | json).
+        var rawLocale = (window.__AICO_SHOP__ && window.__AICO_SHOP__.locale) || 'en';
+        if (rawLocale && typeof rawLocale === 'object') rawLocale = rawLocale.iso_code || rawLocale.locale || 'en';
+        var locale = String(rawLocale).replace('_', '-');
         try {
           moneyFormatters[currencyCode] = new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode });
         } catch (_) {
