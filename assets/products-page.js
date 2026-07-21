@@ -753,6 +753,31 @@
   // cards carry the same star rating as the SSR cards (snippets/star-rating).
   var reviewsInstanceId = grid ? (grid.getAttribute('data-aico-reviews-instance') || '') : '';
 
+  // Rating snapshot cache (SKU → rendered star markup). Yotpo's initWidgets()
+  // re-scans EVERY `.yotpo-widget-instance` on the page, wiping already-rendered
+  // stars and re-fetching them — a visible flicker on each appended batch or
+  // filter re-render. Once a widget has hydrated we snapshot its markup and
+  // swap its class to `aico-rating-cached` ("freeze") so later init passes
+  // skip it; rebuilt cards for a known SKU get the snapshot injected
+  // synchronously instead of a fresh widget, so stars never blink.
+  var ratingCache = {};
+
+  function harvestRatings() {
+    if (!grid) {
+      return;
+    }
+    var widgets = grid.querySelectorAll('.yotpo-widget-instance[data-yotpo-product-id]');
+    for (var wi = 0; wi < widgets.length; wi++) {
+      var w = widgets[wi];
+      if (!w.firstElementChild) {
+        continue; // not hydrated yet — leave it for Yotpo
+      }
+      ratingCache[w.getAttribute('data-yotpo-product-id')] = w.innerHTML;
+      w.classList.add('aico-rating-cached');
+      w.classList.remove('yotpo-widget-instance');
+    }
+  }
+
   // Mirror ProductCatalogLoader::isWithinNewWindow — a hit is "new" when its
   // createdAt is within `newWithinDays` of now. Accepts the ISO string the
   // index stores or a numeric unix timestamp; bad values are simply not new.
@@ -876,9 +901,16 @@
       var reviewsWrap = document.createElement('div');
       reviewsWrap.className = 'aico-product-card-reviews';
       var reviewsWidget = document.createElement('div');
-      reviewsWidget.className = 'yotpo-widget-instance';
-      reviewsWidget.setAttribute('data-yotpo-instance-id', reviewsInstanceId);
-      reviewsWidget.setAttribute('data-yotpo-product-id', reviewsSku);
+      if (ratingCache[reviewsSku] != null) {
+        // Already-seen SKU: reuse the frozen snapshot — no re-init, no
+        // network round-trip, no flicker.
+        reviewsWidget.className = 'aico-rating-cached';
+        reviewsWidget.innerHTML = ratingCache[reviewsSku];
+      } else {
+        reviewsWidget.className = 'yotpo-widget-instance';
+        reviewsWidget.setAttribute('data-yotpo-instance-id', reviewsInstanceId);
+        reviewsWidget.setAttribute('data-yotpo-product-id', reviewsSku);
+      }
       reviewsWrap.appendChild(reviewsWidget);
       imgWrap.appendChild(reviewsWrap);
     }
@@ -1154,13 +1186,18 @@
         appended++;
       }
     });
+    var liveWidgets = frag.querySelectorAll('.yotpo-widget-instance').length;
     grid.appendChild(frag);
     // Hydrate the star widgets on the just-appended cards — the Yotpo loader
     // only auto-initializes instances present at script load, so dynamically
-    // inserted cards need an explicit (idempotent) re-init.
-    if (appended > 0 && reviewsInstanceId
+    // inserted cards need an explicit re-init. initWidgets() re-scans the
+    // whole page, so first freeze (harvest) every already-rendered widget —
+    // otherwise the re-init blanks and re-fetches them — and skip the call
+    // entirely when the batch reused only cached snapshots.
+    if (liveWidgets > 0 && reviewsInstanceId
       && window.yotpoWidgetsContainer
       && typeof window.yotpoWidgetsContainer.initWidgets === 'function') {
+      harvestRatings();
       window.yotpoWidgetsContainer.initWidgets();
     }
   }
@@ -1181,6 +1218,9 @@
       var total = typeof resp.estimatedTotalHits === 'number' ? resp.estimatedTotalHits : (typeof resp.nbHits === 'number' ? resp.nbHits : hits.length);
 
       if (opts && opts.replace) {
+        // Snapshot any stars Yotpo rendered since the last pass — the reset
+        // wipes the DOM, and the rebuilt cards reuse these snapshots.
+        harvestRatings();
         resetGrid();
         appendHits(hits, 0);
         setCount(total);

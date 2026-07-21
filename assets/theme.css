@@ -10776,7 +10776,9 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
    widget appends. PDP: Yotpo ships pill-shaped buttons; flatten
    them to the theme radius so they sit in the kj design. */
 .aico-product-card .yotpo-widget-instance .yotpo-sr-bottom-line-text,
-.aico-product-card .yotpo-widget-instance [class*="bottom-line-text"] {
+.aico-product-card .yotpo-widget-instance [class*="bottom-line-text"],
+.aico-product-card .aico-rating-cached .yotpo-sr-bottom-line-text,
+.aico-product-card .aico-rating-cached [class*="bottom-line-text"] {
   display: none !important;
 }
 /* PDP title-row stars: stars only, same as the cards — hide the widget's
