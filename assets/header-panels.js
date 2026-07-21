@@ -237,6 +237,10 @@
   function formatMoney(amount, currencyCode, locale) {
     var lc = (locale || 'en').replace(/_/g, '-');
     if (amount == null) { return null; }
+    // CHF prices display rounded UP to the nearest 0.05 (display only).
+    if (currencyCode && String(currencyCode).toUpperCase() === 'CHF') {
+      amount = Math.ceil(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+    }
     if (!currencyCode || !/^[A-Z]{3}$/.test(currencyCode.toUpperCase())) {
       return amount.toFixed(2);
     }

@@ -79,6 +79,10 @@
     if (!isFinite(value)) {
       value = 0;
     }
+    // CHF prices display rounded UP to the nearest 0.05 (display only).
+    if (currency && String(currency).toUpperCase() === 'CHF') {
+      value = Math.ceil(Math.round((value / 0.05) * 1e6) / 1e6) * 0.05;
+    }
     var parts = value.toFixed(2).split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
     var formatted = parts.join('.');

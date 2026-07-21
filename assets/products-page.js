@@ -721,11 +721,16 @@
 
   var moneyCache = {};
   function formatMoney(amount, currencyCode, locale) {
-    // Match the legacy b2b-shop's DisplayPrice: Swiss-rounded to 0.05, two
-    // decimals, currency AFTER the amount (EUR shown as €, others as the ISO
-    // code) — NOT Intl's currency style, which puts the symbol first.
-    var rounded = (Math.round((Number(amount) || 0) / 0.05) * 0.05).toFixed(2);
+    // CHF displays round UP to the nearest 0.05 (display only); other
+    // currencies keep exact values. Currency AFTER the amount (EUR shown
+    // as €, others as the ISO code) — NOT Intl's currency style, which
+    // puts the symbol first.
+    var value = Number(amount) || 0;
     var code = (typeof currencyCode === 'string') ? currencyCode.toUpperCase() : '';
+    if (code === 'CHF') {
+      value = Math.ceil(Math.round((value / 0.05) * 1e6) / 1e6) * 0.05;
+    }
+    var rounded = value.toFixed(2);
     var symbol = code === 'EUR' ? '€' : code;
     return symbol ? (rounded + ' ' + symbol) : rounded;
   }

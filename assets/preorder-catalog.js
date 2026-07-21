@@ -499,7 +499,13 @@
 
   function formatMoney(price, currency) {
     if (price == null || price < 0) return '';
-    return Number(price).toFixed(2) + ' ' + (currency || 'CHF');
+    var cur = currency || 'CHF';
+    var amount = Number(price);
+    // CHF prices display rounded UP to the nearest 0.05 (display only).
+    if (String(cur).toUpperCase() === 'CHF') {
+      amount = Math.ceil(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+    }
+    return amount.toFixed(2) + ' ' + cur;
   }
 
   function rowTotalForDate(productId, dateLabel) {
