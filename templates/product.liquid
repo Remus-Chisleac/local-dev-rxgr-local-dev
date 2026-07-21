@@ -158,11 +158,8 @@
                   <span class="aico-pdp-rrp-value">{{ product.aico_retail_price_label }}</span>
                 </p>
               {% endif %}
-            {% else %}
-              <p class="aico-pdp-price aico-pdp-price-on-request">
-                {{ 'product.price_on_request' | t }}
-              </p>
             {% endif %}
+            {%- comment -%} No resolved price → no price output at all (no "price on request" placeholder). {%- endcomment -%}
           </div>
 
           {% if product.aico_small_description %}
@@ -171,6 +168,13 @@
         </header>
 
         {%- comment -%} ──── product-buy-panel (inline) ──── {%- endcomment -%}
+        {%- comment -%}
+          Purchasable only with a resolved entitled price. aico_price_label is
+          nil when no price resolves (product can't be added to the cart) and
+          present for a genuinely free price-list price (0.00), which stays
+          addable.
+        {%- endcomment -%}
+        {% if product.aico_price_label %}
         <form
           class="aico-pdp-buy"
           method="post"
@@ -493,6 +497,7 @@
             {% endif %}
           </p>
         </form>
+        {% endif %}
 
         {%- comment -%} ──── product-more-colors (inline) ──── {%- endcomment -%}
         {%- comment -%}
