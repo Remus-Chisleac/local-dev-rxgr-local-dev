@@ -326,7 +326,7 @@
     }
   },
   "product": {
-    "back_to_products": "Zurück zur Übersicht",
+    "back_to_products": "Produkte",
     "sku_aria": "Artikelnummer",
     "rrp": "UVP",
     "price_on_request": "Preis auf Anfrage",
