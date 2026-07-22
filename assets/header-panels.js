@@ -291,6 +291,7 @@
       brandIcon: (brandInfo && brandInfo.icon) ? brandInfo.icon : null,
       brandLabel: (brandInfo && brandInfo.label) ? brandInfo.label : null,
       gender: (typeof hit.gender === 'string' && hit.gender !== '') ? hit.gender : null,
+      sku: (typeof hit.sku === 'string' && hit.sku !== '') ? hit.sku : null,
     };
   }
 

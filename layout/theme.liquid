@@ -705,7 +705,10 @@
                         <img :src="product.brandIcon" :alt="product.brandLabel || ''" loading="lazy">
                       </span>
                       <span class="aico-search-result-info">
-                        <span class="aico-search-result-gender" x-show="product.gender" x-text="genderLabel(product.gender)"></span>
+                        <span class="aico-search-result-meta" x-show="product.gender || product.sku" x-cloak>
+                          <span class="aico-search-result-gender" x-show="product.gender" x-text="genderLabel(product.gender)"></span>
+                          <span class="aico-search-result-sku" x-show="product.sku" x-text="product.sku"></span>
+                        </span>
                         <span class="aico-search-result-title" x-text="product.title"></span>
                         <span class="aico-search-result-price" x-show="product.priceLabel">
                           <span class="aico-search-result-price-compare" x-show="product.compareLabel" x-text="product.compareLabel"></span>
