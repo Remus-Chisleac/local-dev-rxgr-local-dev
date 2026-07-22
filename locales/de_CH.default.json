@@ -780,6 +780,7 @@
       "unknown_brand": "Unbekannte Marke"
     },
     "set_reminder": "Erinnerung setzen",
+    "pdp_incoming_shipments": "Nächste Wareneingänge",
     "coming_soon": "Demnächst verfügbar",
     "error": "Fehler beim Laden der Nachlieferungsdaten. Bitte versuchen Sie es später erneut.",
     "reminder_modal": {

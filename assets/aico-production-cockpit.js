@@ -895,7 +895,7 @@
       block.innerHTML =
         '<div class="aico-cockpit-pdp-card">' +
           '<p class="aico-cockpit-pdp-line">' +
-            '<span class="aico-cockpit-pdp-label">' + escapeHtml(t('table.restock_date', 'Available from')) + '</span> ' +
+            '<span class="aico-cockpit-pdp-label">' + escapeHtml(t('pdp_incoming_shipments', 'Incoming Shipments')) + '</span> ' +
             '<strong class="aico-cockpit-pdp-date">' + escapeHtml(formatDate(product.date)) + '</strong>' +
           '</p>' +
           '<button type="button" class="aico-cockpit-btn aico-cockpit-btn--outline" data-aico-cockpit-pdp-open>' + escapeHtml(label) + '</button>' +

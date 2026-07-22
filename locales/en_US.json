@@ -780,6 +780,7 @@
       "unknown_brand": "Unknown brand"
     },
     "set_reminder": "Set reminder",
+    "pdp_incoming_shipments": "Incoming Shipments",
     "coming_soon": "Coming soon",
     "error": "Error loading restock data. Please try again later.",
     "reminder_modal": {
