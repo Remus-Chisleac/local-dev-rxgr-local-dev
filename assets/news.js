@@ -681,9 +681,12 @@ $(document).ready(function(){
                                           var proPrice = '';
                                           if(product.price.length > 0){
                                             priceCurrency = product.price[0].currencyName;
-                                            priceValue = product.price[0].value;
-  
-                                            proPrice = priceCurrency+' '+priceValue;
+                                            priceValue = Number(product.price[0].value) || 0;
+                                            // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
+                                            if(String(priceCurrency).toUpperCase() === 'CHF'){
+                                              priceValue = Math.round(priceValue / 0.05) * 0.05;
+                                            }
+                                            proPrice = priceCurrency+' '+priceValue.toFixed(2);
                                           }
                                           if(translations.length > 0){
                                             for(var t=0;t<translations.length;t++){

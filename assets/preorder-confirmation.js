@@ -70,6 +70,10 @@
 
   function formatMoney(amount, currency) {
     var value = Number(amount || 0);
+    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
+    if (String(currency || '').toUpperCase() === 'CHF') {
+      value = Math.round(value / 0.05) * 0.05;
+    }
     try {
       return new Intl.NumberFormat(undefined, {
         style: currency ? 'currency' : 'decimal',
