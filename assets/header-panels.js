@@ -237,9 +237,9 @@
   function formatMoney(amount, currencyCode, locale) {
     var lc = (locale || 'en').replace(/_/g, '-');
     if (amount == null) { return null; }
-    // CHF prices display rounded DOWN to the nearest 0.05 (display only).
+    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
     if (currencyCode && String(currencyCode).toUpperCase() === 'CHF') {
-      amount = Math.floor(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+      amount = Math.round(amount / 0.05) * 0.05;
     }
     if (!currencyCode || !/^[A-Z]{3}$/.test(currencyCode.toUpperCase())) {
       return amount.toFixed(2);

@@ -55,16 +55,16 @@
   // carries the address-mapped currency, e.g. Austrian address → EUR), so the
   // fixed cart-store formatter (page-load currency) is only the fallback.
   var moneyFormatters = {};
-  // CHF prices display rounded DOWN to the nearest 0.05 (display only —
+  // CHF prices display rounded to the NEAREST 0.05 (display only —
   // stored/charged amounts stay exact).
-  function floorChfDisplay(amount, currency) {
+  function roundChfDisplay(amount, currency) {
     if (String(currency || '').toUpperCase() !== 'CHF') return amount;
-    return Math.floor(Math.round((amount / 0.05) * 1e6) / 1e6) * 0.05;
+    return Math.round(amount / 0.05) * 0.05;
   }
   function formatMoneyValue(value, currencyCode) {
     var amount = Number(value || 0);
     if (currencyCode) {
-      amount = floorChfDisplay(amount, currencyCode);
+      amount = roundChfDisplay(amount, currencyCode);
       if (!(currencyCode in moneyFormatters)) {
         // __AICO_SHOP__.locale may be a locale DROP object (request.locale | json).
         var rawLocale = (window.__AICO_SHOP__ && window.__AICO_SHOP__.locale) || 'en';
@@ -85,7 +85,7 @@
     var store = window.Alpine && window.Alpine.store('cart');
     if (store) return store.formatMoney(value);
     var pageCurrency = (window.__AICO_SHOP__ && window.__AICO_SHOP__.currency) || '';
-    return floorChfDisplay(amount, pageCurrency).toFixed(2);
+    return roundChfDisplay(amount, pageCurrency).toFixed(2);
   }
 
   function readInitialCart() {
