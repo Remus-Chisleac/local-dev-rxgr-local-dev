@@ -227,14 +227,32 @@
                 <div class="aico-pdp-size-matrix-toolbar" role="presentation">
                   <div class="aico-pdp-size-matrix-head-tabs-wrap">
                     {%- assign size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+                    {%- comment -%}
+                      The tab that starts active is the shopper's account size
+                      system (profile page → `customer.aico_size_region`, one of
+                      EU/UK/US/KR). The matrix labels the millimetre column
+                      `MM`, which is the same chart column KR maps to, so the
+                      account value is translated once here. Defaults to EU for
+                      a shopper with no preference; product-detail.js reads the
+                      active tab on init and applies its labels.
+                    {%- endcomment -%}
+                    {%- assign preferred_size_region = customer.aico_size_region | default: 'EU' -%}
+                    {%- if preferred_size_region == 'KR' -%}
+                      {%- assign preferred_size_region = 'MM' -%}
+                    {%- endif -%}
                     <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-size-region-tabs>
                       {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
                       {% for region in size_regions %}
+                    {%- if region == preferred_size_region -%}
+                      {%- assign region_is_active = true -%}
+                    {%- else -%}
+                      {%- assign region_is_active = false -%}
+                    {%- endif -%}
                     <button
                       type="button"
                       role="tab"
-                      class="aico-pdp-size-region-tab{% if forloop.first %} aico-pdp-size-region-tab-active{% endif %}"
-                      aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                      class="aico-pdp-size-region-tab{% if region_is_active %} aico-pdp-size-region-tab-active{% endif %}"
+                      aria-selected="{% if region_is_active %}true{% else %}false{% endif %}"
                       data-aico-size-region
                       data-region="{{ region }}"
                     >
@@ -305,7 +323,12 @@
                         data-aico-label-uk="{{ variant.aico_size_label_uk | default: variant.aico_size_value | escape }}"
                         data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
                         data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
-                      >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
+                      >{%- case preferred_size_region -%}
+                        {%- when 'UK' -%}{{ variant.aico_size_label_uk | default: variant.aico_size_value }}
+                        {%- when 'US' -%}{{ variant.aico_size_label_us | default: variant.aico_size_value }}
+                        {%- when 'MM' -%}{{ variant.aico_size_label_mm | default: variant.aico_size_value }}
+                        {%- else -%}{{ variant.aico_size_label_eu | default: variant.aico_size_value }}
+                      {%- endcase -%}</span>
                       {%- comment -%}
                         The HTML max is the stricter of warehouse stock and the
                         variant's max order quantity; product-detail.js re-clamps

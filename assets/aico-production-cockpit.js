@@ -111,6 +111,21 @@
     return Array.isArray(data) ? data : [];
   }
 
+  // Display label for a restock variant. The endpoints add
+  // `variantValueDisplay` — the size converted to the shopper's account size
+  // system (profile page → EU/UK/US/KR) — while `variantValue` stays the
+  // canonical value the reminder writes post back as `size`. Never label a
+  // cell from `variantValue` directly, or a UK/US/KR shopper sees EU sizes.
+  function sizeLabel(variant) {
+    if (!variant) {
+      return '—';
+    }
+    if (variant.variantValueDisplay != null && String(variant.variantValueDisplay) !== '') {
+      return String(variant.variantValueDisplay);
+    }
+    return variant.variantValue != null ? String(variant.variantValue) : '—';
+  }
+
   // A reminder matches a row variant either by real variant id (shop
   // variants) or by sku+size (new-release / manual entries).
   function reminderKeyForVariant(product, variant) {
@@ -310,7 +325,7 @@
           cell.style.animationDelay = (cellIndex * 35) + 'ms';
           cellIndex += 1;
           cell.innerHTML = '<span class="aico-cockpit-size-label">' +
-            escapeHtml(variant.variantValue != null ? variant.variantValue : '—') +
+            escapeHtml(sizeLabel(variant)) +
             '</span><span class="aico-cockpit-size-icon" aria-hidden="true"></span>';
           applyCellClass(cell);
           cell.addEventListener('click', function () { toggleCell(cell); });
