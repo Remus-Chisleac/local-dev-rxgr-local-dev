@@ -1899,13 +1899,14 @@
           return !!(sessionData && sessionData.isStockRelevant);
         },
         onCartUpdated: function () {
-          // Stock-relevant sessions track quantities client-side and update the
-          // grid optimistically, so a routine save echo must NOT rebuild the grid
-          // (that is the "waiting for the backend" jank). The grid is reconciled
-          // in place once the user goes idle (onDirtyChange). Non-stock sessions
-          // have no client-side source of truth, so they still render from cart.
+          // A routine save echo must NOT rebuild the grid: quantities are tracked
+          // client-side in the stock module (seeded from the cart) in BOTH modes,
+          // and a full render() mid-interaction destroys the focused/next input,
+          // which is what broke tabbing between variants. refreshAll() repaints
+          // every card's cells and totals in place instead — same data source
+          // (cellState), no innerHTML rebuild, no focus loss.
           if (!(sessionData && sessionData.isStockRelevant)) {
-            if (catalog) catalog.render();
+            if (catalog && catalog.refreshAll) catalog.refreshAll();
           }
           renderFlyers(sessionData && sessionData.flyers);
           // While a context change's cart fetch is resolving, localCart already

@@ -271,6 +271,14 @@
   //  - decrementDisabled: at/below the committed floor (0 for new cells).
   //  - committedStyle: value equals a committed floor and hasn't been raised ->
   //    gray placeholder, bordered (locked minimum). Raising it flips to `filled`.
+  //
+  // The rolling stock cap is the ONLY cap the preorder tool applies — it is
+  // deliberately separate from the PIM max-order-quantity clamp the PDP and
+  // cart enforce (`aico_max_quantity_per_order`), which must never leak in here.
+  // `isStockRelevant` is accepted for call-site compatibility but no longer
+  // gates the cap: the backend builds `preorderStockData` for every session, so
+  // a variant with known stock is always bounded and one without stays
+  // unlimited via the `hasStock` check below.
   function getCellState(productId, variantId, dateLabel, isStockRelevant) {
     var qty = getQuantity(productId, variantId, dateLabel);
     var committed = getCommitted(productId, variantId, dateLabel);
@@ -286,8 +294,6 @@
       committedStyle: committedStyle,
       filled: qty > 0 && !committedStyle,
     };
-    if (!isStockRelevant) return base;
-
     var pid = idKey(productId);
     var vid = idKey(variantId);
     if (!hasStock(pid, vid)) return base; // unknown stock => unlimited
@@ -303,15 +309,14 @@
   }
 
   // Clamp a raw value for a cell to [floor, cap].
-  //  - upper bound = capForCell (only when stock is relevant);
+  //  - upper bound = capForCell — the rolling stock cap, always applied
+  //    (MAX_QUANTITY when the variant has no known stock);
   //  - lower bound = committed floor, but only when enforceFloor is set.
   function clampCell(productId, variantId, dateLabel, raw, isStockRelevant, enforceFloor) {
     var n = Math.floor(Number(raw));
     if (isNaN(n) || n < 0) n = 0;
-    if (isStockRelevant) {
-      var cap = capForCell(productId, variantId, dateLabel);
-      if (n > cap) n = cap;
-    }
+    var cap = capForCell(productId, variantId, dateLabel);
+    if (n > cap) n = cap;
     if (enforceFloor) {
       var floor = getCommitted(productId, variantId, dateLabel);
       if (n < floor) n = floor;
@@ -340,7 +345,6 @@
   // state). A cell that already has a qty stays enabled even when its cap is
   // reached — only its increment is then disabled (see getCellState).
   function isCellEnabled(productId, variantId, dateLabel, isStockRelevant) {
-    if (!isStockRelevant) return true;
     return !getCellState(productId, variantId, dateLabel, true).boxDisabled;
   }
 

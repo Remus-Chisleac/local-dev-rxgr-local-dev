@@ -1040,7 +1040,7 @@
       var incBtn = box ? box.querySelector('[data-aico-preorder-qty-step="1"]') : null;
       var decBtn = box ? box.querySelector('[data-aico-preorder-qty-step="-1"]') : null;
 
-      if (isStockRelevant && cell.max >= 0 && cell.max < 10000) {
+      if (cell.max >= 0 && cell.max < 10000) {
         input.setAttribute('max', String(cell.max));
       } else {
         input.removeAttribute('max');
@@ -1240,7 +1240,9 @@
         var cell = self.cellState(product.id, variant.id, dateLabel, isStockRelevant);
         var maxAttr = '';
         var minAttr = '';
-        if (isStockRelevant && cell.max >= 0 && cell.max < 10000) {
+        // The rolling stock cap applies to every session — a variant with no
+        // known stock reports max = 10000 and stays uncapped.
+        if (cell.max >= 0 && cell.max < 10000) {
           maxAttr = ' max="' + cell.max + '"';
         }
         if (cell.committed > 0) minAttr = ' min="' + cell.committed + '"';
@@ -1289,12 +1291,10 @@
   };
 
   CatalogController.prototype.getQuantity = function (productId, variantId, dateLabel) {
-    var session = this.getSession() || {};
-    if (
-      session.isStockRelevant &&
-      global.AicoPreorderStock &&
-      global.AicoPreorderStock.getQuantity
-    ) {
+    // The stock module is seeded from the cart on every load/merge regardless of
+    // the session's stock flag, so it is the live source of truth in both modes
+    // (the cart lags behind typing). The cart read below is the no-module fallback.
+    if (global.AicoPreorderStock && global.AicoPreorderStock.getQuantity) {
       return global.AicoPreorderStock.getQuantity(
         productId,
         variantId,
@@ -1387,12 +1387,14 @@
       if (input.value !== display) input.value = display;
       var product = self.findProduct(productId);
       self.onQuantityChange(productId, variantId, dateLabel, qty, product);
-      // Eager UI: update only this product's cells/totals in place (stock mode
-      // tracks quantities client-side, so we never wait for the backend). The
-      // focused input keeps its own caret — refreshProduct only rewrites the
-      // value of non-focused inputs. Fall back to a full render when stock isn't
-      // tracked client-side.
-      if (isStockRelevant && self.refreshProduct) {
+      // Eager UI: update only this product's cells/totals in place. NEVER a full
+      // render() here — that rebuilds the catalog's innerHTML on every keystroke,
+      // and a rebuild during the blur half of a Tab destroys the very input Tab
+      // was about to focus, so focus falls back to the top of the document and
+      // tabbing between variants breaks. refreshProduct is DOM-surgical and only
+      // rewrites the value of non-focused inputs, so the caret and the tab order
+      // both survive. Quantities come from the stock module in either mode.
+      if (self.refreshProduct) {
         self.refreshProduct(productId);
       } else {
         self.render();
