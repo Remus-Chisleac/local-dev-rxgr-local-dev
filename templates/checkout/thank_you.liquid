@@ -1,24 +1,31 @@
 {% comment %}
-  Order-confirmation page. Reads order details off the URL query string.
-  Three producers redirect here, with two param dialects:
-    - the checkout submit + processing pages use order_number / shipping /
-      cc_fee (see assets/checkout.js);
-    - Adyen's Hosted Checkout returnUrl (built server-side in
-      AdyenIntegrationService::createPaymentSession) uses the legacy
-      b2b-shop names orderRef / shippingCost / fee, and Adyen appends
-      sessionId + sessionResult.
-  Both dialects are accepted via the fallback assigns below.
+  Order-confirmation page for ONE order, addressed by its ecommerce order
+  number in the path: `/checkout/thank-you/16220039`.
 
-  The `aicoCheckoutThankYouPage` Alpine component is always mounted:
-  it fetches the PERSISTED order totals from /checkout/order-summary
-  (order id / number off the query string) and swaps them in over the
-  query-param fallback amounts — so the displayed subtotal / discount /
-  VAT / total always end up matching what the aico order actually
-  persisted. When sessionId + sessionResult are present (the Adyen
-  return leg) it additionally verifies the payment session via
-  /checkout/payment-status before showing the success card — a
-  cancelled/refused payment renders the payment-error card instead
-  (mirrors the legacy b2b-shop thank-you).
+  Nothing monetary is passed in the URL. The `aicoCheckoutThankYouPage`
+  Alpine component fetches the PERSISTED totals from
+  /checkout/order-summary, so the amounts shown are always what the aico
+  order actually charged — not client-supplied numbers a shopper could
+  edit in the address bar.
+
+  The order save runs asynchronously (queued SaveAicoShopOrder), so the
+  card has three states:
+    - `pending`  — the order exists but is still saving. The component
+                   subscribes to the AicoShopOrderCreatedEvent broadcast
+                   for this order and swaps in the totals the moment it
+                   lands (polling only when pusher is unavailable).
+    - `summary`  — confirmed: the persisted breakdown, discount included.
+    - `notFound` — no such order, or one outside this shopper's
+                   organisation. Enforced server-side by the endpoint.
+  A reload, or a link opened later by a colleague on the same debtor,
+  lands straight in the `summary` state.
+
+  The legacy `?order_number=` / `?orderRef=` form still renders: Adyen's
+  returnUrl is built from a single app-wide ADYEN_BASE_REDIRECT_URL that
+  the legacy b2b-shop thank-you page also consumes, so it keeps the old
+  dialect (orderRef + sessionId/sessionResult). The component verifies the
+  payment session via /checkout/payment-status before showing the success
+  card, then rewrites the URL to the canonical path form.
 
   Background color: the page gutters take the current selected brand's
   `color_schema.checkoutConfirmation.bg` (exposed on
@@ -29,63 +36,30 @@
 {% endcomment %}
 
 {%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_checkout_confirmation_bg_color -%}
-{%- assign ty_order_number = request.query.order_number | default: request.query.orderRef -%}
-{%- assign ty_shipping = request.query.shipping | default: request.query.shippingCost -%}
-{%- assign ty_cc_fee = request.query.cc_fee | default: request.query.fee -%}
+
+{%- comment -%} The order number is the route's captured `:handle` — resolved by
+  the server, exactly like `products/:handle` gives the product page its handle.
+  Never derive it by matching a literal path segment: the theme route map lets
+  this page's URL be renamed, and the JS reads the number back off the element
+  below rather than re-parsing the address bar. Falls back to the legacy query
+  params for in-flight Adyen returns and old bookmarks. {%- endcomment -%}
+{%- assign ty_order_number = aico_route.handle | default: request.query.order_number | default: request.query.orderRef -%}
 
 {% capture ty_success_card %}
     <div class="aico-checkout-thank-you-card">
       <div class="aico-checkout-thank-you-icon" aria-hidden="true">&#10003;</div>
       <h1 class="aico-checkout-thank-you-title">{{ 'checkout.thank_you.title' | t }}</h1>
 
-      {% if ty_order_number %}
-        <p class="aico-checkout-thank-you-order">
-          {{ 'checkout.thank_you.order_number' | t }}:
-          <strong>{{ ty_order_number }}</strong>
-        </p>
-      {% endif %}
+      <p class="aico-checkout-thank-you-order" x-show="orderNumber && !notFound">
+        {{ 'checkout.thank_you.order_number' | t }}:
+        <strong x-text="orderNumber">{{ ty_order_number }}</strong>
+      </p>
 
-      {%- comment -%} Fallback totals from the query string — shown only until the
-        persisted order totals arrive from /checkout/order-summary (the order
-        save is async, so right after submit the DB row may be incomplete). {%- endcomment -%}
-      <dl class="aico-checkout-thank-you-totals" x-show="!summary">
-        {% if request.query.subtotal %}
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
-            <dd>{{ request.query.subtotal | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-        {% if request.query.discount %}
-          <div class="aico-checkout-summary-row aico-checkout-summary-row-discount">
-            <dt>{{ 'checkout.summary.discount' | t }}{% if request.query.discount_code %} ({{ request.query.discount_code }}){% endif %}</dt>
-            <dd>−{{ request.query.discount | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-        {% if ty_shipping %}
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.shipping' | t }}</dt>
-            <dd>{{ ty_shipping | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-        {% if request.query.vat %}
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.vat' | t }}</dt>
-            <dd>{{ request.query.vat | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-        {% if ty_cc_fee %}
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
-            <dd>{{ ty_cc_fee | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-        {% if request.query.total %}
-          <div class="aico-checkout-summary-row aico-checkout-summary-row-grand">
-            <dt>{{ 'checkout.summary.total' | t }}</dt>
-            <dd>{{ request.query.total | money_with_currency: request.query.currency }}</dd>
-          </div>
-        {% endif %}
-      </dl>
+      {%- comment -%} Still saving: the totals are not trustworthy yet, so show
+        the wait state rather than a half-filled or query-supplied breakdown. {%- endcomment -%}
+      <p class="aico-checkout-thank-you-confirming" x-show="pending && !notFound" x-cloak>
+        {{ 'checkout.thank_you.confirming' | t }}
+      </p>
 
       {%- comment -%} Authoritative totals read back from the persisted aico
         order (aico_shop_orders + the ecommerce order's discount line item) —
@@ -120,7 +94,14 @@
         </div>
       </dl>
 
-      <p class="aico-checkout-thank-you-email">{{ 'checkout.thank_you.email_confirmation' | t }}</p>
+      <p class="aico-checkout-thank-you-email" x-show="!notFound">{{ 'checkout.thank_you.email_confirmation' | t }}</p>
+
+      {%- comment -%} Unknown order number, or one belonging to another
+        organisation — /checkout/order-summary answers 404 either way and never
+        says which, so the page cannot be used to probe for orders. {%- endcomment -%}
+      <p class="aico-checkout-thank-you-not-found" x-show="notFound" x-cloak>
+        {{ 'checkout.thank_you.not_found' | t }}
+      </p>
 
       <a href="{{ routes.products_url }}" class="aico-button aico-button-primary">
         {{ 'checkout.thank_you.continue' | t }}
@@ -134,7 +115,8 @@
       Adyen return leg): it also fetches the persisted order totals via
       /checkout/order-summary. Without session params init() resolves the state
       to 'success' immediately. {%- endcomment -%}
-      <div x-data="aicoCheckoutThankYouPage" x-init="init()">
+      <div data-aico-order-number="{{ ty_order_number | escape }}"
+           x-data="aicoCheckoutThankYouPage" x-init="init()">
         <template x-if="state === 'verifying'">
           <div class="aico-checkout-thank-you-card">
             <div class="aico-checkout-processing-spinner" aria-hidden="true">

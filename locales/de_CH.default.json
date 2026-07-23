@@ -534,7 +534,9 @@
       "order_number": "Bestellnummer",
       "email_confirmation": "Eine Bestellbestätigung wurde Ihnen per E-Mail zugesendet.",
       "continue": "Weiter einkaufen",
-      "verifying": "Wir bestätigen deine Zahlung…"
+      "verifying": "Wir bestätigen deine Zahlung…",
+      "confirming": "Wir bestätigen Ihre Bestellung. Einen Moment bitte …",
+      "not_found": "Diese Bestellung konnte nicht gefunden werden."
     },
     "payment_error": {
       "title": "Zahlung nicht abgeschlossen",

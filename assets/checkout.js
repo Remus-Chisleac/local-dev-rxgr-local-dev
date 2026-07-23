@@ -66,17 +66,16 @@
     return base;
   }
 
-  // Read the order number back out of a canonical confirmation URL — the
-  // segment right after `thank-you`. Deliberately matched on the segment
-  // rather than against `routes.thankYouUrl`, so it still works when the
-  // rendered base carries a prefix the current URL does not (locale prefix,
-  // path-preview prefix). Returns '' for the bare page (the legacy
-  // query-param form, still produced by in-flight Adyen returns).
-  function orderNumberFromPath(pathname) {
-    var segments = String(pathname || '').split('/').filter(Boolean);
-    var index = segments.lastIndexOf('thank-you');
-    if (index === -1 || index === segments.length - 1) return '';
-    return decodeURIComponent(segments[index + 1]);
+  // The order number the SERVER resolved for this page, published by the
+  // template as `data-aico-order-number` (the route's captured `:handle`).
+  //
+  // Deliberately NOT parsed out of window.location: the theme route map lets
+  // a merchant rename this page's path, so any client-side URL matching would
+  // silently break the moment the URL is not `.../thank-you/<number>`. The
+  // server already matched the route — read its answer.
+  function orderNumberFromElement(element) {
+    var node = element && element.closest ? element.closest('[data-aico-order-number]') : null;
+    return node ? (node.getAttribute('data-aico-order-number') || '') : '';
   }
 
   // Per-currency Intl formatters: the checkout currency FOLLOWS the selected
@@ -639,19 +638,36 @@
   function buildCheckoutThankYouPage() {
     return {
       state: 'verifying',
-      // Persisted totals of the just-placed order (from /checkout/order-summary).
-      // While null the template shows the query-param fallback amounts; once the
-      // async order save completes the backend numbers replace them — so the
-      // confirmation always ends up showing exactly what the order persisted,
-      // including the promo-code discount line.
+      // Persisted totals of the just-placed order, or null while loading.
       summary: null,
+      // The order this page is about — the route's captured `:handle`, which
+      // the template stamps onto the card (or the legacy query params).
+      orderNumber: '',
+      orderId: '',
+      // True while the async save is still running — the page shows a
+      // "we are confirming your order" state instead of blank totals.
+      pending: true,
+      // The order exists but is not visible to this shopper's organisation,
+      // or does not exist at all.
+      notFound: false,
+      _pusher: null,
+      _channel: null,
 
       init: function () {
         var query = new URLSearchParams(window.location.search);
+        // `this.$el` is the element carrying x-data — the card the template
+        // stamped the server-resolved order number onto.
+        this.orderNumber = orderNumberFromElement(this.$el)
+          || query.get('order_number') || query.get('orderRef') || '';
+        this.orderId = query.get('order_id') || '';
+        this.resetCartBadge();
+        this.loadOrderSummary(0);
+
+        // Adyen's Hosted Checkout returns with sessionId + sessionResult; the
+        // payment must be verified before the success card is shown. Without
+        // them (every non-credit-card order) the confirmation is immediate.
         var sessionId = query.get('sessionId');
         var sessionResult = query.get('sessionResult');
-        this.resetCartBadge(query);
-        this.loadOrderSummary(query, 0);
         if (!sessionId || !sessionResult) {
           this.state = 'success';
           return;
@@ -659,16 +675,19 @@
         this.verify(sessionId, sessionResult, 0);
       },
 
+      destroy: function () {
+        this.unsubscribeFromOrder();
+      },
+
       // The header cart badge is seeded from the SSR'd cart snapshot, which
       // still contains the just-ordered lines: the async SaveAicoShopOrder
-      // job only consumes the cart after this page has rendered. When the
-      // query carries an order reference the order was placed, so
-      // optimistically zero the `$store.cart` data the badge/mini-cart read.
-      // Once /checkout/order-summary reports `ready` (save finished, cart
-      // consumed) loadOrderSummary re-fetches the authoritative cart, which
-      // also self-corrects historical visits to this page.
-      resetCartBadge: function (query) {
-        if (!query.get('order_id') && !query.get('order_number') && !query.get('orderRef')) return;
+      // job only consumes the cart after this page has rendered. Reaching
+      // this page at all means an order was placed, so optimistically zero
+      // the `$store.cart` data the badge/mini-cart read. Once the order is
+      // confirmed the authoritative cart is re-fetched (see onOrderReady),
+      // which also self-corrects historical visits to this page.
+      resetCartBadge: function () {
+        if (!this.orderNumber && !this.orderId) return;
         var store = window.Alpine && typeof window.Alpine.store === 'function'
           ? window.Alpine.store('cart')
           : null;
@@ -687,38 +706,134 @@
         if (store && typeof store.refresh === 'function') store.refresh();
       },
 
-      // Poll the persisted order totals. The order row exists immediately but
-      // its monetary breakdown is written by the async SaveAicoShopOrder job,
-      // so retry while `ready` is false (20 × 1.5s ≈ 30s cap).
-      loadOrderSummary: function (query, attempt) {
+      // Read the persisted order.
+      //
+      // Two cases, and the page must handle both without the shopper noticing
+      // a difference:
+      //   - the order is ALREADY saved (a reload, a bookmark, a link a
+      //     colleague opened): the first fetch answers `ready` and the totals
+      //     render immediately;
+      //   - the save is still in flight (the usual path straight after
+      //     submit): the fetch answers `ready: false`, and we wait for the
+      //     AicoShopOrderCreatedEvent broadcast for THIS order instead of
+      //     hammering the endpoint. Polling stays as the fallback for when
+      //     pusher is not configured or the socket fails to connect.
+      loadOrderSummary: function (attempt) {
         var self = this;
+        if (!this.orderNumber && !this.orderId) {
+          this.pending = false;
+          this.notFound = true;
+          return;
+        }
         var url = routes.orderSummaryUrl || '/checkout/order-summary';
-        var orderId = query.get('order_id');
-        var orderNumber = query.get('order_number') || query.get('orderRef');
-        if (!orderId && !orderNumber) return;
         var params = new URLSearchParams();
-        if (orderId) params.set('order_id', orderId);
-        else params.set('order_number', orderNumber);
-        var retry = function () {
-          if (attempt < 20) {
-            setTimeout(function () { self.loadOrderSummary(query, attempt + 1); }, 1500);
-          }
-        };
+        if (this.orderId) params.set('order_id', this.orderId);
+        else params.set('order_number', this.orderNumber);
+
         fetch(url + '?' + params.toString(), { headers: jsonHeaders(), credentials: 'same-origin' })
-          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (response) {
+            // 404 = no such order, or one this organisation may not see. That
+            // is a terminal answer for an order number typed into the URL —
+            // but right after submit it is also the transient state while the
+            // async save has not created the ecommerce-order row yet, so it
+            // only becomes terminal once the retries are exhausted.
+            if (response.status === 404) return { missing: true };
+            return response.ok ? response.json() : null;
+          })
           .then(function (body) {
             if (body && body.ready) {
-              self.summary = body;
-              // Order save completed → the cart was consumed server-side;
-              // replace the optimistic zero with the authoritative cart.
-              self.refreshCartStore();
-            } else {
-              // Not ready yet — or a transient 404 while the async save has
-              // not created the ecommerce-order row (order_number lookups).
-              retry();
+              self.onOrderReady(body);
+              return;
             }
+            // The order row exists but is still saving: learn its id so we can
+            // subscribe to the broadcast, then wait for it.
+            if (body && !body.missing && body.order_id) {
+              self.orderId = String(body.order_id);
+              if (!self.orderNumber && body.order_number) self.orderNumber = String(body.order_number);
+              if (self.subscribeToOrder()) return;
+            }
+            self.retryLoad(attempt, !!(body && body.missing));
           })
-          .catch(retry);
+          .catch(function () { self.retryLoad(attempt, false); });
+      },
+
+      // 20 × 1.5s ≈ 30s. Only used until the broadcast subscription is live,
+      // or for the whole wait when pusher is unavailable.
+      retryLoad: function (attempt, missing) {
+        var self = this;
+        if (attempt >= 20) {
+          this.pending = false;
+          this.notFound = missing;
+          return;
+        }
+        setTimeout(function () { self.loadOrderSummary(attempt + 1); }, 1500);
+      },
+
+      // Subscribe to the order-saved broadcast. Returns true when the
+      // subscription is live and the caller can stop polling.
+      subscribeToOrder: function () {
+        var self = this;
+        if (this._channel) return true;
+        if (!pusherConfig || !window.Pusher || !this.orderId) return false;
+        try {
+          this._pusher = new window.Pusher(pusherConfig.key, {
+            cluster: pusherConfig.cluster,
+            authEndpoint: pusherConfig.authEndpoint || undefined,
+          });
+          var channelName = (pusherConfig.appSlug || 'storefront') + '.order_saved.' + this.orderId;
+          this._channel = this._pusher.subscribe(channelName);
+          this._channel.bind('AicoShopOrderCreatedEvent', function () {
+            // The event says the order reached SAVED; re-read the totals
+            // rather than trusting the payload, which carries no amounts.
+            self.loadOrderSummary(0);
+          });
+          return true;
+        } catch (e) {
+          return false;
+        }
+      },
+
+      unsubscribeFromOrder: function () {
+        try {
+          if (this._pusher && typeof this._pusher.disconnect === 'function') this._pusher.disconnect();
+        } catch (e) { /* nothing to clean up */ }
+        this._pusher = null;
+        this._channel = null;
+      },
+
+      onOrderReady: function (body) {
+        this.summary = body;
+        this.pending = false;
+        this.notFound = false;
+        if (body.order_number) this.orderNumber = String(body.order_number);
+        if (body.order_id) this.orderId = String(body.order_id);
+        this.unsubscribeFromOrder();
+        // The save completed → the cart was consumed server-side; replace the
+        // optimistic zero with the authoritative cart.
+        this.refreshCartStore();
+        this.canonicaliseUrl();
+      },
+
+      // Rewrite a legacy `?order_number=…&order_id=…` URL to the canonical
+      // `/checkout/thank-you/<order number>` once the number is known, so a
+      // reload or a shared link uses the clean form. History is REPLACED (not
+      // pushed) — the confirmation is the end of the flow, and a back button
+      // that walks through URL variants of the same page would be noise.
+      canonicaliseUrl: function () {
+        if (!this.orderNumber || !window.history || !window.history.replaceState) return;
+        // Drop the order references (now in the path) and the legacy amount
+        // params; keep anything else the URL carries — notably Adyen's
+        // sessionId/sessionResult, which the payment verification reads.
+        var query = new URLSearchParams(window.location.search);
+        ['order_id', 'order_number', 'orderRef', 'subtotal', 'discount', 'discount_code',
+          'shipping', 'shippingCost', 'vat', 'cc_fee', 'fee', 'total', 'currency']
+          .forEach(function (key) { query.delete(key); });
+        var rest = query.toString();
+        var target = thankYouUrlFor(this.orderNumber, null) + (rest ? '?' + rest : '');
+        if (window.location.pathname + window.location.search === target) return;
+        try {
+          window.history.replaceState(window.history.state, '', target);
+        } catch (e) { /* non-fatal: the page is already rendered correctly */ }
       },
 
       summaryValue: function (key) {
