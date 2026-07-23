@@ -502,6 +502,14 @@
 
     inputs.forEach(function (input) {
       input.addEventListener('input', refresh);
+      input.addEventListener('change', refresh);
+      // Mark step buttons (browser native) with a clamp so the user
+      // can't tap past the max stock.
+      input.addEventListener('blur', refresh);
+    });
+    refresh();
+  })();
+
   // -------- Legacy-mode max clamp ---------------------------------------
   //
   // The non-matrix stepper ADDS to the cart (increment semantics), so the
@@ -555,14 +563,6 @@
     // once it has had a chance to fetch the cart.
     setTimeout(clampLegacy, 1000);
     clampLegacy();
-  })();
-
-      input.addEventListener('change', refresh);
-      // Mark step buttons (browser native) with a clamp so the user
-      // can't tap past the max stock.
-      input.addEventListener('blur', refresh);
-    });
-    refresh();
   })();
 
   // -------- Quantity steppers (− / +) -----------------------------------
