@@ -9,12 +9,16 @@
       sessionId + sessionResult.
   Both dialects are accepted via the fallback assigns below.
 
-  When sessionId + sessionResult are present (the Adyen return leg) the
-  page mounts the `aicoCheckoutThankYouPage` Alpine component, which
-  verifies the payment session via /checkout/payment-status before
-  showing the success card — a cancelled/refused payment renders the
-  payment-error card instead (mirrors the legacy b2b-shop thank-you).
-  Without session params the success card renders statically.
+  The `aicoCheckoutThankYouPage` Alpine component is always mounted:
+  it fetches the PERSISTED order totals from /checkout/order-summary
+  (order id / number off the query string) and swaps them in over the
+  query-param fallback amounts — so the displayed subtotal / discount /
+  VAT / total always end up matching what the aico order actually
+  persisted. When sessionId + sessionResult are present (the Adyen
+  return leg) it additionally verifies the payment session via
+  /checkout/payment-status before showing the success card — a
+  cancelled/refused payment renders the payment-error card instead
+  (mirrors the legacy b2b-shop thank-you).
 
   Background color: the page gutters take the current selected brand's
   `color_schema.checkoutConfirmation.bg` (exposed on
@@ -28,10 +32,6 @@
 {%- assign ty_order_number = request.query.order_number | default: request.query.orderRef -%}
 {%- assign ty_shipping = request.query.shipping | default: request.query.shippingCost -%}
 {%- assign ty_cc_fee = request.query.cc_fee | default: request.query.fee -%}
-{%- assign ty_needs_verification = false -%}
-{%- if request.query.sessionId and request.query.sessionResult -%}
-  {%- assign ty_needs_verification = true -%}
-{%- endif -%}
 
 {% capture ty_success_card %}
     <div class="aico-checkout-thank-you-card">
@@ -45,11 +45,20 @@
         </p>
       {% endif %}
 
-      <dl class="aico-checkout-thank-you-totals">
+      {%- comment -%} Fallback totals from the query string — shown only until the
+        persisted order totals arrive from /checkout/order-summary (the order
+        save is async, so right after submit the DB row may be incomplete). {%- endcomment -%}
+      <dl class="aico-checkout-thank-you-totals" x-show="!summary">
         {% if request.query.subtotal %}
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
             <dd>{{ request.query.subtotal | money_with_currency: request.query.currency }}</dd>
+          </div>
+        {% endif %}
+        {% if request.query.discount %}
+          <div class="aico-checkout-summary-row aico-checkout-summary-row-discount">
+            <dt>{{ 'checkout.summary.discount' | t }}{% if request.query.discount_code %} ({{ request.query.discount_code }}){% endif %}</dt>
+            <dd>−{{ request.query.discount | money_with_currency: request.query.currency }}</dd>
           </div>
         {% endif %}
         {% if ty_shipping %}
@@ -78,6 +87,39 @@
         {% endif %}
       </dl>
 
+      {%- comment -%} Authoritative totals read back from the persisted aico
+        order (aico_shop_orders + the ecommerce order's discount line item) —
+        exactly what the backend charged, including the promo-code discount. {%- endcomment -%}
+      <dl class="aico-checkout-thank-you-totals" x-show="summary" x-cloak>
+        <div class="aico-checkout-summary-row">
+          <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
+          <dd x-text="formatSummary('subtotal')"></dd>
+        </div>
+        <div class="aico-checkout-summary-row aico-checkout-summary-row-discount"
+             x-show="summaryValue('discount_value') > 0">
+          <dt>
+            {{ 'checkout.summary.discount' | t }}<template x-if="summary && summary.discount_code"><span> (<span x-text="summary.discount_code"></span>)</span></template>
+          </dt>
+          <dd x-text="'−' + formatSummary('discount_value')"></dd>
+        </div>
+        <div class="aico-checkout-summary-row" x-show="summaryValue('shipping') > 0">
+          <dt>{{ 'checkout.summary.shipping' | t }}</dt>
+          <dd x-text="formatSummary('shipping')"></dd>
+        </div>
+        <div class="aico-checkout-summary-row" x-show="summaryValue('vat') > 0">
+          <dt>{{ 'checkout.summary.vat' | t }}</dt>
+          <dd x-text="formatSummary('vat')"></dd>
+        </div>
+        <div class="aico-checkout-summary-row" x-show="summaryValue('cc_fee') > 0">
+          <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
+          <dd x-text="formatSummary('cc_fee')"></dd>
+        </div>
+        <div class="aico-checkout-summary-row aico-checkout-summary-row-grand">
+          <dt>{{ 'checkout.summary.total' | t }}</dt>
+          <dd x-text="formatSummary('total')"></dd>
+        </div>
+      </dl>
+
       <p class="aico-checkout-thank-you-email">{{ 'checkout.thank_you.email_confirmation' | t }}</p>
 
       <a href="{{ routes.products_url }}" class="aico-button aico-button-primary">
@@ -88,7 +130,10 @@
 
 <main class="aico-checkout-thank-you"{% if aico_confirmation_bg %} style="--aico-confirmation-bg: {{ aico_confirmation_bg | escape }};"{% endif %}>
   <div class="aico-page-container">
-    {% if ty_needs_verification %}
+    {%- comment -%} The component is mounted for EVERY confirmation (not just the
+      Adyen return leg): it also fetches the persisted order totals via
+      /checkout/order-summary. Without session params init() resolves the state
+      to 'success' immediately. {%- endcomment -%}
       <div x-data="aicoCheckoutThankYouPage" x-init="init()">
         <template x-if="state === 'verifying'">
           <div class="aico-checkout-thank-you-card">
@@ -142,8 +187,5 @@
           </div>
         </template>
       </div>
-    {% else %}
-      {{ ty_success_card }}
-    {% endif %}
   </div>
 </main>

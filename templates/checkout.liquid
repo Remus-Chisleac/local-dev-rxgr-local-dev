@@ -269,12 +269,16 @@
             <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
             <dd x-text="formatMoney(cart && cart.total_price)"></dd>
           </div>
-          <div class="aico-checkout-summary-row">
-            <dt>{{ 'checkout.summary.discount' | t }}</dt>
-            <dd>
-              <template x-if="cart && cart.aico_discount_value > 0">−</template>
-              <span x-text="formatMoney(cart && cart.aico_discount_value)"></span>
-            </dd>
+          {%- comment -%} Promo-code discount: value comes from /cart/vat.js (the
+            checkout cart's backend-computed discount), shown only when a code is
+            applied. Subtracted from the products cost before shipping/VAT in
+            totalDisplay(); the backend VAT is already discount-aware. {%- endcomment -%}
+          <div class="aico-checkout-summary-row aico-checkout-summary-row-discount"
+               x-show="discountValue > 0" x-cloak>
+            <dt>
+              {{ 'checkout.summary.discount' | t }}<template x-if="discountCode"><span> (<span x-text="discountCode"></span>)</span></template>
+            </dt>
+            <dd x-text="'−' + formatMoney(discountValue)"></dd>
           </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.shipping' | t }}</dt>

@@ -114,6 +114,12 @@
       shippingAmount: null,
       vatAmount: null,
       vatRate: null,
+      // Promo-code discount on the CHECKOUT cart, sourced from /cart/vat.js
+      // (NOT /cart.js: on separated-cart shops that endpoint may resolve a
+      // different cart row than the one the order will charge — see #124).
+      discountValue: 0,
+      discountPercentage: 0,
+      discountCode: null,
       creditCardFlatFee: 0,
       creditCardFeePercent: 0,
       totalsLoaded: false,
@@ -188,6 +194,12 @@
               self.vatRate = (vatBody.vat_rate === null || vatBody.vat_rate === undefined || isNaN(Number(vatBody.vat_rate)))
                 ? null
                 : Number(vatBody.vat_rate);
+              // Promo-code discount of the checkout cart (backend-computed;
+              // the VAT above is already calculated on the discount-reduced
+              // position totals, so no client-side VAT correction is needed).
+              self.discountValue = Number(vatBody.discount_value || 0);
+              self.discountPercentage = Number(vatBody.discount_percentage || 0);
+              self.discountCode = vatBody.discount_code || null;
             }
             self.totalsLoaded = true;
           })
@@ -324,11 +336,13 @@
           return (this.cart && this.cart.total_price) || 0;
         }
         var subtotal = (this.cart && this.cart.total_price) || 0;
-        var discount = (this.cart && this.cart.aico_discount_value) || 0;
+        // Business rule: the discount reduces the products cost before every
+        // subsequent component (the backend VAT is already discount-aware).
+        var discount = this.discountValue || 0;
         var shipping = this.shippingAmount || 0;
         var vat = this.vatAmount || 0;
         var ccFlat = this.creditCardFlatFee || 0;
-        var total = subtotal + shipping + vat + ccFlat - discount;
+        var total = subtotal - discount + shipping + vat + ccFlat;
         return Math.max(0, total);
       },
 
@@ -421,6 +435,8 @@
               if (data.order_id) params.set('order_id', data.order_id);
               var subtotal = (self.cart && self.cart.total_price) || 0;
               if (subtotal) params.set('subtotal', String(subtotal));
+              if (self.discountValue) params.set('discount', String(self.discountValue));
+              if (self.discountCode) params.set('discount_code', self.discountCode);
               if (self.shippingAmount) params.set('shipping', String(self.shippingAmount));
               if (self.vatAmount) params.set('vat', String(self.vatAmount));
               if (self.creditCardFlatFee) params.set('cc_fee', String(self.creditCardFlatFee));
@@ -544,16 +560,65 @@
   function buildCheckoutThankYouPage() {
     return {
       state: 'verifying',
+      // Persisted totals of the just-placed order (from /checkout/order-summary).
+      // While null the template shows the query-param fallback amounts; once the
+      // async order save completes the backend numbers replace them — so the
+      // confirmation always ends up showing exactly what the order persisted,
+      // including the promo-code discount line.
+      summary: null,
 
       init: function () {
         var query = new URLSearchParams(window.location.search);
         var sessionId = query.get('sessionId');
         var sessionResult = query.get('sessionResult');
+        this.loadOrderSummary(query, 0);
         if (!sessionId || !sessionResult) {
           this.state = 'success';
           return;
         }
         this.verify(sessionId, sessionResult, 0);
+      },
+
+      // Poll the persisted order totals. The order row exists immediately but
+      // its monetary breakdown is written by the async SaveAicoShopOrder job,
+      // so retry while `ready` is false (20 × 1.5s ≈ 30s cap).
+      loadOrderSummary: function (query, attempt) {
+        var self = this;
+        var url = routes.orderSummaryUrl || '/checkout/order-summary';
+        var orderId = query.get('order_id');
+        var orderNumber = query.get('order_number') || query.get('orderRef');
+        if (!orderId && !orderNumber) return;
+        var params = new URLSearchParams();
+        if (orderId) params.set('order_id', orderId);
+        else params.set('order_number', orderNumber);
+        var retry = function () {
+          if (attempt < 20) {
+            setTimeout(function () { self.loadOrderSummary(query, attempt + 1); }, 1500);
+          }
+        };
+        fetch(url + '?' + params.toString(), { headers: jsonHeaders(), credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (body) {
+            if (body && body.ready) {
+              self.summary = body;
+            } else {
+              // Not ready yet — or a transient 404 while the async save has
+              // not created the ecommerce-order row (order_number lookups).
+              retry();
+            }
+          })
+          .catch(retry);
+      },
+
+      summaryValue: function (key) {
+        return this.summary ? Number(this.summary[key] || 0) : 0;
+      },
+
+      formatSummary: function (key) {
+        return formatMoneyValue(
+          this.summaryValue(key),
+          (this.summary && this.summary.currency) || (window.__AICO_SHOP__ && window.__AICO_SHOP__.currency) || null
+        );
       },
 
       verify: function (sessionId, sessionResult, attempt) {
