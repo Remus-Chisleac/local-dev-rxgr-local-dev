@@ -65,6 +65,55 @@
   }
   var hasMatrix = form.getAttribute('data-aico-has-size-matrix') === '1';
 
+  // -------- Max order quantity (PIM "Max. Bestellmenge") -----------------
+  //
+  // Two modes, stamped by the template from the product drop:
+  //   - data-aico-max-qty-all-variants="1": the product-level max caps the
+  //     SUM across all the product's variants in the cart.
+  //   - otherwise each matrix cell's data-aico-variant-max caps its own
+  //     variant. The server clamps too (StorefrontCartController) — this
+  //     is the visible, immediate guard.
+  var productMaxAllVariants = form.getAttribute('data-aico-max-qty-all-variants') === '1';
+  var productMaxQty = parseInt(form.getAttribute('data-aico-max-qty'), 10);
+  if (isNaN(productMaxQty) || productMaxQty <= 0) {
+    productMaxQty = null;
+  }
+
+  var maxQtyNote = form.querySelector('[data-aico-max-qty-note]');
+
+  function showMaxQtyNote(kind, count) {
+    if (!maxQtyNote) return;
+    var fallback = kind === 'variant'
+      ? 'Maximum order quantity of {count} per size reached.'
+      : 'Maximum order quantity of {count} for this product reached.';
+    var key = kind === 'variant' ? 'max_quantity_variant_reached' : 'max_quantity_reached';
+    var template = getLocaleHint(key, fallback);
+    maxQtyNote.textContent = template.replace('{count}', String(count));
+    maxQtyNote.hidden = false;
+  }
+
+  function hideMaxQtyNote() {
+    if (maxQtyNote) maxQtyNote.hidden = true;
+  }
+
+  // In-cart quantity for this product, summed across all its lines — read
+  // from the shared Alpine cart store (already booted for the header
+  // badge/mini-cart). 0 when the store isn't available yet.
+  function inCartProductQuantity() {
+    try {
+      var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
+      var items = store && store.data && Array.isArray(store.data.items) ? store.data.items : [];
+      var idInput = form.querySelector('input[name="product_id"]');
+      var productId = idInput && idInput.value ? String(idInput.value) : null;
+      if (!productId) return 0;
+      return items.reduce(function (sum, line) {
+        return String(line.product_id) === productId ? sum + Number(line.quantity || 0) : sum;
+      }, 0);
+    } catch (error) {
+      return 0;
+    }
+  }
+
   // -------- Gallery ------------------------------------------------------
 
   (function setupGallery() {
@@ -362,37 +411,152 @@
       return;
     }
 
+    function variantMaxOf(input) {
+      var max = parseInt(input.getAttribute('data-aico-variant-max'), 10);
+      return (!isNaN(max) && max > 0) ? max : null;
+    }
+
+    // Clamp one cell to the stricter of its warehouse stock and its
+    // per-variant max order quantity. Reports whether the MAX (not stock)
+    // was the binding constraint so the notice only fires for the cap.
     function clamp(input) {
-      var max = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
+      var stock = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
+      var variantMax = variantMaxOf(input);
       var raw = parseInt(input.value, 10);
       if (isNaN(raw) || raw < 0) {
         raw = 0;
       }
-      if (!isNaN(max) && raw > max) {
-        raw = max;
+      var clampedByMax = null;
+      if (!isNaN(stock) && raw > stock) {
+        raw = stock;
+      }
+      if (variantMax !== null && raw > variantMax) {
+        raw = variantMax;
+        clampedByMax = variantMax;
       }
       input.value = String(raw);
-      return raw;
+      return { value: raw, clampedByMax: clampedByMax };
     }
 
-    function refresh() {
+    function refresh(event) {
       var total = 0;
+      var variantClampMax = null;
       inputs.forEach(function (input) {
-        var qty = clamp(input);
-        total += qty;
-        // Keep the in-cart accent in sync with the live quantity: the server
-        // only stamps `aico-pdp-size-cell-in-cart` at page load, so zeroing a
-        // size (or typing into a new one) must re-evaluate the border here.
-        var cell = input.closest('[data-aico-size-cell]');
-        if (cell) {
-          cell.classList.toggle('aico-pdp-size-cell-in-cart', qty > 0);
+        var result = clamp(input);
+        total += result.value;
+        if (result.clampedByMax !== null) {
+          variantClampMax = result.clampedByMax;
         }
       });
+
+      // Product-wide cap ("for all variants"): the matrix posts ABSOLUTE
+      // quantities for every variant (pre-filled from the cart), so the cap
+      // is simply the sum of the inputs — pull the just-edited cell back by
+      // the overflow.
+      var productClamped = false;
+      if (productMaxAllVariants && productMaxQty !== null && total > productMaxQty) {
+        var target = event && event.target && inputs.indexOf(event.target) !== -1 ? event.target : null;
+        if (!target) {
+          // No known edit target (initial pass): trim cells from the end.
+          for (var i = inputs.length - 1; i >= 0 && total > productMaxQty; i--) {
+            var value = parseInt(inputs[i].value, 10) || 0;
+            var reduce = Math.min(value, total - productMaxQty);
+            inputs[i].value = String(value - reduce);
+            total -= reduce;
+          }
+        } else {
+          var current = parseInt(target.value, 10) || 0;
+          var next = Math.max(0, current - (total - productMaxQty));
+          target.value = String(next);
+          total -= (current - next);
+        }
+        productClamped = true;
+      }
+
       totalNode.textContent = String(total);
+
+      // Per-cell state: in-cart accent + at-cap visual, plus the localized
+      // notice. The server only stamps `aico-pdp-size-cell-in-cart` at page
+      // load, so zeroing a size (or typing into a new one) must re-evaluate
+      // the border here.
+      var atProductCap = productMaxAllVariants && productMaxQty !== null && total >= productMaxQty;
+      inputs.forEach(function (input) {
+        var value = parseInt(input.value, 10) || 0;
+        var cell = input.closest('[data-aico-size-cell]');
+        if (cell) {
+          cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
+          var variantMax = variantMaxOf(input);
+          var atMax = (variantMax !== null && value >= variantMax) || atProductCap;
+          cell.classList.toggle('aico-pdp-size-cell-at-max', atMax);
+        }
+      });
+
+      if (productClamped || atProductCap) {
+        showMaxQtyNote('product', productMaxQty);
+      } else if (variantClampMax !== null) {
+        showMaxQtyNote('variant', variantClampMax);
+      } else {
+        hideMaxQtyNote();
+      }
     }
 
     inputs.forEach(function (input) {
       input.addEventListener('input', refresh);
+  // -------- Legacy-mode max clamp ---------------------------------------
+  //
+  // The non-matrix stepper ADDS to the cart (increment semantics), so the
+  // room left is the product cap minus what the cart already holds. Only
+  // product-wide caps are enforceable here (the variant id is resolved
+  // server-side); per-variant caps rely on the server clamp.
+  var legacyMaxClamp = null;
+  (function setupLegacyMaxQty() {
+    if (hasMatrix) {
+      return;
+    }
+    if (!productMaxAllVariants || productMaxQty === null) {
+      return;
+    }
+    var qtyInput = form.querySelector('[data-aico-qty-input]');
+    if (!qtyInput) {
+      return;
+    }
+    var buyButton = form.querySelector('[data-aico-buy-button]');
+    var buttonInitiallyDisabled = !!(buyButton && buyButton.hasAttribute('disabled'));
+
+    function clampLegacy() {
+      var room = Math.max(0, productMaxQty - inCartProductQuantity());
+      if (room <= 0) {
+        if (buyButton) {
+          buyButton.setAttribute('disabled', 'disabled');
+        }
+        showMaxQtyNote('product', productMaxQty);
+        return;
+      }
+      if (buyButton && !buttonInitiallyDisabled) {
+        buyButton.removeAttribute('disabled');
+      }
+      qtyInput.max = String(room);
+      var value = parseInt(qtyInput.value, 10);
+      if (isNaN(value) || value < 1) {
+        value = 1;
+      }
+      if (value > room) {
+        qtyInput.value = String(room);
+        showMaxQtyNote('product', productMaxQty);
+      } else {
+        hideMaxQtyNote();
+      }
+    }
+
+    legacyMaxClamp = clampLegacy;
+    qtyInput.addEventListener('input', clampLegacy);
+    qtyInput.addEventListener('change', clampLegacy);
+    // The Alpine cart store hydrates asynchronously after load — re-run
+    // once it has had a chance to fetch the cart.
+    setTimeout(clampLegacy, 1000);
+    clampLegacy();
+  })();
+
       input.addEventListener('change', refresh);
       // Mark step buttons (browser native) with a clamp so the user
       // can't tap past the max stock.
@@ -504,6 +668,12 @@
     // double-handling added every line twice (store.add + delegate add).
     event.stopPropagation();
 
+    // Re-apply the max-order-quantity clamp against the latest cart
+    // contents before anything is posted (legacy add semantics).
+    if (legacyMaxClamp) {
+      legacyMaxClamp();
+    }
+
     // Pre-flight: in matrix mode we need at least one row > 0; in
     // legacy mode we need at least one option resolved. The browser's
     // native required-field handling covers some of this, but matrix
@@ -591,6 +761,11 @@
     }).then(function () {
       if (button) {
         button.removeAttribute('disabled');
+      }
+      // The cart contents changed — re-derive the room left under the
+      // product-wide max (may disable the button when the cap is hit).
+      if (legacyMaxClamp) {
+        legacyMaxClamp();
       }
     });
   });

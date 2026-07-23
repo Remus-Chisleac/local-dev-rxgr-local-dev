@@ -186,6 +186,8 @@
           data-aico-pdp-buy
           data-aico-cart-add
           data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
+          data-aico-max-qty="{{ product.aico_max_quantity_per_order }}"
+          data-aico-max-qty-all-variants="{% if product.aico_max_quantity_for_all_variants %}1{% else %}0{% endif %}"
         >
           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
           <input type="hidden" name="product_id" value="{{ product.id }}">
@@ -304,19 +306,29 @@
                         data-aico-label-us="{{ variant.aico_size_label_us | default: variant.aico_size_value | escape }}"
                         data-aico-label-mm="{{ variant.aico_size_label_mm | default: variant.aico_size_value | escape }}"
                       >{{ variant.aico_size_label_eu | default: variant.aico_size_value }}</span>
+                      {%- comment -%}
+                        The HTML max is the stricter of warehouse stock and the
+                        variant's max order quantity; product-detail.js re-clamps
+                        (incl. the product-wide "for all variants" cap).
+                      {%- endcomment -%}
+                      {%- assign cell_max = variant.aico_stock_amount -%}
+                      {%- if variant.aico_max_quantity_per_order and variant.aico_max_quantity_per_order < cell_max -%}
+                        {%- assign cell_max = variant.aico_max_quantity_per_order -%}
+                      {%- endif -%}
                       <span class="aico-pdp-qty-box" data-aico-stepper>
                         <input
                           type="number"
                           class="aico-pdp-size-cell-input"
                           name="updates[{{ variant.id }}]"
                           min="0"
-                          max="{{ variant.aico_stock_amount }}"
+                          max="{{ cell_max }}"
                           step="1"
                           value="{{ cart_qty }}"
                           inputmode="numeric"
                           data-aico-size-qty
                           data-aico-variant-id="{{ variant.id }}"
                           data-aico-variant-stock="{{ variant.aico_stock_amount }}"
+                          data-aico-variant-max="{{ variant.aico_max_quantity_per_order }}"
                           data-aico-initial="{{ cart_qty }}"
                           aria-label="{{ 'product.size_matrix.qty_aria' | t }}"
                           {% unless variant.available? %}disabled{% endunless %}
@@ -369,6 +381,14 @@
               <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
                 <input
                   type="number"
+          {%- comment -%}
+            Max-order-quantity notice — filled and revealed by
+            product-detail.js when a quantity gets clamped to the PIM
+            "Max. Bestellmenge" (per variant, or product-wide when the
+            "for all variants" flag is on).
+          {%- endcomment -%}
+          <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger" data-aico-max-qty-note hidden role="status"></p>
+
                   class="aico-pdp-qty-input"
                   name="quantity"
                   min="1"
@@ -682,7 +702,9 @@
   <script>
     window.AICO_PDP_LOCALE = {
       select_quantity: {{ 'product.aico_pdp_message.select_quantity' | t | json }},
-      error: {{ 'product.aico_pdp_message.error' | t | json }}
+      error: {{ 'product.aico_pdp_message.error' | t | json }},
+      max_quantity_reached: {{ 'product.aico_pdp_message.max_quantity_reached' | t | json }},
+      max_quantity_variant_reached: {{ 'product.aico_pdp_message.max_quantity_variant_reached' | t | json }}
     };
   </script>
   <script src="{{ 'product-detail.js' | asset_url }}" defer></script>

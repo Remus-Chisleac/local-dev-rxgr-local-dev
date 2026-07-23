@@ -3258,6 +3258,15 @@ button.aico-home-brand-card {
   background: rgba(37, 99, 235, 0.08);
   color: var(--aico-fg);
 }
+/* Cell sits at its max order quantity (per-variant cap, or the product-wide
+   "for all variants" cap) — amber ring so the limit reads as intentional. */
+.aico-pdp-size-cell-at-max:not(.aico-pdp-size-cell-out) {
+  border-color: #d97706;
+}
+.aico-pdp-size-cell-at-max:not(.aico-pdp-size-cell-out) .aico-pdp-size-cell-input {
+  border-color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
 
 .aico-pdp-option-row {
   display: flex;

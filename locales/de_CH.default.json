@@ -396,7 +396,9 @@
       "items_saved": "Artikel zum Warenkorb hinzugefügt.",
       "not_implemented": "Warenkorb-Funktion ist noch nicht verbunden.",
       "select_quantity": "Bitte mindestens eine Grösse auswählen.",
-      "error": "Konnte nicht zum Warenkorb hinzugefügt werden."
+      "error": "Konnte nicht zum Warenkorb hinzugefügt werden.",
+      "max_quantity_reached": "Maximale Bestellmenge von {count} für dieses Produkt erreicht.",
+      "max_quantity_variant_reached": "Maximale Bestellmenge von {count} pro Grösse erreicht."
     },
     "update_cart": "Warenkorb aktualisieren",
     "specs_label": {

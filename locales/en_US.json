@@ -396,7 +396,9 @@
       "items_saved": "Items saved to cart.",
       "not_implemented": "Add-to-cart is not connected yet.",
       "select_quantity": "Select at least one size first.",
-      "error": "Could not add to cart."
+      "error": "Could not add to cart.",
+      "max_quantity_reached": "Maximum order quantity of {count} for this product reached.",
+      "max_quantity_variant_reached": "Maximum order quantity of {count} per size reached."
     },
     "update_cart": "Update cart",
     "specs_label": {
