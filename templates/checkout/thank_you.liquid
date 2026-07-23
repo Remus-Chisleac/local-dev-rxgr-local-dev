@@ -1,6 +1,7 @@
 {% comment %}
   Order-confirmation page for ONE order, addressed by its ecommerce order
-  number in the path: `/checkout/thank-you/16220039`.
+  number: `/checkout/thank-you?order=16220039`. That is the only param the
+  page carries.
 
   Nothing monetary is passed in the URL. The `aicoCheckoutThankYouPage`
   Alpine component fetches the PERSISTED totals from
@@ -20,12 +21,12 @@
   A reload, or a link opened later by a colleague on the same debtor,
   lands straight in the `summary` state.
 
-  The legacy `?order_number=` / `?orderRef=` form still renders: Adyen's
-  returnUrl is built from a single app-wide ADYEN_BASE_REDIRECT_URL that
-  the legacy b2b-shop thank-you page also consumes, so it keeps the old
-  dialect (orderRef + sessionId/sessionResult). The component verifies the
-  payment session via /checkout/payment-status before showing the success
-  card, then rewrites the URL to the canonical path form.
+  The legacy `?order_number=…&subtotal=…` / `?orderRef=…` forms still
+  render: Adyen's returnUrl is built from a single app-wide
+  ADYEN_BASE_REDIRECT_URL that the legacy b2b-shop thank-you page also
+  consumes, so it keeps the old dialect (orderRef + sessionId/sessionResult).
+  The component verifies the payment session via /checkout/payment-status
+  before showing the success card, then rewrites the URL to `?order=`.
 
   Background color: the page gutters take the current selected brand's
   `color_schema.checkoutConfirmation.bg` (exposed on
@@ -37,13 +38,9 @@
 
 {%- assign aico_confirmation_bg = customer.aico_selected_brand.aico_checkout_confirmation_bg_color -%}
 
-{%- comment -%} The order number is the route's captured `:handle` — resolved by
-  the server, exactly like `products/:handle` gives the product page its handle.
-  Never derive it by matching a literal path segment: the theme route map lets
-  this page's URL be renamed, and the JS reads the number back off the element
-  below rather than re-parsing the address bar. Falls back to the legacy query
-  params for in-flight Adyen returns and old bookmarks. {%- endcomment -%}
-{%- assign ty_order_number = aico_route.handle | default: request.query.order_number | default: request.query.orderRef -%}
+{%- comment -%} `order` is the canonical param; `order_number` / `orderRef` are
+  the legacy dialects kept for old bookmarks and the Adyen return leg. {%- endcomment -%}
+{%- assign ty_order_number = request.query.order | default: request.query.order_number | default: request.query.orderRef -%}
 
 {% capture ty_success_card %}
     <div class="aico-checkout-thank-you-card">
@@ -115,8 +112,7 @@
       Adyen return leg): it also fetches the persisted order totals via
       /checkout/order-summary. Without session params init() resolves the state
       to 'success' immediately. {%- endcomment -%}
-      <div data-aico-order-number="{{ ty_order_number | escape }}"
-           x-data="aicoCheckoutThankYouPage" x-init="init()">
+      <div x-data="aicoCheckoutThankYouPage" x-init="init()">
         <template x-if="state === 'verifying'">
           <div class="aico-checkout-thank-you-card">
             <div class="aico-checkout-processing-spinner" aria-hidden="true">

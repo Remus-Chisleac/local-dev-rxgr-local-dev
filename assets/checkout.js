@@ -50,32 +50,20 @@
     return params;
   }
 
-  // Build the canonical order-confirmation URL:
-  // `<thank-you base>/<order number>`, with no amounts in the query string.
+  // Build the canonical order-confirmation URL: the thank-you page plus a
+  // single `?order=<order number>` param and NOTHING else.
   //
   // The order number is the only reference the page needs — it re-reads the
-  // persisted totals from /checkout/order-summary. When the submit response
-  // carries no ecommerce order number yet (it is allocated before the async
-  // save, so this is rare) we fall back to the bare path with `?order_id=`,
-  // which the confirmation page accepts and canonicalises once it learns the
-  // number.
+  // persisted totals from /checkout/order-summary, so no amounts belong in
+  // the URL. When the submit response carries no ecommerce order number yet
+  // (it is allocated before the async save, so this is rare) we fall back to
+  // `?order_id=`, which the page accepts and replaces with `?order=` once it
+  // learns the number.
   function thankYouUrlFor(orderNumber, orderId) {
     var base = (routes.thankYouUrl || '/checkout/thank-you').replace(/\/+$/, '');
-    if (orderNumber) return base + '/' + encodeURIComponent(String(orderNumber));
+    if (orderNumber) return base + '?order=' + encodeURIComponent(String(orderNumber));
     if (orderId) return base + '?order_id=' + encodeURIComponent(String(orderId));
     return base;
-  }
-
-  // The order number the SERVER resolved for this page, published by the
-  // template as `data-aico-order-number` (the route's captured `:handle`).
-  //
-  // Deliberately NOT parsed out of window.location: the theme route map lets
-  // a merchant rename this page's path, so any client-side URL matching would
-  // silently break the moment the URL is not `.../thank-you/<number>`. The
-  // server already matched the route — read its answer.
-  function orderNumberFromElement(element) {
-    var node = element && element.closest ? element.closest('[data-aico-order-number]') : null;
-    return node ? (node.getAttribute('data-aico-order-number') || '') : '';
   }
 
   // Per-currency Intl formatters: the checkout currency FOLLOWS the selected
@@ -640,8 +628,7 @@
       state: 'verifying',
       // Persisted totals of the just-placed order, or null while loading.
       summary: null,
-      // The order this page is about — the route's captured `:handle`, which
-      // the template stamps onto the card (or the legacy query params).
+      // The order this page is about, from `?order=` (or a legacy param).
       orderNumber: '',
       orderId: '',
       // True while the async save is still running — the page shows a
@@ -655,9 +642,10 @@
 
       init: function () {
         var query = new URLSearchParams(window.location.search);
-        // `this.$el` is the element carrying x-data — the card the template
-        // stamped the server-resolved order number onto.
-        this.orderNumber = orderNumberFromElement(this.$el)
+        // `order` is the canonical param; `order_number` / `orderRef` are the
+        // legacy dialects (old bookmarks, and Adyen's returnUrl, which is
+        // shared with the legacy b2b-shop and so cannot be changed).
+        this.orderNumber = query.get('order')
           || query.get('order_number') || query.get('orderRef') || '';
         this.orderId = query.get('order_id') || '';
         this.resetCartBadge();
@@ -814,22 +802,24 @@
         this.canonicaliseUrl();
       },
 
-      // Rewrite a legacy `?order_number=…&order_id=…` URL to the canonical
-      // `/checkout/thank-you/<order number>` once the number is known, so a
-      // reload or a shared link uses the clean form. History is REPLACED (not
-      // pushed) — the confirmation is the end of the flow, and a back button
-      // that walks through URL variants of the same page would be noise.
+      // Rewrite a legacy `?order_number=…&subtotal=…` URL to the canonical
+      // `?order=<number>` once the number is known, so a reload or a shared
+      // link uses the clean form. History is REPLACED (not pushed) — the
+      // confirmation is the end of the flow, and a back button that walks
+      // through URL variants of the same page would be noise.
       canonicaliseUrl: function () {
         if (!this.orderNumber || !window.history || !window.history.replaceState) return;
         // Drop the order references (now in the path) and the legacy amount
         // params; keep anything else the URL carries — notably Adyen's
         // sessionId/sessionResult, which the payment verification reads.
         var query = new URLSearchParams(window.location.search);
-        ['order_id', 'order_number', 'orderRef', 'subtotal', 'discount', 'discount_code',
+        // `order` too: thankYouUrlFor re-adds it, and leaving it here would
+        // emit it twice.
+        ['order', 'order_id', 'order_number', 'orderRef', 'subtotal', 'discount', 'discount_code',
           'shipping', 'shippingCost', 'vat', 'cc_fee', 'fee', 'total', 'currency']
           .forEach(function (key) { query.delete(key); });
         var rest = query.toString();
-        var target = thankYouUrlFor(this.orderNumber, null) + (rest ? '?' + rest : '');
+        var target = thankYouUrlFor(this.orderNumber, null) + (rest ? '&' + rest : '');
         if (window.location.pathname + window.location.search === target) return;
         try {
           window.history.replaceState(window.history.state, '', target);
