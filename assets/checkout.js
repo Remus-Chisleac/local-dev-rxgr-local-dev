@@ -50,6 +50,35 @@
     return params;
   }
 
+  // Build the canonical order-confirmation URL:
+  // `<thank-you base>/<order number>`, with no amounts in the query string.
+  //
+  // The order number is the only reference the page needs — it re-reads the
+  // persisted totals from /checkout/order-summary. When the submit response
+  // carries no ecommerce order number yet (it is allocated before the async
+  // save, so this is rare) we fall back to the bare path with `?order_id=`,
+  // which the confirmation page accepts and canonicalises once it learns the
+  // number.
+  function thankYouUrlFor(orderNumber, orderId) {
+    var base = (routes.thankYouUrl || '/checkout/thank-you').replace(/\/+$/, '');
+    if (orderNumber) return base + '/' + encodeURIComponent(String(orderNumber));
+    if (orderId) return base + '?order_id=' + encodeURIComponent(String(orderId));
+    return base;
+  }
+
+  // Read the order number back out of a canonical confirmation URL — the
+  // segment right after `thank-you`. Deliberately matched on the segment
+  // rather than against `routes.thankYouUrl`, so it still works when the
+  // rendered base carries a prefix the current URL does not (locale prefix,
+  // path-preview prefix). Returns '' for the bare page (the legacy
+  // query-param form, still produced by in-flight Adyen returns).
+  function orderNumberFromPath(pathname) {
+    var segments = String(pathname || '').split('/').filter(Boolean);
+    var index = segments.lastIndexOf('thank-you');
+    if (index === -1 || index === segments.length - 1) return '';
+    return decodeURIComponent(segments[index + 1]);
+  }
+
   // Per-currency Intl formatters: the checkout currency FOLLOWS the selected
   // delivery address (the refreshed /cart.js?delivery_address_id=… response
   // carries the address-mapped currency, e.g. Austrian address → EUR), so the
@@ -128,7 +157,9 @@
       termsError: false,
       submitting: false,
       submitError: null,
-      discountCode: seeds.initialDiscountCode || '',
+      // What the shopper has typed into the discount box. Kept separate from
+      // `discountCode` above, which is the code the BACKEND reports as applied.
+      discountCodeInput: seeds.initialDiscountCode || '',
       discountApplying: false,
       discountStatus: null, // null | 'applied' | 'invalid'
       _refreshInFlight: null,
@@ -244,7 +275,7 @@
        */
       applyDiscount: function () {
         var self = this;
-        var code = String(self.discountCode || '').trim();
+        var code = String(self.discountCodeInput || '').trim();
         if (!code || self.discountApplying) {
           return Promise.resolve();
         }
@@ -263,14 +294,13 @@
               self.discountStatus = 'invalid';
               return;
             }
-            // Replace the object rather than mutating it so the summary
-            // re-renders even if `cart` was seeded before Alpine took over.
-            self.cart = Object.assign({}, self.cart, {
-              aico_discount_code: body.aico_discount_code,
-              aico_discount_value: Number(body.aico_discount_value || 0),
-              aico_discount_percentage: Number(body.aico_discount_percentage || 0),
-            });
-            self.discountCode = body.aico_discount_code || code;
+            // The summary renders the top-level discount state, which normally
+            // comes from /cart/vat.js (#124) — the endpoint reads the same
+            // checkout cart, so seed it now for instant feedback and let
+            // refreshTotals() re-affirm it from that source.
+            self.discountValue = Number(body.aico_discount_value || 0);
+            self.discountPercentage = Number(body.aico_discount_percentage || 0);
+            self.discountCode = body.aico_discount_code || null;
             self.discountStatus = body.applied ? 'applied' : 'invalid';
             if (body.applied) {
               // VAT is charged on the discounted base, so the totals follow.
@@ -477,22 +507,13 @@
                 window.location = processing + '?order_id=' + encodeURIComponent(String(data.order_id));
                 return;
               }
-              var thankYou = routes.thankYouUrl || '/checkout/thank-you';
-              var params = new URLSearchParams();
-              if (data.ecommerce_order_number) params.set('order_number', data.ecommerce_order_number);
-              if (data.order_id) params.set('order_id', data.order_id);
-              var subtotal = (self.cart && self.cart.total_price) || 0;
-              if (subtotal) params.set('subtotal', String(subtotal));
-              if (self.discountValue) params.set('discount', String(self.discountValue));
-              if (self.discountCode) params.set('discount_code', self.discountCode);
-              if (self.shippingAmount) params.set('shipping', String(self.shippingAmount));
-              if (self.vatAmount) params.set('vat', String(self.vatAmount));
-              if (self.creditCardFlatFee) params.set('cc_fee', String(self.creditCardFlatFee));
-              var total = self.totalDisplay();
-              if (total) params.set('total', String(total));
-              var currency = window.__AICO_SHOP__ && window.__AICO_SHOP__.currency;
-              if (currency) params.set('currency', currency);
-              window.location = thankYou + '?' + params.toString();
+              // The confirmation URL carries ONLY the order number, as a path
+              // segment. The amounts are deliberately not passed: the page
+              // reads them back from the persisted order via
+              // /checkout/order-summary, so what the shopper sees is what the
+              // backend actually charged and the URL stays a stable, reloadable
+              // reference to one order instead of client-supplied totals.
+              window.location = thankYouUrlFor(data.ecommerce_order_number, data.order_id);
             });
           })
           .catch(function () {
@@ -557,10 +578,20 @@
           window.location = hostedPageUrl;
           return;
         }
-        var thankYou = routes.thankYouUrl || '/checkout/thank-you';
+        // The Adyen leg carries sessionId/sessionResult, which the
+        // confirmation page needs to verify the payment — those are
+        // preserved. Only the order reference moves into the path.
         var query = new URLSearchParams(window.location.search);
-        if (data.ecommerce_order_number) query.set('order_number', data.ecommerce_order_number);
-        window.location = thankYou + '?' + query.toString();
+        var orderId = query.get('order_id');
+        query.delete('order_id');
+        query.delete('order_number');
+        var url = thankYouUrlFor(data.ecommerce_order_number, orderId);
+        var rest = query.toString();
+        if (!rest) {
+          window.location = url;
+          return;
+        }
+        window.location = url + (url.indexOf('?') === -1 ? '?' : '&') + rest;
       },
 
       pollStatus: function (orderId) {

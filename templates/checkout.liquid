@@ -207,11 +207,11 @@
                    name="discount_code"
                    class="aico-checkout-discount-input"
                    placeholder="{{ 'checkout.discount.placeholder' | t }}"
-                   x-model="discountCode"
+                   x-model="discountCodeInput"
                    @input="discountStatus = null">
             <button type="submit"
                     class="aico-button aico-button-outline"
-                    :disabled="discountApplying || !discountCode">
+                    :disabled="discountApplying || !discountCodeInput">
               {{ 'checkout.discount.apply' | t }}
             </button>
           </form>
