@@ -5376,18 +5376,28 @@ button.aico-home-brand-card {
    ring trace the SAME circumference — the swap reads as one shape resolving
    itself, not as a spinner being replaced by an icon.
 
-   The processing look is the default (server-rendered, so landing here right
-   after submit never flashes a green check over an order that is still
-   saving); the thank-you template's Alpine component adds `is-confirmed` to
-   the card once /checkout/order-summary answers, and every step below is a
-   plain CSS transition off that one class flip. Sequence, in ms from the
-   flip: spinner fades out 0-180, green ring draws closed 20-520, disc pops in
-   340-640, check strokes on 440-740, body copy rises in 100-720.
+   SHARED by the checkout thank-you and the preorder confirmation, which are
+   the same moment on two surfaces. They differ only in which class means
+   "done": the checkout card gains `is-confirmed`, while the preorder panel
+   LOSES `--processing`, so both spellings are grouped onto every rule below.
+
+   The processing look is the default (server-rendered, so landing on either
+   page right after submit never flashes a green check over something that is
+   still saving), and every step is a plain CSS transition off that one class
+   flip. Sequence, in ms from the flip: spinner fades out 0-180, green ring
+   draws closed 20-520, disc pops in 340-640, check strokes on 440-740, body
+   copy rises in 100-720.
 
    The copy deliberately starts early rather than queueing behind the check:
    revealing it is what grows the card to its full height, and that happens the
-   instant Alpine un-hides the elements. Holding the fade back would leave a
-   tall, visibly empty card sitting under the medallion for half a second. */
+   instant the elements are un-hidden. Holding the fade back would leave a
+   tall, visibly empty card sitting under the medallion for half a second.
+
+   The transitions live on the CONFIRMED rules rather than the base ones, so
+   the hand-off only ever plays forwards. The preorder's inline panel can go
+   confirmed → processing again (an edit re-submit re-opens it), and running
+   this sequence in reverse — check un-stroking, ring un-drawing — reads as a
+   glitch rather than as a new wait. */
 .aico-ty-status {
   width: 4.5rem;
   height: 4.5rem;
@@ -5410,7 +5420,6 @@ button.aico-home-brand-card {
    circle rather than a lone floating stroke. */
 .aico-ty-status-track {
   stroke: rgba(0, 0, 0, 0.09);
-  transition: opacity 0.25s ease;
 }
 /* The sweeping arc: a quarter of the circumference, rotating. Same orange as
    the preorder confirmation spinner, so both wait states match. */
@@ -5420,7 +5429,6 @@ button.aico-home-brand-card {
   stroke-dasharray: 38 113;
   transform-origin: 50% 50%;
   animation: aico-ty-sweep 0.9s linear infinite;
-  transition: opacity 0.18s ease;
 }
 /* Success ring — held fully "undrawn" until the confirm flip. */
 .aico-ty-status-ring {
@@ -5431,7 +5439,6 @@ button.aico-home-brand-card {
   /* -90deg starts the draw at 12 o'clock. */
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
-  transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.02s;
 }
 /* Solid fill behind the check; scales up from nothing so the ring visibly
    "fills in" instead of the colour just appearing. */
@@ -5439,7 +5446,6 @@ button.aico-home-brand-card {
   fill: #1f9d55;
   transform: scale(0);
   transform-origin: 50% 50%;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
 }
 .aico-ty-status-check {
   fill: none;
@@ -5453,24 +5459,55 @@ button.aico-home-brand-card {
      white speck on the green disc in the ~150ms before the stroke starts.
      Held at opacity 0 and switched on exactly when the draw begins. */
   opacity: 0;
-  transition:
-    stroke-dashoffset 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.44s,
-    opacity 0s linear 0.44s;
 }
 
 @keyframes aico-ty-sweep {
   to { transform: rotate(360deg); }
 }
 
+/* Determinate mode (preorder submit progress): the same orange arc stops
+   sweeping and becomes a fraction of the ring, 100% = the full circle.
+   preorder-confirmation.js adds the class and writes the dash offset — the
+   value is computed in JS rather than from a custom property so the offset
+   is a plain length no browser has to calc() inside an SVG geometry
+   property. Only meaningful between the first and last progress message; at
+   0 and at 100% the medallion goes back to sweeping (there is nothing
+   truthful to show yet, and "full circle, still waiting" reads as stuck). */
+.aico-ty-status--progress .aico-ty-status-spin {
+  animation: none;
+  stroke-dasharray: 151;
+  transform: rotate(-90deg);
+  transition: stroke-dashoffset 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
 /* Confirmed: hand the circle over from the spinner to the success ring. */
 .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-track,
-.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin {
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-track,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-spin {
   opacity: 0;
+  transition: opacity 0.18s ease;
 }
-.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring { stroke-dashoffset: 0; }
-.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc { transform: scale(1); }
-.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check { stroke-dashoffset: 0; opacity: 1; }
-.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg {
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-ring {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.02s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-disc {
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-check {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition:
+    stroke-dashoffset 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.44s,
+    opacity 0s linear 0.44s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
+.aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-svg {
   animation: aico-ty-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
 }
 @keyframes aico-ty-pop {
@@ -5497,13 +5534,20 @@ button.aico-home-brand-card {
    the medallion renders as the finished green check and the copy just appears. */
 @media (prefers-reduced-motion: reduce) {
   .aico-ty-status-spin { animation: none; }
-  .aico-ty-status-track,
-  .aico-ty-status-spin,
-  .aico-ty-status-ring,
-  .aico-ty-status-disc,
-  .aico-ty-status-check { transition: none; }
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-track,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-track,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-spin,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-ring,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-disc,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-check,
+  .aico-ty-status--progress .aico-ty-status-spin { transition: none; }
   .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
-  .aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal { animation: none; }
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal,
+  .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-svg { animation: none; }
 }
 
 .aico-checkout-thank-you-title { font-size: 1.5rem; font-weight: 700; margin: 0; }
@@ -9603,18 +9647,11 @@ html.aico-preorder-gallery-open {
   margin-bottom: 1.75rem;
 }
 
-.aico-preorder-confirmation-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: #1f9d55;
-  color: #fff;
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-bottom: 0.75rem;
+/* The shared spinner → checkmark medallion (see .aico-ty-status above) is a
+   direct child of the panel, not of the centred header, so it needs its own
+   centring. */
+.aico-preorder-confirmation .aico-ty-status {
+  margin: 0 auto 0.75rem;
 }
 
 .aico-preorder-confirmation-title {
@@ -9790,12 +9827,9 @@ html.aico-preorder-gallery-open {
 
 /* Processing state — a dispatched submit/edit is still running on the queue.
    preorder-confirmation.js toggles the --processing class; the details stay
-   hidden so a re-submit never shows the previous submission's numbers. */
-.aico-preorder-confirmation-processing-spinner {
-  display: none;
-}
-
-.aico-preorder-confirmation--processing .aico-preorder-confirmation-check,
+   hidden so a re-submit never shows the previous submission's numbers. The
+   medallion is NOT in this list: it is the one element that spans both states
+   and animates across the swap. */
 .aico-preorder-confirmation--processing .aico-preorder-confirmation-number-box,
 .aico-preorder-confirmation--processing .aico-preorder-confirmation-summary,
 .aico-preorder-confirmation--processing .aico-preorder-confirmation-dates-wrap,
@@ -9803,48 +9837,20 @@ html.aico-preorder-gallery-open {
   display: none;
 }
 
-.aico-preorder-confirmation--processing .aico-preorder-confirmation-processing-spinner {
-  display: inline-block;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 3px solid rgba(0, 0, 0, 0.12);
-  border-top-color: #e8702d;
-  border-radius: 50%;
-  animation: aico-spin 0.7s linear infinite;
-  margin-bottom: 1rem;
-}
-
-/* Live submit progress (first submits only) — hidden until the first
-   PreorderSubmitProgressEvent arrives (preorder-confirmation.js removes the
-   [hidden] attribute), and only rendered inside the processing state, so the
-   #113 processing → confirmed swap hides it automatically and the EDIT flow
-   (which broadcasts no progress) keeps the plain spinner. */
+/* Live submit progress — the count under the medallion,
+   whose ring carries the actual fraction. Hidden until a counter exists
+   (preorder-confirmation.js removes the [hidden] attribute on the first
+   processed/total it sees, from the confirmation payload or a broadcast), and
+   only rendered inside the processing state, so the processing → confirmed
+   swap hides it automatically. Both submit flows seed a counter; a flow that
+   somehow has none keeps the plain sweeping spinner. */
 .aico-preorder-confirmation-progress {
   display: none;
 }
 
 .aico-preorder-confirmation--processing .aico-preorder-confirmation-progress:not([hidden]) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
-}
-
-.aico-preorder-confirmation-progress-track {
-  width: min(320px, 100%);
-  height: 0.5rem;
-  background: #f0f0f0;
-  border-radius: var(--aico-radius, 2px);
-  overflow: hidden;
-}
-
-.aico-preorder-confirmation-progress-fill {
-  height: 100%;
-  width: 0%;
-  background: #e8702d;
-  border-radius: inherit;
-  transition: width 0.4s ease;
+  display: block;
+  margin-top: 0.75rem;
 }
 
 .aico-preorder-confirmation-progress-count {
@@ -9853,23 +9859,22 @@ html.aico-preorder-gallery-open {
   font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aico-preorder-confirmation-progress-fill {
-    transition: none;
-  }
-}
-
 /* Animated processing → confirmed/error swap (preorder-confirmation.js):
    --swap-out fades/slides the processing panel away, the DOM swaps, then
    --swap-in fades/slides the final state in. Timings match the theme's
-   0.15–0.25s ease conventions; inert under prefers-reduced-motion. */
-.aico-preorder-confirmation--swap-out {
+   0.15–0.25s ease conventions; inert under prefers-reduced-motion.
+
+   Both target the panel's CHILDREN rather than the panel itself so the status
+   medallion can be excluded: it is mid spinner → checkmark hand-off exactly
+   when this runs, and fading it out with the rest of the body would hide the
+   very transition the swap is announcing. */
+.aico-preorder-confirmation--swap-out > *:not(.aico-ty-status) {
   opacity: 0;
   transform: translateY(0.375rem);
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.aico-preorder-confirmation--swap-in {
+.aico-preorder-confirmation--swap-in > *:not(.aico-ty-status) {
   animation: aico-confirmation-swap-in 0.25s ease-out both;
 }
 
@@ -9885,22 +9890,22 @@ html.aico-preorder-gallery-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aico-preorder-confirmation--swap-out {
+  .aico-preorder-confirmation--swap-out > *:not(.aico-ty-status) {
     opacity: 1;
     transform: none;
     transition: none;
   }
 
-  .aico-preorder-confirmation--swap-in {
+  .aico-preorder-confirmation--swap-in > *:not(.aico-ty-status) {
     animation: none;
   }
 }
 
 /* Error state — the queued submit failed and no details will arrive
-   (preorder-confirmation.js toggles the --error class). Hide the success
-   check + detail placeholders and the PDF area; only the error copy shows. */
-.aico-preorder-confirmation--error .aico-preorder-confirmation-check,
-.aico-preorder-confirmation--error .aico-preorder-confirmation-processing-spinner,
+   (preorder-confirmation.js toggles the --error class). Hide the status
+   medallion + detail placeholders and the PDF area; only the error copy
+   shows — there is no success to hand off to. */
+.aico-preorder-confirmation--error .aico-ty-status,
 .aico-preorder-confirmation--error .aico-preorder-confirmation-number-box,
 .aico-preorder-confirmation--error .aico-preorder-confirmation-summary,
 .aico-preorder-confirmation--error .aico-preorder-confirmation-dates-wrap,

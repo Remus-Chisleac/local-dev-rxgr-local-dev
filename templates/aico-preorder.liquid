@@ -631,6 +631,7 @@
     data-aico-confirmation-message="{{ 'aico_preorder.confirmation.message' | t | escape }}"
     data-aico-confirmation-processing-title="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
     data-aico-confirmation-processing-message="{{ 'aico_preorder.confirmation.processing_message' | t | escape }}"
+    data-aico-confirmation-almost-there="{{ 'aico_preorder.confirmation.almost_there' | t | escape }}"
     data-aico-confirmation-error-title="{{ 'aico_preorder.confirmation.error_title' | t | escape }}"
     data-aico-confirmation-error-message="{{ 'aico_preorder.confirmation.error_message' | t | escape }}"
     data-aico-confirmation-update-title="{{ 'aico_preorder.confirmation.update_title' | t | escape }}"
@@ -641,11 +642,35 @@
     data-aico-confirmation-pdf-download="{{ 'aico_preorder.confirmation.pdf_download' | t | escape }}"
     data-aico-confirmation-pdf-unavailable="{{ 'aico_preorder.confirmation.pdf_unavailable' | t | escape }}">
 
+    {%- comment -%} Status medallion — see the note on the same block in
+      templates/aico-preorder-thank-you.liquid: shared with the checkout
+      thank-you, doubles as the submit progress ring, and lives outside the
+      header so the processing → confirmed panel swap cannot fade its
+      spinner → checkmark hand-off away. {%- endcomment -%}
+    <div class="aico-ty-status" aria-hidden="true" data-aico-confirmation-status>
+      <svg class="aico-ty-status-svg" viewBox="0 0 52 52" focusable="false" role="presentation">
+        <circle class="aico-ty-status-track" cx="26" cy="26" r="24"/>
+        <circle class="aico-ty-status-spin" cx="26" cy="26" r="24"/>
+        <circle class="aico-ty-status-ring" cx="26" cy="26" r="24"/>
+        <circle class="aico-ty-status-disc" cx="26" cy="26" r="24"/>
+        <path class="aico-ty-status-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+    </div>
+
     <header class="aico-preorder-confirmation-head">
-      <span class="aico-preorder-confirmation-check" aria-hidden="true">&#10003;</span>
-      <span class="aico-preorder-confirmation-processing-spinner" aria-hidden="true"></span>
       <h2 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h2>
       <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
+      {%- comment -%} Submit progress count — same block as the thank-you
+        template; hidden until a counter exists. {%- endcomment -%}
+      <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
+        data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
+        <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
+      </div>
     </header>
 
     <div class="aico-preorder-confirmation-number-box">

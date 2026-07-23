@@ -695,6 +695,7 @@
       "processing_title": "Ihre Vorbestellung wird verarbeitet…",
       "processing_message": "Das dauert nur einen Moment — die Seite aktualisiert sich automatisch, sobald Ihre Vorbestellung verarbeitet wurde.",
       "progress_count": "{{ processed }} von {{ total }} Artikeln verarbeitet",
+      "almost_there": "Fast geschafft — wir stellen Ihre Bestätigung zusammen…",
       "error_title": "Ihre Vorbestellung konnte nicht verarbeitet werden",
       "error_message": "Bei der Verarbeitung Ihrer Vorbestellung ist ein Fehler aufgetreten. Ihre Vorbestellung wurde nicht aufgegeben — bitte kehren Sie zur Vorbestellungsseite zurück und versuchen Sie es erneut, oder kontaktieren Sie uns, falls das Problem weiterhin besteht.",
       "number_label": "Bestellnummer",

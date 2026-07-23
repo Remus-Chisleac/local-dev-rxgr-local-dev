@@ -50,6 +50,14 @@
   var MAX_PROCESSING_POLLS = 300; // ~10 min while the submit/edit is processing
   var MAX_PDF_POLLS = 90; // ~3 min waiting for the PDF render
   var PUSHER_FALLBACK_MS = 20000; // if the live socket delivers nothing in 20s, poll instead
+  // Polls spent waiting for the backend to seed the line-item counter before
+  // handing the processing state over to pusher anyway (~30s). The counter is
+  // seeded a moment after the submit is queued, which is often after this page
+  // has already made its first request.
+  var MAX_COUNT_POLLS = 15;
+  // Circumference of the status medallion's ring (r=24 on the 52×52 viewBox),
+  // matching the stroke-dasharray theme.css sets on it.
+  var RING_CIRCUMFERENCE = 151;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
@@ -113,6 +121,9 @@
     this.pdfReady = false;
     this.detailLoaded = false;
     this._progressSeen = 0; // highest processed count rendered (monotonic guard)
+    this._progressTotal = 0; // line-item total, once any counter has surfaced
+    this._progressPolls = 0; // polls spent waiting for the counter to be seeded
+    this._almostThere = false; // every line item counted; only the wrap-up left
     this._sawProcessing = false; // a processing block was seen at least once
     this._errored = false; // terminal error state rendered — transports stopped
     this._pusherClient = null;
@@ -150,9 +161,10 @@
   };
 
   /**
-   * The "we are processing your preorder" state: spinner + processing copy,
-   * details hidden (via the --processing class) so a re-submit never shows the
-   * PREVIOUS submission's numbers while the queue is still merging the new one.
+   * The "we are processing your preorder" state: the status medallion sweeps,
+   * processing copy, details hidden (via the --processing class) so a re-submit
+   * never shows the PREVIOUS submission's numbers while the queue is still
+   * merging the new one.
    */
   Confirmation.prototype.renderPending = function () {
     this.root.classList.add('aico-preorder-confirmation--processing');
@@ -161,16 +173,29 @@
     if (headerEl) {
       headerEl.textContent = copyOf(this.root, 'processing-title', 'We are processing your preorder…');
     }
-    var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
-    if (messageEl) {
-      messageEl.textContent = copyOf(this.root, 'processing-message', '');
-    }
+    this.renderProcessingMessage();
     this.setPdfState('generating');
+  };
+
+  /**
+   * The sub-copy under the processing title. Written through a helper because
+   * renderPending() runs again on every processing payload, and a plain
+   * assignment there would keep undoing the "almost there" swap.
+   */
+  Confirmation.prototype.renderProcessingMessage = function () {
+    var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
+    if (!messageEl) return;
+    messageEl.textContent = this._almostThere
+      ? copyOf(this.root, 'almost-there', copyOf(this.root, 'processing-message', ''))
+      : copyOf(this.root, 'processing-message', '');
   };
 
   Confirmation.prototype.clearPending = function () {
     this.root.classList.remove('aico-preorder-confirmation--processing');
     this.root.removeAttribute('aria-busy');
+    // Hand the medallion back to its own confirmed sequence: a leftover
+    // determinate arc would otherwise sit under the green ring being drawn.
+    this.setStatusProgress(0, 0);
   };
 
   /**
@@ -205,6 +230,9 @@
 
   Confirmation.prototype.poll = function () {
     var self = this;
+    // A pusher event can call poll() while a scheduled poll is still pending;
+    // without this the two chains would both keep re-scheduling themselves.
+    this.stopPolling();
     var url = new URL(this.confirmationUrl, global.location.origin);
     url.searchParams.set('cart_id', String(this.cartId));
     fetch(url.toString(), {
@@ -245,12 +273,20 @@
     // delivers nothing — so we never poll in parallel with a working pusher
     // connection.
     var pusherOffered = !!(confirmation && confirmation.pusher && confirmation.pusher.key && confirmation.pusher.channel);
-    if ((processing || (this.detailLoaded && !this.pdfReady)) && (pusherOffered || this._pusherActive)) {
+    // Exception to pusher-primary: while the submit is processing and no
+    // line-item counter has surfaced yet, keep polling. The counter is seeded
+    // just after the submit is queued — often after this page's first request —
+    // and the first BROADCAST only comes when a chunk finishes, which on a large
+    // cart is a long, countless silence. Bounded, so a flow that never seeds one
+    // falls back to pusher instead of polling for the whole submit.
+    var awaitingCount = processing && !this._progressTotal && this._progressPolls < MAX_COUNT_POLLS;
+    if (!awaitingCount && (processing || (this.detailLoaded && !this.pdfReady)) && (pusherOffered || this._pusherActive)) {
       this.armPusherFallback();
       return;
     }
 
     if (processing) {
+      if (awaitingCount) this._progressPolls += 1;
       this.processingPolls += 1;
       // Give up tight-polling eventually; the spinner stays and a late pusher
       // event (still bound) can resolve the page.
@@ -306,14 +342,17 @@
   };
 
   /**
-   * Live submit progress (PreorderSubmitProgressEvent — first submits only):
-   * the backend's chunk jobs feed a redis counter and broadcast a throttled
-   * { processed, total } line-item pair on the same channel. Reveal the bar on
-   * the FIRST event (the edit flow emits none, so its plain spinner stays) and
-   * advance it; only meaningful while the panel still shows the processing
-   * state. Progress never moves backwards (pusher gives no ordering promise),
-   * and a live stream re-arms the polling fallback — events prove the socket
-   * is healthy, so the fallback poll should not fire mid-submit.
+   * Live submit progress — a { processed, total } line-item pair, from the
+   * confirmation payload's processing block (the first one the page sees, so
+   * the count is up before any chunk has finished) or from a throttled
+   * PreorderSubmitProgressEvent. Both submit flows emit it: the first submit's
+   * chunk batch and the edit merge.
+   *
+   * Reveals the count under the medallion and drives the ring. Only meaningful
+   * while the panel still shows the processing state. Progress never moves
+   * backwards (pusher gives no ordering promise), and a live stream re-arms the
+   * polling fallback — events prove the socket is healthy, so the fallback poll
+   * should not fire mid-submit.
    */
   Confirmation.prototype.applyProgress = function (data) {
     if (this.detailLoaded || this._errored || !data) return;
@@ -325,24 +364,31 @@
     total = Math.round(total);
     if (processed < this._progressSeen) return;
     this._progressSeen = processed;
+    this._progressTotal = total;
 
     var wrap = this.root.querySelector('[data-aico-confirmation-progress]');
-    if (!wrap) return;
-    wrap.hidden = false;
+    if (wrap) {
+      wrap.hidden = false;
+      wrap.setAttribute('aria-valuenow', String(Math.round((processed / total) * 100)));
+      var countEl = wrap.querySelector('[data-aico-confirmation-progress-count]');
+      if (countEl) {
+        var template =
+          wrap.getAttribute('data-aico-confirmation-progress-template') ||
+          '{{ processed }} / {{ total }}';
+        countEl.textContent = template
+          .replace(/\{\{\s*processed\s*\}\}/g, String(processed))
+          .replace(/\{\{\s*total\s*\}\}/g, String(total));
+      }
+    }
 
-    var percent = Math.round((processed / total) * 100);
-    var fill = wrap.querySelector('[data-aico-confirmation-progress-fill]');
-    if (fill) fill.style.width = percent + '%';
-    var track = wrap.querySelector('[data-aico-confirmation-progress-track]');
-    if (track) track.setAttribute('aria-valuenow', String(percent));
-    var countEl = wrap.querySelector('[data-aico-confirmation-progress-count]');
-    if (countEl) {
-      var template =
-        wrap.getAttribute('data-aico-confirmation-progress-template') ||
-        '{{ processed }} / {{ total }}';
-      countEl.textContent = template
-        .replace(/\{\{\s*processed\s*\}\}/g, String(processed))
-        .replace(/\{\{\s*total\s*\}\}/g, String(total));
+    this.setStatusProgress(processed, total);
+
+    // Every line item is counted, but the submit is not done — the totals, the
+    // documents and the PDF still have to be built. Say so, rather than leaving
+    // a completed ring implying the page is stuck.
+    if (processed >= total && !this._almostThere) {
+      this._almostThere = true;
+      this.renderProcessingMessage();
     }
 
     // Push the pusher-silence fallback out: the stream is alive.
@@ -352,6 +398,30 @@
     }
     this._pusherFallbackArmed = false;
     this.armPusherFallback();
+  };
+
+  /**
+   * Point the status medallion's orange arc at `processed / total`.
+   *
+   * Determinate only strictly BETWEEN the ends: at 0 there is nothing to show
+   * yet, and a full circle that then sits there while the wrap-up runs reads as
+   * a frozen page — both of those keep the indeterminate sweep instead. The
+   * dash offset is computed here rather than in CSS so the ring never depends
+   * on calc() inside an SVG geometry property.
+   */
+  Confirmation.prototype.setStatusProgress = function (processed, total) {
+    var status = this.root.querySelector('[data-aico-confirmation-status]');
+    if (!status) return;
+    var arc = status.querySelector('.aico-ty-status-spin');
+    if (processed <= 0 || processed >= total) {
+      status.classList.remove('aico-ty-status--progress');
+      if (arc) arc.style.strokeDashoffset = '';
+      return;
+    }
+    status.classList.add('aico-ty-status--progress');
+    if (arc) {
+      arc.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - processed / total));
+    }
   };
 
   /**
@@ -416,6 +486,9 @@
       this._sawProcessing = true;
       this.root.hidden = false;
       this.renderPending();
+      // The counter as the backend has it right now — this is what puts "0 of X"
+      // on screen while the first chunk is still running.
+      this.applyProgress(confirmation.progress);
       if (!this._pusherSubscribed && confirmation.pusher) {
         this.subscribePusher(confirmation.pusher);
       }
