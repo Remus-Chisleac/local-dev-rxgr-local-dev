@@ -81,19 +81,73 @@
 
   var maxQtyNote = form.querySelector('[data-aico-max-qty-note]');
 
-  function showMaxQtyNote(kind, count) {
-    if (!maxQtyNote) return;
+  function maxQtyMessage(kind, count) {
     var fallback = kind === 'variant'
       ? 'Maximum order quantity of {count} per size reached.'
       : 'Maximum order quantity of {count} for this product reached.';
     var key = kind === 'variant' ? 'max_quantity_variant_reached' : 'max_quantity_reached';
-    var template = getLocaleHint(key, fallback);
-    maxQtyNote.textContent = template.replace('{count}', String(count));
+    return getLocaleHint(key, fallback).replace('{count}', String(count));
+  }
+
+  function showMaxQtyNote(kind, count) {
+    if (!maxQtyNote) return;
+    maxQtyNote.textContent = maxQtyMessage(kind, count);
     maxQtyNote.hidden = false;
   }
 
   function hideMaxQtyNote() {
     if (maxQtyNote) maxQtyNote.hidden = true;
+  }
+
+  // Reflect a computed ceiling on ONE quantity input, so the cap is visible
+  // before the user bumps into it: the HTML `max` stops the native spinner
+  // (and the −/+ stepper the mirror themes wrap the input in), the "+" half
+  // goes inert, and input/box/button carry the localized reason as a hover
+  // title. The "+" is marked `aria-disabled` rather than `disabled` on
+  // purpose — a disabled button swallows hover, and the tooltip is the whole
+  // point. `kind` is null when plain warehouse stock is the binding
+  // constraint: nothing max-order-quantity-specific to explain there.
+  function applyQtyCeiling(input, ceiling, kind, count) {
+    var hasCeiling = typeof ceiling === 'number' && !isNaN(ceiling);
+    var min = parseInt(input.getAttribute('min'), 10);
+    if (hasCeiling && (isNaN(min) || ceiling >= min)) {
+      input.max = String(ceiling);
+    }
+    var value = parseInt(input.value, 10);
+    if (isNaN(value)) {
+      value = 0;
+    }
+    var message = (hasCeiling && value >= ceiling && kind) ? maxQtyMessage(kind, count) : '';
+
+    if (message) {
+      input.setAttribute('title', message);
+    } else {
+      input.removeAttribute('title');
+    }
+
+    var box = input.closest ? input.closest('[data-aico-stepper]') : null;
+    if (!box) {
+      return;
+    }
+    if (message) {
+      box.setAttribute('title', message);
+    } else {
+      box.removeAttribute('title');
+    }
+    var plus = box.querySelector('[data-aico-step="1"]');
+    if (!plus || input.disabled) {
+      return;
+    }
+    if (hasCeiling && value >= ceiling) {
+      plus.setAttribute('aria-disabled', 'true');
+    } else {
+      plus.removeAttribute('aria-disabled');
+    }
+    if (message) {
+      plus.setAttribute('title', message);
+    } else {
+      plus.removeAttribute('title');
+    }
   }
 
   // In-cart quantity for this product, summed across all its lines — read
@@ -475,19 +529,41 @@
 
       totalNode.textContent = String(total);
 
-      // Per-cell state: in-cart accent + at-cap visual, plus the localized
-      // notice. The server only stamps `aico-pdp-size-cell-in-cart` at page
-      // load, so zeroing a size (or typing into a new one) must re-evaluate
-      // the border here.
+      // Per-cell state: in-cart accent, the cell's own ceiling and the at-cap
+      // visual, plus the localized notice. The server only stamps
+      // `aico-pdp-size-cell-in-cart` at page load, so zeroing a size (or
+      // typing into a new one) must re-evaluate the border here. The ceiling
+      // is the strictest of warehouse stock, the cell's own cap and the
+      // head-room left under the product-wide cap (the total minus what this
+      // very cell already contributes) — stamping it on the input is what
+      // stops the increment BEFORE the value has to be pulled back.
       var atProductCap = productMaxAllVariants && productMaxQty !== null && total >= productMaxQty;
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
+        var variantMax = variantMaxOf(input);
+        var stock = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
+        var ceiling = isNaN(stock) ? null : stock;
+        var kind = null;
+        var count = null;
+        if (variantMax !== null && (ceiling === null || variantMax <= ceiling)) {
+          ceiling = variantMax;
+          kind = 'variant';
+          count = variantMax;
+        }
+        if (productMaxAllVariants && productMaxQty !== null) {
+          var room = Math.max(0, productMaxQty - (total - value));
+          if (ceiling === null || room <= ceiling) {
+            ceiling = room;
+            kind = 'product';
+            count = productMaxQty;
+          }
+        }
+        applyQtyCeiling(input, ceiling, kind, count);
+
         var cell = input.closest('[data-aico-size-cell]');
         if (cell) {
           cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
-          var variantMax = variantMaxOf(input);
-          var atMax = (variantMax !== null && value >= variantMax) || atProductCap;
-          cell.classList.toggle('aico-pdp-size-cell-at-max', atMax);
+          cell.classList.toggle('aico-pdp-size-cell-at-max', kind !== null && value >= ceiling);
         }
       });
 
@@ -513,44 +589,67 @@
   // -------- Legacy-mode max clamp ---------------------------------------
   //
   // The non-matrix stepper ADDS to the cart (increment semantics), so the
-  // room left is the product cap minus what the cart already holds. Only
-  // product-wide caps are enforceable here (the variant id is resolved
-  // server-side); per-variant caps rely on the server clamp.
+  // room left is the cap minus what the cart already holds. Two caps can
+  // apply here:
+  //   - product-wide ("for all variants"): the cap covers every line of the
+  //     product, which is exactly what inCartProductQuantity() sums;
+  //   - per-variant: only knowable client-side when the product has NO
+  //     option axis — one variant, its id pre-filled, so the product's cart
+  //     quantity IS that variant's. The template stamps the cap onto the
+  //     input in that case. With options the variant is resolved
+  //     server-side, so there the server clamp stays the only guard.
   var legacyMaxClamp = null;
   (function setupLegacyMaxQty() {
     if (hasMatrix) {
-      return;
-    }
-    if (!productMaxAllVariants || productMaxQty === null) {
       return;
     }
     var qtyInput = form.querySelector('[data-aico-qty-input]');
     if (!qtyInput) {
       return;
     }
+    var variantMax = parseInt(qtyInput.getAttribute('data-aico-variant-max'), 10);
+    if (isNaN(variantMax) || variantMax <= 0) {
+      variantMax = null;
+    }
+    var capKind = null;
+    var cap = null;
+    if (productMaxAllVariants && productMaxQty !== null) {
+      capKind = 'product';
+      cap = productMaxQty;
+    } else if (variantMax !== null) {
+      capKind = 'variant';
+      cap = variantMax;
+    }
+    if (capKind === null) {
+      return;
+    }
     var buyButton = form.querySelector('[data-aico-buy-button]');
     var buttonInitiallyDisabled = !!(buyButton && buyButton.hasAttribute('disabled'));
 
     function clampLegacy() {
-      var room = Math.max(0, productMaxQty - inCartProductQuantity());
+      var room = Math.max(0, cap - inCartProductQuantity());
       if (room <= 0) {
         if (buyButton) {
           buyButton.setAttribute('disabled', 'disabled');
         }
-        showMaxQtyNote('product', productMaxQty);
+        applyQtyCeiling(qtyInput, 0, capKind, cap);
+        showMaxQtyNote(capKind, cap);
         return;
       }
       if (buyButton && !buttonInitiallyDisabled) {
         buyButton.removeAttribute('disabled');
       }
-      qtyInput.max = String(room);
       var value = parseInt(qtyInput.value, 10);
       if (isNaN(value) || value < 1) {
         value = 1;
       }
       if (value > room) {
+        value = room;
         qtyInput.value = String(room);
-        showMaxQtyNote('product', productMaxQty);
+      }
+      applyQtyCeiling(qtyInput, room, capKind, cap);
+      if (value >= room) {
+        showMaxQtyNote(capKind, cap);
       } else {
         hideMaxQtyNote();
       }
@@ -585,7 +684,10 @@
       var buttons = Array.prototype.slice.call(stepper.querySelectorAll('[data-aico-step]'));
       buttons.forEach(function (button) {
         button.addEventListener('click', function () {
-          if (input.disabled) {
+          // `aria-disabled` (not the disabled attribute) is how a step goes
+          // inert at a cap — a disabled button would swallow the hover that
+          // shows the reason, so the no-op lives here instead.
+          if (input.disabled || button.getAttribute('aria-disabled') === 'true') {
             return;
           }
           var step = parseInt(button.getAttribute('data-aico-step'), 10);

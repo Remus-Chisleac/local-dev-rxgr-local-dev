@@ -376,6 +376,14 @@
               </label>
             {% endfor %}
 
+            {%- comment -%}
+              Products without an option axis have a single variant whose id is
+              pre-filled below — so its own max order quantity is knowable
+              client-side and product-detail.js can cap the stepper. With
+              options the variant is only resolved server-side; there the
+              server clamp stays the only guard.
+            {%- endcomment -%}
+            {%- assign legacy_variant = product.selected_or_first_available_variant -%}
             <label class="aico-pdp-option-row">
               <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
               <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
@@ -388,6 +396,7 @@
                   value="1"
                   inputmode="numeric"
                   data-aico-qty-input
+                  {%- if product.options.size == 0 and legacy_variant.aico_max_quantity_per_order %} data-aico-variant-max="{{ legacy_variant.aico_max_quantity_per_order }}"{% endif %}
                 >
                 <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
                   <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}">

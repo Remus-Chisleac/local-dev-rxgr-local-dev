@@ -3547,6 +3547,17 @@ button.aico-home-brand-card {
   opacity: 0.35;
   cursor: not-allowed;
 }
+/* Cap reached (max order quantity): the increment half goes inert but stays
+   hoverable — `aria-disabled` instead of `disabled` so its title tooltip can
+   still explain WHY the quantity stops here. */
+.aico-pdp-qty-box__step[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.aico-pdp-qty-box__step[aria-disabled="true"]:hover,
+.aico-pdp-qty-box__step[aria-disabled="true"]:active {
+  background: transparent;
+}
 .aico-pdp-size-cell-available:not(.aico-pdp-size-cell-in-stock)::after {
   content: "";
   position: absolute;
