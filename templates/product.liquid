@@ -381,14 +381,6 @@
               <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
                 <input
                   type="number"
-          {%- comment -%}
-            Max-order-quantity notice — filled and revealed by
-            product-detail.js when a quantity gets clamped to the PIM
-            "Max. Bestellmenge" (per variant, or product-wide when the
-            "for all variants" flag is on).
-          {%- endcomment -%}
-          <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger" data-aico-max-qty-note hidden role="status"></p>
-
                   class="aico-pdp-qty-input"
                   name="quantity"
                   min="1"
@@ -439,6 +431,15 @@
               {%- endif -%}
             {%- endfor -%}
           {%- endif -%}
+
+          {%- comment -%}
+            Max-order-quantity notice — filled and revealed by
+            product-detail.js when a quantity gets clamped to the PIM
+            "Max. Bestellmenge" (per variant, or product-wide when the
+            "for all variants" flag is on).
+          {%- endcomment -%}
+          <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger" data-aico-max-qty-note hidden role="status"></p>
+
           <div class="aico-pdp-buy-actions">
             <button
               type="submit"
