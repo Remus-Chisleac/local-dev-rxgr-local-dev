@@ -109,6 +109,9 @@
           out_of_stock: {{ 'cart.line.out_of_stock' | t | json }},
           quantity_exceeds_stock: {{ 'cart.line.quantity_exceeds_stock' | t | json }},
           quantity_exceeds_stock_generic: {{ 'cart.line.quantity_exceeds_stock_generic' | t | json }},
+          max_stock_reached: {{ 'cart.line.max_stock_reached' | t | json }},
+          max_quantity_reached: {{ 'cart.line.max_quantity_reached' | t | json }},
+          max_quantity_product_reached: {{ 'cart.line.max_quantity_product_reached' | t | json }},
           fixed_invalid_quantity: {{ 'cart.fixed_invalid_quantity' | t | json }},
           fix_invalid_quantity_error: {{ 'cart.fix_invalid_quantity_error' | t | json }}
         }{% if template.name == 'checkout' or template.directory == 'checkout' %},

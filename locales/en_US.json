@@ -456,7 +456,10 @@
       "low_stock": "Low stock",
       "out_of_stock": "Out of stock — remove this item or set quantity to 0.",
       "quantity_exceeds_stock": "Only {count} in stock — reduce the quantity to continue.",
-      "quantity_exceeds_stock_generic": "Not enough stock for this quantity — reduce it to continue."
+      "quantity_exceeds_stock_generic": "Not enough stock for this quantity — reduce it to continue.",
+      "max_stock_reached": "Only {count} in stock — that's the most you can order.",
+      "max_quantity_reached": "Maximum order quantity of {count} per size reached.",
+      "max_quantity_product_reached": "Maximum order quantity of {count} for this product reached."
     },
     "summary": {
       "title": "Order summary",

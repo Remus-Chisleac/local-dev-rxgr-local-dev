@@ -456,7 +456,10 @@
       "low_stock": "Wenig Bestand",
       "out_of_stock": "Nicht auf Lager — entfernen Sie den Artikel oder setzen Sie die Menge auf 0.",
       "quantity_exceeds_stock": "Nur {count} auf Lager — reduzieren Sie die Menge, um fortzufahren.",
-      "quantity_exceeds_stock_generic": "Nicht genügend Bestand für diese Menge — bitte reduzieren."
+      "quantity_exceeds_stock_generic": "Nicht genügend Bestand für diese Menge — bitte reduzieren.",
+      "max_stock_reached": "Nur {count} auf Lager — mehr ist nicht bestellbar.",
+      "max_quantity_reached": "Maximale Bestellmenge von {count} pro Grösse erreicht.",
+      "max_quantity_product_reached": "Maximale Bestellmenge von {count} für dieses Produkt erreicht."
     },
     "summary": {
       "title": "Bestellübersicht",

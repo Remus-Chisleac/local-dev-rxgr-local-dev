@@ -143,6 +143,16 @@
                         <label class="aico-sr-only" :for="'aico-cart-qty-' + line.id">
                           {{ 'cart.line.quantity_aria' | t }}
                         </label>
+                        {%- comment -%}
+                          Quantity ceiling = min(warehouse stock, per-variant PIM
+                          max, product-wide PIM max − the product's other lines).
+                          The store's lineMaxQuantity() resolves it; a null means
+                          "uncapped" and Alpine then drops the `max` attribute.
+
+                          The "+" wrapper carries the tooltip rather than the
+                          button itself: a disabled <button> swallows pointer
+                          events, so a title/hover on it would never fire.
+                        {%- endcomment -%}
                         <div class="aico-qty-stepper">
                           <button type="button"
                                   class="aico-qty-step"
@@ -153,15 +163,29 @@
                                  type="number"
                                  class="aico-qty-input"
                                  min="0"
-                                 :max="line.aico_max_quantity_per_order || line.aico_available_stock || undefined"
+                                 step="1"
+                                 inputmode="numeric"
+                                 :max="$store.cart.lineMaxQuantity(line)"
+                                 :title="$store.cart.lineMaxQuantityHint(line)"
+                                 :class="$store.cart.lineAtMaxQuantity(line) ? 'aico-qty-input--at-max' : ''"
                                  x-model.number="line.quantity"
-                                 @input.debounce.400ms="$store.cart.setLineQuantity(line.id, line.quantity)"
+                                 @input.debounce.400ms="$store.cart.setLineQuantity(line.id, $store.cart.clampLineQuantity(line, line.quantity))"
+                                 @blur="$store.cart.clampLineQuantity(line, line.quantity)"
                                  :disabled="{% if customer.aico_shipping_block %}true{% else %}false{% endif %}">
-                          <button type="button"
-                                  class="aico-qty-step"
-                                  :disabled="(line.aico_available_stock !== null && line.quantity >= line.aico_available_stock) || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
-                                  @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
-                                  aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
+                          <span class="aico-qty-max-wrap">
+                            <button type="button"
+                                    class="aico-qty-step"
+                                    :disabled="$store.cart.lineAtMaxQuantity(line) || {% if customer.aico_shipping_block %}true{% else %}false{% endif %}"
+                                    :aria-describedby="$store.cart.lineAtMaxQuantity(line) ? 'aico-cart-qty-max-' + line.id : null"
+                                    @click="$store.cart.setLineQuantity(line.id, line.quantity + 1)"
+                                    aria-label="{{ 'cart.line.qty_increment' | t }}">+</button>
+                            <template x-if="$store.cart.lineMaxQuantityHint(line)">
+                              <span class="aico-qty-max-pop"
+                                    role="tooltip"
+                                    :id="'aico-cart-qty-max-' + line.id"
+                                    x-text="$store.cart.lineMaxQuantityHint(line)"></span>
+                            </template>
+                          </span>
                         </div>
                         <template x-if="line.aico_available_stock !== null && line.aico_available_stock <= 2 && line.aico_available_stock > 0 && !$store.cart.lineExceedsStock(line)">
                           <p class="aico-cart-line-stock-warning">{{ 'cart.line.low_stock' | t }}</p>

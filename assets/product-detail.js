@@ -625,6 +625,20 @@
     }
     var buyButton = form.querySelector('[data-aico-buy-button]');
     var buttonInitiallyDisabled = !!(buyButton && buyButton.hasAttribute('disabled'));
+    // The wrapper carries the hover explanation — the button itself is
+    // `disabled` at the cap and so receives no pointer events.
+    var buyActions = form.querySelector('[data-aico-buy-actions]');
+
+    function setBuyHint(message) {
+      if (!buyActions) {
+        return;
+      }
+      if (message) {
+        buyActions.setAttribute('title', message);
+      } else {
+        buyActions.removeAttribute('title');
+      }
+    }
 
     function clampLegacy() {
       var room = Math.max(0, cap - inCartProductQuantity());
@@ -632,6 +646,7 @@
         if (buyButton) {
           buyButton.setAttribute('disabled', 'disabled');
         }
+        setBuyHint(maxQtyMessage(capKind, cap));
         applyQtyCeiling(qtyInput, 0, capKind, cap);
         showMaxQtyNote(capKind, cap);
         return;
@@ -639,6 +654,7 @@
       if (buyButton && !buttonInitiallyDisabled) {
         buyButton.removeAttribute('disabled');
       }
+      setBuyHint('');
       var value = parseInt(qtyInput.value, 10);
       if (isNaN(value) || value < 1) {
         value = 1;

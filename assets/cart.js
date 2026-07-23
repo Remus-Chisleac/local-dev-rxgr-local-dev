@@ -119,6 +119,13 @@
         if (this.data && Array.isArray(this.data.items)) {
           var line = this.data.items.find(function (item) { return item.id === lineId; });
           if (line) {
+            // Last line of defence: stepper clicks, typed input and any
+            // programmatic caller all funnel through here, so the stock /
+            // max-order-quantity ceiling is applied once, centrally. The server
+            // clamps too — this just stops the UI from showing a number that
+            // the next /cart.js response would silently walk back.
+            var max = this.lineMaxQuantity(line);
+            if (max !== null && next > max) next = max;
             line.quantity = next;
             this._recalcTotals();
           }
@@ -415,6 +422,123 @@
         return template.replace('{count}', String(stock));
       },
 
+      // ── Per-line quantity ceiling ────────────────────────────────────────
+      //
+      // Three independent limits, all mirrored from the server-side clamps in
+      // StorefrontCartController / SeparatedCartService::clampAddedQuantity:
+      //
+      //   1. warehouse stock            — line.aico_available_stock
+      //   2. per-variant PIM cap        — line.aico_max_quantity_per_order
+      //   3. product-wide PIM cap       — line.aico_product_max_quantity_per_order
+      //      (PIM "for all variants" mode: caps the SUM across every variant of
+      //      the product, so this line's own room is the cap minus what the
+      //      product's OTHER lines already hold)
+      //
+      // The binding limit is the smallest of whichever are set; null means
+      // "no limit known" and must NOT be treated as 0 — hence the explicit
+      // null/undefined checks rather than `a || b` (a cap of 0 is falsy and a
+      // real constraint).
+
+      /** Sum of every OTHER cart line that belongs to the same product. */
+      otherLinesQuantityForProduct(line) {
+        if (!line || !this.data || !Array.isArray(this.data.items)) return 0;
+        var productId = line.product_id;
+        if (productId === null || productId === undefined) return 0;
+        var lineId = line.id;
+        return this.data.items.reduce(function (sum, other) {
+          if (other.id === lineId) return sum;
+          if (other.product_id !== productId) return sum;
+          return sum + Number(other.quantity || 0);
+        }, 0);
+      },
+
+      /**
+       * Highest quantity this line may hold, or null when unconstrained.
+       * Never returns a negative number — a product already over its cap on
+       * other lines floors this line at 0.
+       */
+      lineMaxQuantity(line) {
+        if (!line) return null;
+        var limit = null;
+
+        function tighten(value) {
+          if (value === null || value === undefined) return;
+          var next = Number(value);
+          if (isNaN(next)) return;
+          if (limit === null || next < limit) limit = next;
+        }
+
+        tighten(line.aico_available_stock);
+        tighten(line.aico_max_quantity_per_order);
+
+        var productCap = line.aico_product_max_quantity_per_order;
+        if (productCap !== null && productCap !== undefined && !isNaN(Number(productCap))) {
+          tighten(Number(productCap) - this.otherLinesQuantityForProduct(line));
+        }
+
+        return limit === null ? null : Math.max(0, limit);
+      },
+
+      /** True when the line already sits at (or past) its ceiling — "+" is dead. */
+      lineAtMaxQuantity(line) {
+        var max = this.lineMaxQuantity(line);
+        if (max === null) return false;
+        return Number(line.quantity || 0) >= max;
+      },
+
+      /**
+       * Hover text explaining why "+" is disabled. Empty string when the line
+       * is not capped, so the template can bind it straight to `:title` (an
+       * empty title renders no tooltip).
+       */
+      lineMaxQuantityHint(line) {
+        if (!line || !this.lineAtMaxQuantity(line)) return '';
+        var max = this.lineMaxQuantity(line);
+
+        // Which limit actually bound? Stock wins the message when it is the
+        // smallest, because "only N left" is more actionable than "max N".
+        var stock = line.aico_available_stock;
+        if (stock !== null && stock !== undefined && Number(stock) <= max) {
+          if (Number(stock) <= 0) {
+            return translations.out_of_stock || 'Out of stock.';
+          }
+          var stockTemplate = translations.max_stock_reached || 'Only {count} in stock.';
+          return stockTemplate.replace('{count}', String(Number(stock)));
+        }
+
+        var productCap = line.aico_product_max_quantity_per_order;
+        if (productCap !== null && productCap !== undefined) {
+          var productTemplate = translations.max_quantity_product_reached
+            || 'Maximum order quantity of {count} for this product reached.';
+          return productTemplate.replace('{count}', String(Number(productCap)));
+        }
+
+        var variantTemplate = translations.max_quantity_reached
+          || 'Maximum order quantity of {count} reached.';
+        return variantTemplate.replace('{count}', String(max));
+      },
+
+      /**
+       * Clamp a typed value into [0, lineMaxQuantity] and write it back onto
+       * the line before the debounced server write. Bound to the qty input's
+       * `@input` so pasting/typing "999" snaps to the real ceiling instead of
+       * bouncing back only after the server responds.
+       */
+      clampLineQuantity(line, value) {
+        if (!line) return 0;
+        var next = Math.floor(Number(value));
+        if (isNaN(next) || next < 0) next = 0;
+        var max = this.lineMaxQuantity(line);
+        if (max !== null && next > max) next = max;
+        if (line.quantity !== next) line.quantity = next;
+        return next;
+      },
+
+      /**
+       * Per-line limits only (stock + the variant cap) — deliberately WITHOUT
+       * the product-wide cap, which cannot be judged one line at a time.
+       * `plannedQuantityFixes()` layers that on with a running budget.
+       */
       fixedQuantityForLine(line) {
         if (!line) return null;
         var qty = Number(line.quantity || 0);
@@ -424,22 +548,60 @@
         var stock = line.aico_available_stock;
         var max = line.aico_max_quantity_per_order;
 
-        if (stock !== null && stock !== undefined && qty > Number(stock)) {
+        if (stock !== null && stock !== undefined && next > Number(stock)) {
           next = Math.max(0, Number(stock));
         }
         if (max !== null && max !== undefined && next > Number(max)) {
-          next = Number(max);
+          next = Math.max(0, Number(max));
         }
 
         return next === qty ? null : next;
       },
 
+      /**
+       * The full "adjust quantities automatically" plan: one pass over the
+       * cart applying each line's own limits, then spending a per-product
+       * budget in cart order for products under a product-wide cap.
+       *
+       * Walking with a running budget (instead of asking each line to subtract
+       * its siblings) is what keeps two lines of the same capped product from
+       * BOTH backing off by the full overage — e.g. two lines of 10 under a cap
+       * of 12 settle at 10 + 2, not 2 + 2.
+       *
+       * @return {Array<{id: number, quantity: number}>}
+       */
+      plannedQuantityFixes() {
+        if (!this.data || !Array.isArray(this.data.items)) return [];
+        var self = this;
+        var remainingByProduct = {};
+        var updates = [];
+
+        this.data.items.forEach(function (line) {
+          var current = Number(line.quantity || 0);
+          var next = self.fixedQuantityForLine(line);
+          if (next === null) next = current;
+
+          var productCap = line.aico_product_max_quantity_per_order;
+          var productId = line.product_id;
+          if (productCap !== null && productCap !== undefined
+            && productId !== null && productId !== undefined
+            && !isNaN(Number(productCap))) {
+            if (!(productId in remainingByProduct)) {
+              remainingByProduct[productId] = Math.max(0, Number(productCap));
+            }
+            next = Math.min(next, remainingByProduct[productId]);
+            remainingByProduct[productId] -= next;
+          }
+
+          if (next !== current) updates.push({ id: line.id, quantity: next });
+        });
+
+        return updates;
+      },
+
       hasFixableInvalidQuantity() {
         if (!this.data || !this.data.aico_has_invalid_quantity) return false;
-        var self = this;
-        return (this.data.items || []).some(function (line) {
-          return self.fixedQuantityForLine(line) !== null;
-        });
+        return this.plannedQuantityFixes().length > 0;
       },
 
       async fixInvalidQuantities() {
@@ -454,12 +616,7 @@
         }
 
         this._fixingInvalid = true;
-        var self = this;
-        var updates = [];
-        (this.data.items || []).forEach(function (line) {
-          var next = self.fixedQuantityForLine(line);
-          if (next !== null) updates.push({ id: line.id, quantity: next });
-        });
+        var updates = this.plannedQuantityFixes();
 
         try {
           for (var i = 0; i < updates.length; i++) {

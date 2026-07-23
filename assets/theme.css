@@ -4647,6 +4647,50 @@ button.aico-home-brand-card {
 .aico-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .aico-qty-input:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: -2px; }
 
+/* Line sits at its ceiling (stock or the PIM max order quantity) — amber, to
+   match the PDP size-matrix at-max cell so the limit reads the same everywhere. */
+.aico-qty-input--at-max {
+  background: rgba(217, 119, 6, 0.08);
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* Hover/focus explainer for the disabled "+" step. The wrapper (not the button)
+   owns the hover because a disabled <button> receives no pointer events. */
+.aico-qty-max-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+.aico-qty-max-pop {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  right: 0;
+  width: max-content;
+  max-width: min(15rem, 80vw);
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  color: var(--aico-fg);
+  background: var(--aico-bg);
+  border: 1px solid var(--aico-border);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+  z-index: 35;
+}
+.aico-qty-max-wrap:hover .aico-qty-max-pop,
+.aico-qty-max-wrap:focus-within .aico-qty-max-pop {
+  display: block;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .aico-qty-max-pop { animation: aicoFadeInTool 120ms ease-out; }
+}
+
 /* Header cart badge (overlay on cart icon) */
 .aico-cart-button { position: relative; }
 .aico-cart-badge {

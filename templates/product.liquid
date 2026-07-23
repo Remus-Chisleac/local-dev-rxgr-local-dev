@@ -472,7 +472,14 @@
           {%- endcomment -%}
           <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger" data-aico-max-qty-note hidden role="status"></p>
 
-          <div class="aico-pdp-buy-actions">
+          {%- comment -%}
+            `data-aico-buy-actions` marks the hover surface for the add-to-cart
+            button: product-detail.js parks the max-order-quantity reason here
+            (as a title) when it disables the button, because a disabled
+            <button> receives no pointer events and would never show a tooltip
+            of its own.
+          {%- endcomment -%}
+          <div class="aico-pdp-buy-actions" data-aico-buy-actions>
             <button
               type="submit"
               class="aico-pdp-buy-button"
