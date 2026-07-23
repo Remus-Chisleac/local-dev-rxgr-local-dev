@@ -707,6 +707,7 @@
       "delivery_address": "Delivery address",
       "item_count": "Total items",
       "total": "Total (excl. VAT)",
+      "total_with_vat": "Total (incl. VAT)",
       "discount": "Discount applied",
       "delivery_dates": "Delivery dates",
       "pdf_generating": "Generating your confirmation PDF – this can take a little longer…",

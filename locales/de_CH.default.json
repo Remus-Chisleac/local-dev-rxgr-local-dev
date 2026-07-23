@@ -707,6 +707,7 @@
       "delivery_address": "Lieferadresse",
       "item_count": "Artikel gesamt",
       "total": "Total (exkl. MwSt.)",
+      "total_with_vat": "Total (inkl. MwSt.)",
       "discount": "Angewandter Rabatt",
       "delivery_dates": "Liefertermine",
       "pdf_generating": "Ihr Bestätigungs-PDF wird erstellt – dies kann etwas länger dauern…",

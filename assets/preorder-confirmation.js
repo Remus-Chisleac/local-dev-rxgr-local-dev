@@ -21,8 +21,10 @@
  *   { aico_confirmation: {
  *       processing: false,
  *       order_numbers: string[], preorder_id, cart_id, status,
- *       delivery_address, item_count, total_amount, discount_percent|null,
- *       per_date: [ { order_number, delivery_date, quantity, total_amount } ],
+ *       delivery_address, item_count, discount_percent|null,
+ *       total_amount (net of the discount, excl. VAT), total_amount_with_vat,
+ *       per_date: [ { order_number, delivery_date, quantity, total_amount,
+ *                     total_amount_with_vat } ],
  *       pdf: { file_url|null, file_name|null }, pdf_ready
  *     } | null }
  *
@@ -534,9 +536,19 @@
     this.setText('[data-aico-confirmation-reference]', confirmation.preorder_id || '');
     this.setText('[data-aico-confirmation-address]', confirmation.delivery_address || '—');
     this.setText('[data-aico-confirmation-item-count]', confirmation.item_count || 0);
+    // Both totals come from the endpoint already computed (net of the tier
+    // discount, and the same figure with VAT). The theme deliberately does no
+    // money arithmetic: the discount is a per-line percentage and the VAT rate
+    // can differ per line, so neither is derivable from a single total here.
     this.setText(
       '[data-aico-confirmation-total]',
       formatMoney(confirmation.total_amount, this.currency),
+    );
+    this.setText(
+      '[data-aico-confirmation-total-with-vat]',
+      confirmation.total_amount_with_vat == null
+        ? '—'
+        : formatMoney(confirmation.total_amount_with_vat, this.currency),
     );
 
     // The discount row stays visible and shows an en-dash when no discount was

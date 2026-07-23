@@ -700,6 +700,14 @@
           <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
           <dd data-aico-confirmation-total>&mdash;</dd>
         </div>
+        {%- comment -%} The same total with VAT added — the net figure above is what
+          the tier discount and the price list produce; this is what the invoice will
+          say. Both come from the confirmation endpoint; the theme never does money
+          arithmetic of its own. {%- endcomment -%}
+        <div class="aico-preorder-confirmation-total-row aico-preorder-confirmation-total-row--vat">
+          <dt>{{ 'aico_preorder.confirmation.total_with_vat' | t }}</dt>
+          <dd data-aico-confirmation-total-with-vat>&mdash;</dd>
+        </div>
       </dl>
     </div>
 
