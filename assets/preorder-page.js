@@ -543,8 +543,9 @@
     }
 
     // Pieces still needed to reach the next discount tier — matches b2b-shop's
-    // getNextDiscountLevel (Math.abs(nextThreshold - qty)); 0 when already at the
-    // top tier or there are no tiers. Mirrors getDiscount's tolerant key handling.
+    // getNextDiscountLevel (Math.abs(nextThreshold - qty)); null when already at
+    // the top tier or there are no tiers, so the row can render a dash instead of
+    // a meaningless "0 STK". Mirrors getDiscount's tolerant key handling.
     function nextDiscountRemaining(discounts, totalQty) {
       var next = null;
       (discounts || []).forEach(function (d) {
@@ -553,7 +554,7 @@
           next = from;
         }
       });
-      return next === null ? 0 : Math.abs(next - totalQty);
+      return next === null ? null : Math.abs(next - totalQty);
     }
 
     function updateCartPanel(totalQty, grandTotal, discPct, discounts, currency, discountQty) {
@@ -573,7 +574,9 @@
       if (cartPanelTabQty) cartPanelTabQty.textContent = totalQty;
       if (cartPanelDiscount) cartPanelDiscount.textContent = (discPct || 0) + '%';
       if (cartPanelNextTier) {
-        cartPanelNextTier.textContent = nextDiscountRemaining(discounts, tierQty) + ' ' + pcs;
+        var remainingToTier = nextDiscountRemaining(discounts, tierQty);
+        cartPanelNextTier.textContent =
+          remainingToTier === null ? '—' : remainingToTier + ' ' + pcs;
       }
       if (cartPanelSubtotal) cartPanelSubtotal.textContent = formatMoney(grandTotal, currency, '');
     }
