@@ -128,6 +128,9 @@
       termsError: false,
       submitting: false,
       submitError: null,
+      discountCode: seeds.initialDiscountCode || '',
+      discountApplying: false,
+      discountStatus: null, // null | 'applied' | 'invalid'
       _refreshInFlight: null,
       _totalsInFlight: null,
       _deliveryRefreshTimer: null,
@@ -231,6 +234,51 @@
             self._refreshInFlight = null;
           });
         return self._refreshInFlight;
+      },
+
+      /**
+       * Apply the typed discount code. `POST /cart/discount` returns the
+       * resulting discount only, which we merge into the cart snapshot the
+       * summary renders from — the page is never reloaded, so the shopper
+       * stays where they are instead of being thrown back to the top.
+       */
+      applyDiscount: function () {
+        var self = this;
+        var code = String(self.discountCode || '').trim();
+        if (!code || self.discountApplying) {
+          return Promise.resolve();
+        }
+        self.discountApplying = true;
+        self.discountStatus = null;
+
+        return fetch(cartRoutes.discountUrl || '/cart/discount', {
+          method: 'POST',
+          headers: jsonHeaders(),
+          credentials: 'same-origin',
+          body: formEncoded({ discount_code: code }),
+        })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (body) {
+            if (!body) {
+              self.discountStatus = 'invalid';
+              return;
+            }
+            // Replace the object rather than mutating it so the summary
+            // re-renders even if `cart` was seeded before Alpine took over.
+            self.cart = Object.assign({}, self.cart, {
+              aico_discount_code: body.aico_discount_code,
+              aico_discount_value: Number(body.aico_discount_value || 0),
+              aico_discount_percentage: Number(body.aico_discount_percentage || 0),
+            });
+            self.discountCode = body.aico_discount_code || code;
+            self.discountStatus = body.applied ? 'applied' : 'invalid';
+            if (body.applied) {
+              // VAT is charged on the discounted base, so the totals follow.
+              return self.refreshTotals();
+            }
+          })
+          .catch(function () { self.discountStatus = 'invalid'; })
+          .finally(function () { self.discountApplying = false; });
       },
 
       onDeliveryAddressChange: function () {

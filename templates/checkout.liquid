@@ -23,6 +23,7 @@
   "initialBillingAddressId": {{ checkout.selected_billing_address_id | default: 0 | json }},
   "initialDeliveryAddressId": {{ checkout.selected_shipping_address_id | default: 0 | json }},
   "initialPaymentMethodId": {{ checkout.selected_payment_method_id | default: 0 | json }},
+  "initialDiscountCode": {{ cart.aico_discount_code | json }},
   "creditLimit": {% if customer.aico_debtor %}{{ customer.aico_debtor.credit_limit | default: 0 | minus: customer.aico_debtor.current_credit | json }}{% else %}0{% endif %},
   "shippingBlocked": {{ customer.aico_shipping_block | json }},
   "paymentMethods": [
@@ -193,27 +194,33 @@
           {% endif %}
         </fieldset>
 
-        {%- comment -%} ─── Discount code (standalone form — avoids invalid nested forms) ─── {%- endcomment -%}
+        {%- comment -%}
+          ─── Discount code ───
+          Applied through `POST /cart/discount`, which answers with the resulting
+          discount alone. checkout.js merges that into the cart state, so the
+          summary updates in place — no form navigation, no scroll back to top.
+        {%- endcomment -%}
         <fieldset class="aico-checkout-section">
           <legend class="aico-checkout-section-title">{{ 'checkout.discount.label' | t }}</legend>
-          <form action="{{ routes.aico_cart_discount_url }}" method="post" class="aico-checkout-discount-form">
-            <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
-            <input type="hidden" name="return_url" value="{{ routes.checkout_url }}">
+          <form class="aico-checkout-discount-form" @submit.prevent="applyDiscount()">
             <input type="text"
                    name="discount_code"
                    class="aico-checkout-discount-input"
                    placeholder="{{ 'checkout.discount.placeholder' | t }}"
-                   value="{% if cart.aico_discount_code %}{{ cart.aico_discount_code }}{% endif %}">
-            <button type="submit" class="aico-button aico-button-outline">
+                   x-model="discountCode"
+                   @input="discountStatus = null">
+            <button type="submit"
+                    class="aico-button aico-button-outline"
+                    :disabled="discountApplying || !discountCode">
               {{ 'checkout.discount.apply' | t }}
             </button>
           </form>
-          {% if form.errors and form.form_type == 'cart_discount' %}
-            <p class="aico-checkout-discount-error">{{ 'checkout.discount.invalid' | t }}</p>
-          {% endif %}
-          {% if form.posted_successfully? and form.form_type == 'cart_discount' %}
-            <p class="aico-checkout-discount-success">{{ 'checkout.discount.applied' | t }}</p>
-          {% endif %}
+          <p class="aico-checkout-discount-error" x-show="discountStatus === 'invalid'" x-cloak>
+            {{ 'checkout.discount.invalid' | t }}
+          </p>
+          <p class="aico-checkout-discount-success" x-show="discountStatus === 'applied'" x-cloak>
+            {{ 'checkout.discount.applied' | t }}
+          </p>
         </fieldset>
 
         {%- comment -%} ─── Terms & conditions ─── {%- endcomment -%}
