@@ -571,12 +571,41 @@
         var query = new URLSearchParams(window.location.search);
         var sessionId = query.get('sessionId');
         var sessionResult = query.get('sessionResult');
+        this.resetCartBadge(query);
         this.loadOrderSummary(query, 0);
         if (!sessionId || !sessionResult) {
           this.state = 'success';
           return;
         }
         this.verify(sessionId, sessionResult, 0);
+      },
+
+      // The header cart badge is seeded from the SSR'd cart snapshot, which
+      // still contains the just-ordered lines: the async SaveAicoShopOrder
+      // job only consumes the cart after this page has rendered. When the
+      // query carries an order reference the order was placed, so
+      // optimistically zero the `$store.cart` data the badge/mini-cart read.
+      // Once /checkout/order-summary reports `ready` (save finished, cart
+      // consumed) loadOrderSummary re-fetches the authoritative cart, which
+      // also self-corrects historical visits to this page.
+      resetCartBadge: function (query) {
+        if (!query.get('order_id') && !query.get('order_number') && !query.get('orderRef')) return;
+        var store = window.Alpine && typeof window.Alpine.store === 'function'
+          ? window.Alpine.store('cart')
+          : null;
+        if (store && store.data) {
+          store.data.items = [];
+          store.data.item_count = 0;
+          store.data.total_price = 0;
+          store.data.empty = true;
+        }
+      },
+
+      refreshCartStore: function () {
+        var store = window.Alpine && typeof window.Alpine.store === 'function'
+          ? window.Alpine.store('cart')
+          : null;
+        if (store && typeof store.refresh === 'function') store.refresh();
       },
 
       // Poll the persisted order totals. The order row exists immediately but
@@ -601,6 +630,9 @@
           .then(function (body) {
             if (body && body.ready) {
               self.summary = body;
+              // Order save completed → the cart was consumed server-side;
+              // replace the optimistic zero with the authoritative cart.
+              self.refreshCartStore();
             } else {
               // Not ready yet — or a transient 404 while the async save has
               // not created the ecommerce-order row (order_number lookups).
