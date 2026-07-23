@@ -378,6 +378,7 @@
     "more_colors": "Mehr Farben",
     "reviews": {
       "title": "Kundenbewertungen",
+      "empty": "Keine Bewertungen für dieses Produkt",
       "demo_note": "Demo-Daten – Bewertungen werden später aus einer separaten App geladen.",
       "based_on": "Basierend auf {count} Bewertungen",
       "write_review": "Bewertung schreiben",

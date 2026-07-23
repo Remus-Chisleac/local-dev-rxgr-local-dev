@@ -11048,3 +11048,43 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-pdp-reviews .yotpo-widget-instance .yotpo-media-select:focus-visible::after {
   border-radius: var(--aico-radius, 2px);
 }
+
+/* ── Reviews are read-only on the B2B shop ─────────────────────
+   Reviews come from end customers on the D2C shops; buyers here only read
+   them. Yotpo has no read-only mode, so the write affordances are hidden:
+   the "Write A Review" button (same wrapper class in both the populated and
+   the empty state) and the rule the star distribution draws towards it,
+   which would otherwise dangle at the edge of the widget. */
+.aico-pdp-reviews .yotpo-new-review-btn-wrapper {
+  display: none !important;
+}
+.aico-pdp-reviews .yotpo-star-distribution {
+  border-right: 0 !important;
+}
+
+/* With no reviews the widget is nothing but a "be the first to write one"
+   pitch — headline, illustration, subtitle, button — plus a 75px spacer above
+   it. Drop all of it and show our own note instead; :has() keys off the empty
+   state, both so the note stays hidden once reviews exist and so the spacer
+   rule can't touch the .yotpo-review-border-smooth separators that sit
+   between individual reviews. The headline is outside .yotpo-empty-state and
+   survives. */
+.aico-pdp-reviews .yotpo-empty-state,
+.aico-pdp-reviews:has(.yotpo-empty-state) .yotpo-review-border-smooth {
+  display: none !important;
+}
+.aico-pdp-reviews-empty {
+  display: none;
+  margin: 0;
+  text-align: center;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-pdp-reviews:has(.yotpo-empty-state) .aico-pdp-reviews-empty {
+  display: block;
+}
+/* The headline's 70px bottom margin is there to clear the summary block; with
+   only the note left below it the gap reads as a hole, so let the section's
+   own 2rem gap do the spacing instead. */
+.aico-pdp-reviews:has(.yotpo-empty-state) .yotpo-head {
+  margin-bottom: 0 !important;
+}

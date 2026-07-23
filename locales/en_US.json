@@ -378,6 +378,7 @@
     "more_colors": "More colors",
     "reviews": {
       "title": "Customer reviews",
+      "empty": "No reviews for this product",
       "demo_note": "Demo data — reviews will load from a separate app once connected.",
       "based_on": "Based on {count} reviews",
       "write_review": "Write a review",

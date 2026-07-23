@@ -720,6 +720,14 @@
         <div class="yotpo-widget-instance"
              data-yotpo-instance-id="639491"
              data-yotpo-product-id="{{ product.sku }}"></div>
+        {%- comment -%}
+          B2B buyers don't write reviews — the widget only surfaces what end
+          customers left elsewhere, so every write affordance is hidden in CSS.
+          Yotpo's empty state is one big "be the first to write a review" CTA;
+          this note replaces it, and CSS reveals it only when Yotpo actually
+          rendered that empty state.
+        {%- endcomment -%}
+        <p class="aico-pdp-reviews-empty">{{ 'product.reviews.empty' | t }}</p>
       </section>
     {% endif %}
   </div>
