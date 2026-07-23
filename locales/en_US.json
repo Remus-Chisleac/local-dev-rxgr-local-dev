@@ -399,7 +399,9 @@
       "select_quantity": "Select at least one size first.",
       "error": "Could not add to cart.",
       "max_quantity_reached": "Maximum order quantity of {count} for this product reached.",
-      "max_quantity_variant_reached": "Maximum order quantity of {count} per size reached."
+      "max_quantity_variant_reached": "Maximum order quantity of {count} per size reached.",
+      "button_add_hint": "Select a size to add it to your cart.",
+      "button_update_hint": "No changes — adjust a quantity to update your cart."
     },
     "update_cart": "Update cart",
     "specs_label": {

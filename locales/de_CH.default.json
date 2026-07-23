@@ -399,7 +399,9 @@
       "select_quantity": "Bitte mindestens eine Grösse auswählen.",
       "error": "Konnte nicht zum Warenkorb hinzugefügt werden.",
       "max_quantity_reached": "Maximale Bestellmenge von {count} für dieses Produkt erreicht.",
-      "max_quantity_variant_reached": "Maximale Bestellmenge von {count} pro Grösse erreicht."
+      "max_quantity_variant_reached": "Maximale Bestellmenge von {count} pro Grösse erreicht.",
+      "button_add_hint": "Wählen Sie eine Grösse, um sie in den Warenkorb zu legen.",
+      "button_update_hint": "Keine Änderungen – passen Sie eine Menge an, um zu aktualisieren."
     },
     "update_cart": "Warenkorb aktualisieren",
     "specs_label": {

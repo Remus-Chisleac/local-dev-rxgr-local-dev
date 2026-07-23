@@ -744,7 +744,9 @@
       select_quantity: {{ 'product.aico_pdp_message.select_quantity' | t | json }},
       error: {{ 'product.aico_pdp_message.error' | t | json }},
       max_quantity_reached: {{ 'product.aico_pdp_message.max_quantity_reached' | t | json }},
-      max_quantity_variant_reached: {{ 'product.aico_pdp_message.max_quantity_variant_reached' | t | json }}
+      max_quantity_variant_reached: {{ 'product.aico_pdp_message.max_quantity_variant_reached' | t | json }},
+      button_add_hint: {{ 'product.aico_pdp_message.button_add_hint' | t | json }},
+      button_update_hint: {{ 'product.aico_pdp_message.button_update_hint' | t | json }}
     };
   </script>
   <script src="{{ 'product-detail.js' | asset_url }}" defer></script>

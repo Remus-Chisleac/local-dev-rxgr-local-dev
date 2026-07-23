@@ -899,16 +899,22 @@
         if (isNaN(initial)) { initial = 0; }
         return n !== initial;
       });
-      var anySelected = sizeInputs.some(function (input) {
-        return (parseInt(input.value, 10) || 0) > 0;
-      });
-      if (!actionable && !anySelected) {
-        hint = getLocaleHint('select_quantity', 'Select at least one size first.');
+      if (!actionable) {
+        // Inactive for two different reasons: in "update" mode the cart
+        // already holds this product and nothing was changed; in "add" mode
+        // the cart is empty and no size is picked. Pick the matching hint by
+        // whether any cell was prefilled from the cart (data-aico-initial>0).
+        var inCart = sizeInputs.some(function (input) {
+          return (parseInt(input.getAttribute('data-aico-initial'), 10) || 0) > 0;
+        });
+        hint = inCart
+          ? getLocaleHint('button_update_hint', 'No changes — adjust a quantity to update your cart.')
+          : getLocaleHint('button_add_hint', 'Select a size to add it to your cart.');
       }
     } else {
       actionable = !!buildAddPayload();
       if (!actionable) {
-        hint = getLocaleHint('select_quantity', 'Select at least one size first.');
+        hint = getLocaleHint('button_add_hint', 'Select a size to add it to your cart.');
       }
     }
     button.classList.toggle('aico-pdp-buy-button--inactive', !actionable);
