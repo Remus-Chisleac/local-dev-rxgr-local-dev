@@ -23,7 +23,7 @@
   "initialBillingAddressId": {{ checkout.selected_billing_address_id | default: 0 | json }},
   "initialDeliveryAddressId": {{ checkout.selected_shipping_address_id | default: 0 | json }},
   "initialPaymentMethodId": {{ checkout.selected_payment_method_id | default: 0 | json }},
-  "creditLimit": {% if customer.aico_debtor %}{{ customer.aico_debtor.credit_limit | default: 0 | json }}{% else %}0{% endif %},
+  "creditLimit": {% if customer.aico_debtor %}{{ customer.aico_debtor.credit_limit | default: 0 | minus: customer.aico_debtor.current_credit | json }}{% else %}0{% endif %},
   "shippingBlocked": {{ customer.aico_shipping_block | json }},
   "paymentMethods": [
     {%- for pm in checkout.payment_methods -%}

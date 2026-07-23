@@ -56,7 +56,7 @@
     </template>
 
     {% if customer.aico_debtor %}
-      <template x-if="window.__AICO_FLAGS__ && window.__AICO_FLAGS__.credit_limit_enforcement && $store.cart.data && $store.cart.data.total_price > {{ customer.aico_debtor.credit_limit }}">
+      <template x-if="window.__AICO_FLAGS__ && window.__AICO_FLAGS__.credit_limit_enforcement && $store.cart.data && $store.cart.data.total_price > {{ customer.aico_debtor.credit_limit | minus: customer.aico_debtor.current_credit }}">
         <div class="aico-alert aico-alert-warning" role="alert">
           {{ 'cart.alerts.credit_limit_exceeded' | t }}
         </div>
@@ -224,7 +224,7 @@
           {% if customer.aico_debtor %}
             <p class="aico-cart-summary-credit">
               {{ 'cart.summary.credit_limit' | t }}:
-              <span>{{ customer.aico_debtor.credit_limit | money }}</span>
+              <span>{{ customer.aico_debtor.credit_limit | minus: customer.aico_debtor.current_credit | money }}</span>
             </p>
           {% endif %}
 
