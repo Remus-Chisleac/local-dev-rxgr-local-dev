@@ -28,6 +28,17 @@
   The component verifies the payment session via /checkout/payment-status
   before showing the success card, then rewrites the URL to `?order=`.
 
+  Status medallion: the success card SERVER-RENDERS the processing state
+  (sweeping spinner arc + "is being processed" heading + aria-busy), exactly
+  like the preorder confirmation — landing here straight after submit must
+  never flash a green checkmark over an order that is still saving. Alpine
+  flips `is-confirmed` on the card once the totals are in and CSS runs the
+  hand-off from there: the orange spinner fades out while a green ring draws
+  itself closed on the SAME circumference, the disc pops in behind it, the
+  checkmark strokes on top and the confirmed copy rises in underneath. Every
+  step is a CSS transition on one class flip — no JS timers — and the whole
+  sequence collapses to its final frame under prefers-reduced-motion.
+
   Background color: the page gutters take the current selected brand's
   `color_schema.checkoutConfirmation.bg` (exposed on
   `customer.aico_selected_brand.aico_checkout_confirmation_bg_color`), applied at
@@ -43,9 +54,33 @@
 {%- assign ty_order_number = request.query.order | default: request.query.order_number | default: request.query.orderRef -%}
 
 {% capture ty_success_card %}
-    <div class="aico-checkout-thank-you-card">
-      <div class="aico-checkout-thank-you-icon" aria-hidden="true">&#10003;</div>
-      <h1 class="aico-checkout-thank-you-title">{{ 'checkout.thank_you.title' | t }}</h1>
+    <div class="aico-checkout-thank-you-card"
+         :class="{ 'is-confirmed': !pending && !notFound, 'is-not-found': notFound }"
+         :aria-busy="pending && !notFound ? 'true' : 'false'">
+
+      {%- comment -%} Spinner and checkmark are the SAME medallion: all four
+        circles share one geometry (r=24 on a 52×52 box, C ≈ 151), so the
+        sweeping arc and the drawn success ring sit on exactly the same
+        circumference and the swap reads as one continuous shape rather than
+        two icons replacing each other. {%- endcomment -%}
+      <div class="aico-ty-status" aria-hidden="true" x-show="!notFound">
+        <svg class="aico-ty-status-svg" viewBox="0 0 52 52" focusable="false" role="presentation">
+          <circle class="aico-ty-status-track" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-spin" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-ring" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-disc" cx="26" cy="26" r="24"/>
+          <path class="aico-ty-status-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+
+      {%- comment -%} The processing heading is the server-rendered default; the
+        confirmed one is x-cloak'd so it can never paint before Alpine knows the
+        order is saved. aria-live announces the swap to screen readers.
+      {%- endcomment -%}
+      <h1 class="aico-checkout-thank-you-title" x-show="!notFound" aria-live="polite">
+        <span x-show="pending">{{ 'checkout.thank_you.processing_title' | t }}</span>
+        <span class="aico-ty-reveal" x-show="!pending" x-cloak>{{ 'checkout.thank_you.title' | t }}</span>
+      </h1>
 
       <p class="aico-checkout-thank-you-order" x-show="orderNumber && !notFound">
         {{ 'checkout.thank_you.order_number' | t }}:
@@ -53,15 +88,17 @@
       </p>
 
       {%- comment -%} Still saving: the totals are not trustworthy yet, so show
-        the wait state rather than a half-filled or query-supplied breakdown. {%- endcomment -%}
-      <p class="aico-checkout-thank-you-confirming" x-show="pending && !notFound" x-cloak>
+        the wait state rather than a half-filled or query-supplied breakdown.
+        Server-rendered (no x-cloak) — it belongs to the processing state the
+        page lands in. {%- endcomment -%}
+      <p class="aico-checkout-thank-you-confirming" x-show="pending && !notFound">
         {{ 'checkout.thank_you.confirming' | t }}
       </p>
 
       {%- comment -%} Authoritative totals read back from the persisted aico
         order (aico_shop_orders + the ecommerce order's discount line item) —
         exactly what the backend charged, including the promo-code discount. {%- endcomment -%}
-      <dl class="aico-checkout-thank-you-totals" x-show="summary" x-cloak>
+      <dl class="aico-checkout-thank-you-totals aico-ty-reveal" x-show="summary" x-cloak>
         <div class="aico-checkout-summary-row">
           <dt>{{ 'checkout.summary.subtotal' | t }}</dt>
           <dd x-text="formatSummary('subtotal')"></dd>
@@ -91,7 +128,9 @@
         </div>
       </dl>
 
-      <p class="aico-checkout-thank-you-email" x-show="!notFound">{{ 'checkout.thank_you.email_confirmation' | t }}</p>
+      {%- comment -%} The confirmation mail only goes out once the order is
+        actually saved, so this claim waits for the confirmed state too. {%- endcomment -%}
+      <p class="aico-checkout-thank-you-email aico-ty-reveal" x-show="!pending && !notFound" x-cloak>{{ 'checkout.thank_you.email_confirmation' | t }}</p>
 
       {%- comment -%} Unknown order number, or one belonging to another
         organisation — /checkout/order-summary answers 404 either way and never

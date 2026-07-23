@@ -534,6 +534,7 @@
     },
     "thank_you": {
       "title": "Thank you for your order",
+      "processing_title": "Your order is being processed",
       "order_number": "Order number",
       "email_confirmation": "An order confirmation has been sent to you by email.",
       "continue": "Continue shopping",

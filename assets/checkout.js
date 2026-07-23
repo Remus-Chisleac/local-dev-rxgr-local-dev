@@ -639,6 +639,8 @@
       notFound: false,
       _pusher: null,
       _channel: null,
+      // When the page started waiting — see MIN_SPINNER_MS below.
+      _openedAt: 0,
 
       init: function () {
         var query = new URLSearchParams(window.location.search);
@@ -648,6 +650,7 @@
         this.orderNumber = query.get('order')
           || query.get('order_number') || query.get('orderRef') || '';
         this.orderId = query.get('order_id') || '';
+        this._openedAt = Date.now();
         this.resetCartBadge();
         this.loadOrderSummary(0);
 
@@ -790,8 +793,7 @@
       },
 
       onOrderReady: function (body) {
-        this.summary = body;
-        this.pending = false;
+        var self = this;
         this.notFound = false;
         if (body.order_number) this.orderNumber = String(body.order_number);
         if (body.order_id) this.orderId = String(body.order_id);
@@ -800,6 +802,28 @@
         // optimistic zero with the authoritative cart.
         this.refreshCartStore();
         this.canonicaliseUrl();
+
+        // Clearing `pending` is what starts the CSS spinner → checkmark
+        // hand-off, so it is held until the spinner has been on screen long
+        // enough to be read as a state and not as a flicker. Reloading a
+        // long-since-saved order answers in ~50ms, which without this would
+        // paint one frame of spinner and then jump.
+        this.afterMinimumWait(function () {
+          self.summary = body;
+          self.pending = false;
+        });
+      },
+
+      // Run `done` once at least MIN_SPINNER_MS have passed since the page
+      // opened — immediately if that is already true.
+      afterMinimumWait: function (done) {
+        var MIN_SPINNER_MS = 650;
+        var waited = Date.now() - (this._openedAt || 0);
+        if (waited >= MIN_SPINNER_MS) {
+          done();
+          return;
+        }
+        setTimeout(done, MIN_SPINNER_MS - waited);
       },
 
       // Rewrite a legacy `?order_number=…&subtotal=…` URL to the canonical

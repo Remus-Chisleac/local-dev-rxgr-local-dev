@@ -534,6 +534,7 @@
     },
     "thank_you": {
       "title": "Vielen Dank für Ihre Bestellung",
+      "processing_title": "Ihre Bestellung wird verarbeitet",
       "order_number": "Bestellnummer",
       "email_confirmation": "Eine Bestellbestätigung wurde Ihnen per E-Mail zugesendet.",
       "continue": "Weiter einkaufen",

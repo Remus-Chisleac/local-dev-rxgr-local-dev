@@ -5363,17 +5363,142 @@ button.aico-home-brand-card {
   gap: 1.25rem;
   align-items: center;
 }
-.aico-checkout-thank-you-icon {
-  /* Same success check as the preorder thank-you (.aico-preorder-confirmation-check):
-     solid-green circle with a white checkmark. */
-  width: 3rem; height: 3rem;
-  background: #1f9d55;
-  color: #fff;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center;
+/* ── Status medallion: spinner → checkmark ──────────────────────────
+   One SVG carries both states. All four circles share r=24 on a 52×52 box
+   (C = 2πr ≈ 151), so the sweeping "still saving" arc and the drawn success
+   ring trace the SAME circumference — the swap reads as one shape resolving
+   itself, not as a spinner being replaced by an icon.
+
+   The processing look is the default (server-rendered, so landing here right
+   after submit never flashes a green check over an order that is still
+   saving); the thank-you template's Alpine component adds `is-confirmed` to
+   the card once /checkout/order-summary answers, and every step below is a
+   plain CSS transition off that one class flip. Sequence, in ms from the
+   flip: spinner fades out 0-180, green ring draws closed 20-520, disc pops in
+   340-640, check strokes on 440-740, body copy rises in 100-720.
+
+   The copy deliberately starts early rather than queueing behind the check:
+   revealing it is what grows the card to its full height, and that happens the
+   instant Alpine un-hides the elements. Holding the fade back would leave a
+   tall, visibly empty card sitting under the medallion for half a second. */
+.aico-ty-status {
+  width: 4.5rem;
+  height: 4.5rem;
 }
+.aico-ty-status-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* The confirm "pop" scales past the viewBox edge; without this the ring
+     would be clipped at its widest frame. */
+  overflow: visible;
+}
+.aico-ty-status-track,
+.aico-ty-status-spin,
+.aico-ty-status-ring {
+  fill: none;
+  stroke-width: 3;
+}
+/* Faint full ring the spinner arc travels along, so the medallion reads as a
+   circle rather than a lone floating stroke. */
+.aico-ty-status-track {
+  stroke: rgba(0, 0, 0, 0.09);
+  transition: opacity 0.25s ease;
+}
+/* The sweeping arc: a quarter of the circumference, rotating. Same orange as
+   the preorder confirmation spinner, so both wait states match. */
+.aico-ty-status-spin {
+  stroke: var(--aico-ty-spinner, #e8702d);
+  stroke-linecap: round;
+  stroke-dasharray: 38 113;
+  transform-origin: 50% 50%;
+  animation: aico-ty-sweep 0.9s linear infinite;
+  transition: opacity 0.18s ease;
+}
+/* Success ring — held fully "undrawn" until the confirm flip. */
+.aico-ty-status-ring {
+  stroke: #1f9d55;
+  stroke-linecap: round;
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  /* -90deg starts the draw at 12 o'clock. */
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.02s;
+}
+/* Solid fill behind the check; scales up from nothing so the ring visibly
+   "fills in" instead of the colour just appearing. */
+.aico-ty-status-disc {
+  fill: #1f9d55;
+  transform: scale(0);
+  transform-origin: 50% 50%;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
+}
+.aico-ty-status-check {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 34;
+  stroke-dashoffset: 34;
+  /* A round cap still paints a dot at zero drawn length, which shows up as a
+     white speck on the green disc in the ~150ms before the stroke starts.
+     Held at opacity 0 and switched on exactly when the draw begins. */
+  opacity: 0;
+  transition:
+    stroke-dashoffset 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.44s,
+    opacity 0s linear 0.44s;
+}
+
+@keyframes aico-ty-sweep {
+  to { transform: rotate(360deg); }
+}
+
+/* Confirmed: hand the circle over from the spinner to the success ring. */
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-track,
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin {
+  opacity: 0;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring { stroke-dashoffset: 0; }
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc { transform: scale(1); }
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check { stroke-dashoffset: 0; opacity: 1; }
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg {
+  animation: aico-ty-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
+}
+@keyframes aico-ty-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+
+/* Confirmed copy (thank-you heading, totals, email note) is x-show'd, so it
+   only exists once the order is saved — the animation therefore fires exactly
+   once, on reveal. Staggered so the block settles after the check lands. */
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal {
+  animation: aico-ty-rise 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-checkout-thank-you-title .aico-ty-reveal { animation-delay: 0.1s; }
+.aico-checkout-thank-you-card.is-confirmed .aico-checkout-thank-you-totals { animation-delay: 0.2s; }
+.aico-checkout-thank-you-card.is-confirmed .aico-checkout-thank-you-email { animation-delay: 0.3s; }
+@keyframes aico-ty-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Motion-sensitive shoppers get the same information, none of the movement:
+   the medallion renders as the finished green check and the copy just appears. */
+@media (prefers-reduced-motion: reduce) {
+  .aico-ty-status-spin { animation: none; }
+  .aico-ty-status-track,
+  .aico-ty-status-spin,
+  .aico-ty-status-ring,
+  .aico-ty-status-disc,
+  .aico-ty-status-check { transition: none; }
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal { animation: none; }
+}
+
 .aico-checkout-thank-you-title { font-size: 1.5rem; font-weight: 700; margin: 0; }
 .aico-checkout-thank-you-order { margin: 0; font-size: 1rem; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-thank-you-order strong { color: var(--aico-fg, #1a1a1a); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -5383,6 +5508,10 @@ button.aico-home-brand-card {
 .aico-checkout-thank-you-totals dt { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-thank-you-totals dd { margin: 0; font-weight: 600; }
 .aico-checkout-thank-you-email { margin: 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
+/* Wait-state sub-copy under the spinner, and the 404 line — same muted weight
+   as the email note so neither reads as an alert. */
+.aico-checkout-thank-you-confirming { margin: 0; font-size: 0.9375rem; color: var(--aico-muted-fg, #6b7280); }
+.aico-checkout-thank-you-not-found { margin: 0; font-size: 0.9375rem; color: var(--aico-muted-fg, #6b7280); }
 /* Adyen return-leg error card (payment cancelled / status unverified). */
 .aico-checkout-payment-error { gap: 0.75rem; }
 .aico-checkout-payment-error p { margin: 0; font-size: 0.9375rem; color: var(--aico-fg, #1a1a1a); }
