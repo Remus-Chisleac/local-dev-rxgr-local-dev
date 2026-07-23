@@ -79,24 +79,12 @@
     productMaxQty = null;
   }
 
-  var maxQtyNote = form.querySelector('[data-aico-max-qty-note]');
-
   function maxQtyMessage(kind, count) {
     var fallback = kind === 'variant'
       ? 'Maximum order quantity of {count} per size reached.'
       : 'Maximum order quantity of {count} for this product reached.';
     var key = kind === 'variant' ? 'max_quantity_variant_reached' : 'max_quantity_reached';
     return getLocaleHint(key, fallback).replace('{count}', String(count));
-  }
-
-  function showMaxQtyNote(kind, count) {
-    if (!maxQtyNote) return;
-    maxQtyNote.textContent = maxQtyMessage(kind, count);
-    maxQtyNote.hidden = false;
-  }
-
-  function hideMaxQtyNote() {
-    if (maxQtyNote) maxQtyNote.hidden = true;
   }
 
   // Reflect a computed ceiling on ONE quantity input, so the cap is visible
@@ -471,8 +459,7 @@
     }
 
     // Clamp one cell to the stricter of its warehouse stock and its
-    // per-variant max order quantity. Reports whether the MAX (not stock)
-    // was the binding constraint so the notice only fires for the cap.
+    // per-variant max order quantity.
     function clamp(input) {
       var stock = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
       var variantMax = variantMaxOf(input);
@@ -480,34 +467,26 @@
       if (isNaN(raw) || raw < 0) {
         raw = 0;
       }
-      var clampedByMax = null;
       if (!isNaN(stock) && raw > stock) {
         raw = stock;
       }
       if (variantMax !== null && raw > variantMax) {
         raw = variantMax;
-        clampedByMax = variantMax;
       }
       input.value = String(raw);
-      return { value: raw, clampedByMax: clampedByMax };
+      return raw;
     }
 
     function refresh(event) {
       var total = 0;
-      var variantClampMax = null;
       inputs.forEach(function (input) {
-        var result = clamp(input);
-        total += result.value;
-        if (result.clampedByMax !== null) {
-          variantClampMax = result.clampedByMax;
-        }
+        total += clamp(input);
       });
 
       // Product-wide cap ("for all variants"): the matrix posts ABSOLUTE
       // quantities for every variant (pre-filled from the cart), so the cap
       // is simply the sum of the inputs — pull the just-edited cell back by
       // the overflow.
-      var productClamped = false;
       if (productMaxAllVariants && productMaxQty !== null && total > productMaxQty) {
         var target = event && event.target && inputs.indexOf(event.target) !== -1 ? event.target : null;
         if (!target) {
@@ -524,20 +503,18 @@
           target.value = String(next);
           total -= (current - next);
         }
-        productClamped = true;
       }
 
       totalNode.textContent = String(total);
 
-      // Per-cell state: in-cart accent, the cell's own ceiling and the at-cap
-      // visual, plus the localized notice. The server only stamps
-      // `aico-pdp-size-cell-in-cart` at page load, so zeroing a size (or
-      // typing into a new one) must re-evaluate the border here. The ceiling
-      // is the strictest of warehouse stock, the cell's own cap and the
-      // head-room left under the product-wide cap (the total minus what this
-      // very cell already contributes) — stamping it on the input is what
-      // stops the increment BEFORE the value has to be pulled back.
-      var atProductCap = productMaxAllVariants && productMaxQty !== null && total >= productMaxQty;
+      // Per-cell state: in-cart accent + the cell's ceiling. The server only
+      // stamps `aico-pdp-size-cell-in-cart` at page load, so zeroing a size
+      // (or typing into a new one) must re-evaluate it here. The ceiling is
+      // the strictest of warehouse stock, the cell's own cap and the head-room
+      // left under the product-wide cap (total minus what this very cell
+      // contributes) — stamping it on the input stops the increment BEFORE the
+      // value has to be pulled back. The reason surfaces only as the "+" hover
+      // tooltip (applyQtyCeiling); no red border, no inline notice.
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
         var variantMax = variantMaxOf(input);
@@ -563,17 +540,10 @@
         var cell = input.closest('[data-aico-size-cell]');
         if (cell) {
           cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
-          cell.classList.toggle('aico-pdp-size-cell-at-max', kind !== null && value >= ceiling);
         }
       });
 
-      if (productClamped || atProductCap) {
-        showMaxQtyNote('product', productMaxQty);
-      } else if (variantClampMax !== null) {
-        showMaxQtyNote('variant', variantClampMax);
-      } else {
-        hideMaxQtyNote();
-      }
+      syncButtonState();
     }
 
     inputs.forEach(function (input) {
@@ -648,7 +618,6 @@
         }
         setBuyHint(maxQtyMessage(capKind, cap));
         applyQtyCeiling(qtyInput, 0, capKind, cap);
-        showMaxQtyNote(capKind, cap);
         return;
       }
       if (buyButton && !buttonInitiallyDisabled) {
@@ -664,11 +633,6 @@
         qtyInput.value = String(room);
       }
       applyQtyCeiling(qtyInput, room, capKind, cap);
-      if (value >= room) {
-        showMaxQtyNote(capKind, cap);
-      } else {
-        hideMaxQtyNote();
-      }
     }
 
     legacyMaxClamp = clampLegacy;
@@ -814,9 +778,15 @@
         if (isNaN(initial)) { initial = 0; }
         return n !== initial;
       });
-      if (!anySelected && !anyChanged) {
+      if (!anyChanged) {
+        // Nothing differs from what the cart already holds — an identical
+        // bulk update is a no-op, so block it. Nudge with the "pick a size"
+        // hint only when the selection is genuinely empty; a matching in-cart
+        // state is simply inactive, not an error.
         event.preventDefault();
-        renderError('select_quantity');
+        if (!anySelected) {
+          renderError('select_quantity');
+        }
         return;
       }
     }
@@ -885,6 +855,7 @@
       if (legacyMaxClamp) {
         legacyMaxClamp();
       }
+      syncButtonState();
     });
   });
 
@@ -913,6 +884,37 @@
       if (next) { label.textContent = next; }
     }
   }
+
+  // Reflect an "actionable" state on the buy button: solid orange when there
+  // is something to do, an outline/ghost when the size selection already
+  // matches the cart (matrix) or no variant+quantity is resolved yet (legacy).
+  // The submit handler is the real guard — this is the matching visual cue. A
+  // hard-disabled button (shipping blocked / in-flight submit / max cap) is
+  // left untouched.
+  function syncButtonState() {
+    var button = form.querySelector('[data-aico-buy-button]');
+    if (!button || button.hasAttribute('disabled')) {
+      return;
+    }
+    var actionable;
+    if (hasMatrix) {
+      actionable = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]')).some(function (input) {
+        var n = parseInt(input.value, 10);
+        var initial = parseInt(input.getAttribute('data-aico-initial'), 10);
+        if (isNaN(n)) { n = 0; }
+        if (isNaN(initial)) { initial = 0; }
+        return n !== initial;
+      });
+    } else {
+      actionable = !!buildAddPayload();
+    }
+    button.classList.toggle('aico-pdp-buy-button--inactive', !actionable);
+    button.setAttribute('aria-disabled', actionable ? 'false' : 'true');
+  }
+
+  form.addEventListener('input', syncButtonState);
+  form.addEventListener('change', syncButtonState);
+  syncButtonState();
 
   // Successful adds surface via the cart store's toast now, so clear any
   // leftover inline pre-flight message instead of writing a success line.

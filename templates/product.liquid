@@ -465,14 +465,6 @@
           {%- endif -%}
 
           {%- comment -%}
-            Max-order-quantity notice — filled and revealed by
-            product-detail.js when a quantity gets clamped to the PIM
-            "Max. Bestellmenge" (per variant, or product-wide when the
-            "for all variants" flag is on).
-          {%- endcomment -%}
-          <p class="aico-pdp-buy-hint aico-pdp-buy-hint-danger" data-aico-max-qty-note hidden role="status"></p>
-
-          {%- comment -%}
             `data-aico-buy-actions` marks the hover surface for the add-to-cart
             button: product-detail.js parks the max-order-quantity reason here
             (as a title) when it disables the button, because a disabled
