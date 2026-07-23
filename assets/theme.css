@@ -3642,22 +3642,21 @@ button.aico-home-brand-card {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 .aico-pdp-buy-button[disabled] { opacity: 0.6; cursor: not-allowed; }
-/* Inactive/outline state — nothing to add or update yet: the size selection
-   already matches the cart, or no variant+quantity is resolved. Ghost look
-   (orange outline, no fill); becomes solid orange once there's a change.
-   Visual cue only — the submit handler is the real guard, so it stays
-   focusable rather than [disabled]. */
+/* Inactive state — nothing to add or update yet: the size selection already
+   matches the cart, or no variant+quantity is resolved. Muted/greyed with a
+   not-allowed cursor so it reads as disabled; becomes solid orange once there
+   is a change. The reason shows on hover (title tooltip). Kept focusable
+   rather than [disabled] so the hover tooltip works and the submit handler
+   stays the real guard. */
 .aico-pdp-buy-button--inactive,
-.aico-pdp-buy-button--inactive:hover:not([disabled]) {
-  background: transparent;
-  color: #e8702d;
-  border-color: #e8702d;
-  box-shadow: none;
-  cursor: default;
-}
+.aico-pdp-buy-button--inactive:hover:not([disabled]),
 .aico-pdp-buy-button--inactive:active:not([disabled]) {
-  transform: none;
+  background: transparent;
+  color: var(--aico-muted-fg);
+  border-color: #d1d5db;
   box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
 }
 .aico-pdp-buy-hint { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--aico-muted-fg); }
 .aico-pdp-buy-hint-danger { color: #b91c1c; }

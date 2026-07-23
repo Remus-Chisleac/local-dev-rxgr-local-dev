@@ -762,15 +762,10 @@
     // mode is too dynamic for plain HTML constraints.
     if (hasMatrix) {
       // Matrix posts set ABSOLUTE quantities (mirror-cart semantics). Allow
-      // the submit when something is selected OR when the shopper changed a
-      // cell away from its prefilled cart value — including zeroing a size
-      // out to remove it. Only block when nothing is selected and nothing
-      // changed (empty cart, no picks).
+      // the submit only when the shopper changed a cell away from its
+      // prefilled cart value — including zeroing a size out to remove it.
+      // An unchanged matrix (already matches the cart, or empty) is a no-op.
       var sizeInputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
-      var anySelected = sizeInputs.some(function (input) {
-        var n = parseInt(input.value, 10);
-        return !isNaN(n) && n > 0;
-      });
       var anyChanged = sizeInputs.some(function (input) {
         var n = parseInt(input.value, 10);
         var initial = parseInt(input.getAttribute('data-aico-initial'), 10);
@@ -780,13 +775,10 @@
       });
       if (!anyChanged) {
         // Nothing differs from what the cart already holds — an identical
-        // bulk update is a no-op, so block it. Nudge with the "pick a size"
-        // hint only when the selection is genuinely empty; a matching in-cart
-        // state is simply inactive, not an error.
+        // bulk update is a no-op, so block it silently. The inactive button
+        // already carries the reason as a hover tooltip (syncButtonState);
+        // no inline click-message.
         event.preventDefault();
-        if (!anySelected) {
-          renderError('select_quantity');
-        }
         return;
       }
     }
@@ -897,19 +889,36 @@
       return;
     }
     var actionable;
+    var hint = '';
     if (hasMatrix) {
-      actionable = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]')).some(function (input) {
+      var sizeInputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
+      actionable = sizeInputs.some(function (input) {
         var n = parseInt(input.value, 10);
         var initial = parseInt(input.getAttribute('data-aico-initial'), 10);
         if (isNaN(n)) { n = 0; }
         if (isNaN(initial)) { initial = 0; }
         return n !== initial;
       });
+      var anySelected = sizeInputs.some(function (input) {
+        return (parseInt(input.value, 10) || 0) > 0;
+      });
+      if (!actionable && !anySelected) {
+        hint = getLocaleHint('select_quantity', 'Select at least one size first.');
+      }
     } else {
       actionable = !!buildAddPayload();
+      if (!actionable) {
+        hint = getLocaleHint('select_quantity', 'Select at least one size first.');
+      }
     }
     button.classList.toggle('aico-pdp-buy-button--inactive', !actionable);
     button.setAttribute('aria-disabled', actionable ? 'false' : 'true');
+    // The reason lives on hover (tooltip), not an on-click inline message.
+    if (hint) {
+      button.setAttribute('title', hint);
+    } else {
+      button.removeAttribute('title');
+    }
   }
 
   form.addEventListener('input', syncButtonState);
