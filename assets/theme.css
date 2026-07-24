@@ -9891,7 +9891,11 @@ html.aico-preorder-gallery-open {
 
 .aico-preorder-confirmation--processing .aico-preorder-confirmation-progress:not([hidden]) {
   display: block;
-  margin-top: 0.75rem;
+  /* Sits between the medallion and the header, so it carries its own centring
+     (the header's text-align no longer applies) and a tightened top gap — the
+     count is the spinner's caption, not a line of the header copy. */
+  text-align: center;
+  margin: -0.25rem 0 0.9rem;
 }
 
 .aico-preorder-confirmation-progress-count {

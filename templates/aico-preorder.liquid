@@ -657,20 +657,22 @@
       </svg>
     </div>
 
+    {%- comment -%} Submit progress count — same block as the thank-you
+      template: directly under the medallion so it reads as the spinner's
+      caption, hidden until a counter exists. {%- endcomment -%}
+    <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
+      data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
+      <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
+    </div>
+
     <header class="aico-preorder-confirmation-head">
       <h2 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h2>
       <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
-      {%- comment -%} Submit progress count — same block as the thank-you
-        template; hidden until a counter exists. {%- endcomment -%}
-      <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-        aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
-        data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
-        <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
-      </div>
     </header>
 
     <div class="aico-preorder-confirmation-number-box">

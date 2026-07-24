@@ -82,27 +82,33 @@
       </svg>
     </div>
 
+    {%- comment -%}
+      Real submit progress, on both submit flows (first submit and edit
+      re-submit). The count is seeded from the confirmation endpoint's
+      processing block (0 / X) on the very first request and then advanced by
+      PreorderSubmitProgressEvent; the medallion above carries the same
+      fraction on its ring. Stays hidden when no counter exists at all. The
+      count template keeps its {{ processed }}/{{ total }} placeholders (the t
+      filter only interpolates args it is given) for client-side substitution.
+
+      It sits directly under the medallion — NOT in the header — so the count
+      reads as the spinner's own caption: the two are the only moving parts of
+      the wait state, and the title/message between them made the number look
+      like a footnote to the copy instead of the spinner's progress.
+    {%- endcomment -%}
+    <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
+      data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
+      <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
+    </div>
+
     <header class="aico-preorder-confirmation-head">
       <h1 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.processing_title' | t }}</h1>
       <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.processing_message' | t }}</p>
-      {%- comment -%}
-        Real submit progress, on both submit flows (first submit and edit
-        re-submit). The count is seeded from the confirmation endpoint's
-        processing block (0 / X) on the very first request and then advanced by
-        PreorderSubmitProgressEvent; the medallion above carries the same
-        fraction on its ring. Stays hidden when no counter exists at all. The
-        count template keeps its {{ processed }}/{{ total }} placeholders (the t
-        filter only interpolates args it is given) for client-side substitution.
-      {%- endcomment -%}
-      <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-        aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
-        data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
-        <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
-      </div>
     </header>
 
     <div class="aico-preorder-confirmation-number-box">
