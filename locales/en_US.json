@@ -119,7 +119,6 @@
     },
     "quick_add": {
       "open_aria": "Add {title} to cart",
-      "update_cart": "Update cart",
       "close": "Close",
       "error": "Could not load this product.",
       "sold_out": "This product is currently sold out.",
@@ -343,6 +342,7 @@
     "quantity": "Quantity",
     "choose": "Choose…",
     "add_to_cart": "Add to cart",
+    "update_cart": "Update cart",
     "restricted": "Restricted",
     "shipping_blocked_hint": "Shipping is blocked for your account — you cannot add items to the cart.",
     "info_tabs_aria": "Product information",

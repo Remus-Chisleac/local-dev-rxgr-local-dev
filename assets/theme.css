@@ -11233,6 +11233,96 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 /* The submit reuses .aico-pdp-buy-button; just space it off the total row. */
 .aico-quick-add-submit { margin-top: 1rem; }
 
+/* PDP size-cell internals, scoped to the modal.
+
+   The matrix inside the modal is built from the SAME classes as
+   templates/product.liquid's cells, so on theme copies whose PDP already
+   ships these rules globally they are an exact duplicate and change
+   nothing. They are repeated here (scoped) so the modal is self-contained:
+   the shared scaffold's PDP predates the qty-box/stepper markup, and
+   without these the modal would fall back to bare number inputs. */
+.aico-quick-add-modal .aico-pdp-qty-box {
+  grid-column: 2;
+  display: flex;
+  align-items: stretch;
+  width: 3.25rem;
+  height: 1.875rem;
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius, 2px);
+  background: var(--aico-bg);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.aico-quick-add-modal .aico-pdp-qty-box:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+.aico-quick-add-modal .aico-pdp-size-cell-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0 0.2rem;
+  border: 0;
+  background: transparent;
+  font-size: 0.8125rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--aico-fg);
+  appearance: textfield;
+}
+.aico-quick-add-modal .aico-pdp-size-cell-input:focus { outline: none; }
+.aico-quick-add-modal .aico-pdp-qty-box__spinners {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 15px;
+  width: 15px;
+  align-self: stretch;
+  background: var(--aico-muted);
+  border-left: 1px solid var(--aico-border);
+}
+/* Two equal halves: the top increments, the bottom decrements. */
+.aico-quick-add-modal .aico-pdp-qty-box__step {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--aico-fg);
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-quick-add-modal .aico-pdp-qty-box__step + .aico-pdp-qty-box__step {
+  border-top: 1px solid var(--aico-border);
+}
+.aico-quick-add-modal .aico-pdp-qty-box__step:hover { background: var(--aico-muted-strong); }
+.aico-quick-add-modal .aico-pdp-qty-box__step[aria-disabled="true"],
+.aico-quick-add-modal .aico-pdp-qty-box__step[disabled] {
+  color: var(--aico-muted-fg);
+  cursor: not-allowed;
+}
+/* Cell already in the cart — accent it so the matrix reads as a cart mirror. */
+.aico-quick-add-modal .aico-pdp-size-cell-in-cart {
+  border-color: var(--color-accent);
+  background: rgba(37, 99, 235, 0.06);
+}
+/* Nothing to submit yet (selection still matches the cart) — ghost button
+   with the reason on hover, never a hard-disabled control. */
+.aico-quick-add-modal .aico-pdp-buy-button--inactive,
+.aico-quick-add-modal .aico-pdp-buy-button--inactive:hover:not([disabled]),
+.aico-quick-add-modal .aico-pdp-buy-button--inactive:active:not([disabled]) {
+  background: transparent;
+  color: var(--aico-muted-fg);
+  border-color: #d1d5db;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
 /* Loading skeleton — a row of pulsing size-cell placeholders. */
 .aico-quick-add-modal-loading {
   display: grid;

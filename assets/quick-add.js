@@ -12,10 +12,10 @@
 //
 // Semantics: ABSOLUTE quantities, like the PDP matrix (`bulkUpdate()` →
 // POST /cart/update.js). Inputs are PRE-FILLED from the current cart, so
-// the matrix state mirrors the cart state for this product and submitting
-// updates it; only variants the shopper actually changed are posted, so an
-// untouched line is never rewritten (e.g. a line already above today's
-// stock is left for the cart page's fix-quantities flow).
+// the matrix mirrors the cart for this product; submitting posts the whole
+// matrix (zeros included, so a cleared size removes its line). A matrix
+// that still matches the cart is a silent no-op — the button sits in the
+// PDP's inactive/ghost state with the reason on hover.
 (function () {
   'use strict';
 
@@ -304,9 +304,14 @@
       var initial = Number(inCart[variantId] || 0);
       initialByVariant[variantId] = initial;
 
+      // Cell markup mirrors templates/product.liquid's size cell exactly —
+      // same classes, same qty-box + spinner column — so the modal and the
+      // PDP matrix are visually identical and share theme.css.
       var cell = document.createElement('label');
       cell.className = 'aico-pdp-size-cell'
-        + (available && stock > 0 ? ' aico-pdp-size-cell-in-stock' : (available ? ' aico-pdp-size-cell-available' : ' aico-pdp-size-cell-out'));
+        + (available && stock > 0 ? ' aico-pdp-size-cell-in-stock' : (available ? ' aico-pdp-size-cell-available' : ' aico-pdp-size-cell-out'))
+        + (initial > 0 ? ' aico-pdp-size-cell-in-cart' : '');
+      cell.setAttribute('data-aico-size-cell', '');
 
       var label = document.createElement('span');
       label.className = 'aico-pdp-size-cell-label';
@@ -322,27 +327,64 @@
       if (isNaN(variantMax) || variantMax <= 0) {
         variantMax = null;
       }
+      var cellMax = (variantMax !== null && variantMax < stock) ? variantMax : stock;
+
+      var qtyBox = document.createElement('span');
+      qtyBox.className = 'aico-pdp-qty-box';
+      qtyBox.setAttribute('data-aico-stepper', '');
 
       var input = document.createElement('input');
       input.type = 'number';
       input.className = 'aico-pdp-size-cell-input';
       input.min = '0';
-      // A line already above today's stock keeps its cart value visible;
-      // any edit clamps back to the real ceiling (see clampInput).
-      input.max = String(Math.max(variantMax !== null ? Math.min(stock, variantMax) : stock, initial));
+      input.max = String(cellMax);
       input.step = '1';
       input.value = String(initial);
       input.inputMode = 'numeric';
       input.setAttribute('aria-label', t('qty_aria', 'Quantity'));
+      input.setAttribute('data-aico-size-qty', '');
       input.setAttribute('data-aico-variant-id', variantId);
       input.setAttribute('data-aico-variant-stock', String(stock));
       if (variantMax !== null) {
         input.setAttribute('data-aico-variant-max', String(variantMax));
       }
+      // Baseline for the "anything changed?" pre-flight — a zeroed cell that
+      // started above 0 is a REMOVE, not a no-op (absolute semantics).
+      input.setAttribute('data-aico-initial', String(initial));
       if (!available) {
         input.disabled = true;
       }
-      cell.appendChild(input);
+      qtyBox.appendChild(input);
+
+      var spinners = document.createElement('span');
+      spinners.className = 'aico-pdp-qty-box__spinners';
+      spinners.setAttribute('aria-hidden', 'true');
+      [
+        { step: '1', label: t('increase', 'Increase quantity'), path: 'M1 4 L4 1 L7 4' },
+        { step: '-1', label: t('decrease', 'Decrease quantity'), path: 'M1 1 L4 4 L7 1' }
+      ].forEach(function (spec) {
+        var stepButton = document.createElement('button');
+        stepButton.type = 'button';
+        stepButton.className = 'aico-pdp-qty-box__step';
+        stepButton.setAttribute('data-aico-step', spec.step);
+        stepButton.setAttribute('tabindex', '-1');
+        stepButton.setAttribute('aria-label', spec.label);
+        if (!available) {
+          stepButton.disabled = true;
+        }
+        stepButton.innerHTML = '<svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">'
+          + '<path d="' + spec.path + '" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '</svg>';
+        spinners.appendChild(stepButton);
+      });
+      qtyBox.appendChild(spinners);
+      cell.appendChild(qtyBox);
+
+      var srStock = document.createElement('span');
+      srStock.className = 'aico-pdp-size-cell-stock aico-sr-only';
+      srStock.textContent = stock > 0 ? String(stock) : '—';
+      cell.appendChild(srStock);
+
       grid.appendChild(cell);
       inputs.push(input);
     });
@@ -363,14 +405,29 @@
     maxNote.setAttribute('role', 'status');
     refs.body.appendChild(maxNote);
 
+    // Buy button — same markup/classes as the PDP's (icon + label span with
+    // the add/update label pair). It is NEVER hard-`disabled` for "nothing
+    // selected": that state is the inactive/ghost variant with the reason on
+    // hover, exactly like product-detail.js's syncButtonState.
     var submit = document.createElement('button');
     submit.type = 'button';
     submit.className = 'aico-pdp-buy-button aico-quick-add-submit';
+    submit.setAttribute('data-aico-buy-button', '');
+    submit.innerHTML = '<svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>'
+      + '<path d="M3 6h18"></path>'
+      + '<path d="M16 10a4 4 0 0 1-8 0"></path>'
+      + '</svg>';
+    var submitLabel = document.createElement('span');
+    submitLabel.setAttribute('data-aico-buy-label', '');
     var hasInitial = Object.keys(initialByVariant).some(function (key) { return initialByVariant[key] > 0; });
-    submit.textContent = shippingBlocked
+    submitLabel.textContent = shippingBlocked
       ? t('restricted', 'Restricted')
       : (hasInitial ? t('update_cart', 'Update cart') : t('add_to_cart', 'Add to cart'));
-    submit.disabled = true;
+    submit.appendChild(submitLabel);
+    if (shippingBlocked) {
+      submit.disabled = true;
+    }
     refs.body.appendChild(submit);
 
     if (shippingBlocked) {
@@ -379,12 +436,6 @@
       blockedHint.textContent = t('shipping_blocked_hint', '');
       refs.body.appendChild(blockedHint);
     }
-
-    var message = document.createElement('p');
-    message.className = 'aico-pdp-buy-hint aico-pdp-buy-hint-danger';
-    message.hidden = true;
-    message.setAttribute('role', 'status');
-    refs.body.appendChild(message);
 
     // ---- Guard rails (ports of product-detail.js's matrix refresh) ----
 
@@ -413,8 +464,6 @@
       var limit = ceilingOf(input);
       var clampedByMax = null;
       if (raw > limit.ceiling) {
-        // The prefill may legitimately sit above today's stock — only an
-        // EDIT is pulled back to the real ceiling.
         raw = limit.ceiling;
         if (limit.kind === 'variant') {
           clampedByMax = limit.count;
@@ -424,11 +473,68 @@
       return { value: raw, clampedByMax: clampedByMax };
     }
 
+    // Reflect a computed ceiling on one input: the HTML max stops the
+    // stepper, the "+" half goes inert (aria-disabled, not disabled — a
+    // disabled button swallows the hover that explains why), and the reason
+    // rides along as a title. Port of product-detail.js's applyQtyCeiling.
+    function applyQtyCeiling(input, ceiling, kind, count) {
+      var hasCeiling = typeof ceiling === 'number' && !isNaN(ceiling);
+      if (hasCeiling && ceiling >= 0) {
+        input.max = String(ceiling);
+      }
+      var value = parseInt(input.value, 10);
+      if (isNaN(value)) {
+        value = 0;
+      }
+      var reason = (hasCeiling && value >= ceiling && kind) ? maxQtyMessage(kind, count) : '';
+      if (reason) {
+        input.setAttribute('title', reason);
+      } else {
+        input.removeAttribute('title');
+      }
+      var box = input.closest ? input.closest('[data-aico-stepper]') : null;
+      if (!box) {
+        return;
+      }
+      if (reason) {
+        box.setAttribute('title', reason);
+      } else {
+        box.removeAttribute('title');
+      }
+      var plus = box.querySelector('[data-aico-step="1"]');
+      if (!plus || input.disabled) {
+        return;
+      }
+      if (hasCeiling && value >= ceiling) {
+        plus.setAttribute('aria-disabled', 'true');
+      } else {
+        plus.removeAttribute('aria-disabled');
+      }
+    }
+
     function isDirty() {
       return inputs.some(function (input) {
         var variantId = input.getAttribute('data-aico-variant-id');
         return Number(input.value || 0) !== Number(initialByVariant[variantId] || 0);
       });
+    }
+
+    // Inactive (ghost) button + hover reason, matching the PDP: the real
+    // guard is the submit handler; this is the visual cue.
+    function syncButtonState() {
+      if (submit.hasAttribute('disabled')) {
+        return;
+      }
+      var actionable = isDirty();
+      submit.classList.toggle('aico-pdp-buy-button--inactive', !actionable);
+      submit.setAttribute('aria-disabled', actionable ? 'false' : 'true');
+      if (actionable) {
+        submit.removeAttribute('title');
+        return;
+      }
+      submit.setAttribute('title', hasInitial
+        ? t('button_update_hint', 'No changes — adjust a quantity to update your cart.')
+        : t('button_add_hint', 'Select a size to add it to your cart.'));
     }
 
     function refresh(event) {
@@ -471,16 +577,21 @@
         var limit = ceilingOf(input);
         var ceiling = limit.ceiling;
         var kind = limit.kind;
+        var count = limit.count;
         if (productMaxAllVariants && productMaxQty !== null) {
           var room = Math.max(0, productMaxQty - (sum - value));
           if (room <= ceiling) {
             ceiling = room;
             kind = 'product';
+            count = productMaxQty;
           }
         }
+        applyQtyCeiling(input, ceiling, kind, count);
         var cell = input.closest ? input.closest('.aico-pdp-size-cell') : null;
         if (cell) {
           cell.classList.toggle('aico-pdp-size-cell-at-max', kind !== null && value >= ceiling);
+          // Cart-mirror accent follows the live value, like the PDP.
+          cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
         }
       });
 
@@ -494,16 +605,53 @@
         maxNote.hidden = true;
       }
 
-      if (!shippingBlocked) {
-        submit.disabled = !isDirty();
-      }
-      message.hidden = true;
+      syncButtonState();
     }
 
     inputs.forEach(function (input) {
       input.addEventListener('input', refresh);
       input.addEventListener('change', refresh);
       input.addEventListener('blur', refresh);
+    });
+
+    // Stepper halves — clamp to the input's own min/max and re-dispatch so
+    // refresh() recomputes. Port of product-detail.js's setupSteppers.
+    Array.prototype.forEach.call(grid.querySelectorAll('[data-aico-stepper]'), function (box) {
+      var input = box.querySelector('input[type="number"]');
+      if (!input) {
+        return;
+      }
+      Array.prototype.forEach.call(box.querySelectorAll('[data-aico-step]'), function (button) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          if (input.disabled || button.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
+          var step = parseInt(button.getAttribute('data-aico-step'), 10);
+          if (isNaN(step)) {
+            return;
+          }
+          var min = parseInt(input.getAttribute('min'), 10);
+          var max = parseInt(input.getAttribute('max'), 10);
+          var current = parseInt(input.value, 10);
+          if (isNaN(current)) {
+            current = isNaN(min) ? 0 : min;
+          }
+          var next = current + step;
+          if (!isNaN(min) && next < min) {
+            next = min;
+          }
+          if (!isNaN(max) && next > max) {
+            next = max;
+          }
+          if (next === current) {
+            return;
+          }
+          input.value = String(next);
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
     });
 
     // Region tab switching — swap every cell label from its data attrs.
@@ -528,9 +676,16 @@
       });
     });
 
-    // Submit — only the CHANGED variants, absolute quantities (a zeroed
-    // size removes its line; untouched lines are never posted).
+    // Submit — the FULL matrix as absolute quantities (zeros included, so a
+    // cleared size removes its line), exactly like the PDP's
+    // buildMatrixUpdates → store.bulkUpdate → POST /cart/update.js. An
+    // unchanged matrix is a silent no-op; the inactive button already
+    // carries the reason on hover.
     submit.addEventListener('click', function () {
+      if (!isDirty()) {
+        return;
+      }
+
       var store = cartStore();
       if (!store || typeof store.bulkUpdate !== 'function') {
         if (productUrl) {
@@ -542,26 +697,23 @@
       var updates = {};
       inputs.forEach(function (input) {
         var variantId = input.getAttribute('data-aico-variant-id');
+        if (!variantId) {
+          return;
+        }
         var qty = parseInt(input.value, 10);
         if (isNaN(qty) || qty < 0) {
           qty = 0;
         }
-        if (qty !== Number(initialByVariant[variantId] || 0)) {
-          updates[variantId] = qty;
-        }
+        updates[variantId] = qty;
       });
-      if (Object.keys(updates).length === 0) {
-        message.textContent = t('select_quantity', 'Select at least one size first.');
-        message.hidden = false;
-        return;
-      }
 
       submit.disabled = true;
       Promise.resolve(store.bulkUpdate(updates)).then(function (ok) {
         if (ok === false) {
           // The store already flashed cart.update_error; keep the modal
           // open so the shopper can retry.
-          submit.disabled = false;
+          submit.removeAttribute('disabled');
+          syncButtonState();
           return;
         }
         if (typeof store.flash === 'function') {
@@ -569,16 +721,12 @@
         }
         closeModal();
       }).catch(function () {
-        submit.disabled = false;
+        submit.removeAttribute('disabled');
+        syncButtonState();
       });
     });
 
     refresh();
-
-    var firstInput = inputs.filter(function (input) { return !input.disabled; })[0];
-    if (firstInput) {
-      firstInput.focus();
-    }
   }
 
   // ---- Open flow --------------------------------------------------------

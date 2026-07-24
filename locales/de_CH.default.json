@@ -119,7 +119,6 @@
     },
     "quick_add": {
       "open_aria": "{title} in den Warenkorb legen",
-      "update_cart": "Warenkorb aktualisieren",
       "close": "Schliessen",
       "error": "Dieses Produkt konnte nicht geladen werden.",
       "sold_out": "Dieses Produkt ist derzeit ausverkauft.",
@@ -343,6 +342,7 @@
     "quantity": "Menge",
     "choose": "Auswählen…",
     "add_to_cart": "In den Warenkorb",
+    "update_cart": "Warenkorb aktualisieren",
     "restricted": "Eingeschränkt",
     "shipping_blocked_hint": "Versand ist für Ihr Konto gesperrt — Sie können keine Artikel in den Warenkorb legen.",
     "info_tabs_aria": "Produktinformationen",
