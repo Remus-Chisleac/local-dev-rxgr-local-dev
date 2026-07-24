@@ -1354,6 +1354,31 @@
 
   CatalogController.prototype.bindQuantityInputs = function () {
     var self = this;
+    // Last quantity this controller announced to the cart for a cell — the value
+    // the backend is known to hold (or to be about to hold). Lives on the
+    // instance, not this closure, because render() rebuilds the grid and rebinds
+    // these handlers while the cells themselves keep their identity.
+    if (!self._announcedQty) self._announcedQty = {};
+
+    function cellKeyOf(input) {
+      return [
+        input.getAttribute('data-product-id'),
+        input.getAttribute('data-variant-id'),
+        input.getAttribute('data-date'),
+      ].join('|');
+    }
+
+    /**
+     * Seed the baseline for a cell from what it currently SHOWS. Only valid
+     * before an edit starts (focus, or a step click on an unfocused box), when
+     * the rendered value is still the committed one.
+     */
+    function seedBaseline(input, force) {
+      var key = cellKeyOf(input);
+      if (force || !(key in self._announcedQty)) {
+        self._announcedQty[key] = parseInt(input.value, 10) || 0;
+      }
+    }
 
     function clampFor(productId, variantId, dateLabel, raw, isStockRelevant, enforceFloor) {
       if (global.AicoPreorderStock && global.AicoPreorderStock.clampCell) {
@@ -1386,7 +1411,17 @@
       var display = qty > 0 ? String(qty) : '';
       if (input.value !== display) input.value = display;
       var product = self.findProduct(productId);
-      self.onQuantityChange(productId, variantId, dateLabel, qty, product);
+      // Nothing actually changed — don't announce it. Tabbing across a size row
+      // fires focus+blur on every cell, and blur committing an untouched value
+      // used to post one add.js per cell for a grid the shopper never edited.
+      // A commit that only re-snaps to the same number (the floor clamp) is the
+      // same no-op. The UI refresh below still runs: the editing border has to
+      // come off whether or not the value moved.
+      var key = cellKeyOf(input);
+      if (self._announcedQty[key] !== qty) {
+        self._announcedQty[key] = qty;
+        self.onQuantityChange(productId, variantId, dateLabel, qty, product);
+      }
       // Eager UI: update only this product's cells/totals in place. NEVER a full
       // render() here — that rebuilds the catalog's innerHTML on every keystroke,
       // and a rebuild during the blur half of a Tab destroys the very input Tab
@@ -1414,6 +1449,10 @@
       input.addEventListener('focus', function () {
         var box = input.closest('.aico-preorder-qty-box');
         if (box) box.classList.add('aico-preorder-qty-box--editing');
+        // Re-seed on every focus: what the box shows right now is the freshest
+        // truth for this cell (it may have been rewritten by a refresh since the
+        // last edit), and no typing has happened yet.
+        seedBaseline(input, true);
       });
       input.addEventListener('input', function () {
         apply(input, null, false);
@@ -1442,6 +1481,9 @@
         if (!input || input.disabled) return;
         var step = parseInt(btn.getAttribute('data-aico-preorder-qty-step'), 10) || 0;
         var current = parseInt(input.value, 10) || 0;
+        // A step click need not focus the box first, so make sure the cell has a
+        // baseline before the value moves.
+        seedBaseline(input, false);
         apply(input, current + step, true);
       });
     });

@@ -12,8 +12,10 @@
  * There are NO prices in the snapshot — checkout totals are computed client-side
  * from the catalog (see preorder-page.js).
  *
- * Writes are auto-saved (no "Save Cart" button): each quantity change debounces
- * then POSTs the absolute quantity to add.js / change.js. All writes are
+ * Writes are auto-saved (no "Save Cart" button): quantity changes are coalesced
+ * over a short window and POSTed as ONE batched add.js (Shopify's `items[]`
+ * shape) carrying the absolute quantity of every cell that moved; line removals
+ * by id still go to change.js. All writes are
  * serialized through a single promise chain so the client never races its own
  * optimistic version: each write reads `this.version` only after the previous
  * one has settled and updated it. A 409 (version_conflict) refetches the fresh
@@ -24,6 +26,15 @@
   'use strict';
 
   var FLYER_MAX = 3;
+
+  // Coalescing window for product-cell writes. Quiet time after the last edit
+  // before the batch goes out — long enough to swallow a tab-and-type burst
+  // across a size row, short enough that a single edit still saves as the
+  // shopper moves on.
+  var CELL_FLUSH_IDLE_MS = 150;
+  // Hard ceiling measured from the FIRST pending edit, so continuous editing
+  // still saves on a steady cadence instead of being pushed out indefinitely.
+  var CELL_FLUSH_MAX_MS = 600;
 
   function csrfToken() {
     return (
@@ -113,13 +124,15 @@
     this.snapshot = null;
     this.localCart = snapshotToLocalCart(null);
 
-    // serialization + debounce
+    // serialization + coalescing
     this.saving = false;
     this._writeChain = Promise.resolve();
     this._pendingWrites = 0;
-    this._debounceTimers = {};
-    // latest desired quantity per product/variant/date cell (absolute)
+    // latest desired quantity per product/variant/date cell (absolute), waiting
+    // out the coalescing window; flushed together as one batched write
     this._pendingCells = {};
+    this._flushTimer = null;
+    this._flushDeadline = 0;
   }
 
   CartController.prototype._cellKey = function (productId, variantId, dateLabel) {
@@ -155,10 +168,8 @@
    */
   CartController.prototype.hasPendingWork = function () {
     if (this._pendingWrites > 0) return true;
+    if (this._flushTimer) return true;
     var k;
-    for (k in this._debounceTimers) {
-      if (this._debounceTimers.hasOwnProperty(k)) return true;
-    }
     for (k in this._pendingCells) {
       if (this._pendingCells.hasOwnProperty(k)) return true;
     }
@@ -263,11 +274,16 @@
   };
 
   /**
-   * Auto-save a product quantity change. `quantity` is absolute. Debounced per
-   * cell, then enqueued so writes are serialized against the live version.
+   * Auto-save a product quantity change. `quantity` is absolute.
+   *
+   * Edits are COALESCED, not debounced per cell: the newest value for each cell
+   * is held, and one batched add.js goes out once the shopper pauses. Filling a
+   * size row by tab-and-type produced one request per cell before this — a dozen
+   * round-trips for what is a single intent — and each of those requests pays the
+   * whole shopper/shop/cart resolution again. The batch is applied server-side in
+   * one transaction (see StorefrontPreorderCartService::setItems).
    */
   CartController.prototype.updateQuantity = function (productId, variantId, dateLabel, quantity, product) {
-    var self = this;
     var key = this._cellKey(productId, variantId, dateLabel);
     this._pendingCells[key] = {
       productId: productId,
@@ -275,27 +291,72 @@
       dateLabel: dateLabel,
       quantity: quantity,
     };
-    if (this._debounceTimers[key]) clearTimeout(this._debounceTimers[key]);
-    this._debounceTimers[key] = setTimeout(function () {
-      delete self._debounceTimers[key];
-      var cell = self._pendingCells[key];
-      if (!cell) return;
-      delete self._pendingCells[key];
-      self._enqueue(function () {
-        return self._saveProductCell(cell);
-      });
-    }, 300);
+    this._scheduleFlush();
   };
 
-  CartController.prototype._saveProductCell = function (cell, isRetry) {
+  /**
+   * Arm (or re-arm) the coalescing window. Each new edit pushes the flush out by
+   * CELL_FLUSH_IDLE_MS, but never past CELL_FLUSH_MAX_MS from the first pending
+   * edit — otherwise sustained typing would keep resetting the timer and nothing
+   * would ever be saved while the shopper works.
+   */
+  CartController.prototype._scheduleFlush = function () {
     var self = this;
+    var now = new Date().getTime();
+    if (!this._flushDeadline) this._flushDeadline = now + CELL_FLUSH_MAX_MS;
+    if (this._flushTimer) clearTimeout(this._flushTimer);
+    var wait = Math.max(0, Math.min(CELL_FLUSH_IDLE_MS, this._flushDeadline - now));
+    this._flushTimer = setTimeout(function () {
+      self.flushPendingCells();
+    }, wait);
+  };
+
+  /**
+   * Send every pending cell as ONE write, now. Called by the coalescing timer
+   * and directly before a submit, so a value the shopper typed a moment earlier
+   * can never be left sitting in the window.
+   */
+  CartController.prototype.flushPendingCells = function () {
+    var self = this;
+    if (this._flushTimer) {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = null;
+    }
+    this._flushDeadline = 0;
+    var cells = [];
+    var key;
+    for (key in this._pendingCells) {
+      if (this._pendingCells.hasOwnProperty(key)) cells.push(this._pendingCells[key]);
+    }
+    this._pendingCells = {};
+    if (!cells.length) return;
+    this._enqueue(function () {
+      return self._saveProductCells(cells);
+    });
+  };
+
+  CartController.prototype._cellBody = function (cell) {
+    return {
+      product_id: cell.productId,
+      variant_id: cell.variantId || null,
+      quantity: cell.quantity,
+      preorder_date: cell.dateLabel,
+      list_type: 'PRODUCT',
+    };
+  };
+
+  CartController.prototype._saveProductCells = function (cells, isRetry) {
+    var self = this;
+    // A single cell keeps the flat, top-level body — the shape every backend
+    // understands. Only a real batch uses Shopify's `items[]` form, which needs
+    // a backend that reads it. That way a theme deployed ahead of its backend
+    // still saves ordinary edits, and only a rapid multi-cell burst fails
+    // loudly (422) instead of silently writing one cell out of ten.
     var body = Object.assign(
+      cells.length === 1
+        ? this._cellBody(cells[0])
+        : { items: cells.map(this._cellBody, this) },
       {
-        product_id: cell.productId,
-        variant_id: cell.variantId || null,
-        quantity: cell.quantity,
-        preorder_date: cell.dateLabel,
-        list_type: 'PRODUCT',
         version: this.version,
         slim: this.slimWrites() ? 1 : 0,
       },
@@ -303,15 +364,19 @@
     );
     return this._post(this.addUrl, body).then(function (res) {
       return self._handleWrite(res, isRetry ? null : function () {
-        return self._saveProductCell(cell, true);
+        return self._saveProductCells(cells, true);
       });
     }).then(function (snapshot) {
-      // Adopt the server's authoritative quantity for this cell (handles a
-      // server-side clamp), unless the user has already queued a newer edit for
-      // the same cell — then the optimistic value wins until that write settles.
+      // Adopt the server's authoritative quantity for a single-cell write
+      // (handles a server-side clamp), unless the user has already queued a
+      // newer edit for that cell — then the optimistic value wins until that
+      // write settles. Batched writes carry no per-cell echo; they reconcile
+      // through the idle cart.js fetch like every other multi-line change.
+      if (cells.length !== 1) return;
       if (!snapshot || typeof snapshot.quantity !== 'number') return;
+      var cell = cells[0];
       var key = self._cellKey(cell.productId, cell.variantId, cell.dateLabel);
-      if (self._pendingCells[key] || self._debounceTimers[key]) return;
+      if (self._pendingCells[key]) return;
       self.onProductCellSaved(cell, snapshot.quantity);
     });
   };
@@ -391,6 +456,11 @@
   CartController.prototype.submitPreorder = function (notes) {
     var self = this;
     var idempotencyKey = uuid();
+    // Send anything still sitting in the coalescing window FIRST — a cell edited
+    // a moment before hitting "place preorder" must not be left behind by the
+    // very submit it was meant for. flushPendingCells enqueues, so the submit
+    // below still lands after it on the write chain.
+    this.flushPendingCells();
     // Chain the submit after every queued write so the version is final.
     return this._enqueue(function () {
       var body = Object.assign(
