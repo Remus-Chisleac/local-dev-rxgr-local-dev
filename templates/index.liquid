@@ -1,10 +1,24 @@
 {% comment %}
-  Home page. Renders the shop's full brand grid using `aico_shop_brands`
-  (every brand on the shop, annotated with `aico_is_accessible?` per the
-  current shopper). Accessible tiles link to `/brand/{handle}` (matching
-  the drawer brand picker's URL pattern); inaccessible tiles render
+  Home page. Renders a brand grid from `aico_shop_brands` (every brand on the
+  shop, annotated with `aico_is_accessible?` per the current shopper, in the
+  per-shop order set in the admin). Accessible tiles link to `/brand/{handle}`
+  (matching the drawer brand picker's URL pattern); inaccessible tiles render
   greyed-out and non-clickable so the user knows which brands exist but
   aren't on their plan.
+
+  WHICH brands appear here is curated BY THIS THEME, not by the backend: this
+  home page is a hand-made landing page, so `aico_home_brand_keys` below is the
+  guest list. A brand the shop carries but this list omits still works
+  everywhere else (brand picker, /brand/<handle>, search) — it simply isn't one
+  of the tiles on this page. Order still comes from the admin (the per-shop
+  brand order), so reordering in Neo reorders these tiles too.
+
+  Edit `aico_home_brand_keys` to change the tiles. Each entry matches either a
+  brand's url handle or its numeric id — ids are per-environment (each env has
+  its own copy of this theme), so prefer handles where the brands have them.
+  An EMPTY list means "show every brand the shop carries", which is what a
+  generic shop wants. So does a list that matches NOTHING: the grid fails open
+  rather than rendering a blank page when the keys are wrong for this env.
 
   Tile layout: top region uses `brand.aico_image_tile_url` (the dedicated
   tile photo) falling back to `brand.image_url` (banner or lifestyle).
@@ -23,6 +37,23 @@
   locale keys stay shipped so other slices can reuse them.
 {% endcomment %}
 
+{%- comment -%} The curated tile list — see the note at the top of this file. {%- endcomment -%}
+{%- assign aico_home_brand_keys = 'kybun,joya,kybunjoya,kandahar,kybun-arabic-styles,special-edition,3,6,7,8,10,13' | split: ',' -%}
+
+{%- comment -%}
+  Count the matches first: if the keys match nothing here (wrong env, renamed
+  handles), the page shows every brand instead of nothing.
+{%- endcomment -%}
+{%- assign aico_home_curated_count = 0 -%}
+{%- for brand in aico_shop_brands -%}
+  {%- assign aico_brand_id_key = brand.id | append: '' -%}
+  {%- if aico_home_brand_keys contains aico_brand_id_key -%}
+    {%- assign aico_home_curated_count = aico_home_curated_count | plus: 1 -%}
+  {%- elsif brand.url_handle and aico_home_brand_keys contains brand.url_handle -%}
+    {%- assign aico_home_curated_count = aico_home_curated_count | plus: 1 -%}
+  {%- endif -%}
+{%- endfor -%}
+
 <main class="aico-home aico-home-brands-page" role="main">
   <section class="aico-page-container aico-home-brand-section">
     <h1 class="aico-home-brand-heading">{{ 'home_page.choose_brand' | t }}</h1>
@@ -30,6 +61,16 @@
     {% if aico_shop_brands.size > 0 %}
       <ul class="aico-home-brand-grid" role="list">
         {% for brand in aico_shop_brands %}
+          {%- assign aico_brand_id_key = brand.id | append: '' -%}
+          {%- assign aico_brand_is_curated = false -%}
+          {%- if aico_home_curated_count == 0 -%}
+            {%- assign aico_brand_is_curated = true -%}
+          {%- elsif aico_home_brand_keys contains aico_brand_id_key -%}
+            {%- assign aico_brand_is_curated = true -%}
+          {%- elsif brand.url_handle and aico_home_brand_keys contains brand.url_handle -%}
+            {%- assign aico_brand_is_curated = true -%}
+          {%- endif -%}
+          {%- if aico_brand_is_curated -%}
           <li class="aico-home-brand-grid-item">
             {% if brand.aico_is_accessible? %}
               <form
@@ -113,6 +154,7 @@
               </div>
             {% endif %}
           </li>
+          {%- endif -%}
         {% endfor %}
       </ul>
     {% else %}
@@ -121,12 +163,3 @@
   </section>
 
 </main>
-
-{%- comment -%}
-  Featured-news popup (b2b-shop's FeaturedNewsDialog). Logged-in shoppers
-  only — the unread state is per shop user, and the endpoints it calls are
-  session-authorized. Loads its own data after paint.
-{%- endcomment -%}
-{% if customer %}
-  {% render 'aico-featured-news-popup' %}
-{% endif %}
