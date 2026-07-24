@@ -372,18 +372,24 @@
           if (!cfg) { this.loading = false; return; }
           var seq = ++this._seq;
           var self = this;
-          // Typed queries order A→Z like the b2b-shop side search; the
-          // preload shows the newest products like aico-commerce.
-          var sortKey = isPreload ? '-date' : 'name';
-          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions[sortKey]) || 'translations.name:asc';
+          // The preload (empty query) shows the newest products like
+          // aico-commerce. A TYPED query carries no sort at all so Meilisearch
+          // ranks by relevance — same as the server-side product search
+          // (ProductCatalogLoader::searchProductsForApi). Forcing A→Z here
+          // reordered the whole result set alphabetically, so with only 8 slots
+          // an exact name match ("Colorado") lost its place to whatever
+          // happened to start with an "A".
+          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions['-date']) || 'createdAt:desc';
           var url = cfg.meilisearch.host + '/indexes/' + encodeURIComponent(cfg.meilisearch.indexName) + '/search';
           var body = {
             q: q,
             limit: isPreload ? PRELOAD_LIMIT : QUERY_LIMIT,
             offset: 0,
             filter: (cfg.scope && cfg.scope.filter) || '',
-            sort: [sortExpr],
           };
+          if (isPreload) {
+            body.sort = [sortExpr];
+          }
           // Same matched-attribute whitelist as the products page (served in
           // the config): the index is `searchableAttributes: ['*']`, so without
           // it a query also matches facet LABELS ("Color", "Size"), image URLs
