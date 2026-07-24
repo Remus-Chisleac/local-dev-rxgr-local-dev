@@ -211,7 +211,16 @@
       value.className = 'aico-product-card-rrp-row-value';
       value.textContent = (currentRrp || struckRrp).value;
       row.appendChild(value);
-      price.after(row);
+      // Wrap the price row + RRP row in one group instead of leaving the RRP
+      // row a bare sibling of .aico-product-card-price. Two reasons: the card
+      // body is a flex column with its own gap, which would push the RRP row
+      // away from the price it belongs to; and customer view hides prices by
+      // selector — a sibling row would stay visible and leak the RRP.
+      var group = document.createElement('div');
+      group.className = 'aico-product-card-price-group';
+      price.parentNode.insertBefore(group, price);
+      group.appendChild(price);
+      group.appendChild(row);
     }
   }
 

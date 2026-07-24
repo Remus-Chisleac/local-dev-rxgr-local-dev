@@ -1413,8 +1413,15 @@ html.aico-no-scroll { overflow: hidden; }
   /* single-row layout — don't reserve the base rule's struck-price line */
   min-height: 0;
 }
+/* Price row + RRP row as one unit (theme.js wraps them): flush against each
+   other, without the card body's flex-column gap between them. */
+.aico-product-card-price-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .aico-product-card-rrp-row {
-  margin: 0.125rem 0 0;
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -11111,6 +11118,8 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
    so they go as well; "new"/"discontinued" badges stay. */
 .aico-customer-view .aico-product-card-price,
 .aico-customer-view .aico-product-card-prices,
+.aico-customer-view .aico-product-card-price-group,
+.aico-customer-view .aico-product-card-rrp-row,
 .aico-customer-view .aico-product-card-badge-sale,
 .aico-customer-view .aico-product-card-discount,
 .aico-customer-view .aico-pdp-price-block,
