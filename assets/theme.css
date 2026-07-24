@@ -5550,6 +5550,76 @@ button.aico-home-brand-card {
   100% { transform: scale(1); }
 }
 
+/* ── Warning medallion ──────────────────────────────────────────────────────
+   The third terminal state of both thank-you surfaces: the page was opened
+   WITHOUT the reference it exists to display (`?order=` / `?cart=`), or with
+   one that resolves to nothing. Neither the sweeping spinner nor the green
+   check may be shown then — a spinner promises data that will never arrive,
+   and a checkmark asserts a confirmation we have not verified. (That exact
+   bug is what this state replaces: a bare visit to the preorder thank-you
+   rendered the success skeleton with "…" for an order number and dashes for
+   every total.)
+
+   Same 52×52 geometry as the success medallion so the three states are one
+   component, not three icons: an orange disc carrying a white warning
+   triangle. The colour is the shared spinner orange — this is a "we can't
+   show you this" notice, not a failure, so it deliberately stays short of
+   destructive red. Everything is opacity-gated and inert until the --warn
+   class lands, so the marks can sit in the SVG on every render. */
+.aico-ty-status-warn-disc,
+.aico-ty-status-warn-triangle,
+.aico-ty-status-warn-bang,
+.aico-ty-status-warn-dot {
+  opacity: 0;
+}
+.aico-ty-status-warn-disc {
+  fill: var(--aico-ty-spinner, #e8702d);
+}
+.aico-ty-status-warn-triangle {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+.aico-ty-status-warn-bang {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+.aico-ty-status-warn-dot {
+  fill: #fff;
+}
+
+/* Warn wins over every other medallion state: the wait/success strokes are
+   hidden outright rather than transitioned away, because this state is
+   reached on first paint (no reference in the URL at all) as often as it is
+   flipped into after a failed lookup.
+
+   Doubled class (.aico-ty-status.aico-ty-status--warn) on purpose: the
+   confirmed rules above are keyed off the PANEL (…-card.is-confirmed / the
+   preorder panel merely not being --processing) and so carry three classes.
+   A single-class warn selector would lose to them, and the missing state
+   drops --processing — the green ring would draw itself under the warning. */
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-track,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-spin,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-ring,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-disc,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-check {
+  opacity: 0;
+  animation: none;
+  transition: none;
+}
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-warn-disc,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-warn-triangle,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-warn-bang,
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-warn-dot {
+  opacity: 1;
+}
+.aico-ty-status.aico-ty-status--warn .aico-ty-status-svg {
+  animation: aico-ty-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* Confirmed copy (thank-you heading, totals, email note) is x-show'd, so it
    only exists once the order is saved — the animation therefore fires exactly
    once, on reveal. Staggered so the block settles after the check lands. */
@@ -5581,6 +5651,7 @@ button.aico-home-brand-card {
   .aico-ty-status--progress .aico-ty-status-spin { transition: none; }
   .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
   .aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal,
+  .aico-ty-status.aico-ty-status--warn .aico-ty-status-svg,
   .aico-preorder-confirmation:not(.aico-preorder-confirmation--processing) .aico-ty-status-svg { animation: none; }
 }
 
@@ -5597,6 +5668,10 @@ button.aico-home-brand-card {
    as the email note so neither reads as an alert. */
 .aico-checkout-thank-you-confirming { margin: 0; font-size: 0.9375rem; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-thank-you-not-found { margin: 0; font-size: 0.9375rem; color: var(--aico-muted-fg, #6b7280); }
+/* The dead-end card offers "my orders" (where the shopper can actually find
+   the order they came for) above the plain catalogue link, so the two CTAs
+   need to stack rather than share the card's default gap. */
+.aico-checkout-thank-you-not-found-links { margin: 0.25rem 0 0; }
 /* Adyen return-leg error card (payment cancelled / status unverified). */
 .aico-checkout-payment-error { gap: 0.75rem; }
 .aico-checkout-payment-error p { margin: 0; font-size: 0.9375rem; color: var(--aico-fg, #1a1a1a); }
@@ -9959,6 +10034,21 @@ html.aico-preorder-gallery-open {
 .aico-preorder-confirmation--error .aico-preorder-confirmation-summary,
 .aico-preorder-confirmation--error .aico-preorder-confirmation-dates-wrap,
 .aico-preorder-confirmation--error .aico-preorder-confirmation-pdf-area {
+  display: none;
+}
+
+/* Missing-reference state — the panel was opened with no `?cart=` to confirm
+   against, so every placeholder below the heading would be a lie: an order
+   number of "…", em dashes for totals, an empty delivery-date list and a PDF
+   spinner with no PDF coming. Hide all of it, exactly as --error does, but
+   KEEP the medallion — unlike a failure, this state has something to say
+   (the warning disc, see .aico-ty-status--warn), and a card with no icon at
+   all reads as a half-loaded page rather than a deliberate answer. */
+.aico-preorder-confirmation--missing .aico-preorder-confirmation-number-box,
+.aico-preorder-confirmation--missing .aico-preorder-confirmation-summary,
+.aico-preorder-confirmation--missing .aico-preorder-confirmation-dates-wrap,
+.aico-preorder-confirmation--missing .aico-preorder-confirmation-pdf-area,
+.aico-preorder-confirmation--missing .aico-preorder-confirmation-progress {
   display: none;
 }
 

@@ -57,6 +57,8 @@
     data-aico-confirmation-almost-there="{{ 'aico_preorder.confirmation.almost_there' | t | escape }}"
     data-aico-confirmation-error-title="{{ 'aico_preorder.confirmation.error_title' | t | escape }}"
     data-aico-confirmation-error-message="{{ 'aico_preorder.confirmation.error_message' | t | escape }}"
+    data-aico-confirmation-missing-title="{{ 'aico_preorder.confirmation.missing_title' | t | escape }}"
+    data-aico-confirmation-missing-message="{{ 'aico_preorder.confirmation.missing_message' | t | escape }}"
     data-aico-confirmation-update-title="{{ 'aico_preorder.confirmation.update_title' | t | escape }}"
     data-aico-confirmation-update-message="{{ 'aico_preorder.confirmation.update_message' | t | escape }}"
     data-aico-confirmation-number-pending="{{ 'aico_preorder.confirmation.number_pending' | t | escape }}"
@@ -79,6 +81,16 @@
         <circle class="aico-ty-status-ring" cx="26" cy="26" r="24"/>
         <circle class="aico-ty-status-disc" cx="26" cy="26" r="24"/>
         <path class="aico-ty-status-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        {%- comment -%} Third state on the same geometry: the page was opened
+          with no `?cart=` to confirm against (a locale switch used to drop it,
+          and a bare visit or an old bookmark never had one). It replaces what
+          was previously the worst possible answer here — the full success
+          skeleton, checkmark and all, with "…" where the order number goes.
+        {%- endcomment -%}
+        <circle class="aico-ty-status-warn-disc" cx="26" cy="26" r="24"/>
+        <path class="aico-ty-status-warn-triangle" d="M26 15.4 38.4 36.6 13.6 36.6 Z"/>
+        <path class="aico-ty-status-warn-bang" d="M26 22.6V29.4"/>
+        <circle class="aico-ty-status-warn-dot" cx="26" cy="33.1" r="1.45"/>
       </svg>
     </div>
 

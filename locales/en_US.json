@@ -553,7 +553,11 @@
       "continue": "Continue shopping",
       "verifying": "We're confirming your payment…",
       "confirming": "We are confirming your order. One moment please …",
-      "not_found": "This order could not be found."
+      "not_found": "This order could not be found.",
+      "missing_reference_title": "No order reference",
+      "missing_reference": "This page needs an order number to show a confirmation, and the link you opened did not carry one. You can find your orders under your account.",
+      "not_found_title": "Order not found",
+      "view_orders": "View my orders"
     },
     "payment_error": {
       "title": "Payment not completed",
@@ -711,6 +715,8 @@
       "almost_there": "Almost there — we are putting your confirmation together…",
       "error_title": "We could not process your preorder",
       "error_message": "Something went wrong while processing your preorder. Your preorder was not placed — please go back to the preorder page and try again, or contact us if the problem persists.",
+      "missing_title": "No preorder reference",
+      "missing_message": "This page needs a preorder reference to show a confirmation, and the link you opened did not carry one. Head back to the preorder page to see your preorders.",
       "number_label": "Order number",
       "number_pending": "Assigning…",
       "reference_label": "Preorder reference",

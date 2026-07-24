@@ -137,15 +137,13 @@
   /** Start with a known confirmation payload (e.g. seeded from submit response). */
   Confirmation.prototype.start = function (seed) {
     if (!this.confirmationUrl || !this.cartId) {
-      // Nothing to confirm against. The thank-you template now server-renders
-      // the PROCESSING state (so the checkmark never flashes before the data
-      // is verified) — swap the spinner for the generic thank-you copy, since
-      // no confirmation will ever be fetched for a bare visit.
-      this.clearPending();
-      var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
-      if (headerEl) headerEl.textContent = copyOf(this.root, 'title', 'Thank you');
-      var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
-      if (messageEl) messageEl.textContent = copyOf(this.root, 'message', '');
+      // Nothing to confirm against, and nothing ever will be — no fetch is
+      // possible without a cart id. Say that plainly instead of resolving the
+      // server-rendered processing state into the generic thank-you copy,
+      // which left the success skeleton standing behind it: "…" for the order
+      // number, an em dash for every total, and a PDF spinner that spun
+      // forever. See renderMissing().
+      this.renderMissing();
       return;
     }
     this.root.hidden = false;
@@ -219,6 +217,40 @@
         this.root,
         'error-message',
         'Something went wrong while processing your preorder. Please go back to the preorder page and try again.',
+      );
+    }
+  };
+
+  /**
+   * Terminal "nothing to show" state: the panel was opened without a cart id,
+   * so there is no preorder to confirm and never will be. Reached by a bare
+   * visit to /preorder/thank-you, an old bookmark, and — until the locale
+   * switcher stopped dropping the query string — every language change made
+   * on a real confirmation page.
+   *
+   * Deliberately NOT the --error state: nothing failed. The preorder the
+   * shopper is looking for was very likely placed fine; we simply were not
+   * told which one. So it borrows --error's job of hiding the detail
+   * placeholders but keeps the medallion visible, flipped to the warning
+   * disc, and points at the orders list rather than apologising for a failure
+   * that did not happen.
+   */
+  Confirmation.prototype.renderMissing = function () {
+    this.clearPending();
+    this.root.hidden = false;
+    this.root.classList.add('aico-preorder-confirmation--missing');
+    var status = this.root.querySelector('[data-aico-confirmation-status]');
+    if (status) status.classList.add('aico-ty-status--warn');
+    var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
+    if (headerEl) {
+      headerEl.textContent = copyOf(this.root, 'missing-title', 'No preorder reference');
+    }
+    var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
+    if (messageEl) {
+      messageEl.textContent = copyOf(
+        this.root,
+        'missing-message',
+        'This page needs a preorder reference to show a confirmation, and the link you opened did not carry one. Head back to the preorder page to see your preorders.',
       );
     }
   };

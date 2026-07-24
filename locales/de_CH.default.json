@@ -553,7 +553,11 @@
       "continue": "Weiter einkaufen",
       "verifying": "Wir bestätigen deine Zahlung…",
       "confirming": "Wir bestätigen Ihre Bestellung. Einen Moment bitte …",
-      "not_found": "Diese Bestellung konnte nicht gefunden werden."
+      "not_found": "Diese Bestellung konnte nicht gefunden werden.",
+      "missing_reference_title": "Keine Bestellreferenz",
+      "missing_reference": "Für diese Seite wird eine Bestellnummer benötigt, und der geöffnete Link enthielt keine. Ihre Bestellungen finden Sie in Ihrem Konto.",
+      "not_found_title": "Bestellung nicht gefunden",
+      "view_orders": "Meine Bestellungen ansehen"
     },
     "payment_error": {
       "title": "Zahlung nicht abgeschlossen",
@@ -711,6 +715,8 @@
       "almost_there": "Fast geschafft — wir stellen Ihre Bestätigung zusammen…",
       "error_title": "Ihre Vorbestellung konnte nicht verarbeitet werden",
       "error_message": "Bei der Verarbeitung Ihrer Vorbestellung ist ein Fehler aufgetreten. Ihre Vorbestellung wurde nicht aufgegeben — bitte kehren Sie zur Vorbestellungsseite zurück und versuchen Sie es erneut, oder kontaktieren Sie uns, falls das Problem weiterhin besteht.",
+      "missing_title": "Keine Vorbestellungsreferenz",
+      "missing_message": "Für diese Seite wird eine Vorbestellungsreferenz benötigt, und der geöffnete Link enthielt keine. Kehren Sie zur Vorbestellungsseite zurück, um Ihre Vorbestellungen zu sehen.",
       "number_label": "Bestellnummer",
       "number_pending": "Wird zugewiesen…",
       "reference_label": "Vorbestellungsreferenz",

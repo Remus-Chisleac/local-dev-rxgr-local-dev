@@ -62,14 +62,23 @@
         circles share one geometry (r=24 on a 52×52 box, C ≈ 151), so the
         sweeping arc and the drawn success ring sit on exactly the same
         circumference and the swap reads as one continuous shape rather than
-        two icons replacing each other. {%- endcomment -%}
-      <div class="aico-ty-status" aria-hidden="true" x-show="!notFound">
+        two icons replacing each other.
+
+        The warning disc + triangle are the third state on that same geometry
+        and the reason the medallion is no longer x-show'd away on notFound:
+        landing here without a resolvable order used to leave the card headed
+        by nothing at all. It now says so with an icon. {%- endcomment -%}
+      <div class="aico-ty-status" aria-hidden="true" :class="{ 'aico-ty-status--warn': notFound }">
         <svg class="aico-ty-status-svg" viewBox="0 0 52 52" focusable="false" role="presentation">
           <circle class="aico-ty-status-track" cx="26" cy="26" r="24"/>
           <circle class="aico-ty-status-spin" cx="26" cy="26" r="24"/>
           <circle class="aico-ty-status-ring" cx="26" cy="26" r="24"/>
           <circle class="aico-ty-status-disc" cx="26" cy="26" r="24"/>
           <path class="aico-ty-status-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          <circle class="aico-ty-status-warn-disc" cx="26" cy="26" r="24"/>
+          <path class="aico-ty-status-warn-triangle" d="M26 15.4 38.4 36.6 13.6 36.6 Z"/>
+          <path class="aico-ty-status-warn-bang" d="M26 22.6V29.4"/>
+          <circle class="aico-ty-status-warn-dot" cx="26" cy="33.1" r="1.45"/>
         </svg>
       </div>
 
@@ -77,9 +86,17 @@
         confirmed one is x-cloak'd so it can never paint before Alpine knows the
         order is saved. aria-live announces the swap to screen readers.
       {%- endcomment -%}
-      <h1 class="aico-checkout-thank-you-title" x-show="!notFound" aria-live="polite">
-        <span x-show="pending">{{ 'checkout.thank_you.processing_title' | t }}</span>
-        <span class="aico-ty-reveal" x-show="!pending" x-cloak>{{ 'checkout.thank_you.title' | t }}</span>
+      <h1 class="aico-checkout-thank-you-title" aria-live="polite">
+        <span x-show="pending && !notFound">{{ 'checkout.thank_you.processing_title' | t }}</span>
+        <span class="aico-ty-reveal" x-show="!pending && !notFound" x-cloak>{{ 'checkout.thank_you.title' | t }}</span>
+        {%- comment -%} Two distinct dead ends under one medallion: the page was
+          opened with no order reference at all (a bare `/checkout/thank-you`,
+          typically a locale switch or a hand-edited URL), or with one that does
+          not resolve. Same icon, different heading — telling the shopper "not
+          found" about an order they never named is just confusing.
+        {%- endcomment -%}
+        <span x-show="notFound && !orderNumber && !orderId" x-cloak>{{ 'checkout.thank_you.missing_reference_title' | t }}</span>
+        <span x-show="notFound && (orderNumber || orderId)" x-cloak>{{ 'checkout.thank_you.not_found_title' | t }}</span>
       </h1>
 
       <p class="aico-checkout-thank-you-order" x-show="orderNumber && !notFound">
@@ -135,11 +152,25 @@
       {%- comment -%} Unknown order number, or one belonging to another
         organisation — /checkout/order-summary answers 404 either way and never
         says which, so the page cannot be used to probe for orders. {%- endcomment -%}
-      <p class="aico-checkout-thank-you-not-found" x-show="notFound" x-cloak>
+      <p class="aico-checkout-thank-you-not-found" x-show="notFound && (orderNumber || orderId)" x-cloak>
         {{ 'checkout.thank_you.not_found' | t }}
       </p>
+      <p class="aico-checkout-thank-you-not-found" x-show="notFound && !orderNumber && !orderId" x-cloak>
+        {{ 'checkout.thank_you.missing_reference' | t }}
+      </p>
 
-      <a href="{{ routes.products_url }}" class="aico-button aico-button-primary">
+      {%- comment -%} A dead end needs a way out of itself: the shopper's own
+        orders, not just the catalogue. {%- endcomment -%}
+      <p class="aico-checkout-thank-you-not-found-links" x-show="notFound" x-cloak>
+        <a href="{{ routes.aico_account_orders_url }}" class="aico-button aico-button-primary">
+          {{ 'checkout.thank_you.view_orders' | t }}
+        </a>
+      </p>
+
+      <a href="{{ routes.products_url }}" class="aico-button aico-button-primary" x-show="!notFound">
+        {{ 'checkout.thank_you.continue' | t }}
+      </a>
+      <a href="{{ routes.products_url }}" class="aico-button aico-button-outline" x-show="notFound" x-cloak>
         {{ 'checkout.thank_you.continue' | t }}
       </a>
     </div>
