@@ -411,7 +411,6 @@
       "button_add_hint": "Wählen Sie eine Grösse, um sie in den Warenkorb zu legen.",
       "button_update_hint": "Keine Änderungen – passen Sie eine Menge an, um zu aktualisieren."
     },
-    "update_cart": "Warenkorb aktualisieren",
     "specs_label": {
       "colors": "Farben",
       "gender": "Geschlecht",
@@ -782,6 +781,14 @@
     "saving": "Wird gespeichert…",
     "saved": "Gespeichert",
     "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "aico_featured_news": {
+    "kicker": "Neuigkeiten",
+    "close": "Schliessen",
+    "mark_as_read": "Nachricht als gelesen markieren",
+    "mark_as_read_next": "Als gelesen markieren und weiter",
+    "read_article": "Ganzen Beitrag lesen",
+    "counter": "{{ current }} von {{ total }}"
   },
   "aico_production_cockpit": {
     "title": "Produktion Cockpit",

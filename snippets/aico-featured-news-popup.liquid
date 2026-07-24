@@ -1,0 +1,174 @@
+{% comment %}
+  Featured-news popup — the b2b-shop "FeaturedNewsDialog" ported to the
+  Liquid theme. Rendered once on the home page (templates/index.liquid) for
+  logged-in shoppers; shows every `is_special_article` news item the shopper
+  hasn't read yet, one at a time, and writes the read receipt back.
+
+  Data flow (assets/aico-featured-news.js):
+    GET  {{ routes.aico_news_featured_url }}  → unread featured articles,
+         body already rendered to HTML server-side (NewsContentRenderer)
+    POST {{ routes.aico_news_read_url }}      → { news_ids: [...] }
+
+  The fetch runs after paint, not during render: the unread query costs
+  ~0.7s and the home page must not wait on it.
+
+  Layout note (explicit product decision): the article's own call-to-action
+  lives INSIDE the body HTML (the kj news items ship a styled `<a>` button),
+  so "mark as read" gets its own footer row underneath — the two never share
+  a line, unlike the legacy dialog.
+
+  AICO-only feature (no Shopify analog) — hence the `aico_` prefix on the
+  route helpers, locale namespace, and every class name here.
+{% endcomment %}
+
+<script id="aico-featured-news-config" type="application/json">{
+  "featuredUrl": {{ routes.aico_news_featured_url | json }},
+  "readUrl": {{ routes.aico_news_read_url | json }},
+  "locale": {{ request.locale | default: shop.default_locale | json }},
+  "i18n": {
+    "kicker": {{ 'aico_featured_news.kicker' | t | json }},
+    "close": {{ 'aico_featured_news.close' | t | json }},
+    "mark_as_read": {{ 'aico_featured_news.mark_as_read' | t | json }},
+    "mark_as_read_next": {{ 'aico_featured_news.mark_as_read_next' | t | json }},
+    "read_article": {{ 'aico_featured_news.read_article' | t | json }},
+    "counter": {{ 'aico_featured_news.counter' | t | json }}
+  }
+}</script>
+
+<style>
+  /* Shell — same fixed/backdrop/panel skeleton as the quick-add modal, with a
+     news-specific panel: edge-to-edge hero image and a scrollable body. */
+  .aico-news-popup { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .aico-news-popup[hidden] { display: none; }
+  .aico-news-popup-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
+  .aico-news-popup-panel {
+    position: relative; z-index: 1; display: flex; flex-direction: column;
+    width: 100%; max-width: 34rem; max-height: 88vh; overflow: hidden;
+    background: var(--aico-card, #fff); color: var(--aico-fg, #1a1a1a);
+    border-radius: var(--aico-radius, 2px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Head: kicker + counter on one line, title below, close button pinned. */
+  .aico-news-popup-head { position: relative; padding: 1.25rem 3rem 1rem 1.5rem; }
+  .aico-news-popup-eyebrow { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.4rem; }
+  .aico-news-popup-kicker {
+    margin: 0; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--aico-muted-fg, #6b7280);
+  }
+  .aico-news-popup-counter {
+    margin: 0; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.04em;
+    color: var(--aico-muted-fg, #6b7280);
+  }
+  .aico-news-popup-counter[hidden] { display: none; }
+  .aico-news-popup-title { margin: 0; font-size: 1.3rem; line-height: 1.25; font-weight: 700; }
+  .aico-news-popup-x {
+    position: absolute; top: 0.9rem; right: 0.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; padding: 0; border: 0; cursor: pointer;
+    background: none; color: var(--aico-muted-fg, #6b7280);
+    border-radius: var(--aico-radius, 2px); line-height: 1;
+  }
+  .aico-news-popup-x:hover { color: var(--aico-fg, #1a1a1a); background: var(--aico-muted, #f4f4f5); }
+  .aico-news-popup-x:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
+
+  /* Hero image — full-bleed inside the panel, capped so tall art can't push
+     the body off screen. */
+  .aico-news-popup-media { margin: 0; }
+  .aico-news-popup-media[hidden] { display: none; }
+  .aico-news-popup-media img { display: block; width: 100%; max-height: 15rem; object-fit: cover; }
+
+  /* Body — the server-rendered article HTML. Scrolls on its own so the head
+     and the footer action stay visible. */
+  .aico-news-popup-body {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    padding: 1.25rem 1.5rem 1.5rem;
+    font-size: 0.92rem; line-height: 1.6; color: #222;
+  }
+  .aico-news-popup-body > *:first-child { margin-top: 0; }
+  .aico-news-popup-body > *:last-child { margin-bottom: 0; }
+  .aico-news-popup-body p { margin: 0 0 0.85rem; }
+  .aico-news-popup-body img { max-width: 100%; height: auto; }
+  .aico-news-popup-body a { color: inherit; }
+  /* The content-builder rows the article body ships (see NewsContentRenderer). */
+  .aico-news-popup-body .content-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .aico-news-popup-body .content-column { flex: 1 1 0; min-width: 0; }
+  .aico-news-popup-body .content { margin: 0 0 0.75rem; }
+  .aico-news-popup-excerpt { margin: 0 0 0.85rem; font-weight: 500; }
+
+  /* Foot — one action PER ROW. The article's own CTA sits in the body above,
+     so the read-receipt control never shares a line with it. */
+  .aico-news-popup-foot {
+    display: flex; flex-direction: column; gap: 0.6rem;
+    padding: 1rem 1.5rem 1.25rem;
+    border-top: 1px solid var(--aico-border, #e5e7eb);
+    background: var(--aico-bg, #fff);
+  }
+  .aico-news-popup-more {
+    align-self: flex-start; font-size: 0.85rem; font-weight: 500;
+    color: var(--aico-muted-fg, #6b7280); text-decoration: none;
+  }
+  .aico-news-popup-more[hidden] { display: none; }
+  .aico-news-popup-more:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
+  .aico-news-popup-read { width: 100%; border-radius: var(--aico-radius, 2px); }
+  .aico-news-popup-read[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
+
+  @media (max-width: 30rem) {
+    .aico-news-popup { padding: 0; align-items: flex-end; }
+    .aico-news-popup-panel { max-width: none; max-height: 92vh; }
+    .aico-news-popup-title { font-size: 1.15rem; }
+  }
+</style>
+
+<div class="aico-news-popup" data-aico-news-popup hidden>
+  <div class="aico-news-popup-backdrop" data-aico-news-popup-close></div>
+
+  <div
+    class="aico-news-popup-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aico-news-popup-title"
+  >
+    <header class="aico-news-popup-head">
+      <div class="aico-news-popup-eyebrow">
+        <p class="aico-news-popup-kicker">{{ 'aico_featured_news.kicker' | t }}</p>
+        <p class="aico-news-popup-counter" data-aico-news-popup-counter hidden></p>
+      </div>
+      <h2 class="aico-news-popup-title" id="aico-news-popup-title" data-aico-news-popup-title></h2>
+
+      <button
+        type="button"
+        class="aico-news-popup-x"
+        data-aico-news-popup-close
+        aria-label="{{ 'aico_featured_news.close' | t }}"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+          <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <figure class="aico-news-popup-media" data-aico-news-popup-media hidden>
+      <img src="" alt="" data-aico-news-popup-image loading="lazy" decoding="async">
+    </figure>
+
+    <div class="aico-news-popup-body" data-aico-news-popup-body></div>
+
+    <footer class="aico-news-popup-foot">
+      <a
+        class="aico-news-popup-more"
+        data-aico-news-popup-more
+        href="#"
+        hidden
+      >{{ 'aico_featured_news.read_article' | t }} ›</a>
+
+      <button
+        type="button"
+        class="aico-button aico-button-outline aico-news-popup-read"
+        data-aico-news-popup-read
+      >{{ 'aico_featured_news.mark_as_read' | t }}</button>
+    </footer>
+  </div>
+</div>
+
+<script src="{{ 'aico-featured-news.js' | asset_url }}" defer></script>

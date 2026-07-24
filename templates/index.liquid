@@ -121,3 +121,12 @@
   </section>
 
 </main>
+
+{%- comment -%}
+  Featured-news popup (b2b-shop's FeaturedNewsDialog). Logged-in shoppers
+  only — the unread state is per shop user, and the endpoints it calls are
+  session-authorized. Loads its own data after paint.
+{%- endcomment -%}
+{% if customer %}
+  {% render 'aico-featured-news-popup' %}
+{% endif %}

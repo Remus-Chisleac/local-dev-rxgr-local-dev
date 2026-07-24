@@ -411,7 +411,6 @@
       "button_add_hint": "Select a size to add it to your cart.",
       "button_update_hint": "No changes — adjust a quantity to update your cart."
     },
-    "update_cart": "Update cart",
     "specs_label": {
       "colors": "Colors",
       "gender": "Gender",
@@ -782,6 +781,14 @@
     "saving": "Saving…",
     "saved": "Saved",
     "error": "Something went wrong. Please try again."
+  },
+  "aico_featured_news": {
+    "kicker": "News",
+    "close": "Close",
+    "mark_as_read": "Mark message as read",
+    "mark_as_read_next": "Mark as read and continue",
+    "read_article": "Read the full article",
+    "counter": "{{ current }} of {{ total }}"
   },
   "aico_production_cockpit": {
     "title": "Production Cockpit",
