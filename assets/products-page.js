@@ -1729,6 +1729,18 @@
     }
   }
 
+  // Static facet inputs (the sale toggle) live in the SSR markup and are never
+  // re-rendered from state the way the facet columns and size chips are, so a
+  // URL-applied value (/filter/sale/on) left them visually off while the badge
+  // still counted it. Reflect the applied facets onto them on boot.
+  rootEl.querySelectorAll('input[data-aico-facet-checkbox]').forEach(function (el) {
+    var staticFacetId = el.getAttribute('data-facet-id');
+    var staticFacetValue = el.getAttribute('data-facet-value');
+    if (staticFacetId && staticFacetValue) {
+      el.checked = (state.appliedFacets[staticFacetId] || []).indexOf(staticFacetValue) !== -1;
+    }
+  });
+
   updateFilterCountBadge();
   updateCategoryHeading();
 
