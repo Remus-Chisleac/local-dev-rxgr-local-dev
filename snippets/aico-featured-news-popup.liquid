@@ -110,7 +110,13 @@
   }
   .aico-news-popup-more[hidden] { display: none; }
   .aico-news-popup-more:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
-  .aico-news-popup-read { width: 100%; border-radius: var(--aico-radius, 2px); }
+  /* Neutral, not accent-blue: the article's own CTA (inside the body) is the
+     primary action here — the receipt is the quiet way out. */
+  .aico-news-popup-read {
+    width: 100%; border-radius: var(--aico-radius, 2px);
+    color: var(--aico-fg, #1a1a1a); border-color: var(--aico-muted-strong, #e4e4e7);
+  }
+  .aico-news-popup-read:hover { background: var(--aico-muted, #f4f4f5); border-color: var(--aico-muted-fg, #6b7280); }
   .aico-news-popup-read[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
 
   @media (max-width: 30rem) {
