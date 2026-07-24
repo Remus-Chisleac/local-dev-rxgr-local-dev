@@ -42,13 +42,11 @@
      the article container's own 1.25rem gutter provides the mobile inset. */
   .aico-news--detail .neo-section__inner { margin: 0; }
 
-  /* kj article header: kicker → title → short rule + date (server-rendered). */
+  /* kj article header: kicker → title (server-rendered). */
   .aico-article-header { margin: 0 0 1.75rem; }
   .aico-article-kicker { font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #111; margin: 0 0 1.1rem; }
   .aico-article-kicker a { color: inherit; text-decoration: none; }
-  .aico-article-title { font-size: 2.1rem; line-height: 1.2; margin: 0 0 1.4rem; }
-  .aico-article-meta { font-size: .85rem; color: #444; }
-  .aico-article-meta::before { content: ''; display: block; width: 2.5rem; border-top: 1px solid #111; margin-bottom: .8rem; }
+  .aico-article-title { font-size: 2.1rem; line-height: 1.2; margin: 0; }
 
   /* Neo hero band (first converted section): breathing room below the full-bleed color band. */
   .aico-news--detail .neo-section--full { margin-bottom: 2rem; }
@@ -122,8 +120,8 @@
 <section class="aico-news aico-news--detail" data-aico-news="article">
   {%- if article -%}
     {%- comment -%}
-      Server-rendered header for BOTH body paths (kj article design: kicker → title →
-      rule + date). The client renderer (news.js) skips its own title/tag markup when
+      Server-rendered header for BOTH body paths (kj article design: kicker → title; no
+      date/author byline). The client renderer (news.js) skips its own title/tag markup when
       window.__AICO_ARTICLE_HEADER_SSR__ is set below.
     {%- endcomment -%}
     <header class="aico-article-header" data-aico-article-header>
@@ -133,12 +131,6 @@
         {%- else -%}NEWS{%- endif -%}
       </p>
       <h1 class="aico-article-title">{{ article.title }}</h1>
-      {%- if article.published_at or article.author -%}
-        <div class="aico-article-meta">
-          {%- if article.published_at -%}<span class="news-date">{{ article.published_at }}</span>{%- endif -%}
-          {%- if article.author -%}<span class="news-author">{% if article.published_at %}, {% endif %}{{ article.author }}</span>{%- endif -%}
-        </div>
-      {%- endif -%}
     </header>
   {%- endif -%}
 

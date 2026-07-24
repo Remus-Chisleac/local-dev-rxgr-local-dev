@@ -347,15 +347,10 @@ $(document).ready(function(){
             }else if(catName == 'Frauen'){
               catLink = '/pages/frauen-team-kader';
             }
-            html += '<a href="'+catLink+'" class="news-cat">'+catName+', </a>';
+            html += '<a href="'+catLink+'" class="news-cat">'+catName+'</a>';
           }
               html += '</div>';
-          if(data.publishDate != null ){
-            html += '<span class="news-date">'+formatDate(data.publishDate)+', </span>';
-          }
-          if(data.author != null ){
-            html += '<span class="news-author">'+data.author+'</span>';
-          }
+          // Date / author byline removed from the article header by design.
           html += '</div>';
         html += '</div>';
       }
