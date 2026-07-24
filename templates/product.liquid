@@ -474,28 +474,26 @@
             <button> receives no pointer events and would never show a tooltip
             of its own.
           {%- endcomment -%}
+          {%- comment -%}
+            Start the buy button in the inactive/ghost state whenever it
+            cannot yet be submitted, so the server's first paint already
+            matches what product-detail.js's syncButtonState() computes on
+            boot. Rendering the solid button and letting JS demote it made
+            the button flash orange on every page load.
+
+            Matrix mode always starts unchanged (every cell equals its cart
+            prefill), so it is always inactive on first paint. Legacy mode is
+            inactive only while a variant is still unresolved — an
+            option-less product ships a pre-filled variant id and a quantity
+            of 1, which IS submittable.
+          {%- endcomment -%}
+          {%- assign buy_button_inactive = false -%}
+          {%- if product.aico_has_size_matrix? or product.options.size > 0 -%}
+            {%- assign buy_button_inactive = true -%}
+          {%- endif -%}
           <div class="aico-pdp-buy-actions" data-aico-buy-actions>
             <button
               type="submit"
-              {%- comment -%}
-                Start in the inactive/ghost state whenever the matrix cannot
-                yet be submitted, so the server's first paint already matches
-                what product-detail.js's syncButtonState() would compute.
-                Rendering the solid button and letting JS demote it on boot
-                made the button flash orange on every page load.
-
-                Matrix mode always starts unchanged (every cell equals its
-                cart prefill), so it is always inactive on first paint. Legacy
-                mode is inactive only while a variant is still unresolved —
-                an option-less product ships a pre-filled variant id and a
-                quantity of 1, which IS submittable.
-              {%- endcomment -%}
-              {%- assign buy_button_inactive = false -%}
-              {%- if product.aico_has_size_matrix? -%}
-                {%- assign buy_button_inactive = true -%}
-              {%- elsif product.options.size > 0 -%}
-                {%- assign buy_button_inactive = true -%}
-              {%- endif -%}
               class="aico-pdp-buy-button{% if buy_button_inactive %} aico-pdp-buy-button--inactive{% endif %}"
               data-aico-buy-button
               {% if buy_button_inactive %}aria-disabled="true"{% endif %}
