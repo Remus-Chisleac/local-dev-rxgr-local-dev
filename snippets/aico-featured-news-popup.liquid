@@ -43,7 +43,7 @@
   .aico-news-popup-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
   .aico-news-popup-panel {
     position: relative; z-index: 1; display: flex; flex-direction: column;
-    width: 100%; max-width: 34rem; max-height: 88vh; overflow: hidden;
+    width: 100%; max-width: 42rem; max-height: 88vh; overflow: hidden;
     background: var(--aico-card, #fff); color: var(--aico-fg, #1a1a1a);
     border-radius: var(--aico-radius, 2px);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
@@ -96,28 +96,31 @@
   .aico-news-popup-body .content { margin: 0 0 0.75rem; }
   .aico-news-popup-excerpt { margin: 0 0 0.85rem; font-weight: 500; }
 
-  /* Foot — one action PER ROW. The article's own CTA sits in the body above,
-     so the read-receipt control never shares a line with it. */
+  /* Foot — two quiet TEXT links (per the design), never a button: the only
+     button in this dialog is the article's own CTA inside the body above, and
+     the receipt control must not compete with it or share its row. */
   .aico-news-popup-foot {
-    display: flex; flex-direction: column; gap: 0.6rem;
-    padding: 1rem 1.5rem 1.25rem;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 0.4rem 1.5rem;
+    padding: 0.9rem 1.5rem 1.1rem;
     border-top: 1px solid var(--aico-border, #e5e7eb);
     background: var(--aico-bg, #fff);
   }
-  .aico-news-popup-more {
-    align-self: flex-start; font-size: 0.85rem; font-weight: 500;
-    color: var(--aico-muted-fg, #6b7280); text-decoration: none;
+  .aico-news-popup-more,
+  .aico-news-popup-read {
+    padding: 0; border: 0; background: none; font: inherit; cursor: pointer;
+    font-size: 0.85rem; font-weight: 500; text-decoration: none;
+    color: var(--aico-muted-fg, #6b7280);
   }
   .aico-news-popup-more[hidden] { display: none; }
-  .aico-news-popup-more:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
-  /* Neutral, not accent-blue: the article's own CTA (inside the body) is the
-     primary action here — the receipt is the quiet way out. */
-  .aico-news-popup-read {
-    width: 100%; border-radius: var(--aico-radius, 2px);
-    color: var(--aico-fg, #1a1a1a); border-color: var(--aico-muted-strong, #e4e4e7);
-  }
-  .aico-news-popup-read:hover { background: var(--aico-muted, #f4f4f5); border-color: var(--aico-muted-fg, #6b7280); }
-  .aico-news-popup-read[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
+  .aico-news-popup-more:hover,
+  .aico-news-popup-read:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
+  .aico-news-popup-more:focus-visible,
+  .aico-news-popup-read:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
+  /* Right-hand link in the strip; sits alone (still right-aligned) when the
+     article link is hidden. */
+  .aico-news-popup-read { margin-left: auto; }
+  .aico-news-popup-read[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
 
   @media (max-width: 30rem) {
     .aico-news-popup { padding: 0; align-items: flex-end; }
@@ -170,9 +173,9 @@
 
       <button
         type="button"
-        class="aico-button aico-button-outline aico-news-popup-read"
+        class="aico-news-popup-read"
         data-aico-news-popup-read
-      >{{ 'aico_featured_news.mark_as_read' | t }}</button>
+      >› {{ 'aico_featured_news.mark_as_read' | t }}</button>
     </footer>
   </div>
 </div>

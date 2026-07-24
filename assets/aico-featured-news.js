@@ -131,10 +131,11 @@
       refs.more.hidden = true;
     }
 
+    // Keep the chevron the markup ships with — this is a text link, not a button.
     var isLast = index >= articles.length - 1;
-    refs.read.textContent = isLast
+    refs.read.textContent = '› ' + (isLast
       ? t('mark_as_read', 'Mark as read')
-      : t('mark_as_read_next', 'Mark as read and continue');
+      : t('mark_as_read_next', 'Mark as read and continue'));
     refs.read.removeAttribute('aria-busy');
   }
 
