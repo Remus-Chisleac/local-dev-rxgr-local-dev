@@ -758,23 +758,6 @@
   // cards carry the same star rating as the SSR cards (snippets/star-rating).
   var reviewsInstanceId = grid ? (grid.getAttribute('data-aico-reviews-instance') || '') : '';
 
-  // Quick-add trigger aria label ({title} placeholder) — from the modal's
-  // config blob (snippets/quick-add-modal). Blob absent → no quick-add on
-  // this page, so JS-built cards skip the button like the SSR ones.
-  var quickAddOpenAria = '';
-  var quickAddEnabled = false;
-  (function readQuickAddConfig() {
-    var node = document.getElementById('aico-quick-add-config');
-    if (!node) {
-      return;
-    }
-    quickAddEnabled = true;
-    try {
-      var parsed = JSON.parse(node.textContent || '{}');
-      quickAddOpenAria = (parsed.i18n && parsed.i18n.open_aria) || '';
-    } catch (e) { /* keep defaults */ }
-  })();
-
   // Rating snapshot cache (SKU → rendered star markup). Yotpo's initWidgets()
   // re-scans EVERY `.yotpo-widget-instance` on the page, wiping already-rendered
   // stars and re-fetching them — a visible flicker on each appended batch or
@@ -990,31 +973,6 @@
     link.appendChild(imgWrap);
     link.appendChild(body);
     article.appendChild(link);
-
-    // Quick add-to-cart trigger — mirrors snippets/product-card.liquid: a
-    // SIBLING of the card link (the whole card is an <a>), only when the
-    // page carries the quick-add modal and the product is purchasable
-    // (priced; the listing scope filter already limits hits to in-stock).
-    if (quickAddEnabled && priceLabel && urlHandle) {
-      var quickAdd = document.createElement('button');
-      quickAdd.type = 'button';
-      quickAdd.className = 'aico-quick-add-trigger';
-      quickAdd.setAttribute('data-aico-quick-add', '');
-      quickAdd.setAttribute('data-aico-handle', urlHandle);
-      quickAdd.setAttribute('data-aico-title', title);
-      quickAdd.setAttribute('data-aico-url', link.href);
-      quickAdd.setAttribute('aria-haspopup', 'dialog');
-      quickAdd.setAttribute('aria-label', quickAddOpenAria.replace('{title}', title));
-      quickAdd.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-        + '<circle cx="8" cy="21" r="1"></circle>'
-        + '<circle cx="19" cy="21" r="1"></circle>'
-        + '<path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>'
-        + '<path d="M7 3.5h6"></path>'
-        + '<path d="M10 0.75v5.5"></path>'
-        + '</svg>';
-      article.appendChild(quickAdd);
-    }
-
     li.appendChild(article);
     return li;
   }

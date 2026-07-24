@@ -1,0 +1,57 @@
+{% comment %}
+  Card quick-add modal bootstrap — rendered ONCE per listing page
+  (templates/products.liquid, templates/brand.liquid) after the product
+  grid. Emits the config/i18n blob assets/quick-add.js reads and loads the
+  script; the modal DOM itself is built by the script on first open (same
+  pattern as the production-cockpit reminder modal).
+
+  The modal fetches `routes.aico_product_json_url` (per-product variants +
+  stock) on open and submits through the shared Alpine cart store's
+  bulkUpdate() — the same absolute-quantity path as the PDP size matrix —
+  so the header badge, mini-cart and toast all update reactively.
+{% endcomment %}
+
+{%- comment -%}
+  The region tab that starts active is the shopper's account size system
+  (customer.aico_size_region, one of EU/UK/US/KR) — same mapping as the PDP
+  matrix: KR shares the millimetre chart column, shown as MM.
+{%- endcomment -%}
+{%- assign aico_quick_add_region = customer.aico_size_region | default: 'EU' -%}
+{%- if aico_quick_add_region == 'KR' -%}
+  {%- assign aico_quick_add_region = 'MM' -%}
+{%- endif -%}
+{%- assign aico_quick_add_size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+
+<script id="aico-quick-add-config" type="application/json">{
+  "productJsonUrlTemplate": {{ routes.aico_product_json_url | json }},
+  "locale": {{ request.locale | default: shop.default_locale | json }},
+  "sizeRegion": {{ aico_quick_add_region | json }},
+  "sizeGuideUrl": {{ aico_quick_add_size_guide_url | default: '' | json }},
+  "i18n": {
+    "tab_eu": {{ 'product.size_region.tab_eu' | t | json }},
+    "tab_uk": {{ 'product.size_region.tab_uk' | t | json }},
+    "tab_us": {{ 'product.size_region.tab_us' | t | json }},
+    "tab_mm": {{ 'product.size_region.tab_mm' | t | json }},
+    "region_aria": {{ 'product.size_region.aria' | t | json }},
+    "matrix_aria": {{ 'product.size_matrix.aria' | t | json }},
+    "qty_aria": {{ 'product.size_matrix.qty_aria' | t | json }},
+    "total": {{ 'product.size_matrix.total' | t | json }},
+    "size_guide": {{ 'product.size_guide.link' | t | json }},
+    "size_guide_tooltip": {{ 'product.size_guide.tooltip' | t | json }},
+    "size_guide_soon": {{ 'product.size_guide.soon' | t | json }},
+    "size_guide_soon_tooltip": {{ 'product.size_guide.soon_tooltip' | t | json }},
+    "add_to_cart": {{ 'product.add_to_cart' | t | json }},
+    "update_cart": {{ 'products.quick_add.update_cart' | t | json }},
+    "restricted": {{ 'product.restricted' | t | json }},
+    "shipping_blocked_hint": {{ 'product.shipping_blocked_hint' | t | json }},
+    "close": {{ 'products.quick_add.close' | t | json }},
+    "loading": {{ 'products.loading' | t | json }},
+    "error": {{ 'products.quick_add.error' | t | json }},
+    "sold_out": {{ 'products.quick_add.sold_out' | t | json }},
+    "not_quick_addable": {{ 'products.quick_add.not_quick_addable' | t | json }},
+    "select_quantity": {{ 'products.quick_add.select_quantity' | t | json }},
+    "view_product": {{ 'products.quick_add.view_product' | t | json }},
+    "open_aria": {{ 'products.quick_add.open_aria' | t | json }}
+  }
+}</script>
+<script src="{{ 'quick-add.js' | asset_url }}" defer></script>

@@ -261,6 +261,9 @@
       {% for product in aico_products %}
         {% assign aico_card_eager = false %}
         {% if forloop.index0 < 8 %}{% assign aico_card_eager = true %}{% endif %}
+        {%- comment -%} Quick-add only for purchasable products (available; the snippet additionally requires a price). {%- endcomment -%}
+        {% assign aico_quick_add_handle = '' %}
+        {% if product.available? %}{% assign aico_quick_add_handle = product.aico_url_handle %}{% endif %}
         <li class="aico-products-grid-item" data-aico-product-id="{{ product.id }}">
           {% render 'product-card',
             url: product.url,
@@ -276,7 +279,8 @@
             is_new: product.aico_is_new?,
             discontinued: product.aico_is_discontinued?,
             eager: aico_card_eager,
-            show_reviews: true %}
+            show_reviews: true,
+            quick_add: aico_quick_add_handle %}
         </li>
       {% endfor %}
     </ul>
@@ -295,6 +299,9 @@
 
   {%- comment -%} Yotpo widgets loader — hydrates the per-card star ratings (gated on the reviews flag + store App Key). {%- endcomment -%}
   {% render 'yotpo-loader' %}
+
+  {%- comment -%} Card quick-add modal (config + assets/quick-add.js). {%- endcomment -%}
+  {% render 'quick-add-modal' %}
 
   <script id="aico-products-config" type="application/json">{{ aico_products_config.json }}</script>
   <script src="{{ 'products-page.js' | asset_url }}" defer></script>

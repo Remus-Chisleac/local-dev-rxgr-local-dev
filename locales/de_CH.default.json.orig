@@ -116,16 +116,6 @@
     "pagination_aria": "Produktseiten-Navigation",
     "product": {
       "add_to_cart": "In den Warenkorb"
-    },
-    "quick_add": {
-      "open_aria": "{title} in den Warenkorb legen",
-      "update_cart": "Warenkorb aktualisieren",
-      "close": "Schliessen",
-      "error": "Dieses Produkt konnte nicht geladen werden.",
-      "sold_out": "Dieses Produkt ist derzeit ausverkauft.",
-      "not_quick_addable": "Bitte wählen Sie die Optionen auf der Produktseite.",
-      "select_quantity": "Bitte wählen Sie zuerst mindestens eine Grösse.",
-      "view_product": "Zum Produkt"
     }
   },
   "customer": {

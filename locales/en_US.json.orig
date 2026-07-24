@@ -116,16 +116,6 @@
     "pagination_aria": "Products pagination",
     "product": {
       "add_to_cart": "Add to cart"
-    },
-    "quick_add": {
-      "open_aria": "Add {title} to cart",
-      "update_cart": "Update cart",
-      "close": "Close",
-      "error": "Could not load this product.",
-      "sold_out": "This product is currently sold out.",
-      "not_quick_addable": "Choose the options on the product page.",
-      "select_quantity": "Select at least one size first.",
-      "view_product": "View product"
     }
   },
   "customer": {
