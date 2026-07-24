@@ -414,6 +414,13 @@
       filter: buildFilter(),
       sort: [config.sortExpressions[state.sort] || config.sortExpressions['-date']],
     };
+    // Match a typed query only against the product-identity attributes the
+    // server whitelists. The index is `searchableAttributes: ['*']`, so
+    // without this Meilisearch also matches facet LABELS ("Color", "Size"),
+    // image URLs and locale codes — "col" then returned the whole catalogue.
+    if (body.q && Array.isArray(config.meilisearch.attributesToSearchOn) && config.meilisearch.attributesToSearchOn.length) {
+      body.attributesToSearchOn = config.meilisearch.attributesToSearchOn;
+    }
     if (opts.includeFacets) {
       body.facets = Object.keys(config.facetAttributes)
         .map(function (id) { return config.facetAttributes[id]; })

@@ -384,6 +384,13 @@
             filter: (cfg.scope && cfg.scope.filter) || '',
             sort: [sortExpr],
           };
+          // Same matched-attribute whitelist as the products page (served in
+          // the config): the index is `searchableAttributes: ['*']`, so without
+          // it a query also matches facet LABELS ("Color", "Size"), image URLs
+          // and locale codes — typing "col" returned the whole catalogue.
+          if (q && Array.isArray(cfg.meilisearch.attributesToSearchOn) && cfg.meilisearch.attributesToSearchOn.length) {
+            body.attributesToSearchOn = cfg.meilisearch.attributesToSearchOn;
+          }
           this.loading = true;
           fetch(url, {
             method: 'POST',
