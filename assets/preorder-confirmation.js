@@ -9,13 +9,19 @@
  *   - per-date delivery dates (+ their order numbers),
  *   - a PDF area: "generating…" → a working download link once it lands.
  *
- * The PDF arrives asynchronously (GeneratePreorderPdf). Transport is
- * polling-first: it polls `confirmation.js?cart_id=…` until `pdf.file_url`
- * appears. When the backend reports an active pusher driver, the confirmation
- * payload carries a `pusher` block ({ key, cluster, channel, event }) sourced
- * entirely from aico's broadcasting config — the theme then also subscribes to
- * that channel as a progressive enhancement. The merchant configures nothing;
- * the same UI is driven either way. No hard dependency on pusher being on.
+ * Transport is PUSHER-driven. When the backend has an active broadcast driver
+ * the confirmation payload carries a `pusher` block ({ key, cluster, channel,
+ * event }) assembled from aico's broadcasting config, and `confirmation.js` is
+ * then fetched exactly TWICE for a submit: once on arrival (initial data +
+ * the channel to subscribe to) and once on PreorderProcessedEvent (the final
+ * details). Everything in between — the submit progress and the PDF — arrives
+ * as broadcasts; no timer runs while the socket is healthy.
+ *
+ * There is deliberately NO retry/poll loop. A dropped socket message is not
+ * worth defending against here: this panel's state is entirely re-derivable
+ * from the endpoint, so reloading the page shows whatever is true at that
+ * moment. A deployment with no broadcast driver therefore leaves the wait state
+ * up until the shopper reloads — the same outcome, one keystroke later.
  *
  * Backend contract (GET /preorder/cart/confirmation.js?cart_id=):
  *   { aico_confirmation: {
@@ -32,13 +38,13 @@
  * a slim processing block — { processing: true, cart_id, status, pusher } —
  * NEVER the previous submission's stale orders/PDF. The panel then shows a
  * "we are processing your preorder" spinner state and re-fetches when
- * PreorderProcessedEvent arrives on the pusher channel (or via polling).
+ * PreorderProcessedEvent arrives on the pusher channel.
  * Both FIRST submits and edit re-submits land here the same way: the preorder
- * page redirects right after the submit is queued (no status polling there).
+ * page redirects right after the submit is queued (no status checks there).
  *
  * If the queued submit fails with nothing committed, the backend returns
  * { processing: false, error: true, cart_id, status } — the panel then swaps
- * the spinner for an error state instead of polling for details forever. The
+ * the spinner for an error state instead of waiting for details forever. The
  * same happens when a processing block was seen but a later fetch reports no
  * confirmation at all (e.g. a version conflict left the cart DRAFT).
  *
@@ -47,19 +53,16 @@
 (function (global) {
   'use strict';
 
-  var POLL_INTERVAL = 2000; // legacy parity (2s)
-  var MAX_DETAIL_POLLS = 60; // ~2 min waiting for the umbrella preorder
-  var MAX_PROCESSING_POLLS = 300; // ~10 min while the submit/edit is processing
-  var MAX_PDF_POLLS = 90; // ~3 min waiting for the PDF render
-  var PUSHER_FALLBACK_MS = 20000; // if the live socket delivers nothing in 20s, poll instead
-  // Polls spent waiting for the backend to seed the line-item counter before
-  // handing the processing state over to pusher anyway (~30s). The counter is
-  // seeded a moment after the submit is queued, which is often after this page
-  // has already made its first request.
-  var MAX_COUNT_POLLS = 15;
   // Circumference of the status medallion's ring (r=24 on the 52×52 viewBox),
   // matching the stroke-dasharray theme.css sets on it.
   var RING_CIRCUMFERENCE = 151;
+  // Minimum time a progress state stays on screen before the next one replaces
+  // it. A small submit finishes in about a second, so without this the count,
+  // the determinate arc and the "almost there" state all land in the same
+  // handful of frames and the shopper sees none of them — the page just blinks
+  // from spinner to checkmark. Updates that arrive inside the window are not
+  // dropped, only deferred (the newest wins).
+  var MIN_PROGRESS_DWELL_MS = 550;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
@@ -117,23 +120,18 @@
     this.cartId = root.getAttribute('data-aico-confirmation-cart-id') || null;
     this.currency = root.getAttribute('data-aico-confirmation-currency') || '';
 
-    this.detailPolls = 0;
-    this.processingPolls = 0;
-    this.pdfPolls = 0;
     this.pdfReady = false;
     this.detailLoaded = false;
     this._progressSeen = 0; // highest processed count rendered (monotonic guard)
+    this._lastProgressAt = 0; // when the last progress state was painted
+    this._progressQueue = []; // states waiting out the dwell window, in order
+    this._dwellTimer = null;
     this._progressTotal = 0; // line-item total, once any counter has surfaced
-    this._progressPolls = 0; // polls spent waiting for the counter to be seeded
     this._almostThere = false; // every line item counted; only the wrap-up left
     this._sawProcessing = false; // a processing block was seen at least once
     this._errored = false; // terminal error state rendered — transports stopped
     this._pusherClient = null;
     this._pusherSubscribed = false; // attempted a subscription
-    this._pusherActive = false; // channel subscription confirmed live
-    this._pusherFallbackArmed = false;
-    this._fallbackTimer = null;
-    this._timer = null;
   }
 
   /** Start with a known confirmation payload (e.g. seeded from submit response). */
@@ -157,9 +155,9 @@
       this.renderPending();
     }
     // One initial fetch loads the details (and any already-ready PDF). If the
-    // payload offers a pusher channel, polling then stops and the broadcast
-    // drives the PDF reveal; otherwise polling continues as the fallback.
-    this.poll();
+    // payload offers a pusher channel, no further fetch is scheduled and the
+    // broadcasts drive everything from there.
+    this.fetchConfirmation();
   };
 
   /**
@@ -202,8 +200,8 @@
 
   /**
    * Terminal error state: the queued submit failed and no details will arrive.
-   * Swap the spinner for the error copy and stop every transport (polling +
-   * fallback timers) — a spinner that never resolves is worse than bad news.
+   * Swap the spinner for the error copy — a spinner that never resolves is
+   * worse than bad news.
    */
   Confirmation.prototype.renderError = function () {
     if (this._errored) return;
@@ -223,18 +221,15 @@
         'Something went wrong while processing your preorder. Please go back to the preorder page and try again.',
       );
     }
-    this.stopPolling();
-    if (this._fallbackTimer) {
-      clearTimeout(this._fallbackTimer);
-      this._fallbackTimer = null;
-    }
   };
 
-  Confirmation.prototype.poll = function () {
+  /**
+   * Fetch the confirmation block. Called exactly twice for a normal submit — on
+   * arrival (initial state + the pusher channel) and on PreorderProcessedEvent
+   * (the final details). Nothing here schedules a repeat: the server pushes.
+   */
+  Confirmation.prototype.fetchConfirmation = function () {
     var self = this;
-    // A pusher event can call poll() while a scheduled poll is still pending;
-    // without this the two chains would both keep re-scheduling themselves.
-    this.stopPolling();
     var url = new URL(this.confirmationUrl, global.location.origin);
     url.searchParams.set('cart_id', String(this.cartId));
     fetch(url.toString(), {
@@ -254,93 +249,11 @@
           // left the cart DRAFT). Error state, not an endless spinner.
           self._swapToState(self.renderError.bind(self));
         }
-        self.scheduleNextPoll(confirmation);
       })
       .catch(function () {
-        self.scheduleNextPoll(null);
+        // A dropped request is not worth a retry loop: this panel's state is
+        // fully re-derivable, so a reload shows whatever is true at that moment.
       });
-  };
-
-  Confirmation.prototype.scheduleNextPoll = function (confirmation) {
-    var self = this;
-    if (this._errored) return; // terminal — nothing left to fetch
-    // Stop once we have details AND the PDF (or a delivered broadcast).
-    if (this.detailLoaded && this.pdfReady) return;
-
-    var processing = !!(confirmation && confirmation.processing);
-
-    // Pusher is primary when available: while we wait on the processed details
-    // or (details in hand) on the PDF, STOP polling and let the broadcast drive
-    // the update. A single fallback timer resumes polling if the socket
-    // delivers nothing — so we never poll in parallel with a working pusher
-    // connection.
-    var pusherOffered = !!(confirmation && confirmation.pusher && confirmation.pusher.key && confirmation.pusher.channel);
-    // Exception to pusher-primary: while the submit is processing and no
-    // line-item counter has surfaced yet, keep polling. The counter is seeded
-    // just after the submit is queued — often after this page's first request —
-    // and the first BROADCAST only comes when a chunk finishes, which on a large
-    // cart is a long, countless silence. Bounded, so a flow that never seeds one
-    // falls back to pusher instead of polling for the whole submit.
-    var awaitingCount = processing && !this._progressTotal && this._progressPolls < MAX_COUNT_POLLS;
-    if (!awaitingCount && (processing || (this.detailLoaded && !this.pdfReady)) && (pusherOffered || this._pusherActive)) {
-      this.armPusherFallback();
-      return;
-    }
-
-    if (processing) {
-      if (awaitingCount) this._progressPolls += 1;
-      this.processingPolls += 1;
-      // Give up tight-polling eventually; the spinner stays and a late pusher
-      // event (still bound) can resolve the page.
-      if (this.processingPolls >= MAX_PROCESSING_POLLS) return;
-    } else if (!confirmation) {
-      this.detailPolls += 1;
-      if (this.detailPolls >= MAX_DETAIL_POLLS) return; // submission likely still queued
-    } else if (!this.pdfReady) {
-      this.pdfPolls += 1;
-      if (this.pdfPolls >= MAX_PDF_POLLS) {
-        // Give up waiting for the PDF; the details still stand.
-        this.setPdfState('unavailable');
-        return;
-      }
-    }
-    this._timer = setTimeout(function () {
-      self.poll();
-    }, POLL_INTERVAL);
-  };
-
-  /** Arm a one-shot timer that resumes polling if pusher delivers no PDF in time. */
-  Confirmation.prototype.armPusherFallback = function () {
-    var self = this;
-    if (this._pusherFallbackArmed) return;
-    this._pusherFallbackArmed = true;
-    this._fallbackTimer = setTimeout(function () {
-      self._fallbackTimer = null;
-      if (self.pdfReady) return;
-      // Socket gave us nothing in time — drop back to polling.
-      self._pusherActive = false;
-      self._pusherFallbackArmed = false;
-      self.poll();
-    }, PUSHER_FALLBACK_MS);
-  };
-
-  Confirmation.prototype.stopPolling = function () {
-    if (this._timer) {
-      clearTimeout(this._timer);
-      this._timer = null;
-    }
-  };
-
-  /** Pusher dropped/failed before delivering — resume the polling fallback now. */
-  Confirmation.prototype.resumePolling = function () {
-    if (this.pdfReady) return;
-    this._pusherActive = false;
-    this._pusherFallbackArmed = false;
-    if (this._fallbackTimer) {
-      clearTimeout(this._fallbackTimer);
-      this._fallbackTimer = null;
-    }
-    if (!this._timer) this.poll();
   };
 
   /**
@@ -353,11 +266,47 @@
    * Reveals the count under the medallion and drives the ring. Only meaningful
    * while the panel still shows the processing state. Progress never moves
    * backwards (pusher gives no ordering promise), and a live stream re-arms the
-   * polling fallback — events prove the socket is healthy, so the fallback poll
-   * should not fire mid-submit.
+   * fallback watchdog — events prove the socket is healthy, so it should not
+   * fire mid-submit.
    */
   Confirmation.prototype.applyProgress = function (data) {
-    if (this.detailLoaded || this._errored || !data) return;
+    // Deliberately NOT gated on detailLoaded: apply() sets that flag before it
+    // hands the confirmed swap to _swapToState, and the swap waits for this
+    // queue to drain — gating here would silently discard the very states the
+    // wait was extended for. The panel still showing --processing is the real
+    // condition, and _renderProgress checks it.
+    if (this._errored || !data) return;
+    this._progressQueue.push(data);
+    // A three-event submit (0/X, part-way, X/X) can land inside a couple of
+    // frames, so states are QUEUED rather than overwritten — collapsing to the
+    // newest would skip the part-way state, which is the only one that ever
+    // shows the ring as a percentage. Longer bursts collapse to first+last so
+    // the queue can never lag more than one extra dwell behind reality.
+    if (this._progressQueue.length > 2) {
+      this._progressQueue = [this._progressQueue[0], this._progressQueue[this._progressQueue.length - 1]];
+    }
+    this._drainProgress();
+  };
+
+  /** Paint the next queued progress state, then hold it for its dwell. */
+  Confirmation.prototype._drainProgress = function () {
+    if (this._dwellTimer || !this._progressQueue.length) return;
+    var waited = this._lastProgressAt ? Date.now() - this._lastProgressAt : MIN_PROGRESS_DWELL_MS;
+    if (waited < MIN_PROGRESS_DWELL_MS) {
+      var self = this;
+      this._dwellTimer = setTimeout(function () {
+        self._dwellTimer = null;
+        self._drainProgress();
+      }, MIN_PROGRESS_DWELL_MS - waited);
+      return;
+    }
+    this._renderProgress(this._progressQueue.shift());
+    if (this._progressQueue.length) this._drainProgress();
+  };
+
+  /** Paint one progress state. Always reached through applyProgress()'s pacing. */
+  Confirmation.prototype._renderProgress = function (data) {
+    if (this._errored || !data) return;
     if (!this.root.classList.contains('aico-preorder-confirmation--processing')) return;
     var processed = Number(data.processed);
     var total = Number(data.total);
@@ -367,6 +316,7 @@
     if (processed < this._progressSeen) return;
     this._progressSeen = processed;
     this._progressTotal = total;
+    this._lastProgressAt = Date.now();
 
     var wrap = this.root.querySelector('[data-aico-confirmation-progress]');
     if (wrap) {
@@ -392,14 +342,6 @@
       this._almostThere = true;
       this.renderProcessingMessage();
     }
-
-    // Push the pusher-silence fallback out: the stream is alive.
-    if (this._fallbackTimer) {
-      clearTimeout(this._fallbackTimer);
-      this._fallbackTimer = null;
-    }
-    this._pusherFallbackArmed = false;
-    this.armPusherFallback();
   };
 
   /**
@@ -446,6 +388,20 @@
       render();
       return;
     }
+
+    // Let the wait state finish being a wait state. The submit can complete in
+    // about a second, and swapping to the confirmed panel the instant the last
+    // progress event lands means the 100% / "almost there" step is painted and
+    // replaced in the same breath. Flush anything still queued, then hold the
+    // swap until that final state has had its dwell.
+    var sinceProgress = this._lastProgressAt ? Date.now() - this._lastProgressAt : MIN_PROGRESS_DWELL_MS;
+    if (this._progressQueue.length || sinceProgress < MIN_PROGRESS_DWELL_MS) {
+      var deferred = this;
+      setTimeout(function () {
+        deferred._swapToState(render);
+      }, this._progressQueue.length ? MIN_PROGRESS_DWELL_MS : Math.max(MIN_PROGRESS_DWELL_MS - sinceProgress, 0));
+      return;
+    }
     // A newer payload while mid-swap just replaces what gets rendered.
     if (this._swapping) {
       this._pendingSwapRender = render;
@@ -468,7 +424,7 @@
     }, 190);
   };
 
-  /** Render the full confirmation from a payload (poll or broadcast-merged). */
+  /** Render the full confirmation from a payload (fetched or broadcast-merged). */
   Confirmation.prototype.apply = function (confirmation) {
     if (!confirmation || typeof confirmation !== 'object') return;
 
@@ -497,8 +453,8 @@
       return;
     }
 
-    // Flags flip synchronously (scheduleNextPoll reads them right after this
-    // returns); only the DOM swap below is deferred by the animation.
+    // Flags flip synchronously; only the DOM swap below is deferred by the
+    // animation and the progress dwell.
     this.detailLoaded = true;
     this._errored = false;
     var self = this;
@@ -576,7 +532,7 @@
 
     // Backend-driven progressive enhancement: subscribe the moment the payload
     // first carries an active pusher block (aico sets it only when its driver is
-    // on). Polling above already covers the no-pusher path.
+    // on).
     if (!this._pusherSubscribed && confirmation.pusher) {
       this.subscribePusher(confirmation.pusher);
     }
@@ -653,21 +609,13 @@
       '" target="_blank" rel="noopener">' +
       escapeHtml(label) +
       '</a>';
-    if (this._timer) {
-      clearTimeout(this._timer);
-      this._timer = null;
-    }
-    if (this._fallbackTimer) {
-      clearTimeout(this._fallbackTimer);
-      this._fallbackTimer = null;
-    }
   };
 
   /**
    * Optional pusher subscriber. `config` is the backend-sourced block from the
    * confirmation payload ({ key, cluster, channel, event }); aico assembles the
    * channel name and only sends this when its broadcast driver is active. Loaded
-   * lazily, once, and failures are swallowed (polling still drives the reveal).
+   * lazily, once, and failures are swallowed.
    */
   Confirmation.prototype.subscribePusher = function (config) {
     var self = this;
@@ -679,7 +627,7 @@
     var progressEventName = config.progress_event || 'PreorderSubmitProgressEvent';
     this.loadPusher()
       .then(function (Pusher) {
-        if (!Pusher) { self.resumePolling(); return; } // script blocked → poll
+        if (!Pusher) return; // script blocked — a reload re-derives the state
         try {
           self._pusherClient = new Pusher(config.key, {
             cluster: config.cluster || 'mt1',
@@ -687,16 +635,17 @@
           });
           var channel = self._pusherClient.subscribe(config.channel);
           // Channel confirmed live → pusher is now the source of truth: stop
-          // polling and reconcile once (covers a PDF that landed during setup).
+
           channel.bind('pusher:subscription_succeeded', function () {
-            self._pusherActive = true;
-            self.stopPolling();
-            if (!self.pdfReady) self.poll();
+            // Reconcile ONLY for a PDF that landed while the socket was being
+            // set up. While the submit is still processing there is nothing to
+            // reconcile — PreorderProcessedEvent carries that news.
+            if (self.detailLoaded && !self.pdfReady) self.fetchConfirmation();
           });
           // The async submit/edit finished processing — the details are final;
           // re-fetch the confirmation to swap the processing spinner for them.
           channel.bind(processedEventName, function () {
-            self.poll();
+            self.fetchConfirmation();
           });
           // Live first-submit progress → drive the processing-state bar.
           channel.bind(progressEventName, function (data) {
@@ -707,20 +656,16 @@
               self.showPdfLink(data.fileUrl, data.fileName);
             } else {
               // No locator in the event, or the details themselves are still
-              // pending (processed event missed?) — re-poll for the full block.
-              self.poll();
+              // pending (processed event missed?) — fetch the full block.
+              self.fetchConfirmation();
             }
           });
-          // Socket trouble → resume the polling fallback immediately.
-          self._pusherClient.connection.bind('unavailable', function () { self.resumePolling(); });
-          self._pusherClient.connection.bind('failed', function () { self.resumePolling(); });
         } catch (_) {
-          self.resumePolling();
+          // Subscription failed — the panel keeps its wait state; reloading the
+          // page re-derives whatever is true then.
         }
       })
-      .catch(function () {
-        self.resumePolling();
-      });
+      .catch(function () {});
   };
 
   Confirmation.prototype.loadPusher = function () {

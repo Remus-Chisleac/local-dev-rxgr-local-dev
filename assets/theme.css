@@ -9758,7 +9758,9 @@ html.aico-preorder-gallery-open {
 }
 
 .aico-preorder-confirmation-total-row--grand dt,
-.aico-preorder-confirmation-total-row--grand dd {
+.aico-preorder-confirmation-total-row--grand dd,
+.aico-preorder-confirmation-total-row--vat dt,
+.aico-preorder-confirmation-total-row--vat dd {
   font-weight: 800;
   color: #272727;
 }
