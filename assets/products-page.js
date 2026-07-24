@@ -369,6 +369,12 @@
   // ?facet[id][]= query form the server still accepts.
   function syncUrl() {
     var params = new URLSearchParams();
+    // ?rrp=true experiment toggle (theme.js card-price rearrangement): not
+    // part of the listing state, but it must survive the URL rewrite or the
+    // reload-with-param never sees it.
+    if (/[?&]rrp=true(?:&|#|$)/.test(window.location.search)) {
+      params.set('rrp', 'true');
+    }
     if (state.query) {
       params.set('q', state.query);
     }
