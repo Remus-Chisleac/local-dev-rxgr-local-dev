@@ -1397,7 +1397,7 @@ html.aico-no-scroll { overflow: hidden; }
 }
 /* Recommended retail price — informational, never a sale signal. */
 .aico-product-card-rrp {
-  color: #d97706;
+  color: var(--aico-muted-fg);
   font-weight: 500;
   font-size: 0.8125rem;
 }
@@ -3212,6 +3212,7 @@ button.aico-home-brand-card {
   color: var(--aico-muted-fg);
 }
 .aico-pdp-rrp-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.aico-pdp-rrp-list { text-decoration: line-through; font-variant-numeric: tabular-nums; }
 .aico-pdp-rrp-value { font-variant-numeric: tabular-nums; }
 .aico-pdp-price-on-request {
   font-size: 1rem;
