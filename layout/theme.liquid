@@ -649,7 +649,7 @@
              :class="{ 'aico-panel-open': $store.panels && $store.panels.isOpen('search') }"
              :hidden="!($store.panels && $store.panels.isMounted('search'))"
              :aria-hidden="!($store.panels && $store.panels.isOpen('search'))"
-             x-effect="if ($store.panels && $store.panels.isOpen('search')) { ensurePreloaded(); $nextTick(() => { if ($refs.searchInput) { $refs.searchInput.focus(); } }); }"
+             x-effect="if ($store.panels && $store.panels.isOpen('search')) { onOpen(); $nextTick(() => { if ($refs.searchInput) { $refs.searchInput.focus(); } }); }"
              role="dialog" aria-modal="true" aria-labelledby="aico-search-panel-title" tabindex="-1">
         <div class="aico-panel-head">
           <h2 id="aico-search-panel-title" class="aico-panel-title">{{ 'general.search.search' | t }}</h2>
@@ -692,7 +692,7 @@
             <span class="aico-sr-only">{{ 'general.search.searching' | t }}</span>
           </div>
 
-          {%- comment -%} Results — preloaded products on open, or typed-query matches. {%- endcomment -%}
+          {%- comment -%} Results — matches for the typed query (nothing is preloaded). {%- endcomment -%}
           <template x-if="!loading && results.length > 0">
             <div class="aico-search-results-wrap">
               <p class="aico-search-results-heading">{{ 'general.search.products' | t }}</p>
@@ -724,6 +724,17 @@
                   </li>
                 </template>
               </ul>
+
+              {%- comment -%}
+                Lazy paging: this sentinel sits under the list and, once it
+                scrolls into view of the panel body, pulls the next page.
+                `hasMore` gates it, so the last page leaves it inert.
+              {%- endcomment -%}
+              <div class="aico-search-sentinel" x-init="initSentinel($el)" aria-hidden="true"></div>
+              <div class="aico-search-loading aico-search-loading--more" x-show="loadingMore" x-cloak>
+                <span class="aico-search-spinner" aria-hidden="true"></span>
+                <span class="aico-sr-only">{{ 'general.search.searching' | t }}</span>
+              </div>
             </div>
           </template>
 

@@ -11,8 +11,10 @@
 // product search that talks to Meilisearch directly with the public
 // read-only key — the same client-side pattern as assets/products-page.js,
 // reusing the `aico_search_config` bootstrap the renderer injects on every
-// page. Results are ordered by name A→Z to match the legacy b2b-shop side
-// search.
+// page. Results are ranked by relevance and matched against product identity
+// only (name / SKU / EAN). Nothing is fetched until the shopper types; further
+// pages load lazily as the list is scrolled, and the term is persisted to
+// localStorage so it survives navigating to a product and back.
 
 (function () {
   'use strict';
@@ -263,6 +265,14 @@
     return pct > 0 ? pct : null;
   }
 
+  // The index's translation rows are keyed `en` / `de_CH`, NOT the storefront
+  // locale (`en_US` / `de_CH`) — so translation lookups use the server-supplied
+  // `indexLocale`, while money formatting keeps the real BCP-47 `locale`.
+  // Falling back to `locale` keeps an older cached config working.
+  function translationLocale(cfg) {
+    return (cfg && cfg.indexLocale) || (cfg && cfg.locale) || 'en';
+  }
+
   function mapHit(hit, cfg) {
     var id = String(hit.productId != null ? hit.productId : (hit.id != null ? hit.id : (hit.urlHandle || '')));
     var urlHandle = (typeof hit.urlHandle === 'string' && hit.urlHandle.trim()) ? hit.urlHandle.trim() : id;
@@ -277,9 +287,9 @@
     var brandInfo = brandId != null ? brands[String(brandId)] : null;
     return {
       id: id,
-      title: pickName(hit, cfg.locale) || id,
+      title: pickName(hit, translationLocale(cfg)) || id,
       url: prefix + encodeURIComponent(urlHandle) + suffix,
-      image: pickImage(hit, cfg.locale),
+      image: pickImage(hit, translationLocale(cfg)),
       priceLabel: pricing ? formatMoney(displayed, pricing.currencyCode, cfg.locale) : null,
       compareLabel: (pricing && pricing.isOnSale && pricing.discountPrice != null)
         ? formatMoney(pricing.sellingPrice, pricing.currencyCode, cfg.locale)
@@ -297,30 +307,67 @@
 
   // ---- Search Alpine component ------------------------------------
 
-  var PRELOAD_LIMIT = 12;
-  var QUERY_LIMIT = 8;
+  // One page of results. The drawer never preloads: with no query there is
+  // nothing to show, so the first request only fires once the shopper has
+  // typed `minChars` characters. Further pages are pulled in by the sentinel
+  // observer as the results list is scrolled.
+  var PAGE_SIZE = 12;
+
+  // The term survives navigation, so opening a result and coming back leaves
+  // the search intact. sessionStorage would die with the tab; localStorage
+  // also survives a reload, which is what "going to a page does not clear it"
+  // asks for.
+  var STORAGE_KEY = 'aico:search:query';
+
+  function readStoredQuery() {
+    try {
+      var stored = window.localStorage.getItem(STORAGE_KEY);
+      return typeof stored === 'string' ? stored : '';
+    } catch (e) {
+      return ''; // storage disabled / private mode
+    }
+  }
+
+  function writeStoredQuery(query) {
+    try {
+      if (query) {
+        window.localStorage.setItem(STORAGE_KEY, query);
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (e) { /* non-fatal — the drawer just forgets between pages */ }
+  }
 
   function registerSearchComponent() {
     Alpine.data('aicoSearch', function () {
       return {
         query: '',
         results: [],
-        loading: false,
-        searched: false,   // a typed query has returned (drives the no-results state)
+        loading: false,      // the first page of a query is in flight
+        loadingMore: false,  // a follow-up page is in flight
+        searched: false,     // a query has returned (drives the no-results state)
         error: false,
         total: 0,
-        isPreload: false,   // current results are the preloaded set, not a typed query
-        preloaded: false,   // preload fetch has been kicked off
+        hasMore: false,
         minChars: 2,
         _debounce: null,
         _seq: 0,
-        _preloadResults: null,
+        _observer: null,
         cfg: null,
         i18n: null,
 
         init: function () {
           this.cfg = readSearchConfig();
           this.i18n = (typeof window !== 'undefined' && window.__AICO_SEARCH_I18N__) || null;
+          // Restore the last term into the input but do NOT search yet: the
+          // fetch waits until the drawer is actually opened (onOpen), so a
+          // page load never costs a Meilisearch request.
+          this.query = readStoredQuery();
+        },
+
+        destroy: function () {
+          if (this._observer) { this._observer.disconnect(); this._observer = null; }
+          if (this._debounce) { clearTimeout(this._debounce); }
         },
 
         get configured() { return !!this.cfg; },
@@ -332,72 +379,98 @@
           return map[gender] || gender;
         },
 
-        // Preload products the first time the drawer opens (empty query →
-        // newest products, like aico-commerce's search panel), cached so
-        // re-opening doesn't refetch.
-        ensurePreloaded: function () {
-          if (!this.cfg || this.preloaded) { return; }
-          this.preloaded = true;
-          this.runFetch('', true);
+        // Drawer opened: run the restored term once. Results are kept after
+        // that, so re-opening the drawer doesn't refetch.
+        onOpen: function () {
+          if (!this.cfg) { return; }
+          var query = (this.query || '').trim();
+          if (query.length >= this.minChars && !this.results.length && !this.loading) {
+            this.runQuery(query);
+          }
         },
 
         onInput: function () {
-          var q = (this.query || '').trim();
+          var query = (this.query || '').trim();
+          writeStoredQuery(query);
           if (this._debounce) { clearTimeout(this._debounce); }
-          if (q.length < this.minChars) {
-            // Below the threshold → fall back to the preloaded set.
-            this._seq++; // cancel any in-flight typed query
+          if (query.length < this.minChars) {
+            // Below the threshold there is nothing to show — the drawer has
+            // no preloaded set to fall back to any more.
+            this._seq++; // cancel any in-flight query
+            this.resetResults();
+            this.loading = false;
             this.error = false;
             this.searched = false;
-            this.loading = false;
-            if (this._preloadResults) {
-              this.results = this._preloadResults;
-              this.total = this._preloadResults.length;
-              this.isPreload = true;
-            } else {
-              this.results = [];
-              this.total = 0;
-              this.isPreload = false;
-              this.ensurePreloaded();
-            }
             return;
           }
           this.loading = true;
           var self = this;
-          this._debounce = setTimeout(function () { self.runFetch(q, false); }, 250);
+          this._debounce = setTimeout(function () { self.runQuery(query); }, 250);
         },
 
-        runFetch: function (q, isPreload) {
+        resetResults: function () {
+          this.results = [];
+          this.total = 0;
+          this.hasMore = false;
+          this.loadingMore = false;
+        },
+
+        // First page of a term — drops whatever is currently listed.
+        runQuery: function (query) {
+          this.resetResults();
+          this.loading = true;
+          this.runFetch(query, 0, false);
+        },
+
+        // Next page, driven by the sentinel scrolling into view.
+        loadMore: function () {
+          if (!this.cfg || !this.hasMore || this.loading || this.loadingMore) { return; }
+          var query = (this.query || '').trim();
+          if (query.length < this.minChars) { return; }
+          this.loadingMore = true;
+          this.runFetch(query, this.results.length, true);
+        },
+
+        // Watch the sentinel that sits below the list, rooted on the scrolling
+        // panel body, so paging triggers on actually reaching the bottom rather
+        // than on a scroll-position guess. Re-runs whenever Alpine recreates
+        // the results block, hence the disconnect first.
+        initSentinel: function (el) {
+          if (!el || typeof IntersectionObserver !== 'function') { return; }
+          if (this._observer) { this._observer.disconnect(); }
+          var self = this;
+          this._observer = new IntersectionObserver(function (entries) {
+            for (var i = 0; i < entries.length; i++) {
+              if (entries[i].isIntersecting) { self.loadMore(); }
+            }
+          }, { root: el.closest('.aico-search-body') || null, rootMargin: '200px' });
+          this._observer.observe(el);
+        },
+
+        runFetch: function (query, offset, append) {
           var cfg = this.cfg;
-          if (!cfg) { this.loading = false; return; }
+          if (!cfg) { this.loading = false; this.loadingMore = false; return; }
           var seq = ++this._seq;
           var self = this;
-          // The preload (empty query) shows the newest products like
-          // aico-commerce. A TYPED query carries no sort at all so Meilisearch
-          // ranks by relevance — same as the server-side product search
-          // (ProductCatalogLoader::searchProductsForApi). Forcing A→Z here
-          // reordered the whole result set alphabetically, so with only 8 slots
+          // No sort expression: Meilisearch ranks by relevance, same as the
+          // server-side product search (ProductCatalogLoader::searchProductsForApi).
+          // Forcing A→Z here reordered the whole result set alphabetically, so
           // an exact name match ("Colorado") lost its place to whatever
           // happened to start with an "A".
-          var sortExpr = (cfg.sortExpressions && cfg.sortExpressions['-date']) || 'createdAt:desc';
           var url = cfg.meilisearch.host + '/indexes/' + encodeURIComponent(cfg.meilisearch.indexName) + '/search';
           var body = {
-            q: q,
-            limit: isPreload ? PRELOAD_LIMIT : QUERY_LIMIT,
-            offset: 0,
+            q: query,
+            limit: PAGE_SIZE,
+            offset: offset,
             filter: (cfg.scope && cfg.scope.filter) || '',
           };
-          if (isPreload) {
-            body.sort = [sortExpr];
-          }
-          // Same matched-attribute whitelist as the products page (served in
-          // the config): the index is `searchableAttributes: ['*']`, so without
-          // it a query also matches facet LABELS ("Color", "Size"), image URLs
-          // and locale codes — typing "col" returned the whole catalogue.
-          if (q && Array.isArray(cfg.meilisearch.attributesToSearchOn) && cfg.meilisearch.attributesToSearchOn.length) {
+          // Identity-only whitelist (name / SKU / EAN) served in the config:
+          // the index is `searchableAttributes: ['*']`, so without it a query
+          // also matches facet LABELS ("Color", "Size"), image URLs and locale
+          // codes — typing "col" returned the whole catalogue.
+          if (Array.isArray(cfg.meilisearch.attributesToSearchOn) && cfg.meilisearch.attributesToSearchOn.length) {
             body.attributesToSearchOn = cfg.meilisearch.attributesToSearchOn;
           }
-          this.loading = true;
           fetch(url, {
             method: 'POST',
             headers: {
@@ -416,37 +489,30 @@
           }).then(function (priced) {
             if (seq !== self._seq) { return; } // a newer query superseded this one
             var data = priced.data;
-            var hits = priced.hits;
-            var products = hits.map(function (h) { return mapHit(h, cfg); });
+            var products = priced.hits.map(function (h) { return mapHit(h, cfg); });
+            self.results = append ? self.results.concat(products) : products;
             var estimated = (data && typeof data.estimatedTotalHits === 'number')
               ? data.estimatedTotalHits
-              : products.length;
-            if (isPreload) {
-              self._preloadResults = products;
-              // Only surface the preload if the user hasn't started typing.
-              if ((self.query || '').trim().length < self.minChars) {
-                self.results = products;
-                self.total = estimated;
-                self.isPreload = true;
-                self.searched = false;
-              }
-            } else {
-              self.results = products;
-              self.total = estimated;
-              self.isPreload = false;
-              self.searched = true;
-            }
+              : self.results.length;
+            self.total = estimated;
+            // Only claim another page when this one came back FULL and the
+            // running count is still short of the estimate — a last page that
+            // exactly fills PAGE_SIZE would otherwise cost one empty fetch.
+            self.hasMore = products.length === PAGE_SIZE && self.results.length < estimated;
+            self.searched = true;
             self.loading = false;
+            self.loadingMore = false;
             self.error = false;
           }).catch(function () {
             if (seq !== self._seq) { return; }
             self.loading = false;
-            self.error = true;
-            if (isPreload) {
-              self.preloaded = false; // allow a retry on the next open
+            self.loadingMore = false;
+            if (append) {
+              // Keep the pages already listed; just stop paging.
+              self.hasMore = false;
             } else {
-              self.results = [];
-              self.total = 0;
+              self.error = true;
+              self.resetResults();
               self.searched = true;
             }
           });
@@ -456,20 +522,11 @@
           if (this._debounce) { clearTimeout(this._debounce); }
           this._seq++;
           this.query = '';
+          writeStoredQuery('');
+          this.resetResults();
           this.searched = false;
           this.loading = false;
           this.error = false;
-          // Restore the preloaded set rather than emptying the drawer.
-          if (this._preloadResults) {
-            this.results = this._preloadResults;
-            this.total = this._preloadResults.length;
-            this.isPreload = true;
-          } else {
-            this.results = [];
-            this.total = 0;
-            this.isPreload = false;
-            this.ensurePreloaded();
-          }
         },
       };
     });

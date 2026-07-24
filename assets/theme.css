@@ -755,6 +755,11 @@ html.aico-no-scroll { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .aico-search-spinner { animation-duration: 1.6s; }
 }
+/* Lazy-paging spinner sits under the list, so it needs far less room than the
+   full-panel one it shares a class with. */
+.aico-search-loading--more { padding: 1rem 0; }
+/* Zero-height trigger for the paging IntersectionObserver. */
+.aico-search-sentinel { height: 1px; }
 
 .aico-search-results { list-style: none; margin: 0; padding: 0; }
 .aico-search-result + .aico-search-result { border-top: 1px solid var(--aico-border, #f0f0f0); }
