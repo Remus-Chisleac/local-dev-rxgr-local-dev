@@ -1405,6 +1405,8 @@ html.aico-no-scroll { overflow: hidden; }
    beside the current price, RRP on its own row underneath. */
 .aico-product-card-price[data-aico-rrp-v2] {
   display: flex;
+  /* the base card rule stacks its price rows with flex-direction: column */
+  flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.375rem;
