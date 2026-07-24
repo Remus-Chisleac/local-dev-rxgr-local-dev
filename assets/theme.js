@@ -123,3 +123,115 @@
     }
   });
 })();
+
+// Client-proposal experiment (?rrp=true): rearrange product-card prices to
+// the PDP layout — struck regular price BESIDE the current price (not a row
+// above), RRP on its own line UNDERNEATH ("RRP <struck regular> <current>").
+// Only active when the query param is present; without it the cards keep the
+// stock two-row layout. Works on server-rendered cards (listing/brand/blocks)
+// and on infinite-scroll cards via a MutationObserver, so products-page.js
+// stays untouched.
+(function () {
+  'use strict';
+
+  if (!/[?&]rrp=true(?:&|#|$)/.test(window.location.search)) {
+    return;
+  }
+
+  // "(RRP 259.90 CHF)" / "(UVP 259,90 €)" → { label: 'RRP', value: '259.90 CHF' }
+  function parseRrp(el) {
+    if (!el) {
+      return null;
+    }
+    var text = el.textContent.trim().replace(/^\(/, '').replace(/\)$/, '');
+    var firstDigit = text.search(/\d/);
+    if (firstDigit < 1) {
+      return { label: '', value: text };
+    }
+    return { label: text.slice(0, firstDigit).trim(), value: text.slice(firstDigit).trim() };
+  }
+
+  function upgradeCard(card) {
+    var price = card.querySelector('.aico-product-card-price');
+    if (!price || price.hasAttribute('data-aico-rrp-v2')) {
+      return;
+    }
+    var now = price.querySelector('.aico-product-card-price-now');
+    if (!now) {
+      // Skeleton or price-on-request card — nothing to rearrange.
+      return;
+    }
+    price.setAttribute('data-aico-rrp-v2', '');
+
+    var was = price.querySelector('.aico-product-card-price-was');
+    var struckPrice = was ? was.querySelector('.aico-product-card-price-list') : null;
+    var struckRrp = parseRrp(was ? was.querySelector('.aico-product-card-rrp-was') : null);
+    var currentPrice = now.querySelector('.aico-product-card-price-current');
+    var discountBadge = now.querySelector('.aico-product-card-discount');
+    var currentRrp = parseRrp(now.querySelector('.aico-product-card-rrp:not(.aico-product-card-rrp-was)'));
+
+    // Price row: struck regular + current side by side (+ discount chip).
+    price.textContent = '';
+    if (struckPrice) {
+      price.appendChild(struckPrice);
+    }
+    if (currentPrice) {
+      price.appendChild(currentPrice);
+    }
+    if (discountBadge) {
+      price.appendChild(discountBadge);
+    }
+
+    // RRP row underneath, PDP-style: label + struck regular RRP + current RRP.
+    if (currentRrp || struckRrp) {
+      var row = document.createElement('p');
+      row.className = 'aico-product-card-rrp-row';
+      var label = document.createElement('span');
+      label.className = 'aico-product-card-rrp-row-label';
+      label.textContent = (currentRrp && currentRrp.label) || (struckRrp && struckRrp.label) || 'RRP';
+      row.appendChild(label);
+      if (currentRrp && struckRrp && struckRrp.value !== currentRrp.value) {
+        var old = document.createElement('span');
+        old.className = 'aico-product-card-rrp-row-list';
+        old.textContent = struckRrp.value;
+        row.appendChild(old);
+      }
+      var value = document.createElement('span');
+      value.className = 'aico-product-card-rrp-row-value';
+      value.textContent = (currentRrp || struckRrp).value;
+      row.appendChild(value);
+      price.after(row);
+    }
+  }
+
+  function upgradeAll(root) {
+    if (root.matches && root.matches('.aico-product-card')) {
+      upgradeCard(root);
+    }
+    var cards = root.querySelectorAll ? root.querySelectorAll('.aico-product-card') : [];
+    for (var i = 0; i < cards.length; i++) {
+      upgradeCard(cards[i]);
+    }
+  }
+
+  function start() {
+    upgradeAll(document);
+    // Infinite-scroll / async cards (products-page.js buildCard).
+    new MutationObserver(function (mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var added = mutations[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          if (added[j].nodeType === 1) {
+            upgradeAll(added[j]);
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();

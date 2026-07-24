@@ -1401,6 +1401,36 @@ html.aico-no-scroll { overflow: hidden; }
   font-weight: 500;
   font-size: 0.8125rem;
 }
+/* ?rrp=true experiment (theme.js): PDP-style card prices — struck regular
+   beside the current price, RRP on its own row underneath. */
+.aico-product-card-price[data-aico-rrp-v2] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+.aico-product-card-rrp-row {
+  margin: 0.125rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--aico-muted-fg);
+}
+.aico-product-card-rrp-row-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.aico-product-card-rrp-row-list {
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+.aico-product-card-rrp-row-value {
+  font-variant-numeric: tabular-nums;
+}
 .aico-product-card-rrp-was {
   color: var(--aico-muted-fg);
   text-decoration: line-through;
