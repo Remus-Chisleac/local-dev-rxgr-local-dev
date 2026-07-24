@@ -20,7 +20,12 @@
 {%- if aico_quick_add_region == 'KR' -%}
   {%- assign aico_quick_add_region = 'MM' -%}
 {%- endif -%}
-{%- assign aico_quick_add_size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+{%- comment -%}
+  Same size-chart media as the PDP matrix (theme setting → media-gallery
+  file: PDF, image or video). '' when nothing is picked; the script then
+  renders no link at all.
+{%- endcomment -%}
+{%- assign aico_quick_add_size_guide_url = settings.aico_pdp_size_guide_media | aico_media_url -%}
 
 <script id="aico-quick-add-config" type="application/json">{
   "productJsonUrlTemplate": {{ routes.aico_product_json_url | json }},
@@ -40,8 +45,6 @@
     "total": {{ 'product.size_matrix.total' | t | json }},
     "size_guide": {{ 'product.size_guide.link' | t | json }},
     "size_guide_tooltip": {{ 'product.size_guide.tooltip' | t | json }},
-    "size_guide_soon": {{ 'product.size_guide.soon' | t | json }},
-    "size_guide_soon_tooltip": {{ 'product.size_guide.soon_tooltip' | t | json }},
     "add_to_cart": {{ 'product.add_to_cart' | t | json }},
     "update_cart": {{ 'product.update_cart' | t | json }},
     "restricted": {{ 'product.restricted' | t | json }},

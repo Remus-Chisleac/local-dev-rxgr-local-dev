@@ -16,11 +16,10 @@
       { "id": "heading", "type": "text", "label": "Hero heading", "default": "Welcome to your new shop" },
       { "id": "subheading", "type": "text", "label": "Hero subheading", "default": "Customize this from the theme settings." },
       {
-        "id": "aico_pdp_size_guide_url",
-        "type": "text",
-        "label": "Size chart URL (opens in new tab)",
-        "default": "",
-        "info": "Optional link for “Size chart” on the product page matrix row. Hover shows a short hint (matches aico-commerce)."
+        "id": "aico_pdp_size_guide_media",
+        "type": "image_picker",
+        "label": "Size chart media",
+        "info": "Media-gallery file (PDF, image or video) opened by the “Size chart” link on the product page and the quick-buy modal. When empty, the link is not shown at all."
       }
     ]
   },

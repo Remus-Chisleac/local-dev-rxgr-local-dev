@@ -255,10 +255,12 @@
     });
     toolbar.appendChild(tabs);
 
-    var guideWrap = document.createElement('span');
-    guideWrap.className = 'aico-pdp-size-guide-wrap';
+    // Size-chart link only when the theme setting points at a gallery file
+    // (PDF / image / video) — nothing is rendered when it is unset.
     var guideUrl = String(config.sizeGuideUrl || '');
     if (guideUrl !== '') {
+      var guideWrap = document.createElement('span');
+      guideWrap.className = 'aico-pdp-size-guide-wrap';
       var guideLink = document.createElement('a');
       guideLink.className = 'aico-pdp-size-guide-link';
       guideLink.href = guideUrl;
@@ -271,20 +273,8 @@
       guidePop.setAttribute('role', 'tooltip');
       guidePop.textContent = t('size_guide_tooltip', '');
       guideWrap.appendChild(guidePop);
-    } else {
-      var guideSoon = document.createElement('span');
-      guideSoon.className = 'aico-pdp-size-guide-link aico-pdp-size-guide-link--disabled';
-      guideSoon.setAttribute('tabindex', '0');
-      guideSoon.setAttribute('aria-disabled', 'true');
-      guideSoon.textContent = t('size_guide_soon', 'Size guide');
-      guideWrap.appendChild(guideSoon);
-      var guideSoonPop = document.createElement('span');
-      guideSoonPop.className = 'aico-pdp-size-guide-pop';
-      guideSoonPop.setAttribute('role', 'tooltip');
-      guideSoonPop.textContent = t('size_guide_soon_tooltip', '');
-      guideWrap.appendChild(guideSoonPop);
+      toolbar.appendChild(guideWrap);
     }
-    toolbar.appendChild(guideWrap);
     refs.body.appendChild(toolbar);
 
     // Size grid — mirrors the PDP cell markup so the theme.css matrix

@@ -4,7 +4,13 @@
   `{% render %}` resolves snippet files; kept in sync manually.
 {% endcomment %}
 
-{%- assign size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+{%- comment -%}
+  Size chart: a media-gallery file (usually a PDF, but images and videos work
+  the same) picked in the theme settings. `aico_media_url` resolves both the
+  media object and a bare URL string, and yields '' when nothing is picked —
+  in which case the link is omitted entirely rather than shown disabled.
+{%- endcomment -%}
+{%- assign size_guide_url = settings.aico_pdp_size_guide_media | aico_media_url -%}
 
 <section class="aico-pdp-size-matrix" data-aico-size-matrix aria-label="{{ 'product.size_matrix.aria' | t }}">
   <div class="aico-pdp-size-matrix-head">
@@ -38,8 +44,8 @@
         </div>
       </div>
 
-      <div class="aico-pdp-size-guide">
-        {% if size_guide_url != blank %}
+      {% if size_guide_url != blank %}
+        <div class="aico-pdp-size-guide">
           <span class="aico-pdp-size-guide-wrap">
             <a
               href="{{ size_guide_url }}"
@@ -49,13 +55,8 @@
             >{{ 'product.size_guide.link' | t }}</a>
             <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.tooltip' | t }}</span>
           </span>
-        {% else %}
-          <span class="aico-pdp-size-guide-wrap">
-            <span tabindex="0" class="aico-pdp-size-guide-link aico-pdp-size-guide-link--disabled" aria-disabled="true">{{ 'product.size_guide.soon' | t }}</span>
-            <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.soon_tooltip' | t }}</span>
-          </span>
-        {% endif %}
-      </div>
+        </div>
+      {% endif %}
     </div>
   </div>
 

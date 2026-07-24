@@ -229,7 +229,15 @@
               <div class="aico-pdp-size-matrix-head">
                 <div class="aico-pdp-size-matrix-toolbar" role="presentation">
                   <div class="aico-pdp-size-matrix-head-tabs-wrap">
-                    {%- assign size_guide_url = settings.aico_pdp_size_guide_url | strip -%}
+                    {%- comment -%}
+                      Size chart: a media-gallery file (usually a PDF, but
+                      images and videos work the same) picked in the theme
+                      settings. `aico_media_url` resolves both the media
+                      object and a bare URL string, and yields '' when
+                      nothing is picked — the link is then omitted entirely
+                      rather than shown disabled.
+                    {%- endcomment -%}
+                    {%- assign size_guide_url = settings.aico_pdp_size_guide_media | aico_media_url -%}
                     {%- comment -%}
                       The tab that starts active is the shopper's account size
                       system (profile page → `customer.aico_size_region`, one of
@@ -276,8 +284,8 @@
                     </div>
                   </div>
 
-                  <div class="aico-pdp-size-guide">
-                    {% if size_guide_url != blank %}
+                  {% if size_guide_url != blank %}
+                    <div class="aico-pdp-size-guide">
                       <span class="aico-pdp-size-guide-wrap">
                         <a
                           href="{{ size_guide_url }}"
@@ -287,13 +295,8 @@
                         >{{ 'product.size_guide.link' | t }}</a>
                         <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.tooltip' | t }}</span>
                       </span>
-                    {% else %}
-                      <span class="aico-pdp-size-guide-wrap">
-                        <span tabindex="0" class="aico-pdp-size-guide-link aico-pdp-size-guide-link--disabled" aria-disabled="true">{{ 'product.size_guide.soon' | t }}</span>
-                        <span class="aico-pdp-size-guide-pop" role="tooltip">{{ 'product.size_guide.soon_tooltip' | t }}</span>
-                      </span>
-                    {% endif %}
-                  </div>
+                    </div>
+                  {% endif %}
                 </div>
               </div>
 
