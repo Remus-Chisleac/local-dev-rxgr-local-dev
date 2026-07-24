@@ -9748,9 +9748,9 @@ html.aico-preorder-gallery-open {
   padding-bottom: 0;
 }
 
-/* The incl.-VAT figure sits directly under the net total as its secondary
-   reading, so it keeps the muted label weight of an ordinary row and drops the
-   rule (it is the last line of the block). */
+/* The incl.-VAT figure sits directly under the net total and reads as its
+   equal — same weight and colour (set with the --grand rule below), just
+   without the separating rule, since it is the last line of the block. */
 .aico-preorder-confirmation-total-row--vat {
   border-bottom: 0;
   padding-top: 0.25rem;
