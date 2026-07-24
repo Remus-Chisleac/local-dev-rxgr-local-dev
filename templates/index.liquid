@@ -6,10 +6,12 @@
   greyed-out and non-clickable so the user knows which brands exist but
   aren't on their plan.
 
-  Tile layout: top region uses `brand.image_url` (banner or lifestyle
-  fallback); footer strip uses `brand.logo_url` when the PIM has both a
-  `banner` and a translation `image` (logo art). Otherwise the footer
-  falls back to the brand label.
+  Tile layout: top region uses `brand.aico_image_tile_url` (the dedicated
+  tile photo) falling back to `brand.image_url` (banner or lifestyle).
+  The footer strip resolves its logo the same way the header does —
+  `brand.logo_url | default: brand.image_url` — so a brand that has logo
+  artwork always shows it on both surfaces; only a brand with no artwork
+  at all falls back to the text label.
 
   Disabled tiles are sorted to the bottom by `ShopAllBrandsLoader`
   (mirrors b2b-shop's `transformHomePage` `orderBy(isAccessible, desc)`).
@@ -57,10 +59,11 @@
                       <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
                     {% endif %}
                   </div>
+                  {%- assign aico_card_logo = brand.logo_url | default: brand.image_url -%}
                   <div class="aico-home-brand-card-footer">
-                    {% if brand.logo_url %}
+                    {% if aico_card_logo %}
                       <img
-                        src="{{ brand.logo_url }}"
+                        src="{{ aico_card_logo }}"
                         alt="{{ brand.label }}"
                         class="aico-home-brand-card-logo"
                         loading="lazy"
@@ -92,10 +95,11 @@
                     <div class="aico-home-brand-card-photo-empty" aria-hidden="true"></div>
                   {% endif %}
                 </div>
+                {%- assign aico_card_logo = brand.logo_url | default: brand.image_url -%}
                 <div class="aico-home-brand-card-footer">
-                  {% if brand.logo_url %}
+                  {% if aico_card_logo %}
                     <img
-                      src="{{ brand.logo_url }}"
+                      src="{{ aico_card_logo }}"
                       alt="{{ brand.label }}"
                       class="aico-home-brand-card-logo"
                       loading="lazy"
