@@ -35,6 +35,13 @@
   // Hard ceiling measured from the FIRST pending edit, so continuous editing
   // still saves on a steady cadence instead of being pushed out indefinitely.
   var CELL_FLUSH_MAX_MS = 600;
+  // Most cells one add.js may carry. The window is time-bounded, not size-
+  // bounded, so a stalled main thread (a heavy re-render, a backgrounded tab)
+  // can let a very large flush build up — and the endpoint rejects an oversized
+  // batch outright, which would throw away every edit in it. Chunking here keeps
+  // each request comfortably under the server's own cap instead of relying on
+  // the window to stay small.
+  var MAX_CELLS_PER_WRITE = 50;
 
   function csrfToken() {
     return (
@@ -312,9 +319,13 @@
   };
 
   /**
-   * Send every pending cell as ONE write, now. Called by the coalescing timer
-   * and directly before a submit, so a value the shopper typed a moment earlier
-   * can never be left sitting in the window.
+   * Send every pending cell now, as one write per MAX_CELLS_PER_WRITE. Called by
+   * the coalescing timer and directly before a submit, so a value the shopper
+   * typed a moment earlier can never be left sitting in the window.
+   *
+   * Chunks are enqueued in order onto the same serialized write chain, so each
+   * one reads the version the previous one produced — a split batch behaves
+   * exactly like the single write it would have been, just in several requests.
    */
   CartController.prototype.flushPendingCells = function () {
     var self = this;
@@ -330,9 +341,13 @@
     }
     this._pendingCells = {};
     if (!cells.length) return;
-    this._enqueue(function () {
-      return self._saveProductCells(cells);
-    });
+    for (var start = 0; start < cells.length; start += MAX_CELLS_PER_WRITE) {
+      (function (chunk) {
+        self._enqueue(function () {
+          return self._saveProductCells(chunk);
+        });
+      })(cells.slice(start, start + MAX_CELLS_PER_WRITE));
+    }
   };
 
   CartController.prototype._cellBody = function (cell) {
