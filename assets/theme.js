@@ -14,9 +14,12 @@
     return;
   }
 
-  // Auto-collapse the contact card when the user reaches for the nav list
-  // or the brand picker. Keeps the contact visible when the menu first
-  // opens (markup default), then steps out of the way.
+  // Auto-collapse the contact card when the user opens a nav collection (a
+  // `<details>` group with sub-items) or reaches for the brand picker. Keeps
+  // the contact visible when the menu first opens (markup default), then
+  // steps out of the way to make room for the expanded sub-items. A plain
+  // link row has nothing to make room for — it just navigates — so it must
+  // leave the card alone.
   var contact = menu.querySelector('[data-aico-contact]');
   if (contact) {
     var collapseContact = function () {
@@ -26,7 +29,15 @@
     };
     var navRegion = menu.querySelector('.aico-drawer-nav');
     if (navRegion) {
-      navRegion.addEventListener('click', collapseContact, true);
+      // `toggle` doesn't bubble, so listen for it in the capture phase.
+      navRegion.addEventListener('toggle', function (event) {
+        var details = event.target;
+        if (details instanceof HTMLDetailsElement
+          && details.open
+          && details.matches('.aico-drawer-nav-group')) {
+          collapseContact();
+        }
+      }, true);
     }
     var brandPicker = menu.querySelector('.aico-drawer-brand-picker');
     if (brandPicker) {
