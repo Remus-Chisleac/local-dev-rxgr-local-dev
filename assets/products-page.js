@@ -484,35 +484,9 @@
     return t === '' ? null : t;
   }
 
-  function pickTranslation(list, locale) {
-    if (!Array.isArray(list) || !list.length) {
-      return null;
-    }
-    var normalized = String(locale || '').replace(/-/g, '_');
-    for (var i = 0; i < list.length; i++) {
-      var row = list[i];
-      if (row && typeof row === 'object') {
-        var rl = String(row.locale || '').replace(/-/g, '_');
-        if (rl === normalized) {
-          return row;
-        }
-      }
-    }
-    for (var j = 0; j < list.length; j++) {
-      var row2 = list[j];
-      if (row2 && typeof row2 === 'object') {
-        var rl2 = String(row2.locale || '').replace(/-/g, '_');
-        if (rl2 === 'de_CH') {
-          return row2;
-        }
-      }
-    }
-    return list[0] || null;
-  }
-
   function pickName(hit, locale) {
     var list = hit.translations;
-    var primary = pickTranslation(list, locale) || {};
+    var primary = AicoUtils.pickTranslation(list, locale) || {};
     var fromPrimary = nonEmpty(primary.webName) || nonEmpty(primary.name);
     if (fromPrimary) {
       return fromPrimary;
@@ -532,7 +506,7 @@
   function pickImage(hit, locale) {
     var list = hit.translations;
     if (Array.isArray(list) && list.length) {
-      var primary = pickTranslation(list, locale) || {};
+      var primary = AicoUtils.pickTranslation(list, locale) || {};
       var fp = nonEmpty(primary.mainImage) || nonEmpty(primary.secondaryImage);
       if (fp) {
         return fp;

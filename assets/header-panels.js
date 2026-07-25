@@ -129,27 +129,9 @@
     return t === '' ? null : t;
   }
 
-  function pickTranslation(list, locale) {
-    if (!Array.isArray(list) || !list.length) { return null; }
-    var normalized = String(locale || '').replace(/-/g, '_');
-    for (var i = 0; i < list.length; i++) {
-      var row = list[i];
-      if (row && typeof row === 'object' && String(row.locale || '').replace(/-/g, '_') === normalized) {
-        return row;
-      }
-    }
-    for (var j = 0; j < list.length; j++) {
-      var row2 = list[j];
-      if (row2 && typeof row2 === 'object' && String(row2.locale || '').replace(/-/g, '_') === 'de_CH') {
-        return row2;
-      }
-    }
-    return list[0] || null;
-  }
-
   function pickName(hit, locale) {
     var list = hit.translations;
-    var primary = pickTranslation(list, locale) || {};
+    var primary = AicoUtils.pickTranslation(list, locale) || {};
     var fromPrimary = nonEmpty(primary.webName) || nonEmpty(primary.name);
     if (fromPrimary) { return fromPrimary; }
     if (Array.isArray(list)) {
@@ -165,7 +147,7 @@
   function pickImage(hit, locale) {
     var list = hit.translations;
     if (Array.isArray(list) && list.length) {
-      var primary = pickTranslation(list, locale) || {};
+      var primary = AicoUtils.pickTranslation(list, locale) || {};
       var fp = nonEmpty(primary.mainImage) || nonEmpty(primary.secondaryImage);
       if (fp) { return fp; }
       for (var i = 0; i < list.length; i++) {
@@ -263,14 +245,6 @@
     return pct > 0 ? pct : null;
   }
 
-  // The index's translation rows are keyed `en` / `de_CH`, NOT the storefront
-  // locale (`en_US` / `de_CH`) — so translation lookups use the server-supplied
-  // `indexLocale`, while money formatting keeps the real BCP-47 `locale`.
-  // Falling back to `locale` keeps an older cached config working.
-  function translationLocale(cfg) {
-    return (cfg && cfg.indexLocale) || (cfg && cfg.locale) || 'en';
-  }
-
   function mapHit(hit, cfg) {
     var id = String(hit.productId != null ? hit.productId : (hit.id != null ? hit.id : (hit.urlHandle || '')));
     var urlHandle = (typeof hit.urlHandle === 'string' && hit.urlHandle.trim()) ? hit.urlHandle.trim() : id;
@@ -285,9 +259,9 @@
     var brandInfo = brandId != null ? brands[String(brandId)] : null;
     return {
       id: id,
-      title: pickName(hit, translationLocale(cfg)) || id,
+      title: pickName(hit, cfg.locale) || id,
       url: prefix + encodeURIComponent(urlHandle) + suffix,
-      image: pickImage(hit, translationLocale(cfg)),
+      image: pickImage(hit, cfg.locale),
       priceLabel: pricing ? formatMoney(displayed, pricing.currencyCode, cfg.locale) : null,
       compareLabel: (pricing && pricing.isOnSale && pricing.discountPrice != null)
         ? formatMoney(pricing.sellingPrice, pricing.currencyCode, cfg.locale)

@@ -17,6 +17,9 @@
    */
   var DISPLAY_STEP = { CHF: 0.05 };
 
+  /* The locale every AICO entity is guaranteed to have a translation for. */
+  var CANONICAL_LOCALE = 'de_CH';
+
   /*
    * The display value for an amount in a given currency. Returns null for a
    * non-numeric amount so callers can render "price on request" rather than
@@ -52,7 +55,60 @@
     return Math.round(Math.round(quotient) * step * 100) / 100;
   }
 
+  /* Canonical comparison form, and the language part of a locale. */
+  function normalizeLocale(locale) {
+    return String(locale === null || locale === undefined ? '' : locale).replace(/-/g, '_').trim();
+  }
+
+  function languageOf(locale) {
+    var normalized = normalizeLocale(locale);
+    var separator = normalized.indexOf('_');
+
+    return separator === -1 ? normalized : normalized.slice(0, separator);
+  }
+
+  function firstMatch(rows, matches) {
+    for (var i = 0; i < rows.length; i++) {
+      if (matches(normalizeLocale(rows[i].locale))) {
+        return rows[i];
+      }
+    }
+
+    return null;
+  }
+
+  /*
+   * The translation row for a shopper's locale, by the same rule as the
+   * server (Modules/Storefront/Support/StorefrontLocale::pickTranslation):
+   * exact locale, then the same language in any region, then canonical
+   * de_CH, then whatever exists.
+   *
+   * The same-language step is the load-bearing one: theme locales are
+   * region-qualified (`en_US`) to match the locale files, while the search
+   * index stores rows under bare language codes (`en`, `fr`, `it`). Without
+   * it every English shopper fell through to the de_CH row and saw German
+   * product names.
+   */
+  function pickTranslation(list, locale) {
+    if (!Array.isArray(list) || !list.length) {
+      return null;
+    }
+    var rows = list.filter(function (row) { return row && typeof row === 'object'; });
+    if (!rows.length) {
+      return null;
+    }
+    var want = normalizeLocale(locale);
+    var wantLanguage = languageOf(want);
+
+    return firstMatch(rows, function (rowLocale) { return rowLocale === want; })
+      || firstMatch(rows, function (rowLocale) { return wantLanguage !== '' && languageOf(rowLocale) === wantLanguage; })
+      || firstMatch(rows, function (rowLocale) { return rowLocale === CANONICAL_LOCALE; })
+      || rows[0];
+  }
+
   global.AicoUtils = global.AicoUtils || {};
   global.AicoUtils.DISPLAY_STEP = DISPLAY_STEP;
   global.AicoUtils.roundForDisplay = roundForDisplay;
+  global.AicoUtils.CANONICAL_LOCALE = CANONICAL_LOCALE;
+  global.AicoUtils.pickTranslation = pickTranslation;
 })(typeof window !== 'undefined' ? window : this);
