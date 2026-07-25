@@ -483,6 +483,29 @@
     return null;
   }
 
+  // The struck compare-at: the regular selling price, returned ONLY when the
+  // entitled row carries a real reduction (the same test productPrice() uses to
+  // pick the discount). Null keeps the card on its single-price layout — a flat
+  // product.price carries no compare-at information at all.
+  function productComparePrice(product) {
+    if (product.price != null && product.price >= 0) return null;
+    var row = priceRowFor(product);
+    if (!row) return null;
+    var selling = row.selling_price != null ? row.selling_price : row.sellingPrice;
+    var discount = row.discount_price != null ? row.discount_price : row.discountPrice;
+    if (selling == null || discount == null) return null;
+    return discount > 0 && discount < selling ? selling : null;
+  }
+
+  // Percent off, computed from the RAW amounts — formatMoney() rounds CHF to
+  // 0.05 for display, so deriving it from the labels would drift.
+  function discountPercentOf(price, comparePrice) {
+    if (price == null || comparePrice == null || comparePrice <= 0) return null;
+    if (price >= comparePrice) return null;
+    var pct = Math.round(((comparePrice - price) / comparePrice) * 100);
+    return pct > 0 ? pct : null;
+  }
+
   function productCurrency(product) {
     if (product.variantPriceCurrency) return product.variantPriceCurrency;
     if (product.currency) return product.currency;
@@ -1206,10 +1229,26 @@
       html += '<p class="aico-preorder-product-sku">' + escapeHtml(product.sku) + '</p>';
     }
     if (price != null && price >= 0) {
+      var comparePrice = productComparePrice(product);
+      var discountPct = discountPercentOf(price, comparePrice);
+      html += '<p class="aico-preorder-product-price">';
+      if (comparePrice != null) {
+        html +=
+          '<span class="aico-preorder-product-price-was">' +
+          escapeHtml(formatMoney(comparePrice, currency)) +
+          '</span>';
+      }
       html +=
-        '<p class="aico-preorder-product-price">' +
+        '<span class="aico-preorder-product-price-now">' +
         escapeHtml(formatMoney(price, currency)) +
-        '</p>';
+        '</span>';
+      if (discountPct) {
+        html +=
+          '<span class="aico-preorder-product-price-badge">−' +
+          discountPct +
+          '%</span>';
+      }
+      html += '</p>';
     }
     html += '</div></div>';
     html += '<div class="aico-preorder-product-rows" data-aico-preorder-product-rows>';

@@ -6503,6 +6503,27 @@ html.aico-preorder-gallery-open {
   font-size: 0.75rem;
   font-weight: 600;
   color: #272727;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+/* Sale treatment on the preorder card — same contract as the catalogue card
+   (struck regular + −x% badge), scaled down for this dense layout. Only
+   rendered when the entitled price-list row carries a real reduction. */
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-price-was {
+  color: #6b6b6b;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.aico-preorder:not(.aico-preorder2) .aico-preorder-product-price-badge {
+  padding: 0.05rem 0.25rem;
+  border-radius: var(--aico-radius, 2px);
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .aico-preorder:not(.aico-preorder2) .aico-preorder-matrix-row {
   display: grid;
