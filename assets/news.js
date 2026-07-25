@@ -677,10 +677,7 @@ $(document).ready(function(){
                                           if(product.price.length > 0){
                                             priceCurrency = product.price[0].currencyName;
                                             priceValue = Number(product.price[0].value) || 0;
-                                            // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
-                                            if(String(priceCurrency).toUpperCase() === 'CHF'){
-                                              priceValue = Math.round(priceValue / 0.05) * 0.05;
-                                            }
+                                            priceValue = AicoUtils.roundForDisplay(priceValue, priceCurrency) || 0;
                                             proPrice = priceCurrency+' '+priceValue.toFixed(2);
                                           }
                                           if(translations.length > 0){

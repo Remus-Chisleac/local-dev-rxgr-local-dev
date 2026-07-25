@@ -79,9 +79,9 @@
     if (!isFinite(value)) {
       value = 0;
     }
-    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
-    if (currency && String(currency).toUpperCase() === 'CHF') {
-      value = Math.round(value / 0.05) * 0.05;
+    value = AicoUtils.roundForDisplay(value, currency);
+    if (value === null) {
+      value = 0;
     }
     var parts = value.toFixed(2).split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");

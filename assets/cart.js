@@ -23,9 +23,11 @@
 
   // CHF prices display rounded to the NEAREST 0.05 (display only —
   // stored/charged amounts stay exact).
+  // Kept as a local alias so the existing call sites stay untouched; the rule
+  // itself lives in AicoUtils so it is defined and tested in exactly one place.
   function roundChfDisplay(amount, currency) {
-    if (String(currency || '').toUpperCase() !== 'CHF') return amount;
-    return Math.round(amount / 0.05) * 0.05;
+    var rounded = AicoUtils.roundForDisplay(amount, currency);
+    return rounded === null ? amount : rounded;
   }
 
   function registerCartStore() {

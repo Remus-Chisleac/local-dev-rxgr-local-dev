@@ -377,10 +377,7 @@
   function formatMoney(amount, currency, exclVat) {
     var cur = currency || 'CHF';
     var number = amount || 0;
-    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
-    if (String(cur).toUpperCase() === 'CHF') {
-      number = Math.round(number / 0.05) * 0.05;
-    }
+    number = AicoUtils.roundForDisplay(number, cur) || 0;
     var value = number.toFixed(2) + ' ' + cur;
     return exclVat ? value + ' ' + exclVat : value;
   }
