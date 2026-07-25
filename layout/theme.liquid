@@ -27,6 +27,12 @@
   {%- endif -%}
   <link rel="stylesheet" href="{{ 'theme.css' | asset_url }}">
   {%- comment -%}
+    Shared helpers (AicoUtils). Deferred scripts run in document order, so
+    loading this first in <head> guarantees it is defined before any page
+    script that calls it.
+  {%- endcomment -%}
+  <script src="{{ 'aico-utils.js' | asset_url }}" defer></script>
+  {%- comment -%}
     Only the unauthenticated auth pages (login / recover / register) use the
     bare, centered auth shell. Authenticated profile pages under customers/
     (account, addresses, aico_store_locator) render inside the full site chrome

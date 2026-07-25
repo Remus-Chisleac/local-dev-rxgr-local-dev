@@ -239,10 +239,8 @@
   function formatMoney(amount, currencyCode, locale) {
     var lc = (locale || 'en').replace(/_/g, '-');
     if (amount == null) { return null; }
-    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
-    if (currencyCode && String(currencyCode).toUpperCase() === 'CHF') {
-      amount = Math.round(amount / 0.05) * 0.05;
-    }
+    amount = AicoUtils.roundForDisplay(amount, currencyCode);
+    if (amount === null) { return null; }
     if (!currencyCode || !/^[A-Z]{3}$/.test(currencyCode.toUpperCase())) {
       return amount.toFixed(2);
     }

@@ -497,15 +497,6 @@
     return discount > 0 && discount < selling ? selling : null;
   }
 
-  // Percent off, computed from the RAW amounts — formatMoney() rounds CHF to
-  // 0.05 for display, so deriving it from the labels would drift.
-  function discountPercentOf(price, comparePrice) {
-    if (price == null || comparePrice == null || comparePrice <= 0) return null;
-    if (price >= comparePrice) return null;
-    var pct = Math.round(((comparePrice - price) / comparePrice) * 100);
-    return pct > 0 ? pct : null;
-  }
-
   function productCurrency(product) {
     if (product.variantPriceCurrency) return product.variantPriceCurrency;
     if (product.currency) return product.currency;
@@ -523,11 +514,8 @@
   function formatMoney(price, currency) {
     if (price == null || price < 0) return '';
     var cur = currency || 'CHF';
-    var amount = Number(price);
-    // CHF prices display rounded to the NEAREST 0.05 (display only), like the legacy shop.
-    if (String(cur).toUpperCase() === 'CHF') {
-      amount = Math.round(amount / 0.05) * 0.05;
-    }
+    var amount = AicoUtils.roundForDisplay(price, cur);
+    if (amount === null) return '';
     return amount.toFixed(2) + ' ' + cur;
   }
 
@@ -1230,7 +1218,6 @@
     }
     if (price != null && price >= 0) {
       var comparePrice = productComparePrice(product);
-      var discountPct = discountPercentOf(price, comparePrice);
       html += '<p class="aico-preorder-product-price">';
       if (comparePrice != null) {
         html +=
@@ -1242,12 +1229,6 @@
         '<span class="aico-preorder-product-price-now">' +
         escapeHtml(formatMoney(price, currency)) +
         '</span>';
-      if (discountPct) {
-        html +=
-          '<span class="aico-preorder-product-price-badge">−' +
-          discountPct +
-          '%</span>';
-      }
       html += '</p>';
     }
     html += '</div></div>';

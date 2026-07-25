@@ -734,15 +734,11 @@
 
   var moneyCache = {};
   function formatMoney(amount, currencyCode, locale) {
-    // CHF displays round DOWN to the nearest 0.05 (display only); other
-    // currencies keep exact values. Currency AFTER the amount (EUR shown
-    // as €, others as the ISO code) — NOT Intl's currency style, which
-    // puts the symbol first.
-    var value = Number(amount) || 0;
+    // Per-currency display rounding lives in AicoUtils. Currency AFTER the
+    // amount (EUR shown as €, others as the ISO code) — NOT Intl's currency
+    // style, which puts the symbol first.
     var code = (typeof currencyCode === 'string') ? currencyCode.toUpperCase() : '';
-    if (code === 'CHF') {
-      value = Math.round(value / 0.05) * 0.05;
-    }
+    var value = AicoUtils.roundForDisplay(amount, code) || 0;
     var rounded = value.toFixed(2);
     var symbol = code === 'EUR' ? '€' : code;
     return symbol ? (rounded + ' ' + symbol) : rounded;
