@@ -851,6 +851,21 @@
       </template>
     </div>
 
+    {%- comment -%}
+      Featured-news popup (b2b-shop's FeaturedNewsDialog). Rendered here, in
+      the layout, rather than on templates/index.liquid: a shopper who lands
+      straight on a product or the preorder page must still see the
+      announcement, and the read receipt is what retires it — not "happened
+      to visit the home page". Logged-in shoppers only (the unread state is
+      per shop user and the endpoints it calls are session-authorized), and
+      outside the auth shell, where there is no customer anyway. Loads its
+      own data after paint and remembers a dismissal for the session, so the
+      extra page weight is one idle-time request per visit, not per click.
+    {%- endcomment -%}
+    {% if customer %}
+      {% render 'aico-featured-news-popup' %}
+    {% endif %}
+
     <script src="{{ 'theme.js' | asset_url }}" defer></script>
     <script src="{{ 'customer-view.js' | asset_url }}" defer></script>
   {% endif %}

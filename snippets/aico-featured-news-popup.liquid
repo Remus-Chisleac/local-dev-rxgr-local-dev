@@ -1,8 +1,10 @@
 {% comment %}
   Featured-news popup — the b2b-shop "FeaturedNewsDialog" ported to the
-  Liquid theme. Rendered once on the home page (templates/index.liquid) for
-  logged-in shoppers; shows every `is_special_article` news item the shopper
-  hasn't read yet, one at a time, and writes the read receipt back.
+  Liquid theme. Rendered from layout/theme.liquid on EVERY shop page for
+  logged-in shoppers (b2b-shop showed it on the home page only, but a
+  shopper who lands deep in the catalogue must still see the announcement);
+  shows every `is_special_article` news item the shopper hasn't read yet,
+  one at a time, and writes the read receipt back.
 
   Data flow (assets/aico-featured-news.js):
     GET  {{ routes.aico_news_featured_url }}  → unread featured articles,
@@ -10,12 +12,16 @@
     POST {{ routes.aico_news_read_url }}      → { news_ids: [...] }
 
   The fetch runs after paint, not during render: the unread query costs
-  ~0.7s and the home page must not wait on it.
+  ~0.7s and no page may wait on it. Because the popup now loads on every
+  page, the script also keeps a per-session memory (see the JS) so a
+  shopper who dismisses it isn't asked again on the next navigation and
+  the query doesn't repeat on every page view.
 
-  Layout note (explicit product decision): the article's own call-to-action
-  lives INSIDE the body HTML (the kj news items ship a styled `<a>` button),
-  so "mark as read" gets its own footer row underneath — the two never share
-  a line, unlike the legacy dialog.
+  Styles live inline here rather than in assets/theme.css on purpose: this
+  snippet is byte-identical across the aico scaffold and both theme
+  mirrors, and theme.css is the one file whose ordering diverges between
+  them (reconciling it means a per-selector merge). Same pattern as
+  templates/article.liquid.
 
   AICO-only feature (no Shopify analog) — hence the `aico_` prefix on the
   route helpers, locale namespace, and every class name here.
@@ -24,7 +30,8 @@
 <script id="aico-featured-news-config" type="application/json">{
   "featuredUrl": {{ routes.aico_news_featured_url | json }},
   "readUrl": {{ routes.aico_news_read_url | json }},
-  "locale": {{ request.locale | default: shop.default_locale | json }},
+  "locale": {{ request.locale.iso_code | default: shop.default_locale | json }},
+  "customerId": {{ customer.id | json }},
   "i18n": {
     "kicker": {{ 'aico_featured_news.kicker' | t | json }},
     "close": {{ 'aico_featured_news.close' | t | json }},
@@ -36,96 +43,168 @@
 }</script>
 
 <style>
-  /* Shell — same fixed/backdrop/panel skeleton as the quick-add modal, with a
-     news-specific panel: edge-to-edge hero image and a scrollable body. */
-  .aico-news-popup { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  /* ── Shell ────────────────────────────────────────────────────────────
+     Same fixed/backdrop/panel skeleton as the quick-add modal, with a
+     news-specific panel: full-bleed hero image and a scrollable body. */
+  .aico-news-popup { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 1.25rem; }
   .aico-news-popup[hidden] { display: none; }
-  .aico-news-popup-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
+  .aico-news-popup-backdrop { position: absolute; inset: 0; background: rgba(17, 17, 17, 0.55); }
   .aico-news-popup-panel {
     position: relative; z-index: 1; display: flex; flex-direction: column;
-    width: 100%; max-width: 42rem; max-height: 88vh; overflow: hidden;
+    width: 100%; max-width: 44rem; max-height: 88vh; overflow: hidden;
     background: var(--aico-card, #fff); color: var(--aico-fg, #1a1a1a);
     border-radius: var(--aico-radius, 2px);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+    animation: aico-news-popup-in 0.18s ease-out both;
+  }
+  @keyframes aico-news-popup-in {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aico-news-popup-panel { animation: none; }
   }
 
-  /* Head: kicker + counter on one line, title below, close button pinned. */
-  .aico-news-popup-head { position: relative; padding: 1.25rem 3rem 1rem 1.5rem; }
-  .aico-news-popup-eyebrow { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.4rem; }
-  .aico-news-popup-kicker {
-    margin: 0; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--aico-muted-fg, #6b7280);
+  /* ── Hero image ───────────────────────────────────────────────────────
+     Fixed aspect instead of a max-height crop, so every article gets the
+     same silhouette regardless of the source art's proportions. */
+  .aico-news-popup-media { position: relative; margin: 0; flex: 0 0 auto; background: var(--aico-muted, #f4f4f5); }
+  .aico-news-popup-media[hidden] { display: none; }
+  .aico-news-popup-media img { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; }
+
+  /* ── Close ────────────────────────────────────────────────────────────
+     Pinned to the panel (not the header) so it stays reachable whether or
+     not the article has a hero image; the translucent chip keeps it legible
+     on top of arbitrary artwork. */
+  .aico-news-popup-x {
+    position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; padding: 0; border: 0; cursor: pointer;
+    background: rgba(255, 255, 255, 0.92); color: #111;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    border-radius: var(--aico-radius, 2px); line-height: 1;
+    transition: background 0.12s ease, color 0.12s ease;
   }
+  .aico-news-popup-x:hover { background: #111; color: #fff; }
+  .aico-news-popup-x:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
+
+  /* ── Head ─────────────────────────────────────────────────────────────
+     Kicker in the kybun orange to tie the dialog to the brand, progress
+     dots pushed to the far end of the same line. */
+  .aico-news-popup-head { padding: 1.35rem 1.75rem 0.9rem; }
+  .aico-news-popup-eyebrow { display: flex; align-items: center; gap: 1rem; margin: 0 0 0.55rem; }
+  .aico-news-popup-kicker {
+    margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #e8702d;
+  }
+  /* Dots when the shopper has a handful of articles queued, a plain
+     "3 von 12" once dots would turn into noise. */
+  .aico-news-popup-progress { display: flex; align-items: center; gap: 0.3rem; margin: 0 0 0 auto; }
+  .aico-news-popup-progress[hidden] { display: none; }
+  .aico-news-popup-dot {
+    width: 0.4rem; height: 0.4rem; border-radius: 50%;
+    background: var(--aico-muted-strong, #e4e4e7);
+  }
+  .aico-news-popup-dot[data-current] { background: #e8702d; }
+  .aico-news-popup-dot[data-done] { background: var(--aico-muted-fg, #6b7280); }
   .aico-news-popup-counter {
-    margin: 0; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.04em;
+    margin: 0 0 0 auto; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em;
     color: var(--aico-muted-fg, #6b7280);
   }
   .aico-news-popup-counter[hidden] { display: none; }
-  .aico-news-popup-title { margin: 0; font-size: 1.3rem; line-height: 1.25; font-weight: 700; }
-  .aico-news-popup-x {
-    position: absolute; top: 0.9rem; right: 0.9rem;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 2rem; height: 2rem; padding: 0; border: 0; cursor: pointer;
-    background: none; color: var(--aico-muted-fg, #6b7280);
-    border-radius: var(--aico-radius, 2px); line-height: 1;
-  }
-  .aico-news-popup-x:hover { color: var(--aico-fg, #1a1a1a); background: var(--aico-muted, #f4f4f5); }
-  .aico-news-popup-x:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
+  .aico-news-popup-title { margin: 0; font-size: 1.5rem; line-height: 1.22; font-weight: 700; letter-spacing: -0.01em; }
 
-  /* Hero image — full-bleed inside the panel, capped so tall art can't push
-     the body off screen. */
-  .aico-news-popup-media { margin: 0; }
-  .aico-news-popup-media[hidden] { display: none; }
-  .aico-news-popup-media img { display: block; width: 100%; max-height: 15rem; object-fit: cover; }
-
-  /* Body — the server-rendered article HTML. Scrolls on its own so the head
-     and the footer action stay visible. */
+  /* ── Body ─────────────────────────────────────────────────────────────
+     The server-rendered article HTML. Scrolls on its own so the head and
+     the footer action stay visible. */
   .aico-news-popup-body {
     flex: 1 1 auto; min-height: 0; overflow-y: auto;
-    padding: 1.25rem 1.5rem 1.5rem;
-    font-size: 0.92rem; line-height: 1.6; color: #222;
+    padding: 0.5rem 1.75rem 1.5rem;
+    font-size: 0.95rem; line-height: 1.65; color: #333;
   }
   .aico-news-popup-body > *:first-child { margin-top: 0; }
   .aico-news-popup-body > *:last-child { margin-bottom: 0; }
-  .aico-news-popup-body p { margin: 0 0 0.85rem; }
+  .aico-news-popup-body p { margin: 0 0 0.9rem; }
+  .aico-news-popup-body h1,
+  .aico-news-popup-body h2,
+  .aico-news-popup-body h3,
+  .aico-news-popup-body h4 { margin: 1.4rem 0 0.6rem; line-height: 1.3; color: var(--aico-fg, #1a1a1a); }
+  .aico-news-popup-body h1 { font-size: 1.25rem; }
+  .aico-news-popup-body h2 { font-size: 1.1rem; }
+  .aico-news-popup-body h3,
+  .aico-news-popup-body h4 { font-size: 1rem; }
   .aico-news-popup-body img { max-width: 100%; height: auto; }
-  .aico-news-popup-body a { color: inherit; }
-  /* The content-builder rows the article body ships (see NewsContentRenderer). */
-  .aico-news-popup-body .content-row { display: flex; flex-wrap: wrap; gap: 1rem; }
-  .aico-news-popup-body .content-column { flex: 1 1 0; min-width: 0; }
-  .aico-news-popup-body .content { margin: 0 0 0.75rem; }
-  .aico-news-popup-excerpt { margin: 0 0 0.85rem; font-weight: 500; }
+  .aico-news-popup-body ul,
+  .aico-news-popup-body ol { margin: 0 0 0.9rem; padding-left: 1.15rem; }
+  .aico-news-popup-body li { margin: 0 0 0.3rem; }
+  .aico-news-popup-body a { color: var(--color-accent, #2563eb); }
+  /* The content-builder blocks the article body ships (NewsContentRenderer). */
+  .aico-news-popup-body .content-row { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+  .aico-news-popup-body .content-column { flex: 1 1 14rem; min-width: 0; }
+  .aico-news-popup-body .content { margin: 0 0 0.85rem; }
+  .aico-news-popup-body .content-type-divider hr { margin: 1.25rem 0; border: 0; border-top: 1px solid var(--aico-border, #e5e7eb); }
+  .aico-news-popup-body .content-type-quote {
+    margin: 0 0 0.9rem; padding: 0.15rem 0 0.15rem 0.9rem;
+    border-left: 2px solid #e8702d; color: var(--aico-muted-fg, #6b7280); font-style: italic;
+  }
+  .aico-news-popup-body .content-type-video iframe,
+  .aico-news-popup-body .content-type-video video { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; }
+  .aico-news-popup-body .content-type-album { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .aico-news-popup-body .content-type-album img { width: calc(50% - 0.25rem); object-fit: cover; }
+  /* The article's own call-to-action — the primary action of this dialog. */
+  .aico-news-popup-body .content-type-link { margin: 1.1rem 0 0.25rem; }
+  .aico-news-popup-body a.button {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.625rem 1.25rem; font-weight: 600; text-decoration: none;
+    border-radius: var(--aico-radius, 2px);
+    background: #e8702d; color: #fff; border: 1px solid #e8702d;
+  }
+  .aico-news-popup-body a.button:hover { background: #d4611f; border-color: #d4611f; }
+  .aico-news-popup-excerpt { margin: 0 0 0.9rem; font-size: 1rem; font-weight: 500; color: var(--aico-fg, #1a1a1a); }
 
-  /* Foot — two quiet TEXT links (per the design), never a button: the only
-     button in this dialog is the article's own CTA inside the body above, and
-     the receipt control must not compete with it or share its row. */
+  /* ── Foot ─────────────────────────────────────────────────────────────
+     One row, never shared with the article's own CTA (that lives in the
+     body above). "Read the full article" stays a quiet text link; the
+     receipt is a bordered ghost button — it needs a real affordance since
+     it is the only control that permanently retires the article, but it
+     must not out-shout the orange CTA above it. */
   .aico-news-popup-foot {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: 0.4rem 1.5rem;
-    padding: 0.9rem 1.5rem 1.1rem;
+    gap: 0.6rem 1.5rem;
+    padding: 0.9rem 1.75rem 1rem;
     border-top: 1px solid var(--aico-border, #e5e7eb);
     background: var(--aico-bg, #fff);
   }
-  .aico-news-popup-more,
-  .aico-news-popup-read {
-    padding: 0; border: 0; background: none; font: inherit; cursor: pointer;
+  .aico-news-popup-more {
     font-size: 0.85rem; font-weight: 500; text-decoration: none;
     color: var(--aico-muted-fg, #6b7280);
   }
   .aico-news-popup-more[hidden] { display: none; }
-  .aico-news-popup-more:hover,
-  .aico-news-popup-read:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
+  .aico-news-popup-more:hover { color: var(--aico-fg, #1a1a1a); text-decoration: underline; }
+  .aico-news-popup-read {
+    margin-left: auto; cursor: pointer; font: inherit;
+    padding: 0.5rem 1.1rem; font-size: 0.85rem; font-weight: 600;
+    color: var(--aico-fg, #1a1a1a);
+    background: var(--aico-bg, #fff);
+    border: 1px solid var(--aico-muted-strong, #e4e4e7);
+    border-radius: var(--aico-radius, 2px);
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .aico-news-popup-read:hover { background: var(--aico-muted, #f4f4f5); border-color: var(--aico-muted-fg, #6b7280); }
   .aico-news-popup-more:focus-visible,
   .aico-news-popup-read:focus-visible { outline: 2px solid var(--color-accent, #2563eb); outline-offset: 2px; }
-  /* Right-hand link in the strip; sits alone (still right-aligned) when the
-     article link is hidden. */
-  .aico-news-popup-read { margin-left: auto; }
   .aico-news-popup-read[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
 
-  @media (max-width: 30rem) {
+  /* Bottom sheet on phones. */
+  @media (max-width: 36rem) {
     .aico-news-popup { padding: 0; align-items: flex-end; }
     .aico-news-popup-panel { max-width: none; max-height: 92vh; }
-    .aico-news-popup-title { font-size: 1.15rem; }
+    .aico-news-popup-media img { aspect-ratio: 16 / 9; }
+    .aico-news-popup-head { padding: 1.1rem 1.15rem 0.75rem; }
+    .aico-news-popup-title { font-size: 1.2rem; }
+    .aico-news-popup-body { padding: 0.4rem 1.15rem 1.25rem; }
+    .aico-news-popup-foot { padding: 0.8rem 1.15rem 0.9rem; }
+    .aico-news-popup-read { flex: 1 1 auto; }
   }
 </style>
 
@@ -138,28 +217,29 @@
     aria-modal="true"
     aria-labelledby="aico-news-popup-title"
   >
-    <header class="aico-news-popup-head">
-      <div class="aico-news-popup-eyebrow">
-        <p class="aico-news-popup-kicker">{{ 'aico_featured_news.kicker' | t }}</p>
-        <p class="aico-news-popup-counter" data-aico-news-popup-counter hidden></p>
-      </div>
-      <h2 class="aico-news-popup-title" id="aico-news-popup-title" data-aico-news-popup-title></h2>
-
-      <button
-        type="button"
-        class="aico-news-popup-x"
-        data-aico-news-popup-close
-        aria-label="{{ 'aico_featured_news.close' | t }}"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-          <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </header>
+    <button
+      type="button"
+      class="aico-news-popup-x"
+      data-aico-news-popup-close
+      aria-label="{{ 'aico_featured_news.close' | t }}"
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+        <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
 
     <figure class="aico-news-popup-media" data-aico-news-popup-media hidden>
       <img src="" alt="" data-aico-news-popup-image loading="lazy" decoding="async">
     </figure>
+
+    <header class="aico-news-popup-head">
+      <div class="aico-news-popup-eyebrow">
+        <p class="aico-news-popup-kicker">{{ 'aico_featured_news.kicker' | t }}</p>
+        <div class="aico-news-popup-progress" data-aico-news-popup-progress aria-hidden="true" hidden></div>
+        <p class="aico-news-popup-counter" data-aico-news-popup-counter hidden></p>
+      </div>
+      <h2 class="aico-news-popup-title" id="aico-news-popup-title" data-aico-news-popup-title></h2>
+    </header>
 
     <div class="aico-news-popup-body" data-aico-news-popup-body></div>
 
@@ -175,7 +255,7 @@
         type="button"
         class="aico-news-popup-read"
         data-aico-news-popup-read
-      >› {{ 'aico_featured_news.mark_as_read' | t }}</button>
+      >{{ 'aico_featured_news.mark_as_read' | t }}</button>
     </footer>
   </div>
 </div>

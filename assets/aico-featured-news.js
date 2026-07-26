@@ -1,7 +1,6 @@
 // Featured-news popup — port of b2b-shop's `FeaturedNewsDialog`
 // (src/pages/index/HomePage/FeaturedNewsDialog). Shows the shopper's unread
-// `is_special_article` news one at a time on the home page and writes the
-// read receipts back.
+// `is_special_article` news one at a time and writes the read receipts back.
 //
 // Ported behaviour, 1:1 with the React dialog:
 //   • fetch the unread featured articles (page size 5, newest first)
@@ -11,10 +10,17 @@
 //     article the shopper never marked stays unread and returns next visit
 //   • `?hideFeatured` in the URL suppresses the popup (b2b's router guard)
 //
-// Changed on purpose: the body arrives as HTML rendered by the server
-// (NewsContentRenderer), so there is no client-side content-builder walk; and
-// the read-receipt control sits on its own footer row, never beside the
-// article's own call-to-action button (which lives inside the body).
+// Changed on purpose:
+//   • the body arrives as HTML rendered by the server (NewsContentRenderer),
+//     so there is no client-side content-builder walk
+//   • the read-receipt control sits on its own footer row, never beside the
+//     article's own call-to-action button (which lives inside the body)
+//   • the snippet renders from layout/theme.liquid, i.e. on EVERY shop page
+//     rather than only the home page. b2b-shop was a single-page app, so
+//     "close" naturally held until the next full load; here every navigation
+//     is a full load, so the dismissal has to be remembered explicitly —
+//     see the sessionStorage state below. Without it the popup would reopen
+//     on every click through the catalogue.
 //
 // Same no-framework IIFE style as quick-add.js; the dialog markup ships in
 // snippets/aico-featured-news-popup.liquid and is filled in here.
@@ -45,10 +51,37 @@
     return;
   }
 
+  // How long a "nothing unread" answer is trusted before asking again. The
+  // unread query costs ~0.7s and now runs on every page, so re-asking on each
+  // navigation is the one thing this feature must not do; 15 minutes still
+  // surfaces an article published mid-visit soon enough.
+  var EMPTY_TTL_MS = 15 * 60 * 1000;
+
+  // Keyed per shopper: sessionStorage survives a logout/login in the same tab,
+  // and one shopper's dismissal must not silence the next one's articles.
+  var stateKey = 'aico-news-popup:' + (config.customerId == null ? 'anon' : config.customerId);
+
+  function readState() {
+    try {
+      return JSON.parse(window.sessionStorage.getItem(stateKey) || '{}') || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function writeState(patch) {
+    var next = readState();
+    Object.keys(patch).forEach(function (key) { next[key] = patch[key]; });
+    try {
+      window.sessionStorage.setItem(stateKey, JSON.stringify(next));
+    } catch (error) { /* private mode / quota — the popup just repeats */ }
+  }
+
   var refs = {
     panel: root.querySelector('.aico-news-popup-panel'),
     title: root.querySelector('[data-aico-news-popup-title]'),
     counter: root.querySelector('[data-aico-news-popup-counter]'),
+    progress: root.querySelector('[data-aico-news-popup-progress]'),
     media: root.querySelector('[data-aico-news-popup-media]'),
     image: root.querySelector('[data-aico-news-popup-image]'),
     body: root.querySelector('[data-aico-news-popup-body]'),
@@ -80,6 +113,40 @@
 
   // ---- Rendering --------------------------------------------------------
 
+  // Dots up to a handful of queued articles, a "3 / 12" counter beyond that.
+  var MAX_DOTS = 6;
+
+  function renderProgress() {
+    if (articles.length < 2) {
+      refs.progress.hidden = true;
+      refs.counter.hidden = true;
+      return;
+    }
+
+    if (articles.length <= MAX_DOTS) {
+      refs.counter.hidden = true;
+      refs.progress.innerHTML = '';
+      for (var position = 0; position < articles.length; position += 1) {
+        var dot = document.createElement('span');
+        dot.className = 'aico-news-popup-dot';
+        if (position === index) {
+          dot.setAttribute('data-current', '');
+        } else if (position < index) {
+          dot.setAttribute('data-done', '');
+        }
+        refs.progress.appendChild(dot);
+      }
+      refs.progress.hidden = false;
+      return;
+    }
+
+    refs.progress.hidden = true;
+    refs.counter.textContent = t('counter', '{{ current }} / {{ total }}')
+      .replace('{{ current }}', String(index + 1))
+      .replace('{{ total }}', String(articles.length));
+    refs.counter.hidden = false;
+  }
+
   function renderCurrent() {
     var article = articles[index];
     if (!article) {
@@ -88,15 +155,7 @@
     }
 
     refs.title.textContent = article.title || '';
-
-    if (articles.length > 1) {
-      refs.counter.textContent = t('counter', '{{ current }} / {{ total }}')
-        .replace('{{ current }}', String(index + 1))
-        .replace('{{ total }}', String(articles.length));
-      refs.counter.hidden = false;
-    } else {
-      refs.counter.hidden = true;
-    }
+    renderProgress();
 
     if (article.image) {
       refs.image.src = article.image;
@@ -131,11 +190,10 @@
       refs.more.hidden = true;
     }
 
-    // Keep the chevron the markup ships with — this is a text link, not a button.
     var isLast = index >= articles.length - 1;
-    refs.read.textContent = '› ' + (isLast
+    refs.read.textContent = isLast
       ? t('mark_as_read', 'Mark as read')
-      : t('mark_as_read_next', 'Mark as read and continue'));
+      : t('mark_as_read_next', 'Mark as read and continue');
     refs.read.removeAttribute('aria-busy');
   }
 
@@ -174,6 +232,9 @@
     if (lastFocused && typeof lastFocused.focus === 'function') {
       lastFocused.focus();
     }
+    // Whatever the shopper left unread stays unread server-side, but they
+    // have answered this popup for now — don't re-open it on the next page.
+    writeState({ dismissed: true });
     flushPending();
   }
 
@@ -260,6 +321,7 @@
         var rows = (payload && payload.data) || [];
         articles = rows.filter(function (row) { return row && row.id; });
         if (!articles.length) {
+          writeState({ emptyUntil: Date.now() + EMPTY_TTL_MS });
           return;
         }
         index = 0;
@@ -268,8 +330,13 @@
       })['catch'](function () { /* no popup is the correct failure mode */ });
   }
 
-  // After paint — the unread query is the slowest thing on this page and the
-  // brand grid must not wait for it.
+  var state = readState();
+  if (state.dismissed || (typeof state.emptyUntil === 'number' && Date.now() < state.emptyUntil)) {
+    return;
+  }
+
+  // After paint — the unread query is the slowest thing on the page and the
+  // content must not wait for it.
   if (window.requestIdleCallback) {
     window.requestIdleCallback(load, { timeout: 2000 });
   } else {
