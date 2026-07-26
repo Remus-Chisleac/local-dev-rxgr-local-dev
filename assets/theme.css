@@ -5381,6 +5381,10 @@ button.aico-home-brand-card {
 .aico-checkout-processing-title { margin: 0; font-size: 1.25rem; font-weight: 600; }
 .aico-checkout-processing-body { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-processing-fallback { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
+/* Payment-session failure card: no order was placed, cart kept — loud dead-end with a way back. */
+.aico-checkout-processing-failed { border: 1px solid var(--aico-danger, #dc2626); }
+.aico-checkout-processing-failed .aico-checkout-processing-title { color: var(--aico-danger, #dc2626); }
+.aico-checkout-processing-back { margin: 1rem 0 0; }
 
 .aico-checkout-thank-you {
   /* The brand confirmation colour is the full-bleed background, so it shows in the

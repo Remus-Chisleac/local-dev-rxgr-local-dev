@@ -536,12 +536,16 @@
       "credit_limit": "Your cart exceeds your credit limit. Choose a credit-card payment method, or reduce your cart total.",
       "cart_modified": "Your cart has changed. Please review your items before continuing.",
       "submit_failed": "We couldn't submit your order. Please try again or contact your sales representative.",
-      "missing_fields": "Choose a billing address, delivery address, and payment method to continue."
+      "missing_fields": "Choose a billing address, delivery address, and payment method to continue.",
+      "payment_failed": "The payment could not be started. No order was placed and your cart is unchanged — please try again or choose another payment method."
     },
     "processing_page": {
       "title": "Finalising your order",
       "body": "We're confirming the payment with our processor. Please don't close this page — you'll be redirected automatically when it's done.",
-      "fallback": "Taking longer than expected? Check your inbox for an order-confirmation email or contact your sales representative."
+      "fallback": "Taking longer than expected? Check your inbox for an order-confirmation email or contact your sales representative.",
+      "failed_title": "Payment could not be started",
+      "failed_body": "We could not reach our payment provider. No order was placed, nothing was charged, and your cart is unchanged. Please try again or contact your sales representative.",
+      "back_to_checkout": "Back to checkout"
     },
     "thank_you": {
       "title": "Thank you for your order",

@@ -479,6 +479,13 @@
               });
             }
             return res.json().then(function (data) {
+              // Defensive: an ERROR status must never navigate anywhere —
+              // the backend kept the cart and no order was placed.
+              if (data.status === 'ERROR') {
+                self.submitError = self.errorMessage('payment_failed');
+                self.submitting = false;
+                return;
+              }
               if (data.hosted_page_url) {
                 window.location = data.hosted_page_url;
                 return;
@@ -516,6 +523,8 @@
           case 'missing_fields': return translations.missing_fields || 'Please fill in all required fields.';
           case 'empty_cart': return translations.cart_modified || 'Your cart has changed.';
           case 'unauthorized': return translations.login_required || 'Please sign in to continue.';
+          case 'payment_failed': return translations.payment_failed
+            || 'The payment could not be started. No order was placed and your cart is unchanged — please try again.';
           default: return translations.submit_failed || 'Could not submit the order.';
         }
       },
@@ -525,9 +534,14 @@
   function buildCheckoutProcessingPage() {
     return {
       elapsed: 0,
+      // Payment-session creation failed: the backend kept the cart (items
+      // and discount intact) and no order was placed. The template swaps the
+      // spinner for the failure card with a back-to-checkout link.
+      failed: false,
       _interval: null,
       _pusher: null,
       _channel: null,
+      _done: false,
 
       init: function () {
         var self = this;
@@ -537,10 +551,12 @@
         var orderId = query.get('order_id');
         if (!orderId) return;
 
-        if (!pusherConfig || !window.Pusher) {
-          this.pollStatus(orderId);
-          return;
-        }
+        // The Pusher event only fires for orders that reach SAVED — a
+        // failed payment-session order never broadcasts. Poll ALWAYS, with
+        // the broadcast as the fast path; _done dedupes the two signals.
+        this.pollStatus(orderId);
+
+        if (!pusherConfig || !window.Pusher) return;
 
         try {
           this._pusher = new window.Pusher(pusherConfig.key, {
@@ -552,9 +568,14 @@
           this._channel.bind('AicoShopOrderCreatedEvent', function (data) {
             self.navigateToThankYou(data || {});
           });
-        } catch (e) {
-          this.pollStatus(orderId);
-        }
+        } catch (e) { /* polling already runs */ }
+      },
+
+      showPaymentFailed: function () {
+        if (this._done) return;
+        this._done = true;
+        this.failed = true;
+        if (this._interval) clearInterval(this._interval);
       },
 
       // Credit-card orders carry the Adyen hosted-page URL (`url` on the
@@ -562,6 +583,8 @@
       // must be sent THERE to pay, mirroring the legacy b2b-shop
       // `redirectToUrl`. Only URL-less orders go straight to thank-you.
       navigateToThankYou: function (data) {
+        if (this._done) return;
+        this._done = true;
         var hostedPageUrl = data.url || data.hosted_page_url;
         if (hostedPageUrl) {
           window.location = hostedPageUrl;
@@ -588,11 +611,24 @@
         var statusUrl = routes.paymentStatusUrl || '/checkout/payment-status';
         var attempts = 0;
         var tick = function () {
+          if (self._done) return;
           attempts += 1;
           fetch(statusUrl + '?order_id=' + orderId, { headers: jsonHeaders(), credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (body) {
-              if (!body) return;
+              if (self._done) return;
+              if (!body) {
+                if (attempts < 60) setTimeout(tick, 2000);
+                return;
+              }
+              // ERROR = the Adyen payment session could not be created; the
+              // backend kept the cart and placed no order. Show the failure
+              // card — navigating to a success page here is exactly the
+              // silent fall-through this state exists to prevent.
+              if (body.status === 'ERROR') {
+                self.showPaymentFailed();
+                return;
+              }
               var status = body.status || body.payment_status;
               if (status && status !== 'SAVING' && status !== 'paymentPending') {
                 self.navigateToThankYou({
