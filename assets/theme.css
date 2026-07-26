@@ -772,7 +772,9 @@ html.aico-no-scroll { overflow: hidden; }
   text-decoration: none;
   color: inherit;
 }
-.aico-search-result-link:hover { background: var(--aico-muted, #f7f7f8); }
+/* Hover highlights the whole <li> — the restock row is a sibling of the link
+   inside the card, so a link-scoped hover left it looking cut off. */
+.aico-search-result:hover { background: var(--aico-muted, #f7f7f8); }
 .aico-search-result-image {
   position: relative;
   width: 3.5rem; height: 3.5rem;
@@ -838,7 +840,8 @@ html.aico-no-scroll { overflow: hidden; }
   background: transparent; color: var(--aico-fg, #1a1a1a);
   cursor: pointer;
 }
-.aico-search-result-restock-bell:hover { background: var(--aico-muted, #f4f4f5); }
+/* Translucent so it stays visible on the card's own muted hover background. */
+.aico-search-result-restock-bell:hover { background: rgba(0, 0, 0, 0.07); }
 .aico-search-result-restock-bell--active { color: #16a34a; }
 /* Reminder-save toast in the drawer (base look comes from .aico-cockpit-toast). */
 .aico-search-restock-toast { padding: 0 1.25rem; }
