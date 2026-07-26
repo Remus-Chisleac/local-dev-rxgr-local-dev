@@ -135,3 +135,93 @@
   });
 })();
 
+
+// Keep the locale switcher pointing at the page as it is NOW. The pill hrefs
+// come from `aico_locale_url`, which renders the request's path — but several
+// pages rewrite their own URL afterwards without reloading (products-page.js
+// pushes the applied facets into the path as `/filter/<id>/<value>`,
+// order-history does the same in the query). Switching language then went to
+// the page as it looked on load, so a filtered listing came back unfiltered.
+//
+// Each pill's href and the load-time location share a trailing run of
+// segments — the locale-stripped sub-path — and differ only in the head
+// (base + locale prefix). So the pill's own head plus whatever the page has
+// since made of the live path is the same page in the other locale, without
+// the theme having to know the preview prefix or the locale-code mapping.
+(function () {
+  'use strict';
+
+  function sharedTailLength(pathA, pathB) {
+    var a = pathA.split('/');
+    var b = pathB.split('/');
+    var shared = 0;
+    while (shared < a.length && shared < b.length
+      && a[a.length - 1 - shared] === b[b.length - 1 - shared]) {
+      shared++;
+    }
+    return shared;
+  }
+
+  function headOf(path, tailLength) {
+    var segments = path.split('/');
+    return segments.slice(0, segments.length - tailLength).join('/');
+  }
+
+  function liveQuery() {
+    // `locale` is dropped for the same reason the filter drops it: since the
+    // locale lives in the path prefix, a stale param would override it.
+    var params = new URLSearchParams(window.location.search);
+    params.delete('locale');
+    var query = params.toString();
+    return query ? '?' + query : '';
+  }
+
+  function start() {
+    var options = document.querySelectorAll('.aico-locale-pill-option');
+    if (!options.length) {
+      return;
+    }
+    var loadPath = window.location.pathname;
+    var pills = [];
+    for (var i = 0; i < options.length; i++) {
+      var rendered = options[i].getAttribute('href');
+      if (!rendered) {
+        continue;
+      }
+      var tail = sharedTailLength(new URL(rendered, window.location.href).pathname, loadPath);
+      pills.push({
+        link: options[i],
+        head: headOf(new URL(rendered, window.location.href).pathname, tail),
+        loadHead: headOf(loadPath, tail),
+      });
+    }
+
+    var retarget = function () {
+      var live = window.location.pathname;
+      pills.forEach(function (pill) {
+        // The page navigated somewhere the rendered href says nothing about
+        // (shouldn't happen — a real navigation re-renders the pill) — leave
+        // the server-rendered href alone rather than guess.
+        if (live.indexOf(pill.loadHead) !== 0) {
+          return;
+        }
+        pill.link.setAttribute(
+          'href',
+          pill.head + live.slice(pill.loadHead.length) + liveQuery() + window.location.hash
+        );
+      });
+    };
+
+    // Capture phase so the href is current before the click navigates;
+    // `auxclick` covers middle-click / open-in-new-tab.
+    document.addEventListener('click', retarget, true);
+    document.addEventListener('auxclick', retarget, true);
+    window.addEventListener('popstate', retarget);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
