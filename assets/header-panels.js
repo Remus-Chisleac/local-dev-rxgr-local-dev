@@ -312,6 +312,10 @@
 
   function registerSearchComponent() {
     Alpine.data('aicoSearch', function () {
+      // Deliberately a closure variable, not reactive component state: the
+      // x-effect that drives onOpen/onClose would re-run on every write to it.
+      var selectOnFocus = true;
+
       return {
         query: '',
         results: [],
@@ -359,6 +363,24 @@
           if (query.length >= this.minChars && !this.results.length && !this.loading) {
             this.runQuery(query);
           }
+        },
+
+        // Focus the input on every effect pass (cheap no-op once focused), but
+        // preselect the restored term only on the first pass of an open — the
+        // driving x-effect also re-runs while typing, and re-selecting then
+        // would make each keystroke wipe the term. With it selected, typing or
+        // a barcode scanner's keystrokes replace the previous search outright.
+        focusInput: function (el) {
+          el.focus();
+          if (selectOnFocus) {
+            selectOnFocus = false;
+            el.select();
+          }
+        },
+
+        // Drawer closed: arm the preselect again for the next open.
+        onClose: function () {
+          selectOnFocus = true;
         },
 
         onInput: function () {
