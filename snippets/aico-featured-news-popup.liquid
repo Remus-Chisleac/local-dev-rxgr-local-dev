@@ -211,11 +211,17 @@
 <div class="aico-news-popup" data-aico-news-popup hidden>
   <div class="aico-news-popup-backdrop" data-aico-news-popup-close></div>
 
+  {%- comment -%}
+    tabindex="-1" so opening can move focus into the dialog without landing on
+    a control — focusing the receipt button paints a focus ring on it the
+    moment the popup appears, which reads as "this is the thing to press".
+  {%- endcomment -%}
   <div
     class="aico-news-popup-panel"
     role="dialog"
     aria-modal="true"
     aria-labelledby="aico-news-popup-title"
+    tabindex="-1"
   >
     <button
       type="button"

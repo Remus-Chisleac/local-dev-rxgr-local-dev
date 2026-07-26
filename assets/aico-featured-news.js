@@ -215,8 +215,8 @@
     document.documentElement.classList.add('aico-no-scroll');
     document.body.classList.add('aico-no-scroll');
     document.addEventListener('keydown', onKeydown);
-    if (refs.read && typeof refs.read.focus === 'function') {
-      refs.read.focus();
+    if (refs.panel && typeof refs.panel.focus === 'function') {
+      refs.panel.focus();
     }
   }
 
