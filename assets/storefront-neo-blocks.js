@@ -178,10 +178,10 @@
     html += '<h3 class="aico-product-card-title">' + escapeHtml(title) + '</h3>';
     if (price) {
       html += '<p class="aico-product-card-price">';
+      html += '<span class="aico-product-card-price-now"><span class="aico-product-card-price-current">' + escapeHtml(price) + '</span></span>';
       if (compare) {
         html += '<span class="aico-product-card-price-was"><span class="aico-product-card-price-list">' + escapeHtml(compare) + '</span></span>';
       }
-      html += '<span class="aico-product-card-price-now"><span class="aico-product-card-price-current">' + escapeHtml(price) + '</span></span>';
       html += '</p>';
     }
     html += '</div>';

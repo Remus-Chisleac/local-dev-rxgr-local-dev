@@ -923,24 +923,25 @@
     body.appendChild(h3);
     if (priceLabel) {
       // Price group (default = the former ?rrp=true layout, mirrors
-      // snippets/product-card.liquid): price row pairs the struck regular
-      // price with the current one; the RRP gets its own row underneath.
+      // snippets/product-card.liquid): price row pairs the current price
+      // with the struck regular one (current FIRST, PDP order); the RRP
+      // gets its own row underneath.
       // No inline discount chip — the image-corner sale badge carries it.
       var group = document.createElement('div');
       group.className = 'aico-product-card-price-group';
       var p = document.createElement('p');
       p.className = 'aico-product-card-price';
       p.setAttribute('data-aico-rrp-v2', '');
+      var cp = document.createElement('span');
+      cp.className = 'aico-product-card-price-current';
+      cp.textContent = priceLabel;
+      p.appendChild(cp);
       if (compareLabel) {
         var cs = document.createElement('span');
         cs.className = 'aico-product-card-price-list';
         cs.textContent = compareLabel;
         p.appendChild(cs);
       }
-      var cp = document.createElement('span');
-      cp.className = 'aico-product-card-price-current';
-      cp.textContent = priceLabel;
-      p.appendChild(cp);
       group.appendChild(p);
       if (rrpLabel || compareRrpLabel) {
         var rrpRow = document.createElement('p');
@@ -949,16 +950,16 @@
         rrpLabelEl.className = 'aico-product-card-rrp-row-label';
         rrpLabelEl.textContent = labelRrp;
         rrpRow.appendChild(rrpLabelEl);
+        var rrpValue = document.createElement('span');
+        rrpValue.className = 'aico-product-card-rrp-row-value';
+        rrpValue.textContent = rrpLabel || compareRrpLabel;
+        rrpRow.appendChild(rrpValue);
         if (rrpLabel && compareRrpLabel && compareRrpLabel !== rrpLabel) {
           var rrpOld = document.createElement('span');
           rrpOld.className = 'aico-product-card-rrp-row-list';
           rrpOld.textContent = compareRrpLabel;
           rrpRow.appendChild(rrpOld);
         }
-        var rrpValue = document.createElement('span');
-        rrpValue.className = 'aico-product-card-rrp-row-value';
-        rrpValue.textContent = rrpLabel || compareRrpLabel;
-        rrpRow.appendChild(rrpValue);
         group.appendChild(rrpRow);
       }
       body.appendChild(group);

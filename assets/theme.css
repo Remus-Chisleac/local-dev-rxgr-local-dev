@@ -11319,7 +11319,9 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   z-index: 1;
   background: var(--aico-card, #fff);
   border-radius: var(--aico-radius, 2px);
-  max-width: 40rem;
+  /* Wide enough that a 5-column size grid keeps labels like "10 1/2" on
+     one line beside the qty box (PDP parity). */
+  max-width: 46rem;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
@@ -11404,6 +11406,9 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   appearance: textfield;
 }
 .aico-quick-add-modal .aico-pdp-size-cell-input:focus { outline: none; }
+/* Fractional sizes ("10 1/2") must never wrap onto a second line inside the
+   narrower modal cells — the wrap overlapped the qty box. */
+.aico-quick-add-modal .aico-pdp-size-cell-label { white-space: nowrap; }
 .aico-quick-add-modal .aico-pdp-qty-box__spinners {
   display: flex;
   flex-direction: column;
