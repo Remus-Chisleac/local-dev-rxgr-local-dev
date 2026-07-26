@@ -1,0 +1,278 @@
+/* storefront-neo-blocks.css — styles for the storefront-specific Neo element
+ * renderers (assets/storefront-neo-blocks.js), BR1/W2 brand pages.
+ *
+ * Linked from snippets/neo-content.liquid next to content-builder.css, so it
+ * only loads on Neo-rendered pages. The product cards themselves reuse the
+ * global .aico-product-card styles from theme.css; the brand-news strip
+ * reuses .aico-brand-news*. This file covers only the new aico-neo-* shells.
+ * Visual language mirrors the retired server-rendered brand page
+ * (.aico-brand-hero / .aico-brand-category-tile) — kj rounding via the
+ * global --aico-radius token (2px). Mobile-first.
+ */
+
+/* ── hero — banner photo + scrim + copy (mirrors .aico-brand-hero) ── */
+
+.aico-neo-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: clamp(16rem, 42vw, 22rem);
+  border-radius: var(--aico-radius, 2px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.aico-neo-hero-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.aico-neo-hero-scrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(0, 0, 0, 0.28) 52%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+}
+
+.aico-neo-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 3rem);
+  box-sizing: border-box;
+}
+
+.aico-neo-hero-copy {
+  min-width: 0;
+  max-width: 36rem;
+  color: #ffffff;
+}
+/* No banner photo → dark-on-light copy on the page background. */
+.aico-neo-hero-copy--plain {
+  color: var(--aico-fg, #18181b);
+}
+.aico-neo-hero-copy--plain .aico-neo-hero-heading {
+  color: var(--aico-fg, #18181b);
+  text-shadow: none;
+}
+.aico-neo-hero-copy--plain .aico-neo-hero-sub {
+  color: var(--aico-muted-fg, #52525b);
+}
+
+.aico-neo-hero-heading {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.875rem, 4.5vw, 2.65rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: #ffffff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+
+.aico-neo-hero-sub {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.aico-neo-hero-cta {
+  display: inline-flex;
+  margin-top: 0.75rem;
+}
+
+/* ── single product card (product-card element) ── */
+
+.aico-neo-product-single {
+  max-width: 24rem;
+}
+
+/* ── product grid — 2-up base, authored column count from 900px
+      (breakpoints mirror the retired .aico-brand-product-grid) ── */
+
+.aico-neo-product-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.aico-neo-product-grid-item {
+  min-width: 0;
+}
+
+.aico-neo-product-grid--cols-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .aico-neo-product-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .aico-neo-product-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.125rem;
+  }
+  .aico-neo-product-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.125rem;
+  }
+}
+
+/* ── product carousel — scroll-snap track of the same cards ── */
+
+.aico-neo-product-carousel {
+  position: relative;
+}
+
+.aico-neo-product-carousel-track {
+  display: flex;
+  gap: 0.875rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 0.25rem;
+}
+.aico-neo-product-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.aico-neo-product-carousel-item {
+  flex: 0 0 calc((100% - 0.875rem) / 2);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+@media (min-width: 768px) {
+  .aico-neo-product-carousel-item {
+    flex-basis: calc((100% - 0.875rem * 2) / 3);
+  }
+}
+@media (min-width: 1024px) {
+  /* --aico-neo-carousel-cols is stamped on the track by the renderer
+     (authored slidesToShow, capped at 4). */
+  .aico-neo-product-carousel-item {
+    flex-basis: calc(
+      (100% - 0.875rem * (var(--aico-neo-carousel-cols, 4) - 1)) /
+        var(--aico-neo-carousel-cols, 4)
+    );
+  }
+}
+
+.aico-neo-product-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  border: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.aico-neo-product-carousel-nav--prev {
+  left: 8px;
+}
+.aico-neo-product-carousel-nav--next {
+  right: 8px;
+}
+
+/* ── brand gender tiles (mirrors .aico-brand-category-tile) ── */
+
+.aico-neo-gender-tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .aico-neo-gender-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+.aico-neo-gender-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 10.5rem;
+  padding: 1.5rem 1rem;
+  border-radius: var(--aico-radius, 2px);
+  overflow: hidden;
+  border: 1px solid var(--aico-border, #e4e4e7);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Bottom scrim keeps the label readable over the photo/gradient. */
+.aico-neo-gender-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 35%,
+    rgba(24, 24, 27, 0.45) 100%
+  );
+}
+
+.aico-neo-gender-tile-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Gradient fallbacks when no authored tile image (same palette as the
+   retired .aico-brand-category-tile-women/-men). */
+.aico-neo-gender-tile--women {
+  background: linear-gradient(145deg, #dbeafe 0%, #c084fc 52%, #a855f7 100%);
+}
+.aico-neo-gender-tile--men {
+  background: linear-gradient(145deg, #cbd5f5 0%, #4b5563 55%, #1f2937 100%);
+}
+
+.aico-neo-gender-label {
+  position: relative;
+  z-index: 2;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* ── brand news — the strip reuses theme.css .aico-brand-news*; inside a Neo
+      section the vertical rhythm comes from the section, so drop the strip's
+      standalone bottom padding. ── */
+
+.aico-neo-brand-news {
+  padding-bottom: 0;
+}

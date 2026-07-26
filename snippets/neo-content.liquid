@@ -12,9 +12,26 @@
   empty mount instead of an empty/broken data script.
 {%- endcomment -%}
 <link rel="stylesheet" href="{{ 'content-builder.css' | asset_url }}">
+<link rel="stylesheet" href="{{ 'storefront-neo-blocks.css' | asset_url }}">
 <div id="aico-content" class="aico-neo-page"></div>
 {%- if page.aico_has_neo_content -%}
   <script>window.current_locale_code = {{ request.locale | default: shop.default_locale | json }};</script>
+  {%- comment -%}
+    Locale bridge for the client-side storefront renderers
+    (assets/storefront-neo-blocks.js) — Liquid `t` isn't reachable from JS.
+  {%- endcomment -%}
+  <script>window.aicoNeoI18n = {
+    "gender_women": {{ 'brand_page.gender_women' | t | json }},
+    "gender_men": {{ 'brand_page.gender_men' | t | json }},
+    "categories_aria": {{ 'brand_page.categories_aria' | t | json }},
+    "news_heading": {{ 'brand_page.news_heading' | t | json }}
+  };</script>
   <script id="aico-page-data" type="application/json">{{ page.aico_neo_data }}</script>
 {%- endif -%}
 <script src="{{ 'content-builder-neo.js' | asset_url }}" defer></script>
+{%- comment -%}
+  Storefront element renderers (hero, product-card/grid/carousel,
+  brand-gender-links, brand-news) — registers onto window.NewsNeo, so it must
+  load AFTER the engine (defer preserves document order).
+{%- endcomment -%}
+<script src="{{ 'storefront-neo-blocks.js' | asset_url }}" defer></script>
