@@ -591,12 +591,16 @@
           is NOT shown in the strip — the shopper is already on it, so the
           row lists only the *other* colours (the url guard below is
           belt-and-braces on top of the backend's own SKU exclusion).
+          The loop is deliberately uncapped: the strip is a horizontal
+          scroller, so extra colours cost width rather than page height, and
+          a cap silently dropped the newest connections (the backend orders
+          them oldest-first).
         {%- endcomment -%}
         {% if product.aico_color_siblings.size > 0 %}
           <section class="aico-pdp-colors" aria-labelledby="aico-pdp-colors-heading">
             <h2 id="aico-pdp-colors-heading" class="aico-pdp-section-heading">{{ 'product.more_colors' | t }}</h2>
             <div class="aico-pdp-color-strip" data-aico-color-strip>
-              {% for sibling in product.aico_color_siblings limit: 11 %}
+              {% for sibling in product.aico_color_siblings %}
                 {% if sibling.url == product.url %}{% continue %}{% endif %}
                 <a class="aico-pdp-color-tile" href="{{ sibling.url }}" title="{{ sibling.title }}" aria-label="{{ sibling.title }}">
                   {% if sibling.featured_image %}
