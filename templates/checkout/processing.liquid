@@ -14,27 +14,44 @@
       x-data="aicoCheckoutProcessingPage"
       x-init="init()">
   <div class="aico-page-container aico-checkout-processing-inner">
-    <div class="aico-checkout-processing-card" x-show="!failed">
-      <div class="aico-checkout-processing-spinner" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    {%- comment -%}
+      One card, two states — the same spinner → status medallion as the
+      thank-you page (see thank_you.liquid for the geometry notes): the
+      sweeping orange arc runs while we wait for the Adyen round-trip, and
+      a payment-session failure flips `is-failed`, which hands the SAME
+      circle over to the orange warning disc (aico-ty-status--warn pop)
+      while the failure copy rises in underneath. No order was placed,
+      nothing was charged, the cart is intact — the button leads back to
+      the checkout to retry.
+    {%- endcomment -%}
+    <div class="aico-checkout-processing-card"
+         :class="{ 'is-failed': failed }"
+         :aria-busy="failed ? 'false' : 'true'">
+      <div class="aico-ty-status" aria-hidden="true" :class="{ 'aico-ty-status--warn': failed }">
+        <svg class="aico-ty-status-svg" viewBox="0 0 52 52" focusable="false" role="presentation">
+          <circle class="aico-ty-status-track" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-spin" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-ring" cx="26" cy="26" r="24"/>
+          <circle class="aico-ty-status-disc" cx="26" cy="26" r="24"/>
+          <path class="aico-ty-status-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          <circle class="aico-ty-status-warn-disc" cx="26" cy="26" r="24"/>
+          <path class="aico-ty-status-warn-triangle" d="M26 15.4 38.4 36.6 13.6 36.6 Z"/>
+          <path class="aico-ty-status-warn-bang" d="M26 22.6V29.4"/>
+          <circle class="aico-ty-status-warn-dot" cx="26" cy="33.1" r="1.45"/>
         </svg>
       </div>
-      <h1 class="aico-checkout-processing-title">{{ 'checkout.processing_page.title' | t }}</h1>
-      <p class="aico-checkout-processing-body">{{ 'checkout.processing_page.body' | t }}</p>
-      <p class="aico-checkout-processing-fallback" x-show="elapsed > 30" x-cloak>
+      <h1 class="aico-checkout-processing-title" aria-live="polite">
+        <span x-show="!failed">{{ 'checkout.processing_page.title' | t }}</span>
+        <span class="aico-ty-reveal" x-show="failed" x-cloak>{{ 'checkout.processing_page.failed_title' | t }}</span>
+      </h1>
+      <p class="aico-checkout-processing-body" x-show="!failed">{{ 'checkout.processing_page.body' | t }}</p>
+      <p class="aico-checkout-processing-fallback" x-show="!failed && elapsed > 30" x-cloak>
         {{ 'checkout.processing_page.fallback' | t }}
       </p>
-    </div>
-    {%- comment -%}
-      Payment-session failure: the backend could not create the Adyen
-      hosted-checkout session — no order was placed, nothing was charged,
-      and the cart was kept intact. Loud dead-end with a way back.
-    {%- endcomment -%}
-    <div class="aico-checkout-processing-card aico-checkout-processing-failed" x-show="failed" x-cloak>
-      <h1 class="aico-checkout-processing-title">{{ 'checkout.processing_page.failed_title' | t }}</h1>
-      <p class="aico-checkout-processing-body">{{ 'checkout.processing_page.failed_body' | t }}</p>
-      <p class="aico-checkout-processing-back">
+      <p class="aico-checkout-processing-body aico-ty-reveal" x-show="failed" x-cloak>
+        {{ 'checkout.processing_page.failed_body' | t }}
+      </p>
+      <p class="aico-checkout-processing-back aico-ty-reveal" x-show="failed" x-cloak>
         <a class="aico-button aico-button-primary" href="{{ routes.checkout_url }}">
           {{ 'checkout.processing_page.back_to_checkout' | t }}
         </a>
