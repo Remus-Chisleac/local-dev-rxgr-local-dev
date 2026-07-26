@@ -190,7 +190,6 @@
           data-aico-cart-add
           data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
           data-aico-max-qty="{{ product.aico_max_quantity_per_order }}"
-          data-aico-max-qty-all-variants="{% if product.aico_max_quantity_for_all_variants %}1{% else %}0{% endif %}"
         >
           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
           <input type="hidden" name="product_id" value="{{ product.id }}">

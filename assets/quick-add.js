@@ -224,7 +224,8 @@
     }
 
     var shippingBlocked = !!product.aico_shipping_blocked;
-    var productMaxAllVariants = !!product.aico_max_quantity_for_all_variants;
+    // Product-wide cap on the SUM across all variants — coexists with each
+    // variant's own aico_max_quantity_per_order cap.
     var productMaxQty = Number(product.aico_max_quantity_per_order);
     if (isNaN(productMaxQty) || productMaxQty <= 0) {
       productMaxQty = null;
@@ -538,10 +539,11 @@
         }
       });
 
-      // Product-wide cap ("for all variants"): absolute quantities, so the
-      // cap is the sum of the inputs — pull the edited cell back.
+      // Product-wide cap (coexists with the per-variant caps): absolute
+      // quantities, so the cap is the sum of the inputs — pull the edited
+      // cell back.
       var productClamped = false;
-      if (productMaxAllVariants && productMaxQty !== null && sum > productMaxQty) {
+      if (productMaxQty !== null && sum > productMaxQty) {
         var target = event && event.target && inputs.indexOf(event.target) !== -1 ? event.target : null;
         if (target) {
           var current = parseInt(target.value, 10) || 0;
@@ -561,14 +563,14 @@
 
       totalValue.textContent = String(sum);
 
-      var atProductCap = productMaxAllVariants && productMaxQty !== null && sum >= productMaxQty;
+      var atProductCap = productMaxQty !== null && sum >= productMaxQty;
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
         var limit = ceilingOf(input);
         var ceiling = limit.ceiling;
         var kind = limit.kind;
         var count = limit.count;
-        if (productMaxAllVariants && productMaxQty !== null) {
+        if (productMaxQty !== null) {
           var room = Math.max(0, productMaxQty - (sum - value));
           if (room <= ceiling) {
             ceiling = room;

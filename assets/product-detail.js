@@ -67,13 +67,12 @@
 
   // -------- Max order quantity (PIM "Max. Bestellmenge") -----------------
   //
-  // Two modes, stamped by the template from the product drop:
-  //   - data-aico-max-qty-all-variants="1": the product-level max caps the
-  //     SUM across all the product's variants in the cart.
-  //   - otherwise each matrix cell's data-aico-variant-max caps its own
-  //     variant. The server clamps too (StorefrontCartController) — this
-  //     is the visible, immediate guard.
-  var productMaxAllVariants = form.getAttribute('data-aico-max-qty-all-variants') === '1';
+  // Two COEXISTING caps, stamped by the template from the product drop:
+  //   - data-aico-max-qty: the product-wide max — caps the SUM across all
+  //     the product's variants in the cart;
+  //   - each matrix cell's data-aico-variant-max caps its own variant.
+  // Both apply at once; the server clamps too (StorefrontCartController) —
+  // this is the visible, immediate guard.
   var productMaxQty = parseInt(form.getAttribute('data-aico-max-qty'), 10);
   if (isNaN(productMaxQty) || productMaxQty <= 0) {
     productMaxQty = null;
@@ -483,11 +482,10 @@
         total += clamp(input);
       });
 
-      // Product-wide cap ("for all variants"): the matrix posts ABSOLUTE
-      // quantities for every variant (pre-filled from the cart), so the cap
-      // is simply the sum of the inputs — pull the just-edited cell back by
-      // the overflow.
-      if (productMaxAllVariants && productMaxQty !== null && total > productMaxQty) {
+      // Product-wide cap: the matrix posts ABSOLUTE quantities for every
+      // variant (pre-filled from the cart), so the cap is simply the sum of
+      // the inputs — pull the just-edited cell back by the overflow.
+      if (productMaxQty !== null && total > productMaxQty) {
         var target = event && event.target && inputs.indexOf(event.target) !== -1 ? event.target : null;
         if (!target) {
           // No known edit target (initial pass): trim cells from the end.
@@ -527,7 +525,7 @@
           kind = 'variant';
           count = variantMax;
         }
-        if (productMaxAllVariants && productMaxQty !== null) {
+        if (productMaxQty !== null) {
           var room = Math.max(0, productMaxQty - (total - value));
           if (ceiling === null || room <= ceiling) {
             ceiling = room;
@@ -560,9 +558,9 @@
   //
   // The non-matrix stepper ADDS to the cart (increment semantics), so the
   // room left is the cap minus what the cart already holds. Two caps can
-  // apply here:
-  //   - product-wide ("for all variants"): the cap covers every line of the
-  //     product, which is exactly what inCartProductQuantity() sums;
+  // apply here, and they COEXIST — the tighter one binds:
+  //   - product-wide: the cap covers every line of the product, which is
+  //     exactly what inCartProductQuantity() sums;
   //   - per-variant: only knowable client-side when the product has NO
   //     option axis — one variant, its id pre-filled, so the product's cart
   //     quantity IS that variant's. The template stamps the cap onto the
@@ -583,12 +581,12 @@
     }
     var capKind = null;
     var cap = null;
-    if (productMaxAllVariants && productMaxQty !== null) {
-      capKind = 'product';
-      cap = productMaxQty;
-    } else if (variantMax !== null) {
+    if (variantMax !== null && (productMaxQty === null || variantMax <= productMaxQty)) {
       capKind = 'variant';
       cap = variantMax;
+    } else if (productMaxQty !== null) {
+      capKind = 'product';
+      cap = productMaxQty;
     }
     if (capKind === null) {
       return;
