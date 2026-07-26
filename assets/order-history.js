@@ -48,6 +48,15 @@
 
   // ---- State ------------------------------------------------------
 
+  // The account preference names the millimetre system KR (a country code);
+  // the size charts and the PDP's region tabs call the same column MM.
+  var SIZE_REGIONS = ['EU', 'UK', 'US', 'MM'];
+  function normalizeSizeRegion(value) {
+    var candidate = String(value == null ? '' : value).toUpperCase();
+    if (candidate === 'KR') { return 'MM'; }
+    return SIZE_REGIONS.indexOf(candidate) !== -1 ? candidate : 'EU';
+  }
+
   var state = {
     page: 0,
     lastPage: null,
@@ -56,6 +65,9 @@
     requestId: 0,
     filters: { type: 'all', period: 'all', from: null, to: null, search: '', createdBy: [] },
     userCounts: [],
+    // Display-only: which size system the variant tables label sizes in.
+    // Starts on the shopper's account preference, switchable per page load.
+    sizeRegion: normalizeSizeRegion(rootEl.getAttribute('data-aico-orders-size-region')),
   };
 
   // ---- i18n + formatting helpers ----------------------------------
@@ -832,17 +844,47 @@
     return dd;
   }
 
+  function sizeRegionLabel(region) {
+    return t('size_region.tab_' + region.toLowerCase(), region);
+  }
+
+  // Display-only, so it neither filters the feed nor counts as an active
+  // filter: switching just relabels the size chips already on the page.
+  function buildSizeRegionDropdown() {
+    var dd = createDropdown(t('filters.size_region', 'Size type') + ': ' + sizeRegionLabel(state.sizeRegion), 'right');
+    SIZE_REGIONS.forEach(function (region) {
+      var row = el('button', 'aico-orders-option');
+      row.type = 'button';
+      row.textContent = sizeRegionLabel(region);
+      if (state.sizeRegion === region) {
+        row.classList.add('aico-orders-option-selected');
+      }
+      row.addEventListener('click', function () {
+        state.sizeRegion = region;
+        dd.setLabel(t('filters.size_region', 'Size type') + ': ' + sizeRegionLabel(region));
+        Array.prototype.forEach.call(dd.panel.children, function (c) { c.classList.remove('aico-orders-option-selected'); });
+        row.classList.add('aico-orders-option-selected');
+        closeOpenDropdown();
+        relabelSizes();
+      });
+      dd.panel.appendChild(row);
+    });
+    return dd;
+  }
+
   // ---- Toolbar assembly -------------------------------------------
 
-  var typeDropdown, periodDropdown, createdByDropdown, resetBtnEl;
+  var typeDropdown, periodDropdown, createdByDropdown, sizeRegionDropdown, resetBtnEl;
 
   function buildToolbar() {
     typeDropdown = buildTypeDropdown();
     periodDropdown = buildPeriodDropdown();
     createdByDropdown = buildCreatedByDropdown();
+    sizeRegionDropdown = buildSizeRegionDropdown();
     filtersEl.appendChild(typeDropdown.root);
     filtersEl.appendChild(periodDropdown.root);
     filtersEl.appendChild(createdByDropdown.root);
+    filtersEl.appendChild(sizeRegionDropdown.root);
 
     resetBtnEl = el('button', 'aico-orders-reset');
     resetBtnEl.type = 'button';
@@ -1091,6 +1133,21 @@
     return group;
   }
 
+  // The feed ships every size system's label for a line (`sizeLabels`);
+  // `size` itself stays the canonical (EU) option value.
+  function sizeLabelFor(item, region) {
+    var label = item.sizeLabels && item.sizeLabels[normalizeSizeRegion(region).toLowerCase()];
+    return (label != null && label !== '') ? String(label) : String(item.size);
+  }
+
+  function relabelSizes() {
+    var attr = 'data-aico-label-' + state.sizeRegion.toLowerCase();
+    Array.prototype.forEach.call(listEl.querySelectorAll('[data-aico-size-label]'), function (chip) {
+      var next = chip.getAttribute(attr);
+      if (next != null && next !== '') { chip.textContent = next; }
+    });
+  }
+
   function buildVariantTable(product) {
     var table = el('div', 'aico-order-vtable');
 
@@ -1111,7 +1168,18 @@
 
       var sizeCell = el('span', 'aico-order-vsize');
       if (item.size) {
-        sizeCell.appendChild(el('span', 'aico-order-size-chip', item.size));
+        // Every system's label rides along on the chip (as on the PDP's
+        // matrix cells) so switching the selector relabels cards already
+        // rendered, without refetching the feed.
+        var chip = el('span', 'aico-order-size-chip');
+        SIZE_REGIONS.forEach(function (region) {
+          var key = region.toLowerCase();
+          var label = item.sizeLabels && item.sizeLabels[key];
+          chip.setAttribute('data-aico-label-' + key, label || item.size);
+        });
+        chip.setAttribute('data-aico-size-label', '');
+        chip.textContent = sizeLabelFor(item, state.sizeRegion);
+        sizeCell.appendChild(chip);
       } else {
         sizeCell.appendChild(el('span', null, '—'));
       }

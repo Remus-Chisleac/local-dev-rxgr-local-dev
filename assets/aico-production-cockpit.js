@@ -111,19 +111,52 @@
     return Array.isArray(data) ? data : [];
   }
 
-  // Display label for a restock variant. The endpoints add
-  // `variantValueDisplay` — the size converted to the shopper's account size
-  // system (profile page → EU/UK/US/KR) — while `variantValue` stays the
+  // The account preference names the millimetre system KR (a country code);
+  // the size charts and the PDP tabs call the same column MM.
+  var SIZE_REGIONS = ['EU', 'UK', 'US', 'MM'];
+  function normalizeRegion(value) {
+    var candidate = String(value == null ? '' : value).toUpperCase();
+    if (candidate === 'KR') {
+      return 'MM';
+    }
+    return SIZE_REGIONS.indexOf(candidate) !== -1 ? candidate : 'EU';
+  }
+
+  // Display label for a restock variant in one size system. The endpoints add
+  // `variantValueLabels` ({eu,uk,us,mm}) while `variantValue` stays the
   // canonical value the reminder writes post back as `size`. Never label a
   // cell from `variantValue` directly, or a UK/US/KR shopper sees EU sizes.
-  function sizeLabel(variant) {
+  function sizeLabel(variant, region) {
     if (!variant) {
       return '—';
     }
-    if (variant.variantValueDisplay != null && String(variant.variantValueDisplay) !== '') {
-      return String(variant.variantValueDisplay);
+    var labels = variant.variantValueLabels;
+    var key = normalizeRegion(region).toLowerCase();
+    if (labels && labels[key] != null && String(labels[key]) !== '') {
+      return String(labels[key]);
     }
     return variant.variantValue != null ? String(variant.variantValue) : '—';
+  }
+
+  // Read the size system out of a PDP-style region tab strip. On the PDP
+  // product-detail.js owns the strip and keeps the active class in sync; the
+  // cockpit page renders its own strip, made interactive by the binder below.
+  function activeSizeRegion(tabsEl) {
+    var active = tabsEl ? tabsEl.querySelector('.aico-pdp-size-region-tab-active') : null;
+    return normalizeRegion(active && active.getAttribute('data-region'));
+  }
+
+  function bindSizeRegionTabs(tabsEl) {
+    var tabs = tabsEl ? Array.prototype.slice.call(tabsEl.querySelectorAll('[data-aico-size-region]')) : [];
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (other) {
+          var on = other === tab;
+          other.classList.toggle('aico-pdp-size-region-tab-active', on);
+          other.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      });
+    });
   }
 
   // A reminder matches a row variant either by real variant id (shop
@@ -209,6 +242,9 @@
     var newReleaseUrl = opts.newReleaseUrl;
     var onToast = opts.onToast || function () {};
     var onSaved = opts.onSaved || function () {};
+    // The size system the cells are labelled in, read fresh on every open:
+    // the cockpit page's tab strip on one side, the PDP's on the other.
+    var getRegion = opts.getRegion || function () { return 'EU'; };
 
     var root = document.createElement('div');
     root.className = 'aico-cockpit-modal';
@@ -297,6 +333,7 @@
     function renderGrid(product, reminderIndex) {
       gridEl.innerHTML = '';
       var cellIndex = 0;
+      var region = getRegion();
       groupVariantsByDate(product.variants || []).forEach(function (group) {
         var panel = document.createElement('div');
         panel.className = 'aico-cockpit-date-group';
@@ -325,7 +362,7 @@
           cell.style.animationDelay = (cellIndex * 35) + 'ms';
           cellIndex += 1;
           cell.innerHTML = '<span class="aico-cockpit-size-label">' +
-            escapeHtml(sizeLabel(variant)) +
+            escapeHtml(sizeLabel(variant, region)) +
             '</span><span class="aico-cockpit-size-icon" aria-hidden="true"></span>';
           applyCellClass(cell);
           cell.addEventListener('click', function () { toggleCell(cell); });
@@ -539,13 +576,20 @@
       }, 2600);
     }
 
+    // Page-level size-system selector (filter row). The cockpit table has no
+    // size column, so it governs the reminder modal's cells; the strip is
+    // server-rendered with the shopper's account preference already active.
+    var sizeRegionTabsEl = root.querySelector('[data-aico-cockpit-size-region-tabs]');
+    bindSizeRegionTabs(sizeRegionTabsEl);
+
     var modal = createReminderModal({
       t: t,
       token: token,
       remindersUrl: remindersUrl,
       newReleaseUrl: newReleaseUrl,
       onToast: toast,
-      onSaved: refreshReminders
+      onSaved: refreshReminders,
+      getRegion: function () { return activeSizeRegion(sizeRegionTabsEl); }
     });
 
     function brandLabel(product) {
@@ -870,7 +914,17 @@
       remindersUrl: remindersUrl,
       newReleaseUrl: newReleaseUrl,
       onToast: toast,
-      onSaved: hydrate
+      onSaved: hydrate,
+      // The PDP already has a size selector (the matrix' region tabs) — the
+      // reminder cells follow whichever system is showing there. A product
+      // without a size matrix has no strip, so fall back to the account
+      // preference rather than to EU.
+      getRegion: function () {
+        var tabsEl = document.querySelector('[data-aico-size-region-tabs]');
+        return tabsEl
+          ? activeSizeRegion(tabsEl)
+          : normalizeRegion(block.getAttribute('data-aico-cockpit-size-region'));
+      }
     });
 
     var product = null;

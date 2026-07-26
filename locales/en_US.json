@@ -234,7 +234,8 @@
         "unassigned": "Unassigned",
         "search_label": "Search",
         "search_placeholder": "Search by order no., product name or size SKU",
-        "reset": "Reset filters"
+        "reset": "Reset filters",
+        "size_region": "Size type"
       },
       "card": {
         "item_count": "{count} products",
@@ -807,6 +808,9 @@
       },
       "no_data": "No restock data available",
       "no_data_for_brands": "No products found for selected brands"
+    },
+    "size_filter": {
+      "title": "Size type"
     },
     "brand_filter": {
       "title": "Filter by brand",

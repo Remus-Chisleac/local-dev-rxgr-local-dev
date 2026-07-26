@@ -17,6 +17,13 @@
   data-aico-orders-feed-url="{{ routes.aico_account_orders_feed_url }}"
   data-aico-order-user-counts-url="{{ routes.aico_account_order_user_counts_url }}"
   data-aico-order-document-url-template="{{ routes.aico_account_order_document_download_url }}"
+  {%- comment -%}
+    Size system the variant tables start on: the shopper's account preference
+    (`customer.aico_size_region`, EU/UK/US/KR). The charts label the millimetre
+    column MM, so the JS translates KR once. The Size-type dropdown it builds
+    switches the labels client-side — the feed ships all four per line.
+  {%- endcomment -%}
+  data-aico-orders-size-region="{{ customer.aico_size_region }}"
   data-aico-page-size="10">
   <div class="aico-page-container aico-orders-shell">
     <h1 class="aico-orders-title">{{ 'customer.orders_page.title' | t }}</h1>
@@ -88,7 +95,15 @@
       "created_by_count": {{ 'customer.orders_page.filters.created_by_count' | t | json }},
       "search_users": {{ 'customer.orders_page.filters.search_users' | t | json }},
       "unassigned": {{ 'customer.orders_page.filters.unassigned' | t | json }},
-      "reset": {{ 'customer.orders_page.filters.reset' | t | json }}
+      "reset": {{ 'customer.orders_page.filters.reset' | t | json }},
+      "size_region": {{ 'customer.orders_page.filters.size_region' | t | json }}
+    },
+    {% comment %} Same tab labels the PDP's size-matrix region tabs use. {% endcomment %}
+    "size_region": {
+      "tab_eu": {{ 'product.size_region.tab_eu' | t | json }},
+      "tab_uk": {{ 'product.size_region.tab_uk' | t | json }},
+      "tab_us": {{ 'product.size_region.tab_us' | t | json }},
+      "tab_mm": {{ 'product.size_region.tab_mm' | t | json }}
     },
     "card": {
       "item_count": {{ 'customer.orders_page.card.item_count' | t | json }},

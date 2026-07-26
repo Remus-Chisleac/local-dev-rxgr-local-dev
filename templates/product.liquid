@@ -536,6 +536,11 @@
               class="aico-cockpit-restock"
               data-aico-cockpit-restock
               data-aico-cockpit-sku="{{ product.sku | escape }}"
+              {%- comment -%}
+                Fallback size system for the reminder modal on a product with
+                no size matrix (no region tabs to follow).
+              {%- endcomment -%}
+              data-aico-cockpit-size-region="{{ customer.aico_size_region }}"
               data-aico-cockpit-token="{{ aico_csrf_token }}"
               data-aico-cockpit-product-url="{{ routes.aico_production_cockpit_product_url }}"
               data-aico-cockpit-reminders-url="{{ routes.aico_production_cockpit_reminders_url }}"

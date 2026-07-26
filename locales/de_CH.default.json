@@ -234,7 +234,8 @@
         "unassigned": "Nicht zugeordnet",
         "search_label": "Suche",
         "search_placeholder": "Suche nach Bestellnr., Produktname oder Grössen-SKU",
-        "reset": "Filter zurücksetzen"
+        "reset": "Filter zurücksetzen",
+        "size_region": "Grössentyp"
       },
       "card": {
         "item_count": "{count} Produkte",
@@ -807,6 +808,9 @@
       },
       "no_data": "Keine Nachlieferungsdaten verfügbar",
       "no_data_for_brands": "Keine Produkte für ausgewählte Marken gefunden"
+    },
+    "size_filter": {
+      "title": "Grössentyp"
     },
     "brand_filter": {
       "title": "Nach Marke filtern",

@@ -56,6 +56,54 @@
       <div class="aico-cockpit-brand-chips" data-aico-cockpit-brand-filter></div>
     </section>
 
+    {%- comment -%}
+      Size-system selector. Sizes only ever show inside the reminder modal, so
+      this strip governs how that modal labels its cells. Same markup + classes
+      as the PDP's size-matrix region tabs, and it starts on the shopper's
+      account preference (`customer.aico_size_region`, EU/UK/US/KR) — the
+      matrix labels the millimetre column MM, so KR is translated once here.
+    {%- endcomment -%}
+    {%- assign preferred_size_region = customer.aico_size_region | default: 'EU' -%}
+    {%- if preferred_size_region == 'KR' -%}
+      {%- assign preferred_size_region = 'MM' -%}
+    {%- endif -%}
+    <section class="aico-cockpit-filter aico-cockpit-size-filter" aria-label="{{ 'aico_production_cockpit.size_filter.title' | t }}">
+      <div class="aico-cockpit-filter-head">
+        <h2 class="aico-cockpit-filter-title">{{ 'aico_production_cockpit.size_filter.title' | t }}</h2>
+      </div>
+      <div class="aico-pdp-size-region-tabs" role="tablist" aria-label="{{ 'product.size_region.aria' | t }}" data-aico-cockpit-size-region-tabs>
+        {%- assign size_regions = 'EU,UK,US,MM' | split: ',' -%}
+        {% for region in size_regions %}
+          {%- if region == preferred_size_region -%}
+            {%- assign region_is_active = true -%}
+          {%- else -%}
+            {%- assign region_is_active = false -%}
+          {%- endif -%}
+          <button
+            type="button"
+            role="tab"
+            class="aico-pdp-size-region-tab{% if region_is_active %} aico-pdp-size-region-tab-active{% endif %}"
+            aria-selected="{% if region_is_active %}true{% else %}false{% endif %}"
+            data-aico-size-region
+            data-region="{{ region }}"
+          >
+            {% case region %}
+              {% when 'EU' %}
+                {{ 'product.size_region.tab_eu' | t }}
+              {% when 'UK' %}
+                {{ 'product.size_region.tab_uk' | t }}
+              {% when 'US' %}
+                {{ 'product.size_region.tab_us' | t }}
+              {% when 'MM' %}
+                {{ 'product.size_region.tab_mm' | t }}
+              {% else %}
+                {{ region }}
+            {% endcase %}
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+
     <p class="aico-cockpit-empty" role="status" data-aico-cockpit-empty hidden></p>
     <p class="aico-cockpit-error" role="alert" data-aico-cockpit-error hidden>
       {{ 'aico_production_cockpit.error' | t }}
