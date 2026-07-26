@@ -206,20 +206,6 @@
 }
 
 /* ----------------------------------------------------------------
-   Full-bleed hero: break the LCP banner out of the page container to
-   the viewport edges (live brand-page look). The row/column wrappers
-   are flex items, so the breakout uses the 50%/50vw trick.
----------------------------------------------------------------- */
-.aico-neo-page .content-type-neo-hero,
-.aico-neo-page .aico-neo-hero {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  border-radius: 0;
-}
-
-/* ----------------------------------------------------------------
    Server-rendered card slots: carousel variant of the shared
    .aico-products-grid list — a scroll-snap track instead of the grid.
 ---------------------------------------------------------------- */
