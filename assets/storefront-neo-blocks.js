@@ -192,9 +192,10 @@
 
   // ============================================================
   // hero — authored fields per aiconeo elements.ts:
-  // backgroundImage, headline, subheadline, buttonText, buttonUrl.
+  // backgroundImage, headline, subheadline, buttonText, buttonUrl, overlayOpacity.
   // Generic (not storefront-gated): renders from authored content alone.
-  // Visual language mirrors the retired .aico-brand-hero (photo + scrim + copy).
+  // Visual language mirrors the retired .aico-brand-hero (photo + optional
+  // darkening + copy).
   // ============================================================
 
   Neo.registerType('hero', function (el) {
@@ -204,13 +205,20 @@
     var subheadline = stripOuterParagraph(content.subheadline || '');
     var ctaText = content.buttonText || '';
     var ctaUrl = normalizeUrl(content.buttonUrl || '');
+    var overlay = parseFloat(content.overlayOpacity);
+    if (!isFinite(overlay) || overlay <= 0) overlay = 0;
+    if (overlay > 100) overlay = 100;
     if (!image && !headline && !subheadline) return '';
 
     var html = '<div class="aico-neo-hero"' + inlineStyleAttr(el) + '>';
     if (image) {
       // The hero is the page's LCP banner — load eagerly, unlike the cards below.
       html += '<img class="aico-neo-hero-photo" src="' + escapeAttr(image) + '" alt="" loading="eager">';
-      html += '<div class="aico-neo-hero-scrim" aria-hidden="true"></div>';
+      // Darkening is authored, never baked in: aiconeo's overlayOpacity slider
+      // (0-100%, absent/0 = untinted banner), same semantics as the builder preview.
+      if (overlay > 0) {
+        html += '<div class="aico-neo-hero-scrim" aria-hidden="true" style="opacity:' + (overlay / 100) + '"></div>';
+      }
     }
     html += '<div class="aico-neo-hero-inner"><div class="aico-neo-hero-copy' + (image ? '' : ' aico-neo-hero-copy--plain') + '">';
     if (headline) html += '<h2 class="aico-neo-hero-heading">' + headline + '</h2>';

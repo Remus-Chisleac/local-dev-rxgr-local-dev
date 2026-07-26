@@ -10,7 +10,7 @@
  * global --aico-radius token (2px). Mobile-first.
  */
 
-/* ── hero — banner photo + scrim + copy (mirrors .aico-brand-hero) ── */
+/* ── hero — banner photo + optional overlay + copy (mirrors .aico-brand-hero) ── */
 
 .aico-neo-hero {
   position: relative;
@@ -32,16 +32,13 @@
   display: block;
 }
 
+/* Only emitted when the hero authored a non-zero overlayOpacity; the renderer
+   carries the value as an inline opacity. */
 .aico-neo-hero-scrim {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.62) 0%,
-    rgba(0, 0, 0, 0.28) 52%,
-    rgba(0, 0, 0, 0.12) 100%
-  );
+  background: #000;
 }
 
 .aico-neo-hero-inner {
