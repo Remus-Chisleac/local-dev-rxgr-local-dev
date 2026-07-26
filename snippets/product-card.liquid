@@ -110,7 +110,7 @@
               </p>
             {% endif %}
           </div>
-        {% else %}
+        {% elsif hide_price_on_request != true %}
           <p class="aico-product-card-price aico-product-card-price-on-request">{{ 'product.price_on_request' | t }}</p>
         {% endif %}
       </div>
