@@ -227,7 +227,25 @@
   // product-card — single card from aico_hydrated.products[0]
   // ============================================================
 
+  // Server-rendered REAL cards: neo-content.liquid renders the shop's actual
+  // `product-card` snippet (reviews stars, badges, quick-add button — the
+  // quick-add modal binds by document-level delegation, so injected buttons
+  // work) into `<template data-aico-neo-products="<elementId>">` blocks.
+  // Renderers below slot that HTML into place; the JS-built card remains only
+  // as a fallback for documents rendered without the snippet slots.
+  function slotCardsHtml(el) {
+    if (!el || !el.id || typeof document === 'undefined') return null;
+    var tpl = document.querySelector('template[data-aico-neo-products="' + String(el.id).replace(/"/g, '') + '"]');
+    if (!tpl) return null;
+    var html = tpl.innerHTML;
+    return html && html.replace(/\s/g, '') !== '' ? html : null;
+  }
+
   Neo.registerType('product-card', function (el) {
+    var slot = slotCardsHtml(el);
+    if (slot) {
+      return '<ul class="aico-products-grid aico-brand-product-grid aico-neo-product-single" role="list"' + inlineStyleAttr(el) + '>' + slot + '</ul>';
+    }
     var products = hydratedProducts(el);
     if (products.length === 0) return '';
     return '<div class="aico-neo-product-single"' + inlineStyleAttr(el) + '>' + renderProductCard(products[0]) + '</div>';
@@ -240,6 +258,12 @@
   // ============================================================
 
   Neo.registerType('product-grid', function (el) {
+    var slot = slotCardsHtml(el);
+    if (slot) {
+      // Same list classes as the products listing + retired brand page, so
+      // the existing responsive grid CSS applies unchanged.
+      return '<ul class="aico-products-grid aico-brand-product-grid" role="list"' + inlineStyleAttr(el) + '>' + slot + '</ul>';
+    }
     var products = hydratedProducts(el);
     if (products.length === 0) return '';
     var content = el.content || {};
@@ -262,12 +286,28 @@
   // ============================================================
 
   Neo.registerType('product-carousel', function (el) {
-    var products = hydratedProducts(el);
-    if (products.length === 0) return '';
     var content = el.content || {};
     var perView = parseInt(content.slidesToShow, 10);
     if (!isFinite(perView) || perView < 1) perView = 4;
     if (perView > 4) perView = 4;
+
+    var slot = slotCardsHtml(el);
+    if (slot) {
+      // Real cards in a scroll-snap track: the <li> items keep the shared
+      // card markup; the track class overrides the grid layout.
+      var count = (slot.match(/aico-products-grid-item/g) || []).length;
+      var htmlS = '<div class="aico-neo-product-carousel" data-aico-neo-carousel="1"' + inlineStyleAttr(el) + '>';
+      htmlS += '<ul class="aico-products-grid aico-brand-product-grid aico-neo-product-carousel-track" role="list" style="--aico-neo-carousel-cols:' + perView + ';">' + slot + '</ul>';
+      if (count > perView) {
+        htmlS += '<button type="button" class="aico-neo-product-carousel-nav aico-neo-product-carousel-nav--prev" aria-label="Previous">&#10094;</button>';
+        htmlS += '<button type="button" class="aico-neo-product-carousel-nav aico-neo-product-carousel-nav--next" aria-label="Next">&#10095;</button>';
+      }
+      htmlS += '</div>';
+      return htmlS;
+    }
+
+    var products = hydratedProducts(el);
+    if (products.length === 0) return '';
 
     var html = '<div class="aico-neo-product-carousel" data-aico-neo-carousel="1"' + inlineStyleAttr(el) + '>';
     html += '<div class="aico-neo-product-carousel-track" style="--aico-neo-carousel-cols:' + perView + ';">';
@@ -293,25 +333,24 @@
     var payload = hydrated(el);
     if (!payload || (!payload.women_url && !payload.men_url)) return '';
     var content = el.content || {};
-    var tiles = [
-      { key: 'women', url: payload.women_url, label: content.womenLabel || i18n('gender_women', 'Women'), image: content.womenImage || '' },
-      { key: 'men', url: payload.men_url, label: content.menLabel || i18n('gender_men', 'Men'), image: content.menImage || '' }
+    // Simple text links, exactly like the retired brand.liquid gender nav —
+    // the existing .aico-brand-gender / -link / -sep CSS styles them.
+    var links = [
+      { url: payload.women_url, label: content.womenLabel || i18n('gender_women', 'Women') },
+      { url: payload.men_url, label: content.menLabel || i18n('gender_men', 'Men') }
     ];
 
-    var html = '<nav class="aico-neo-gender-tiles" aria-label="' + escapeAttr(i18n('categories_aria', 'Shop by category')) + '"' + inlineStyleAttr(el) + '>';
-    for (var i = 0; i < tiles.length; i++) {
-      var tile = tiles[i];
-      var url = normalizeUrl(tile.url || '');
+    var parts = [];
+    for (var i = 0; i < links.length; i++) {
+      var url = normalizeUrl(links[i].url || '');
       if (!url) continue;
-      html += '<a class="aico-neo-gender-tile aico-neo-gender-tile--' + tile.key + '" href="' + escapeAttr(url) + '">';
-      if (tile.image) {
-        html += '<img class="aico-neo-gender-tile-photo" src="' + escapeAttr(tile.image) + '" alt="" loading="lazy">';
-      }
-      html += '<span class="aico-neo-gender-label">' + escapeHtml(tile.label) + '</span>';
-      html += '</a>';
+      parts.push('<a class="aico-brand-gender-link" href="' + escapeAttr(url) + '">' + escapeHtml(links[i].label) + '</a>');
     }
-    html += '</nav>';
-    return html;
+    if (parts.length === 0) return '';
+
+    return '<nav class="aico-brand-gender" aria-label="' + escapeAttr(i18n('categories_aria', 'Shop by category')) + '"' + inlineStyleAttr(el) + '>' +
+      parts.join('<span class="aico-brand-gender-sep" aria-hidden="true">&ndash;</span>') +
+      '</nav>';
   });
 
   // ============================================================

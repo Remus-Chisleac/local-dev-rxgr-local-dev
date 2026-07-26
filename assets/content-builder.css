@@ -25,7 +25,11 @@ a { color: inherit; }
 
 /* Centred page container. */
 .aico-neo-main { width: 100%; }
-.aico-neo-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+/* Full-width content pages: the neo page spans the theme's standard container
+   (matching the products listing), not a narrow article column. Individual
+   full-bleed elements (hero) break out to the viewport edges themselves. */
+.aico-neo-page { max-width: var(--max-width, 1600px); margin: 0 auto; padding: 0 1rem 4rem; }
+@media (min-width: 640px) { .aico-neo-page { padding: 0 1.25rem 4rem; } }
 
 /* Row / column grid emitted by the renderer. A single-column row (the default
    for stacked content) spans full width; multi-column rows split evenly. */
