@@ -861,8 +861,12 @@
       outside the auth shell, where there is no customer anyway. Loads its
       own data after paint and remembers a dismissal for the session, so the
       extra page weight is one idle-time request per visit, not per click.
+
+      Excluded on the checkout family (checkout / checkout/processing /
+      checkout/thank_you): an announcement modal must never land on top of an
+      order being placed. Same condition the checkout script tag uses above.
     {%- endcomment -%}
-    {% if customer %}
+    {% if customer and template.name != 'checkout' and template.directory != 'checkout' %}
       {% render 'aico-featured-news-popup' %}
     {% endif %}
 
