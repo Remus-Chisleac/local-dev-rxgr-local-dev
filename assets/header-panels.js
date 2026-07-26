@@ -314,6 +314,10 @@
   // of overwriting one another the way the earlier localStorage version did.
   var STORAGE_KEY = 'aico:search:query';
 
+  // One-time cleanup: earlier versions kept the term in localStorage (shared
+  // across tabs); drop the legacy key so old sessions don't carry it forever.
+  try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) { /* storage disabled */ }
+
   function readStoredQuery() {
     try {
       var stored = window.sessionStorage.getItem(STORAGE_KEY);
