@@ -652,16 +652,22 @@
           return api ? api.formatDate(entry.date) : entry.date;
         },
 
-        reminderLabelFor: function (product) {
+        hasReminderFor: function (product) {
           var entry = this.restockFor(product);
           var api = window.AicoProductionCockpit;
-          if (!entry || !api) { return ''; }
-          var t = api.makeT(this.restockContext.i18n);
+          if (!entry || !api) { return false; }
           var index = this.reminderIndex;
-          var hasReminder = (entry.variants || []).some(function (variant) {
+          return (entry.variants || []).some(function (variant) {
             return !!index[api.reminderKeyForVariant(entry, variant)];
           });
-          return hasReminder
+        },
+
+        // Feeds the bell's aria-label/title — the bell itself is the whole UI.
+        reminderLabelFor: function (product) {
+          var api = window.AicoProductionCockpit;
+          if (!api || !this.restockContext) { return ''; }
+          var t = api.makeT(this.restockContext.i18n);
+          return this.hasReminderFor(product)
             ? t('reminder_modal.update', 'Update reminders')
             : t('set_reminder', 'Set reminder');
         },

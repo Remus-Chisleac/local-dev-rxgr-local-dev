@@ -815,16 +815,31 @@ html.aico-no-scroll { overflow: hidden; }
   line-height: 1.2; white-space: nowrap;
 }
 .aico-search-result-stock .aico-pdp-stock-dot { width: 0.4rem; height: 0.4rem; }
-/* Planned-restock row under an out-of-stock card: sits outside the card link
-   (button ≠ <a> content), indented to align with the info column
+/* Planned-restock row under an out-of-stock card: ONE slim text line (date +
+   bell icon), so the card barely grows. Sits outside the card link (a button
+   may not nest inside an <a>), indented to align with the info column
    (padding + image column + gap + brand column + gap). */
 .aico-search-result-restock {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem;
-  padding: 0 1.25rem 0.625rem calc(1.25rem + 3.25rem + 0.75rem + 1.5rem + 0.75rem);
-  font-size: 0.75rem; color: var(--aico-muted-fg, #6b7280);
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-top: -0.25rem; /* tuck under the link's bottom padding */
+  padding: 0 1.25rem 0.5rem calc(1.25rem + 3.25rem + 0.75rem + 1.5rem + 0.75rem);
+  font-size: 0.6875rem; line-height: 1.2; color: var(--aico-muted-fg, #6b7280);
+  white-space: nowrap;
 }
+.aico-search-result-restock-line { overflow: hidden; text-overflow: ellipsis; }
 .aico-search-result-restock-date { font-variant-numeric: tabular-nums; color: var(--aico-fg, #1a1a1a); }
-.aico-search-result-restock-btn { padding: 0.25rem 0.6rem; font-size: 0.6875rem; }
+/* Icon-only bell: no border/padding block — same height as the text line. */
+.aico-search-result-restock-bell {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem; height: 1.25rem;
+  margin: 0; padding: 0;
+  border: 0; border-radius: var(--aico-radius);
+  background: transparent; color: var(--aico-fg, #1a1a1a);
+  cursor: pointer;
+}
+.aico-search-result-restock-bell:hover { background: var(--aico-muted, #f4f4f5); }
+.aico-search-result-restock-bell--active { color: #16a34a; }
 /* Reminder-save toast in the drawer (base look comes from .aico-cockpit-toast). */
 .aico-search-restock-toast { padding: 0 1.25rem; }
 .aico-search-restock-toast.is-visible { padding-bottom: 0.5rem; }
