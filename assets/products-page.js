@@ -369,12 +369,6 @@
   // ?facet[id][]= query form the server still accepts.
   function syncUrl() {
     var params = new URLSearchParams();
-    // ?rrp=true experiment toggle (theme.js card-price rearrangement): not
-    // part of the listing state, but it must survive the URL rewrite or the
-    // reload-with-param never sees it.
-    if (/[?&]rrp=true(?:&|#|$)/.test(window.location.search)) {
-      params.set('rrp', 'true');
-    }
     if (state.query) {
       params.set('q', state.query);
     }
@@ -928,39 +922,46 @@
     h3.textContent = title;
     body.appendChild(h3);
     if (priceLabel) {
+      // Price group (default = the former ?rrp=true layout, mirrors
+      // snippets/product-card.liquid): price row pairs the struck regular
+      // price with the current one; the RRP gets its own row underneath.
+      // No inline discount chip — the image-corner sale badge carries it.
+      var group = document.createElement('div');
+      group.className = 'aico-product-card-price-group';
       var p = document.createElement('p');
       p.className = 'aico-product-card-price';
-      var mkRrp = function (label, extraCls) {
-        var s = document.createElement('span');
-        s.className = 'aico-product-card-rrp' + (extraCls ? ' ' + extraCls : '');
-        s.textContent = '(' + labelRrp + ' ' + label + ')';
-        return s;
-      };
+      p.setAttribute('data-aico-rrp-v2', '');
       if (compareLabel) {
-        // Struck regular line (sale): regular price + its RRP, both struck.
-        var was = document.createElement('span');
-        was.className = 'aico-product-card-price-was';
         var cs = document.createElement('span');
         cs.className = 'aico-product-card-price-list';
         cs.textContent = compareLabel;
-        was.appendChild(cs);
-        if (compareRrpLabel) {
-          was.appendChild(mkRrp(compareRrpLabel, 'aico-product-card-rrp-was'));
-        }
-        p.appendChild(was);
+        p.appendChild(cs);
       }
-      // Current line: current price + its RRP (informational, not a sale).
-      var now = document.createElement('span');
-      now.className = 'aico-product-card-price-now';
       var cp = document.createElement('span');
       cp.className = 'aico-product-card-price-current';
       cp.textContent = priceLabel;
-      now.appendChild(cp);
-      if (rrpLabel) {
-        now.appendChild(mkRrp(rrpLabel));
+      p.appendChild(cp);
+      group.appendChild(p);
+      if (rrpLabel || compareRrpLabel) {
+        var rrpRow = document.createElement('p');
+        rrpRow.className = 'aico-product-card-rrp-row';
+        var rrpLabelEl = document.createElement('span');
+        rrpLabelEl.className = 'aico-product-card-rrp-row-label';
+        rrpLabelEl.textContent = labelRrp;
+        rrpRow.appendChild(rrpLabelEl);
+        if (rrpLabel && compareRrpLabel && compareRrpLabel !== rrpLabel) {
+          var rrpOld = document.createElement('span');
+          rrpOld.className = 'aico-product-card-rrp-row-list';
+          rrpOld.textContent = compareRrpLabel;
+          rrpRow.appendChild(rrpOld);
+        }
+        var rrpValue = document.createElement('span');
+        rrpValue.className = 'aico-product-card-rrp-row-value';
+        rrpValue.textContent = rrpLabel || compareRrpLabel;
+        rrpRow.appendChild(rrpValue);
+        group.appendChild(rrpRow);
       }
-      p.appendChild(now);
-      body.appendChild(p);
+      body.appendChild(group);
     } else {
       // No row in the debtor's currency → "price on request" (mirrors the
       // server-rendered first page's templates/products.liquid else branch).

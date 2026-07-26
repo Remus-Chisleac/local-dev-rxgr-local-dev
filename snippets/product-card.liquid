@@ -83,24 +83,33 @@
       <div class="aico-product-card-body">
         <h3 class="aico-product-card-title">{{ title }}</h3>
 
+        {%- comment -%}
+          Price group (default = the former ?rrp=true layout): the price row
+          pairs the struck regular price with the current one; the RRP gets
+          its own row underneath ("UVP <struck regular RRP> <current RRP>").
+          No inline discount chip — the image-corner sale badge carries the
+          percentage.
+        {%- endcomment -%}
         {% if price_label and price_label != '' %}
-          <p class="aico-product-card-price">
-            {% if compare_at_label and compare_at_label != '' %}
-              <span class="aico-product-card-price-was">
+          <div class="aico-product-card-price-group">
+            <p class="aico-product-card-price" data-aico-rrp-v2>
+              {% if compare_at_label and compare_at_label != '' %}
                 <span class="aico-product-card-price-list">{{ compare_at_label }}</span>
-                {% if compare_rrp_label and compare_rrp_label != '' %}
-                  <span class="aico-product-card-rrp aico-product-card-rrp-was">({{ 'product.rrp' | t }} {{ compare_rrp_label }})</span>
-                {% endif %}
-              </span>
-            {% endif %}
-            <span class="aico-product-card-price-now">
-              <span class="aico-product-card-price-current">{{ price_label }}</span>
-              {% if discount_percent %}<span class="aico-product-card-discount">−{{ discount_percent }}%</span>{% endif %}
-              {% if rrp_label and rrp_label != '' %}
-                <span class="aico-product-card-rrp">({{ 'product.rrp' | t }} {{ rrp_label }})</span>
               {% endif %}
-            </span>
-          </p>
+              <span class="aico-product-card-price-current">{{ price_label }}</span>
+            </p>
+            {% assign aico_rrp_current = rrp_label | default: '' %}
+            {% assign aico_rrp_struck = compare_rrp_label | default: '' %}
+            {% if aico_rrp_current != '' or aico_rrp_struck != '' %}
+              <p class="aico-product-card-rrp-row">
+                <span class="aico-product-card-rrp-row-label">{{ 'product.rrp' | t }}</span>
+                {% if aico_rrp_struck != '' and aico_rrp_struck != aico_rrp_current and aico_rrp_current != '' %}
+                  <span class="aico-product-card-rrp-row-list">{{ aico_rrp_struck }}</span>
+                {% endif %}
+                <span class="aico-product-card-rrp-row-value">{% if aico_rrp_current != '' %}{{ aico_rrp_current }}{% else %}{{ aico_rrp_struck }}{% endif %}</span>
+              </p>
+            {% endif %}
+          </div>
         {% else %}
           <p class="aico-product-card-price aico-product-card-price-on-request">{{ 'product.price_on_request' | t }}</p>
         {% endif %}
