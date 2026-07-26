@@ -656,7 +656,7 @@
              :class="{ 'aico-panel-open': $store.panels && $store.panels.isOpen('search') }"
              :hidden="!($store.panels && $store.panels.isMounted('search'))"
              :aria-hidden="!($store.panels && $store.panels.isOpen('search'))"
-             x-effect="if ($store.panels && $store.panels.isOpen('search')) { onOpen(); $nextTick(() => { if ($refs.searchInput) { focusInput($refs.searchInput); } }); } else { onClose(); }"
+             x-effect="if ($store.panels && $store.panels.isOpen('search')) { onOpen(); $nextTick(() => { if ($refs.searchInput) { $refs.searchInput.focus(); } }); }"
              role="dialog" aria-modal="true" aria-labelledby="aico-search-panel-title" tabindex="-1">
         <div class="aico-panel-head">
           <h2 id="aico-search-panel-title" class="aico-panel-title">{{ 'general.search.search' | t }}</h2>
