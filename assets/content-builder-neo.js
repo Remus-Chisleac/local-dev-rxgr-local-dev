@@ -955,9 +955,13 @@
     window.NewsNeo.hydrate(mount);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
+  // Wait for DOMContentLoaded unless the document is fully loaded: deferred
+  // scripts execute while readyState is 'interactive' (before DCL), and later
+  // deferred files (storefront-neo-blocks.js) still need to registerType()
+  // before the first render.
+  if (document.readyState === 'complete') {
     boot();
+  } else {
+    document.addEventListener('DOMContentLoaded', boot);
   }
 })(window, document);
