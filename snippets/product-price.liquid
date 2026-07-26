@@ -9,10 +9,10 @@
 <div class="aico-pdp-price-block">
   {% if product.aico_price_label %}
     <p class="aico-pdp-price">
+      <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
       {% if product.aico_compare_at_price_label %}
         <span class="aico-pdp-price-list">{{ product.aico_compare_at_price_label }}</span>
       {% endif %}
-      <span class="aico-pdp-price-current">{{ product.aico_price_label }}</span>
       {% if product.aico_discount_percent %}
         <span class="aico-pdp-discount">−{{ product.aico_discount_percent }}%</span>
       {% endif %}
@@ -20,10 +20,10 @@
     {% if product.aico_retail_price_label %}
       <p class="aico-pdp-rrp">
         <span class="aico-pdp-rrp-label">{{ 'product.rrp' | t }}</span>
+        <span class="aico-pdp-rrp-value">{{ product.aico_retail_price_label }}</span>
         {% if product.aico_compare_rrp_label %}
           <span class="aico-pdp-rrp-list">{{ product.aico_compare_rrp_label }}</span>
         {% endif %}
-        <span class="aico-pdp-rrp-value">{{ product.aico_retail_price_label }}</span>
       </p>
     {% endif %}
   {% else %}
