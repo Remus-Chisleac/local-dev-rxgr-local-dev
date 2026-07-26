@@ -13,9 +13,16 @@
 //
 // All data comes from the same-origin .js proxies (StorefrontProductionCockpit
 // Controller), cookie-authorized — no JWT touches the browser.
+//
+// The script is included from layout/theme.liquid (for the search drawer's
+// restock cards) AND from the cockpit/PDP templates that predate that; the
+// guard below keeps the double `<script src>` from booting everything twice.
 
 (function () {
   'use strict';
+
+  if (window.__AICO_PRODUCTION_COCKPIT_LOADED__) { return; }
+  window.__AICO_PRODUCTION_COCKPIT_LOADED__ = true;
 
   // ---- shared helpers ---------------------------------------------
 
@@ -1002,4 +1009,18 @@
   } else {
     boot();
   }
+
+  // Public seam for other scripts that render restock/reminder UI outside the
+  // cockpit page and the PDP — today the search drawer (header-panels.js),
+  // which fetches the restock table itself and opens the SAME shared modal.
+  window.AicoProductionCockpit = {
+    createReminderModal: createReminderModal,
+    getJson: getJson,
+    unwrap: unwrap,
+    indexReminders: indexReminders,
+    reminderKeyForVariant: reminderKeyForVariant,
+    normalizeRegion: normalizeRegion,
+    formatDate: formatDate,
+    makeT: makeT,
+  };
 })();

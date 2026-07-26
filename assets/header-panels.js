@@ -14,7 +14,8 @@
 // page. Results are ranked by relevance and matched against product identity
 // only (name / SKU / EAN). Nothing is fetched until the shopper types; further
 // pages load lazily as the list is scrolled, and the term is persisted to
-// localStorage so it survives navigating to a product and back.
+// sessionStorage so it survives navigating to a product and back within the
+// same tab, while every tab keeps its own independent search.
 
 (function () {
   'use strict';
@@ -274,7 +275,29 @@
       brandLabel: (brandInfo && brandInfo.label) ? brandInfo.label : null,
       gender: (typeof hit.gender === 'string' && hit.gender !== '') ? hit.gender : null,
       sku: (typeof hit.sku === 'string' && hit.sku !== '') ? hit.sku : null,
+      outOfStock: hitOutOfStock(hit, cfg),
     };
+  }
+
+  // Search deliberately shows products the grid hides for having no sellable
+  // stock in the shopper's warehouse (its Meili filter carries no
+  // `inStockWarehouseIds` clause) — instead each hit is marked so the card can
+  // render the PDP's out-of-stock dot. The hit's `stock` rows come straight
+  // from the v2 index (`[{warehouseId, available}]`); the shopper's warehouse
+  // id is served in the config (`cfg.stock.warehouseId`, null for sessions
+  // without a debtor context — then nothing is flagged, matching the PDP's
+  // all-warehouse fallback).
+  function hitOutOfStock(hit, cfg) {
+    var warehouseId = cfg && cfg.stock ? cfg.stock.warehouseId : null;
+    if (warehouseId == null || !Array.isArray(hit.stock)) { return false; }
+    for (var i = 0; i < hit.stock.length; i++) {
+      var row = hit.stock[i];
+      if (row && Number(row.warehouseId) === Number(warehouseId)) {
+        return !(typeof row.available === 'number' && row.available > 0);
+      }
+    }
+    // No row for the shopper's warehouse = nothing available there.
+    return true;
   }
 
   // ---- Search Alpine component ------------------------------------
@@ -286,14 +309,14 @@
   var PAGE_SIZE = 12;
 
   // The term survives navigation, so opening a result and coming back leaves
-  // the search intact. sessionStorage would die with the tab; localStorage
-  // also survives a reload, which is what "going to a page does not clear it"
-  // asks for.
+  // the search intact — but only within the tab: sessionStorage is per-tab by
+  // contract, so parallel tabs each keep their own independent search instead
+  // of overwriting one another the way the earlier localStorage version did.
   var STORAGE_KEY = 'aico:search:query';
 
   function readStoredQuery() {
     try {
-      var stored = window.localStorage.getItem(STORAGE_KEY);
+      var stored = window.sessionStorage.getItem(STORAGE_KEY);
       return typeof stored === 'string' ? stored : '';
     } catch (e) {
       return ''; // storage disabled / private mode
@@ -303,11 +326,35 @@
   function writeStoredQuery(query) {
     try {
       if (query) {
-        window.localStorage.setItem(STORAGE_KEY, query);
+        window.sessionStorage.setItem(STORAGE_KEY, query);
       } else {
-        window.localStorage.removeItem(STORAGE_KEY);
+        window.sessionStorage.removeItem(STORAGE_KEY);
       }
     } catch (e) { /* non-fatal — the drawer just forgets between pages */ }
+  }
+
+  // Restock wiring for out-of-stock results: URLs / CSRF token / i18n are
+  // served as data attributes + a JSON block on the search panel element
+  // (only for signed-in customers — the cockpit endpoints are
+  // cookie-authorized). Returns null when the panel carries no wiring.
+  function readRestockContext(el) {
+    if (!el) { return null; }
+    var productsUrl = el.getAttribute('data-aico-restock-products-url') || '';
+    var remindersUrl = el.getAttribute('data-aico-restock-reminders-url') || '';
+    if (!productsUrl || !remindersUrl) { return null; }
+    var i18n = null;
+    var i18nEl = el.querySelector('[data-aico-search-restock-i18n]');
+    if (i18nEl) {
+      try { i18n = JSON.parse(i18nEl.textContent); } catch (e) { i18n = null; }
+    }
+    return {
+      productsUrl: productsUrl,
+      remindersUrl: remindersUrl,
+      newReleaseUrl: el.getAttribute('data-aico-restock-new-release-url') || '',
+      token: el.getAttribute('data-aico-restock-token') || '',
+      sizeRegion: el.getAttribute('data-aico-restock-size-region') || '',
+      i18n: i18n,
+    };
   }
 
   function registerSearchComponent() {
@@ -315,6 +362,11 @@
       // Deliberately a closure variable, not reactive component state: the
       // x-effect that drives onOpen/onClose would re-run on every write to it.
       var selectOnFocus = true;
+      // Shared reminder modal (built lazily by aico-production-cockpit.js) and
+      // the in-flight restock fetch — closure vars for the same reason.
+      var reminderModal = null;
+      var restockLoading = false;
+      var toastTimer = null;
 
       return {
         query: '',
@@ -331,10 +383,18 @@
         _observer: null,
         cfg: null,
         i18n: null,
+        // sku (lowercased) → restock-feed product; null until the first fetch,
+        // {} after a fetch that failed or found nothing.
+        restocks: null,
+        // Active reminders keyed like the cockpit modal keys them, so the
+        // button can flip to "Update reminders" and the modal pre-marks sizes.
+        reminderIndex: {},
+        restockContext: null,
 
         init: function () {
           this.cfg = readSearchConfig();
           this.i18n = (typeof window !== 'undefined' && window.__AICO_SEARCH_I18N__) || null;
+          this.restockContext = readRestockContext(this.$el);
           // Restore the last term into the input but do NOT search yet: the
           // fetch waits until the drawer is actually opened (onOpen), so a
           // page load never costs a Meilisearch request.
@@ -357,10 +417,19 @@
 
         // Drawer opened: run the restored term once. Results are kept after
         // that, so re-opening the drawer doesn't refetch.
+        //
+        // The `!this.searched` guard is load-bearing: this method runs from the
+        // panel's x-effect, so Alpine re-runs it whenever any dependency read
+        // here changes. A query with ZERO hits leaves `results` empty, and
+        // without the guard every completed fetch re-armed the effect
+        // (`results.length` still 0, `loading` back to false) → runQuery →
+        // fetch → effect, an infinite request loop with the spinner stuck.
+        // `searched` flips true exactly once per term (success OR error), so
+        // the restored term runs once and the effect settles.
         onOpen: function () {
           if (!this.cfg) { return; }
           var query = (this.query || '').trim();
-          if (query.length >= this.minChars && !this.results.length && !this.loading) {
+          if (query.length >= this.minChars && !this.searched && !this.results.length && !this.loading) {
             this.runQuery(query);
           }
         },
@@ -497,6 +566,7 @@
             self.loading = false;
             self.loadingMore = false;
             self.error = false;
+            self.maybeLoadRestocks();
           }).catch(function () {
             if (seq !== self._seq) { return; }
             self.loading = false;
@@ -521,6 +591,122 @@
           this.searched = false;
           this.loading = false;
           this.error = false;
+        },
+
+        // ---- Restock ("Nächste Wareneingänge") for out-of-stock hits ----
+        //
+        // The whole feature rides on the production-cockpit script
+        // (assets/aico-production-cockpit.js exposes its fetch helpers and the
+        // shared reminder modal as window.AicoProductionCockpit); without it,
+        // or without the panel wiring (guest session), the cards just show the
+        // out-of-stock dot and nothing else.
+
+        restockReady: function () {
+          return !!(this.restockContext && window.AicoProductionCockpit);
+        },
+
+        // One lazy fetch of the debtor's whole restock table + reminders, made
+        // only once a result set actually contains an out-of-stock hit — a
+        // shopper who never sees one never costs the two requests.
+        maybeLoadRestocks: function () {
+          if (!this.restockReady() || this.restocks !== null || restockLoading) { return; }
+          var anyOut = false;
+          for (var i = 0; i < this.results.length; i++) {
+            if (this.results[i] && this.results[i].outOfStock) { anyOut = true; break; }
+          }
+          if (!anyOut) { return; }
+          restockLoading = true;
+          var api = window.AicoProductionCockpit;
+          var self = this;
+          Promise.all([
+            api.getJson(this.restockContext.productsUrl),
+            api.getJson(this.restockContext.remindersUrl),
+          ]).then(function (payloads) {
+            var map = {};
+            api.unwrap(payloads[0]).forEach(function (entry) {
+              if (entry && entry.sku) { map[String(entry.sku).toLowerCase()] = entry; }
+            });
+            self.reminderIndex = api.indexReminders(api.unwrap(payloads[1]));
+            self.restocks = map;
+            restockLoading = false;
+          }).catch(function (error) {
+            console.warn('aico-search: restock load failed', error);
+            self.restocks = {}; // quiet failure: cards simply show no restock line
+            restockLoading = false;
+          });
+        },
+
+        restockFor: function (product) {
+          if (!product || !product.outOfStock || !product.sku || !this.restocks) { return null; }
+          return this.restocks[String(product.sku).toLowerCase()] || null;
+        },
+
+        restockDateFor: function (product) {
+          var entry = this.restockFor(product);
+          if (!entry || !entry.date) { return ''; }
+          var api = window.AicoProductionCockpit;
+          return api ? api.formatDate(entry.date) : entry.date;
+        },
+
+        reminderLabelFor: function (product) {
+          var entry = this.restockFor(product);
+          var api = window.AicoProductionCockpit;
+          if (!entry || !api) { return ''; }
+          var t = api.makeT(this.restockContext.i18n);
+          var index = this.reminderIndex;
+          var hasReminder = (entry.variants || []).some(function (variant) {
+            return !!index[api.reminderKeyForVariant(entry, variant)];
+          });
+          return hasReminder
+            ? t('reminder_modal.update', 'Update reminders')
+            : t('set_reminder', 'Set reminder');
+        },
+
+        openReminder: function (product) {
+          var entry = this.restockFor(product);
+          if (!entry || !this.restockReady()) { return; }
+          var api = window.AicoProductionCockpit;
+          var context = this.restockContext;
+          var self = this;
+          if (!reminderModal) {
+            reminderModal = api.createReminderModal({
+              t: api.makeT(context.i18n),
+              token: context.token,
+              remindersUrl: context.remindersUrl,
+              newReleaseUrl: context.newReleaseUrl,
+              onToast: function (kind) { self.showRestockToast(kind); },
+              onSaved: function () { self.refreshReminders(); },
+              // No size matrix in the drawer, so the modal's cells follow the
+              // account preference (same fallback as a matrix-less PDP).
+              getRegion: function () { return api.normalizeRegion(context.sizeRegion); },
+            });
+          }
+          reminderModal.open(entry, this.reminderIndex);
+        },
+
+        refreshReminders: function () {
+          if (!this.restockReady()) { return; }
+          var api = window.AicoProductionCockpit;
+          var self = this;
+          api.getJson(this.restockContext.remindersUrl).then(function (payload) {
+            self.reminderIndex = api.indexReminders(api.unwrap(payload));
+          }).catch(function () { /* stale labels until the next open — fine */ });
+        },
+
+        showRestockToast: function (kind) {
+          var api = window.AicoProductionCockpit;
+          var toastEl = this.$el.querySelector('[data-aico-search-restock-toast]');
+          if (!toastEl || !api) { return; }
+          var t = api.makeT(this.restockContext ? this.restockContext.i18n : null);
+          toastEl.textContent = kind === 'error'
+            ? t('reminder_modal.toast_error', 'Failed to update reminders. Please try again.')
+            : t('reminder_modal.toast_updated', 'Reminders updated');
+          toastEl.classList.toggle('aico-cockpit-toast--error', kind === 'error');
+          toastEl.classList.add('is-visible');
+          if (toastTimer) { window.clearTimeout(toastTimer); }
+          toastTimer = window.setTimeout(function () {
+            toastEl.classList.remove('is-visible');
+          }, 2600);
         },
       };
     });

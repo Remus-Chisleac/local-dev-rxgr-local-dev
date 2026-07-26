@@ -654,9 +654,10 @@ html.aico-no-scroll { overflow: hidden; }
 }
 .aico-panel[hidden] { display: none; }
 .aico-panel-open { transform: translateX(0); }
-/* Menu keeps the previous drawer width; search matches it so things fit. */
-.aico-panel--menu { max-width: 28rem; }
-.aico-panel--search { max-width: 28rem; }
+/* One shared width for BOTH right-edge drawers: menu and search must always
+   stay the same size, so any future widening happens in this one token. */
+.aico-panel--menu,
+.aico-panel--search { max-width: var(--aico-panel-width, 28rem); }
 
 @media (prefers-reduced-motion: reduce) {
   .aico-panels-backdrop, .aico-panel { transition: none; }
@@ -807,6 +808,26 @@ html.aico-no-scroll { overflow: hidden; }
 .aico-search-result-info { min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 .aico-search-result-meta { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; }
 .aico-search-result-sku { font-size: 0.6875rem; color: var(--aico-muted-fg, #6b7280); line-height: 1.2; white-space: nowrap; }
+/* PDP out-of-stock marker on the meta line (reuses .aico-pdp-stock-dot-out). */
+.aico-search-result-stock {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.6875rem; color: var(--aico-muted-fg, #6b7280);
+  line-height: 1.2; white-space: nowrap;
+}
+.aico-search-result-stock .aico-pdp-stock-dot { width: 0.4rem; height: 0.4rem; }
+/* Planned-restock row under an out-of-stock card: sits outside the card link
+   (button ≠ <a> content), indented to align with the info column
+   (padding + image column + gap + brand column + gap). */
+.aico-search-result-restock {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem;
+  padding: 0 1.25rem 0.625rem calc(1.25rem + 3.25rem + 0.75rem + 1.5rem + 0.75rem);
+  font-size: 0.75rem; color: var(--aico-muted-fg, #6b7280);
+}
+.aico-search-result-restock-date { font-variant-numeric: tabular-nums; color: var(--aico-fg, #1a1a1a); }
+.aico-search-result-restock-btn { padding: 0.25rem 0.6rem; font-size: 0.6875rem; }
+/* Reminder-save toast in the drawer (base look comes from .aico-cockpit-toast). */
+.aico-search-restock-toast { padding: 0 1.25rem; }
+.aico-search-restock-toast.is-visible { padding-bottom: 0.5rem; }
 .aico-search-result-title {
   font-size: 0.875rem; font-weight: 500; line-height: 1.25;
   color: var(--aico-fg, #1a1a1a);

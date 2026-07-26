@@ -194,6 +194,14 @@
       `$store.panels` global and the `aicoSearch` component.
     {%- endcomment -%}
     <script src="{{ 'header-panels.js' | asset_url }}" defer></script>
+    {%- comment -%}
+      Restock table + shared reminder modal for the search drawer's
+      out-of-stock cards (window.AicoProductionCockpit seam). Guarded against
+      the PDP/cockpit templates including the same file.
+    {%- endcomment -%}
+    {% if customer %}
+      <script src="{{ 'aico-production-cockpit.js' | asset_url }}" defer></script>
+    {% endif %}
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
   {% endif %}
   {% render 'hotjar-loader' %}
@@ -657,6 +665,17 @@
              :hidden="!($store.panels && $store.panels.isMounted('search'))"
              :aria-hidden="!($store.panels && $store.panels.isOpen('search'))"
              x-effect="if ($store.panels && $store.panels.isOpen('search')) { onOpen(); $nextTick(() => { if ($refs.searchInput) { focusInput($refs.searchInput); } }); } else { onClose(); }"
+             {%- comment -%}
+               Restock wiring for out-of-stock results (header-panels.js reads
+               these; endpoints are cookie-authorized, so customers only).
+             {%- endcomment -%}
+             {% if customer %}
+             data-aico-restock-products-url="{{ routes.aico_production_cockpit_products_url }}"
+             data-aico-restock-reminders-url="{{ routes.aico_production_cockpit_reminders_url }}"
+             data-aico-restock-new-release-url="{{ routes.aico_production_cockpit_new_release_url }}"
+             data-aico-restock-token="{{ aico_csrf_token }}"
+             data-aico-restock-size-region="{{ customer.aico_size_region }}"
+             {% endif %}
              role="dialog" aria-modal="true" aria-labelledby="aico-search-panel-title" tabindex="-1">
         <div class="aico-panel-head">
           <h2 id="aico-search-panel-title" class="aico-panel-title">{{ 'general.search.search' | t }}</h2>
@@ -692,6 +711,31 @@
           </button>
         </div>
 
+        {% if customer %}
+          <script type="application/json" data-aico-search-restock-i18n>{
+            "set_reminder": {{ 'aico_production_cockpit.set_reminder' | t | json }},
+            "pdp_incoming_shipments": {{ 'aico_production_cockpit.pdp_incoming_shipments' | t | json }},
+            "table": { "restock_date": {{ 'aico_production_cockpit.table.columns.restock_date' | t | json }} },
+            "reminder_modal": {
+              "manage_for": {{ 'aico_production_cockpit.reminder_modal.manage_for' | t | json }},
+              "choose_size": {{ 'aico_production_cockpit.reminder_modal.choose_size' | t | json }},
+              "cancel": {{ 'aico_production_cockpit.reminder_modal.cancel' | t | json }},
+              "save": {{ 'aico_production_cockpit.reminder_modal.save' | t | json }},
+              "update": {{ 'aico_production_cockpit.reminder_modal.update' | t | json }},
+              "legend_active": {{ 'aico_production_cockpit.reminder_modal.legend_active' | t | json }},
+              "legend_add": {{ 'aico_production_cockpit.reminder_modal.legend_add' | t | json }},
+              "legend_remove": {{ 'aico_production_cockpit.reminder_modal.legend_remove' | t | json }},
+              "toast_updated": {{ 'aico_production_cockpit.reminder_modal.toast_updated' | t | json }},
+              "toast_error": {{ 'aico_production_cockpit.reminder_modal.toast_error' | t | json }}
+            }
+          }</script>
+          {%- comment -%}
+            Reminder-save feedback ("Reminders updated" / error) — the modal
+            closes back onto the drawer, so the toast lives here.
+          {%- endcomment -%}
+          <div class="aico-cockpit-toast aico-search-restock-toast" aria-live="polite" data-aico-search-restock-toast></div>
+        {% endif %}
+
         <div class="aico-search-body">
           {%- comment -%} Loading spinner. {%- endcomment -%}
           <div class="aico-search-loading" x-show="loading" x-cloak>
@@ -716,9 +760,13 @@
                         <img :src="product.brandIcon" :alt="product.brandLabel || ''" loading="lazy">
                       </span>
                       <span class="aico-search-result-info">
-                        <span class="aico-search-result-meta" x-show="product.gender || product.sku" x-cloak>
+                        <span class="aico-search-result-meta" x-show="product.gender || product.sku || product.outOfStock" x-cloak>
                           <span class="aico-search-result-gender" x-show="product.gender" x-text="genderLabel(product.gender)"></span>
                           <span class="aico-search-result-sku" x-show="product.sku" x-text="product.sku"></span>
+                          {%- comment -%} PDP out-of-stock marker, drawer-sized. {%- endcomment -%}
+                          <span class="aico-search-result-stock" x-show="product.outOfStock" x-cloak>
+                            <span class="aico-pdp-stock-dot aico-pdp-stock-dot-out" aria-hidden="true"></span>{{ 'product.stock.out' | t }}
+                          </span>
                         </span>
                         <span class="aico-search-result-title" x-text="product.title"></span>
                         <span class="aico-search-result-price" x-show="product.priceLabel">
@@ -728,6 +776,22 @@
                         </span>
                       </span>
                     </a>
+                    {%- comment -%}
+                      Planned restock for an out-of-stock hit: next-shipping
+                      date + the shared reminder modal. A sibling of the card
+                      link (a button may not nest inside an <a>).
+                    {%- endcomment -%}
+                    <template x-if="restockFor(product)">
+                      <div class="aico-search-result-restock">
+                        <span class="aico-search-result-restock-line">
+                          {{ 'aico_production_cockpit.pdp_incoming_shipments' | t }}
+                          <strong class="aico-search-result-restock-date" x-text="restockDateFor(product)"></strong>
+                        </span>
+                        <button type="button" class="aico-cockpit-btn aico-cockpit-btn--outline aico-search-result-restock-btn"
+                                @click="openReminder(product)"
+                                x-text="reminderLabelFor(product)"></button>
+                      </div>
+                    </template>
                   </li>
                 </template>
               </ul>
