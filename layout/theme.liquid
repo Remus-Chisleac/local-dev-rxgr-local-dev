@@ -163,8 +163,10 @@
       {%- endcomment -%}
       {%- assign aico_cart_template_root = template.name | default: '' -%}
       {%- if aico_cart_template_root == 'checkout' or template.directory == 'checkout' -%}
-      {%- comment -%} Checkout SSRs its order summary from this seed — full drop. {%- endcomment -%}
-      <script id="aico-cart-data" type="application/json">{{ cart | json }}</script>
+      {%- comment -%} Checkout SSRs its order summary from this seed. Flat
+        server-encoded lines (no item.product/variant sub-drops) — the
+        reflective `cart | json` walked every variant of every product. {%- endcomment -%}
+      <script id="aico-cart-data" type="application/json">{{ cart.aico_seed_json }}</script>
       {%- elsif aico_cart_template_root == 'cart' or aico_cart_template_root == 'cart2' -%}
       {%- comment -%} Cart page: aggregates only; rows arrive server-paged
         (24/page) via /cart.js?aico_page=N — a 175-line cart is never
