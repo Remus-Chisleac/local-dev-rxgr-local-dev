@@ -382,6 +382,11 @@
         total: 0,
         hasMore: false,
         minChars: 2,
+        // A debounced query is armed but its fetch has not started yet. Kept
+        // separate from `loading` so the spinner only appears once a request
+        // is actually in flight, and read by onOpen so the x-effect does not
+        // race the pending timer with an immediate fetch.
+        pending: false,
         _debounce: null,
         _seq: 0,
         _observer: null,
@@ -433,7 +438,7 @@
         onOpen: function () {
           if (!this.cfg) { return; }
           var query = (this.query || '').trim();
-          if (query.length >= this.minChars && !this.searched && !this.results.length && !this.loading) {
+          if (query.length >= this.minChars && !this.searched && !this.results.length && !this.loading && !this.pending) {
             this.runQuery(query);
           }
         },
@@ -465,14 +470,22 @@
             // no preloaded set to fall back to any more.
             this._seq++; // cancel any in-flight query
             this.resetResults();
+            this.pending = false;
             this.loading = false;
             this.error = false;
             this.searched = false;
             return;
           }
-          this.loading = true;
+          // Deliberately NOT `loading = true` here: this runs on every
+          // keystroke, and flipping the spinner on immediately made a
+          // debounced search look like one request per character. `loading`
+          // is set by runQuery, i.e. when a fetch really starts.
+          this.pending = true;
           var self = this;
-          this._debounce = setTimeout(function () { self.runQuery(query); }, 250);
+          this._debounce = setTimeout(function () {
+            self.pending = false;
+            self.runQuery(query);
+          }, 250);
         },
 
         resetResults: function () {
@@ -592,6 +605,7 @@
           this.query = '';
           writeStoredQuery('');
           this.resetResults();
+          this.pending = false;
           this.searched = false;
           this.loading = false;
           this.error = false;
