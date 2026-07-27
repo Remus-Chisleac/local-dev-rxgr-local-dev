@@ -176,8 +176,7 @@
         "used": "Used",
         "total": "Total",
         "available": "Available"
-      },
-      "payment_terms_text": "Terms of payment"
+      }
     },
     "addresses": {
       "title": "My addresses",

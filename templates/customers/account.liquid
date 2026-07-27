@@ -124,8 +124,6 @@
         (current_debit is a separate accounting field and is intentionally not
         shown here.) Only rendered for B2B debtors. "Down payment" (Anzahlung)
         is not implemented yet — the link slot below is intentionally a TODO.
-        Payment terms ("Zahlungsbedingungen") link to the same AGB page the
-        footer terms link points to (config/menus.json → footer → /pages/agb).
       {%- endcomment -%}
       {% if customer.aico_debtor %}
         {%- assign aico_credit_available = customer.aico_debtor.credit_limit | minus: customer.aico_debtor.current_credit -%}
@@ -148,10 +146,6 @@
           {%- comment -%} TODO: down-payment ("Anzahlung") link — add once the down-payment flow ships. {%- endcomment -%}
         </div>
       {% endif %}
-
-      <div class="aico-account-payment-terms">
-        <a href="/pages/agb" class="aico-account-payment-terms-link">{{ 'customer.account.payment_terms_text' | t }}</a>
-      </div>
     </aside>
 
     {%- comment -%} ── Right: contact + addresses ───────────────────────── {%- endcomment -%}

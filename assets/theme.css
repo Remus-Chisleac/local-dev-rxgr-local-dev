@@ -7917,15 +7917,6 @@ html.aico-preorder-gallery-open {
   color: var(--aico-account-accent);
 }
 
-.aico-account-payment-terms {
-  font-size: 0.85rem;
-}
-
-.aico-account-payment-terms-link {
-  color: var(--aico-account-accent);
-  text-decoration: underline;
-}
-
 /* Save toast — uses the standard site toast (.aico-toast-wrap / .aico-toast,
    bottom-center). Only the show/hide fade is added here because the profile
    toast is driven by vanilla JS rather than Alpine's x-transition. */
