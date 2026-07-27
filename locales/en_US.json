@@ -495,8 +495,7 @@
     },
     "group": {
       "pcs": "pcs",
-      "quantity_aria": "Total quantity",
-      "adjust_sizes": "Adjust sizes"
+      "quantity_aria": "Total quantity"
     }
   },
   "checkout": {

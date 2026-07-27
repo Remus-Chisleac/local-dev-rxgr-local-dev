@@ -495,8 +495,7 @@
     },
     "group": {
       "pcs": "Stk.",
-      "quantity_aria": "Gesamtmenge",
-      "adjust_sizes": "Grössen anpassen"
+      "quantity_aria": "Gesamtmenge"
     }
   },
   "checkout": {

@@ -126,22 +126,6 @@
 
                   <span class="aico-cart-group-total" x-text="$store.cart.formatMoney(groupLineTotal(group))"></span>
 
-                  {%- comment -%}
-                    "Adjust sizes" — opens the shared quick-add size matrix
-                    (assets/quick-add.js) for this product. Absolute
-                    quantities: the shopper zeroes an out-of-stock size and
-                    picks others in one place.
-                  {%- endcomment -%}
-                  <button type="button"
-                          class="aico-cart-group-adjust"
-                          x-show="groupHandle(group)"
-                          data-aico-quick-add
-                          :data-aico-handle="groupHandle(group)"
-                          :data-aico-title="group.title"
-                          :data-aico-url="group.url || '#'"
-                          aria-haspopup="dialog">
-                    {{ 'cart.group.adjust_sizes' | t }}
-                  </button>
                 </div>
 
                 <div class="aico-cart-group-panel"
@@ -310,5 +294,3 @@
   </div>
 </main>
 
-{%- comment -%} Shared size-matrix modal for the adjust-sizes triggers above. {%- endcomment -%}
-{% render 'quick-add-modal' %}
