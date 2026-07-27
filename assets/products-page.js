@@ -1258,6 +1258,15 @@
     if (loaderEl) {
       loaderEl.hidden = false;
     }
+    // A fetch in flight means "unknown", not "nothing found" — hide the empty
+    // notice for its duration. The page hydrates its first grid client-side,
+    // so the server always ships the zero-state markup visible; without this
+    // it sat above the spinner claiming there were no matches for the whole
+    // boot fetch (and for every later search/filter). It comes back below,
+    // once a settled request has actually left the grid empty.
+    if (emptyEl) {
+      emptyEl.hidden = true;
+    }
     if (replace) {
       // Reset paging BEFORE computing the offset — a query/filter change
       // must fetch from offset 0, not from the current scroll depth.
@@ -1315,6 +1324,14 @@
       state.loading = false;
       if (loaderEl) {
         loaderEl.hidden = true;
+      }
+      // Settled with an empty grid → the notice is true again. This is also
+      // the error path's safety net (a failed fetch must not leave a blank
+      // page with no explanation) and covers a page whose hits were all
+      // dropped by the no-price rule, which the hits.length check above misses.
+      if (emptyEl && grid && grid.children.length === 0) {
+        emptyEl.hidden = false;
+        grid.hidden = true;
       }
       maybeLoadMore();
     });
