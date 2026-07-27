@@ -47,7 +47,6 @@
 
       <script>
         (function () {
-          window.__AICO_COGNITO_RAN__ = (window.__AICO_COGNITO_RAN__ || 0) + 1;
           var box = document.currentScript.closest('[data-aico-cognito]');
           var mount = box.querySelector('[data-aico-cognito-mount]');
           var spinner = box.querySelector('[data-aico-cognito-loading]');
@@ -59,13 +58,16 @@
             // Give up after 15s so a slow or blocked Cognito still shows the form.
             if (!mount.querySelector('.cog-body') && waited < 15000) return;
             clearInterval(timer);
-            requestAnimationFrame(function () {
-              box.classList.add('is-ready');
-              if (!spinner) return;
+            // No requestAnimationFrame here: it does not fire in a background
+            // tab, which left the spinner turning until the tab was focused.
+            // Both elements have been painted since parse, so the transition
+            // runs without a frame hop anyway.
+            box.classList.add('is-ready');
+            if (spinner) {
               var drop = function () { if (spinner.parentNode) spinner.parentNode.removeChild(spinner); };
               spinner.addEventListener('transitionend', drop);
               setTimeout(drop, 600);
-            });
+            }
           }, 100);
         })();
       </script>
