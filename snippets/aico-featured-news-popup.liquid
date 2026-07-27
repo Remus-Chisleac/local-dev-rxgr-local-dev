@@ -57,6 +57,15 @@
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
     animation: aico-news-popup-in 0.18s ease-out both;
   }
+  /* The panel is tabindex="-1" and is focused on open (see the markup below).
+     Once the shopper has touched the keyboard at all, Chrome treats that
+     programmatic focus as keyboard modality and paints its default
+     `outline: auto` around the whole dialog — it reads as a stray hover ring
+     on a box nobody is interacting with. The dialog announces itself through
+     the backdrop and the animation; the controls inside keep their own
+     :focus-visible rings, so nothing is lost by dropping this one. */
+  .aico-news-popup-panel:focus,
+  .aico-news-popup-panel:focus-visible { outline: none; }
   @keyframes aico-news-popup-in {
     from { opacity: 0; transform: translateY(0.75rem); }
     to { opacity: 1; transform: none; }
