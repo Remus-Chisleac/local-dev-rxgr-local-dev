@@ -11528,6 +11528,16 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   background: var(--aico-muted);
   border-left: 1px solid var(--aico-border);
 }
+/* Cap-reached wash — restated at modal specificity, because the modal's
+   .aico-pdp-qty-box override above resets background/border and would
+   otherwise beat the base .aico-pdp-qty-box--at-max rule (PDP parity). */
+.aico-quick-add-modal .aico-pdp-qty-box--at-max {
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.45);
+}
+.aico-quick-add-modal .aico-pdp-qty-box--at-max .aico-pdp-qty-box__spinners {
+  background: rgba(234, 88, 12, 0.12);
+}
 /* Two equal halves: the top increments, the bottom decrements. */
 .aico-quick-add-modal .aico-pdp-qty-box__step {
   flex: 1 1 50%;
