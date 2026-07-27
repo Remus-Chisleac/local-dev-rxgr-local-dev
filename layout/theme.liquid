@@ -162,8 +162,15 @@
         per-product quantities from /cart/aico_product_status.js instead.
       {%- endcomment -%}
       {%- assign aico_cart_template_root = template.name | default: '' -%}
-      {%- if aico_cart_template_root == 'cart' or aico_cart_template_root == 'cart2' or aico_cart_template_root == 'checkout' or template.directory == 'checkout' -%}
+      {%- if aico_cart_template_root == 'checkout' or template.directory == 'checkout' -%}
+      {%- comment -%} Checkout SSRs its order summary from this seed — full drop. {%- endcomment -%}
       <script id="aico-cart-data" type="application/json">{{ cart | json }}</script>
+      {%- elsif aico_cart_template_root == 'cart' or aico_cart_template_root == 'cart2' -%}
+      {%- comment -%} Cart page: aggregates only; rows arrive server-paged
+        (24/page) via /cart.js?aico_page=N — a 175-line cart is never
+        serialized here (each full line dragged its whole product sub-drop
+        with every variant into the page). {%- endcomment -%}
+      <script id="aico-cart-data" type="application/json">{"id": {{ cart.id | json }}, "item_count": {{ cart.item_count | json }}, "total_price": {{ cart.total_price | json }}, "currency": {{ cart.currency | json }}, "empty": {{ cart.empty | json }}, "aico_status": {{ cart.aico_status | json }}, "aico_has_invalid_quantity": {{ cart.aico_has_invalid_quantity | json }}, "aico_has_invalid_price": {{ cart.aico_has_invalid_price | json }}, "aico_discount_code": {{ cart.aico_discount_code | json }}, "aico_discount_value": {{ cart.aico_discount_value | json }}, "aico_discount_percentage": {{ cart.aico_discount_percentage | json }}, "items": null, "aico_slim_seed": true, "aico_paged_cart_page": true, "aico_total_lines": {{ cart.items | size }}}</script>
       {%- else -%}
       <script id="aico-cart-data" type="application/json">{"id": {{ cart.id | json }}, "item_count": {{ cart.item_count | json }}, "total_price": {{ cart.total_price | json }}, "currency": {{ cart.currency | json }}, "empty": {{ cart.empty | json }}, "aico_status": {{ cart.aico_status | json }}, "aico_has_invalid_quantity": {{ cart.aico_has_invalid_quantity | json }}, "aico_has_invalid_price": {{ cart.aico_has_invalid_price | json }}, "aico_discount_code": {{ cart.aico_discount_code | json }}, "aico_discount_value": {{ cart.aico_discount_value | json }}, "aico_discount_percentage": {{ cart.aico_discount_percentage | json }}, "items": null, "aico_slim_seed": true}</script>
       {%- endif -%}

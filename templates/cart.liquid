@@ -214,6 +214,17 @@
             </template>
           </ul>
 
+          {%- comment -%} Server-paged: rows load 24 lines at a time (window
+            scroll near the bottom auto-loads; this button is the fallback). {%- endcomment -%}
+          <div class="aico-cart-load-more" x-show="$store.cart.cartPageHasMore()" x-cloak>
+            <button type="button"
+                    class="aico-button aico-button-outline"
+                    :disabled="$store.cart._cartPageLoading"
+                    @click="$store.cart.loadCartPage(false)">
+              {{ 'cart.load_more' | t }}
+            </button>
+          </div>
+
           <form action="{{ routes.cart_clear_url }}" method="post" class="aico-cart-clear-form">
             <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
             <button type="submit"

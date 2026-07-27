@@ -111,6 +111,16 @@
       _drawerLoading: false,
       _drawerStale: true,
 
+      // Cart-PAGE server paging (templates/cart*.liquid): the seed carries
+      // aggregates only (aico_paged_cart_page) and rows stream into
+      // data.items 24 at a time — window scroll near the bottom (or the
+      // fallback button) loads the next page.
+      _cartPageMode: false,
+      _cartPageSize: 24,
+      cartPageTotalLines: 0,
+      _cartPageNextPage: 1,
+      _cartPageLoading: false,
+
       _recalcTotals() {
         if (!this.data || !Array.isArray(this.data.items)) return;
         var count = 0;
@@ -122,6 +132,13 @@
           count += qty;
           total += line.line_price;
         });
+        // With server paging the loaded list may be PARTIAL — summing it
+        // would understate the cart. Line prices above still refresh; the
+        // cart-level figures stay server-authoritative (every delta
+        // response carries them) until all lines are loaded.
+        if (this._cartPageMode && this.data.items.length < this.cartPageTotalLines) {
+          return;
+        }
         this.data.item_count = count;
         this.data.total_price = total;
         this.data.empty = count === 0;
@@ -243,6 +260,9 @@
         this.drawerItems = patch(this.drawerItems, false);
         if (payload.aico_total_lines !== undefined) {
           this.drawerTotalLines = Number(payload.aico_total_lines || 0);
+          if (this._cartPageMode) {
+            this.cartPageTotalLines = Number(payload.aico_total_lines || 0);
+          }
         }
         this._drawerStale = true;
         return true;
@@ -260,7 +280,14 @@
           var res = await fetch(routes.jsonUrl || '/cart.js', { headers: jsonHeaders(), credentials: 'same-origin' });
           if (!res.ok) return;
           var payload = await res.json();
-          if (this._acceptGeneration(payload)) this.data = payload;
+          if (this._acceptGeneration(payload)) {
+            this.data = payload;
+            // A full refresh loads EVERY line — the paged list is complete.
+            if (this._cartPageMode && Array.isArray(payload.items)) {
+              this.cartPageTotalLines = payload.items.length;
+              this._cartPageNextPage = Math.ceil(payload.items.length / this._cartPageSize) + 1;
+            }
+          }
         } catch (e) {
           // Network blip — leave existing data in place rather than
           // wiping the visible cart.
@@ -505,7 +532,91 @@
         } finally {
           this._drawerLoading = false;
         }
+
+        // Chain-load until the list actually OVERFLOWS the drawer body —
+        // a short first page leaves nothing to scroll, so the scroll
+        // handler could never fire and only the button loaded more.
+        // Measured after Alpine has painted the new rows.
+        if (this.miniCartHasMore()) {
+          await new Promise(function (resolve) {
+            if (window.Alpine && typeof window.Alpine.nextTick === 'function') {
+              window.Alpine.nextTick(resolve);
+            } else {
+              requestAnimationFrame(resolve);
+            }
+          });
+          var body = document.querySelector('.aico-mini-cart-body');
+          if (body && body.scrollHeight <= body.clientHeight + 140) {
+            await this.loadDrawerPage(false);
+          }
+        }
       },
+      // ── Cart-page paging (window scroll) ──
+      initCartPageMode() {
+        this._cartPageMode = true;
+        this.cartPageTotalLines = Number((this.data && this.data.aico_total_lines) || 0);
+        if (this.data && !Array.isArray(this.data.items)) {
+          this.data.items = [];
+        }
+        this.loadCartPage(true);
+        var self = this;
+        window.addEventListener('scroll', function () {
+          if (self._cartPageLoading || !self.cartPageHasMore()) return;
+          var doc = document.documentElement;
+          if (window.innerHeight + window.scrollY >= doc.scrollHeight - 600) {
+            self.loadCartPage(false);
+          }
+        }, { passive: true });
+      },
+
+      cartPageHasMore() {
+        return this._cartPageMode
+          && !!this.data && Array.isArray(this.data.items)
+          && this.data.items.length < this.cartPageTotalLines;
+      },
+
+      async loadCartPage(reset) {
+        if (this._cartPageLoading) return;
+        this._cartPageLoading = true;
+        try {
+          var page = reset ? 1 : this._cartPageNextPage;
+          var url = routes.jsonUrl || '/cart.js';
+          url += (url.indexOf('?') === -1 ? '?' : '&')
+            + 'aico_page=' + page + '&aico_limit=' + this._cartPageSize;
+          var res = await fetch(url, { headers: jsonHeaders(), credentials: 'same-origin' });
+          if (!res.ok) return;
+          var payload = await res.json();
+          var items = Array.isArray(payload.items) ? payload.items : [];
+          if (this._acceptGeneration(payload)) {
+            if (!this.data) this.data = {};
+            this.data.item_count = Number(payload.item_count || 0);
+            this.data.total_price = Number(payload.total_price || 0);
+            this.data.empty = !!payload.empty;
+            this.data.aico_status = payload.aico_status;
+            this.data.aico_has_invalid_quantity = !!payload.aico_has_invalid_quantity;
+            this.data.aico_has_invalid_price = !!payload.aico_has_invalid_price;
+          }
+          this.cartPageTotalLines = Number(payload.aico_total_lines || items.length);
+          if (!Array.isArray(this.data.items)) this.data.items = [];
+          if (reset) {
+            this.data.items = items;
+            this._cartPageNextPage = 2;
+          } else {
+            var known = {};
+            this.data.items.forEach(function (line) { known[line.id] = true; });
+            var self = this;
+            items.forEach(function (line) {
+              if (!known[line.id]) self.data.items.push(line);
+            });
+            this._cartPageNextPage = page + 1;
+          }
+        } catch (e) {
+          // Network blip — keep whatever rows are already shown.
+        } finally {
+          this._cartPageLoading = false;
+        }
+      },
+
       miniCartVisibleItems() {
         return this.drawerItems;
       },
@@ -820,6 +931,12 @@
       void data;
       Alpine.store('cart')._drawerStale = true;
     });
+
+    // Cart page: the seed carries aggregates only — stream the rows in
+    // server-paged (see initCartPageMode).
+    if (initial && initial.aico_paged_cart_page) {
+      Alpine.store('cart').initCartPageMode();
+    }
   }
 
   // Register via `alpine:init`. theme.liquid loads this script before Alpine
