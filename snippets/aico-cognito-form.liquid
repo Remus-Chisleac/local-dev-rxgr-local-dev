@@ -10,22 +10,46 @@
   waited for it before injecting the form, so a submission can never carry an
   empty CustomerNumber.
 
+  The form is fetched from cognitoforms.com, so there is a visible gap before it
+  paints. The skeleton below stands in during that gap and crossfades to the real
+  form (assets/aico-cognito-form.js). Both live in the same grid cell so the swap
+  can't shift the page. `seamless.js` injects the form next to its own script
+  tag, i.e. inside `.aico-cognito-mount`.
+
   Accepts: form_id — Cognito form id (theme setting; differs per page).
 {%- endcomment -%}
 
 <main class="aico-page-container aico-cognito-form" role="main">
   {%- if customer.aico_customer_number and form_id != blank -%}
-    <script src="https://www.cognitoforms.com/f/seamless.js" data-key="{{ settings.aico_cognito_form_key }}" data-form="{{ form_id }}"></script>
-    <script>
-      Cognito.prefill({
-        "CustomerNumber": {{ customer.aico_customer_number | json }},
-        "Kundenreferenznummerselectline": {{ customer.aico_customer_reference_number | default: '' | json }},
-        "Kundenreferenznummer2myfactory": {{ customer.aico_second_customer_reference_number | default: '' | json }},
-        "Land": {{ customer.aico_country | default: '' | json }},
-        "Market": {{ customer.aico_debtor.seller_name | default: '' | json }}
-      });
-    </script>
+    <div class="aico-cognito-embed" data-aico-cognito>
+      <div class="aico-cognito-skeleton" data-aico-cognito-skeleton>
+        <span class="aico-sr-only">{{ 'aico_forms.loading' | t }}</span>
+        <div class="aico-skeleton aico-skel-pulse aico-cognito-skeleton-title" aria-hidden="true"></div>
+        {%- for i in (1..5) -%}
+          <div class="aico-cognito-skeleton-field" aria-hidden="true">
+            <div class="aico-skeleton aico-skel-pulse aico-cognito-skeleton-label"></div>
+            <div class="aico-skeleton aico-skel-pulse aico-cognito-skeleton-input"></div>
+          </div>
+        {%- endfor -%}
+        <div class="aico-skeleton aico-skel-pulse aico-cognito-skeleton-submit" aria-hidden="true"></div>
+      </div>
+
+      <div class="aico-cognito-mount" data-aico-cognito-mount>
+        <script src="https://www.cognitoforms.com/f/seamless.js" data-key="{{ settings.aico_cognito_form_key }}" data-form="{{ form_id }}"></script>
+        <script>
+          Cognito.prefill({
+            "CustomerNumber": {{ customer.aico_customer_number | json }},
+            "Kundenreferenznummerselectline": {{ customer.aico_customer_reference_number | default: '' | json }},
+            "Kundenreferenznummer2myfactory": {{ customer.aico_second_customer_reference_number | default: '' | json }},
+            "Land": {{ customer.aico_country | default: '' | json }},
+            "Market": {{ customer.aico_debtor.seller_name | default: '' | json }}
+          });
+        </script>
+      </div>
+    </div>
   {%- else -%}
     <p class="aico-cognito-form-unavailable">{{ 'aico_forms.unavailable' | t }}</p>
   {%- endif -%}
 </main>
+
+<script src="{{ 'aico-cognito-form.js' | asset_url }}" defer></script>

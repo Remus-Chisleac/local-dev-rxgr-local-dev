@@ -11637,3 +11637,41 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   padding-bottom: 4rem;
 }
 .aico-cognito-form-unavailable { margin: 0; color: var(--aico-muted-fg, #6b7280); }
+
+/* Skeleton and the real form share ONE grid cell, so the crossfade can't
+   shift the page. The skeleton is removed from the DOM after it fades
+   (aico-cognito-form.js) so it stops contributing height to the cell. */
+.aico-cognito-embed { display: grid; }
+.aico-cognito-embed > * { grid-area: 1 / 1; }
+
+.aico-cognito-mount {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.aico-cognito-embed.is-ready .aico-cognito-mount {
+  opacity: 1;
+  transform: none;
+}
+
+.aico-cognito-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: opacity 0.25s ease;
+}
+.aico-cognito-embed.is-ready .aico-cognito-skeleton {
+  opacity: 0;
+  pointer-events: none;
+}
+.aico-cognito-skeleton-title { height: 1.75rem; width: min(22rem, 70%); border-radius: var(--aico-radius, 2px); }
+.aico-cognito-skeleton-field { display: flex; flex-direction: column; gap: 0.5rem; }
+.aico-cognito-skeleton-label { height: 0.875rem; width: min(12rem, 45%); border-radius: var(--aico-radius, 2px); }
+.aico-cognito-skeleton-input { height: 2.75rem; width: 100%; border-radius: var(--aico-radius, 2px); }
+.aico-cognito-skeleton-submit { height: 2.75rem; width: 10rem; border-radius: var(--aico-radius, 2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-cognito-mount,
+  .aico-cognito-skeleton { transition-duration: 0.01ms; }
+  .aico-cognito-mount { transform: none; }
+}

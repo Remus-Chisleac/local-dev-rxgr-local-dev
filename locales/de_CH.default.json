@@ -800,6 +800,7 @@
     "counter": "{{ current }} von {{ total }}"
   },
   "aico_forms": {
+    "loading": "Formular wird geladen…",
     "unavailable": "Dieses Formular steht für Ihr Konto derzeit nicht zur Verfügung. Bitte wenden Sie sich an Ihren Ansprechpartner."
   },
   "aico_production_cockpit": {
