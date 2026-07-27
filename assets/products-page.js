@@ -275,17 +275,33 @@
       rawByEu[eu].push(raw);
     });
     var out = [];
+    function push(raw) {
+      if (out.indexOf(raw) === -1) {
+        out.push(raw);
+      }
+    }
     selectedDisplays.forEach(function (display) {
       var d = String(display || '').trim();
       if (!d) {
         return;
       }
-      getEuSizeGroup(d).forEach(function (eu) {
-        (rawByEu[eu] || []).forEach(function (raw) {
-          if (out.indexOf(raw) === -1) {
-            out.push(raw);
-          }
-        });
+      var band = getEuSizeGroup(d);
+      var before = out.length;
+      band.forEach(function (eu) {
+        (rawByEu[eu] || []).forEach(push);
+      });
+      if (out.length > before || !WAREHOUSE_ID) {
+        return;
+      }
+      // The distribution knows nothing about this band. On a `/filter/sizes/…`
+      // deep link that just means "not fetched yet" — the first filter is built
+      // before any response — and dropping the clause rendered the whole
+      // catalogue for a URL that asked for one size. The raw shape is
+      // `<warehouseId>-<euSize>` and the warehouse is known, so build the band's
+      // values directly; ones with no stock simply match no document, which is
+      // also the right answer when the band really is unavailable.
+      band.forEach(function (eu) {
+        push(WAREHOUSE_ID + '-' + eu);
       });
     });
     return out;
@@ -1786,6 +1802,11 @@
   //    expand display→raw), re-querying only when facets are already applied.
   var hasSsrCards = !!(grid && grid.querySelector('.aico-products-grid-item'));
   if (!hasSsrCards) {
+    // Seed the ⅓-step ladder before the first filter is built: a deep-linked
+    // size expands through getEuSizeGroup, which without the universe returns
+    // the bare size instead of its band, so `/filter/sizes/39` would miss
+    // products stocked only as 38 2/3 or 39 1/3.
+    setEuUniverse();
     refresh().then(function () { fillViewport(); });
   } else {
     meiliSearch({ offset: 0, includeFacets: true }).then(function (resp) {
