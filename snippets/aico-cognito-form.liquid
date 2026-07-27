@@ -1,0 +1,37 @@
+{%- comment -%}
+  Embedded Cognito Forms form, prefilled with the dealer identifiers the legacy
+  b2b-shop sent (return-center + self-repair). Its React pages injected exactly
+  these two script tags into the document and rewrote the `Cognito.prefill`
+  argument client-side; server-rendering them is the same contract without the
+  injection dance — `seamless.js` blocks, so `Cognito` is defined by the time
+  the inline call runs.
+
+  Rendered only for a shopper who has a B2B customer number: the legacy pages
+  waited for it before injecting the form, so a submission can never carry an
+  empty CustomerNumber.
+
+  Accepts:
+    form_id - Cognito form id (theme setting; differs per page).
+    land    - country of the shopper's "Hauptadresse" delivery address. Passed
+              in rather than looked up here because the drops manifest is built
+              by scanning TEMPLATE source only — `{% render %}` is not followed,
+              so a `customer.aico_delivery_addresses` read in this snippet would
+              never schedule the address descriptor.
+{%- endcomment -%}
+
+<main class="aico-page-container aico-cognito-form" role="main">
+  {%- if customer.aico_customer_number and form_id != blank -%}
+    <script src="https://www.cognitoforms.com/f/seamless.js" data-key="{{ settings.aico_cognito_form_key }}" data-form="{{ form_id }}"></script>
+    <script>
+      Cognito.prefill({
+        "CustomerNumber": {{ customer.aico_customer_number | json }},
+        "Kundenreferenznummerselectline": {{ customer.aico_customer_reference_number | default: '' | json }},
+        "Kundenreferenznummer2myfactory": {{ customer.aico_second_customer_reference_number | default: '' | json }},
+        "Land": {{ land | default: '' | json }},
+        "Market": {{ customer.aico_debtor.name | default: '' | json }}
+      });
+    </script>
+  {%- else -%}
+    <p class="aico-cognito-form-unavailable">{{ 'aico_forms.unavailable' | t }}</p>
+  {%- endif -%}
+</main>

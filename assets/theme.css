@@ -11626,3 +11626,14 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 /* Sold-out / load-error notice + the PDP fallback link. */
 .aico-quick-add-modal-notice { margin: 0 0 0.75rem; color: var(--aico-muted-fg, #6b7280); }
 .aico-quick-add-view-link { color: var(--aico-fg, #1a1a1a); font-weight: 600; }
+
+/* ---------------------------------------------------------------- */
+/* Embedded Cognito forms (/return-center, /self-repair)             */
+/* ---------------------------------------------------------------- */
+/* Cognito injects its own form chrome, so this only gives the embed the
+   page's gutters and the same vertical rhythm as .aico-contact. */
+.aico-cognito-form {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+.aico-cognito-form-unavailable { margin: 0; color: var(--aico-muted-fg, #6b7280); }

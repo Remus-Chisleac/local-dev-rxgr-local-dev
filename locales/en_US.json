@@ -799,6 +799,9 @@
     "read_article": "Read the full article",
     "counter": "{{ current }} of {{ total }}"
   },
+  "aico_forms": {
+    "unavailable": "This form is currently not available for your account. Please contact your account manager."
+  },
   "aico_production_cockpit": {
     "title": "Production Cockpit",
     "intro": {

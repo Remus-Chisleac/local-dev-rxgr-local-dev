@@ -16,6 +16,8 @@
     { "template": "aico_events_kybun_joya", "path": "events/kybun-joya", "page_type": "custom", "name": "EventsKybunJoya" },
     { "template": "aico_ads_joya", "path": "ads/joya", "page_type": "custom", "name": "AdsJoya" },
     { "template": "aico_ads_kybun_joya", "path": "ads/kybun-joya", "page_type": "custom", "name": "AdsKybunJoya" },
+    { "template": "aico_return_center", "path": "return-center", "page_type": "custom", "name": "ReturnCenter" },
+    { "template": "aico_self_repair", "path": "self-repair", "page_type": "custom", "name": "SelfRepair" },
 
     { "template": "cart", "path": "cart", "page_type": "cart" },
     { "template": "cart2", "path": "cart2", "page_type": "custom", "name": "Cart2", "menu": false },

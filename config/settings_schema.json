@@ -111,6 +111,33 @@
     ]
   },
   {
+    "name": "Cognito Forms",
+    "info": "The externally hosted Cognito Forms embedded on /return-center and /self-repair. Both forms are prefilled with the logged-in dealer's customer number, the SelectLine / myFactory reference numbers, the country of their Hauptadresse and their debtor name. Find the key and form id in Cognito Forms → Publish → Embed.",
+    "settings": [
+      {
+        "id": "aico_cognito_form_key",
+        "type": "text",
+        "label": "Cognito Forms key",
+        "default": "yQBia8R8_UOttwSO73Mwcw",
+        "info": "The `data-key` of the Cognito account hosting both forms."
+      },
+      {
+        "id": "aico_cognito_return_center_form_id",
+        "type": "text",
+        "label": "Return Center form id",
+        "default": "208",
+        "info": "The `data-form` of the return-center form. Leave empty to hide the form."
+      },
+      {
+        "id": "aico_cognito_self_repair_form_id",
+        "type": "text",
+        "label": "Self repair form id",
+        "default": "255",
+        "info": "The `data-form` of the self-repair form. Leave empty to hide the form."
+      }
+    ]
+  },
+  {
     "name": "Error messages",
     "info": "Shopper-facing error messages (toast + error list bubble) for failed actions like add-to-cart or preorder/checkout submit. Hidden by default; the code stays in the theme but nothing is shown unless enabled.",
     "settings": [

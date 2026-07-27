@@ -1,0 +1,25 @@
+{%- comment -%}
+  Return Center (`/return-center`) — the b2b-shop page recreated in the theme.
+  The form is hosted by Cognito Forms; the theme only embeds it and prefills the
+  dealer identifiers. In b2b-shop the embed markup came from the CMS landing
+  page with url handle `return-center`; here the form key/id are theme settings
+  so the page is repointable without touching the CMS or the template.
+
+  Shopify has no return-center concept, hence the `aico_` template stem. Login
+  is enforced by the storefront catch-all (RequireCustomerLogin).
+
+  The "Hauptadresse" delivery-address lookup lives here (not in the snippet) so
+  the build-time drops manifest sees `customer.aico_delivery_addresses` and
+  schedules the address descriptor — the scan does not follow `{% render %}`.
+{%- endcomment -%}
+
+{%- assign aico_land = '' -%}
+{%- for address in customer.aico_delivery_addresses -%}
+  {%- if address.name == 'Hauptadresse' -%}
+    {%- assign aico_land = address.country -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{% render 'aico-cognito-form',
+   form_id: settings.aico_cognito_return_center_form_id,
+   land: aico_land %}
