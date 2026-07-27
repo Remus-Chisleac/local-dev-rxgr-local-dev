@@ -63,7 +63,7 @@
         "id": "aico_search_brand_ids",
         "type": "text",
         "label": "Searchable brands",
-        "default": "3,6,7",
+        "default": "",
         "info": "Comma-separated brand IDs (or names) the search drawer may return — e.g. \"3,6,7\" or \"kybun, Joya, kybunjoya\". Leave empty to allow every brand the shopper can access. Shoppers still only see brands they have access to."
       }
     ]
