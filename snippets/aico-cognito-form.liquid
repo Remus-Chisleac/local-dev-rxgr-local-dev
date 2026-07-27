@@ -11,53 +11,20 @@
   empty CustomerNumber.
 
   The form is fetched from cognitoforms.com, so there is a visible gap before it
-  paints. The skeleton below stands in during that gap and crossfades to the real
-  form (assets/aico-cognito-form.js). Both live in the same grid cell so the swap
+  paints. A spinner stands in during that gap and crossfades to the real form
+  (assets/aico-cognito-form.js). Both live in the same grid cell so the swap
   can't shift the page. `seamless.js` injects the form next to its own script
   tag, i.e. inside `.aico-cognito-mount`.
 
-  Accepts:
-    form_id        — Cognito form id (theme setting; differs per page).
-    skeleton_intro — true on the form that leads with an intro paragraph
-                     (self-repair, 228px header vs return-center's 89px).
+  Accepts: form_id — Cognito form id (theme setting; differs per page).
 {%- endcomment -%}
 
 <main class="aico-page-container aico-cognito-form" role="main">
   {%- if customer.aico_customer_number and form_id != blank -%}
     <div class="aico-cognito-embed" data-aico-cognito>
-      {%- comment -%}
-        Row rhythm measured from the two live forms (both are the same 11-row
-        shape; only the intro and the batch-number block differ):
-        title 89px · customer-number readout 69 · Partner+E-Mail 2-up 86 ·
-        Kontakt 86 · Marke 69 · Modell 86 · Grössenangabe 137 · Zustand 69 ·
-        Defekt-Kategorie 109 · Chargen-Nummer 263 · Kommentar 103.
-        Sizes below are the rem equivalents, so the skeleton stands roughly as
-        tall as the form it is standing in for and the reveal barely shifts.
-      {%- endcomment -%}
-      <div class="aico-cognito-skeleton" data-aico-cognito-skeleton>
-        <span class="aico-sr-only">{{ 'aico_forms.loading' | t }}</span>
-        <div aria-hidden="true">
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-title"></div>
-          {%- if skeleton_intro -%}
-            <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-intro"></div>
-          {%- endif -%}
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-readout"></div>
-
-          <div class="aico-cognito-skel-duo">
-            <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-field"></div>
-            <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-field"></div>
-          </div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-field"></div>
-
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-choice-s"></div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-choice-m"></div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-choice-l"></div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-choice-s"></div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-choice-xl"></div>
-
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-batch"></div>
-          <div class="aico-skeleton aico-skel-pulse aico-cognito-skel-comment"></div>
-        </div>
+      <div class="aico-cognito-loading" data-aico-cognito-loading role="status">
+        <span class="aico-cognito-spinner" aria-hidden="true"></span>
+        <p class="aico-cognito-loading-text">{{ 'aico_forms.loading' | t }}</p>
       </div>
 
       <div class="aico-cognito-mount" data-aico-cognito-mount>

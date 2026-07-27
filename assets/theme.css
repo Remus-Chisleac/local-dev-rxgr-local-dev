@@ -11638,10 +11638,15 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 }
 .aico-cognito-form-unavailable { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 
-/* Skeleton and the real form share ONE grid cell, so the crossfade can't
-   shift the page. The skeleton is removed from the DOM after it fades
-   (aico-cognito-form.js) so it stops contributing height to the cell. */
-.aico-cognito-embed { display: grid; }
+/* `main` here is a flex ITEM of .aico-shell-grow, so it shrink-wraps to its
+   content. The loading state has no intrinsic width (spinner + one line), which
+   collapsed the whole column to ~56px until this width was made explicit. */
+.aico-cognito-form { width: 100%; }
+
+/* Loader and the real form share ONE grid cell, so the swap can't shift the
+   page. minmax(0, 1fr) keeps the column full-width even while the mount is
+   still empty — an auto column would size to the loader's tiny content. */
+.aico-cognito-embed { display: grid; grid-template-columns: minmax(0, 1fr); }
 .aico-cognito-embed > * { grid-area: 1 / 1; }
 
 .aico-cognito-mount {
@@ -11654,33 +11659,35 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   transform: none;
 }
 
-.aico-cognito-skeleton {
+.aico-cognito-loading {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  min-height: 24rem;
+  text-align: center;
   transition: opacity 0.25s ease;
 }
-.aico-cognito-embed.is-ready .aico-cognito-skeleton {
+.aico-cognito-embed.is-ready .aico-cognito-loading {
   opacity: 0;
   pointer-events: none;
 }
-/* Heights mirror the measured rows of the real forms (see the snippet's
-   comment); the gap stands in for Cognito's own row spacing. */
-.aico-cognito-skeleton > [aria-hidden] { display: flex; flex-direction: column; gap: 1rem; }
-.aico-cognito-skeleton [class*="aico-cognito-skel-"] { border-radius: var(--aico-radius, 2px); }
-.aico-cognito-skel-title   { height: 2.25rem; width: min(26rem, 80%); }
-.aico-cognito-skel-intro   { height: 8rem;    width: 100%; }
-.aico-cognito-skel-readout { height: 1.5rem;  width: min(18rem, 55%); }
-.aico-cognito-skel-duo     { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.aico-cognito-skel-field   { height: 4.5rem;  width: 100%; }
-.aico-cognito-skel-choice-s  { height: 4.25rem; width: 100%; }
-.aico-cognito-skel-choice-m  { height: 5.25rem; width: 100%; }
-.aico-cognito-skel-choice-l  { height: 8.5rem;  width: 100%; }
-.aico-cognito-skel-choice-xl { height: 6.75rem; width: 100%; }
-.aico-cognito-skel-batch     { height: 16.5rem; width: 100%; }
-.aico-cognito-skel-comment   { height: 6.5rem;  width: 100%; }
+/* Same ring + aico-spin keyframes as .aico-products-spinner, one size up. */
+.aico-cognito-spinner {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 2px solid var(--aico-muted-strong);
+  border-top-color: var(--color-accent);
+  animation: aico-spin 0.7s linear infinite;
+}
+.aico-cognito-loading-text { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 
 @media (prefers-reduced-motion: reduce) {
   .aico-cognito-mount,
-  .aico-cognito-skeleton { transition-duration: 0.01ms; }
+  .aico-cognito-loading { transition-duration: 0.01ms; }
   .aico-cognito-mount { transform: none; }
+  .aico-cognito-spinner { animation-duration: 2.4s; }
+}
 }
