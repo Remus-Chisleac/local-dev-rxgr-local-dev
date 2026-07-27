@@ -1,16 +1,6 @@
 {%- comment -%}
   Self repair (`/self-repair`) — the b2b-shop page recreated in the theme. Same
-  shape as `aico_return_center.liquid` (see its comment for why the address
-  lookup is inline), pointing at the self-repair Cognito form instead.
+  shape as `aico_return_center.liquid`, pointing at the self-repair Cognito form.
 {%- endcomment -%}
 
-{%- assign aico_land = '' -%}
-{%- for address in customer.aico_delivery_addresses -%}
-  {%- if address.name == 'Hauptadresse' -%}
-    {%- assign aico_land = address.country -%}
-  {%- endif -%}
-{%- endfor -%}
-
-{% render 'aico-cognito-form',
-   form_id: settings.aico_cognito_self_repair_form_id,
-   land: aico_land %}
+{% render 'aico-cognito-form', form_id: settings.aico_cognito_self_repair_form_id %}

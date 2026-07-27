@@ -10,13 +10,7 @@
   waited for it before injecting the form, so a submission can never carry an
   empty CustomerNumber.
 
-  Accepts:
-    form_id - Cognito form id (theme setting; differs per page).
-    land    - country of the shopper's "Hauptadresse" delivery address. Passed
-              in rather than looked up here because the drops manifest is built
-              by scanning TEMPLATE source only — `{% render %}` is not followed,
-              so a `customer.aico_delivery_addresses` read in this snippet would
-              never schedule the address descriptor.
+  Accepts: form_id — Cognito form id (theme setting; differs per page).
 {%- endcomment -%}
 
 <main class="aico-page-container aico-cognito-form" role="main">
@@ -27,8 +21,8 @@
         "CustomerNumber": {{ customer.aico_customer_number | json }},
         "Kundenreferenznummerselectline": {{ customer.aico_customer_reference_number | default: '' | json }},
         "Kundenreferenznummer2myfactory": {{ customer.aico_second_customer_reference_number | default: '' | json }},
-        "Land": {{ land | default: '' | json }},
-        "Market": {{ customer.aico_debtor.name | default: '' | json }}
+        "Land": {{ customer.aico_country | default: '' | json }},
+        "Market": {{ customer.aico_debtor.seller_name | default: '' | json }}
       });
     </script>
   {%- else -%}
