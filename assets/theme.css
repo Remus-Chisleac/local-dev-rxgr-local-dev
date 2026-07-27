@@ -3633,6 +3633,16 @@ button.aico-home-brand-card {
 .aico-pdp-qty-box__step[aria-disabled="true"]:active {
   background: transparent;
 }
+/* A max-order-quantity cap binds on this cell (product-wide or per-variant):
+   soft orange wash — deliberately NOT the hard button orange; the words live
+   in .aico-pdp-max-note beside the total. */
+.aico-pdp-qty-box--at-max {
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.45);
+}
+.aico-pdp-qty-box--at-max .aico-pdp-qty-box__spinners {
+  background: rgba(234, 88, 12, 0.12);
+}
 .aico-pdp-size-cell-available:not(.aico-pdp-size-cell-in-stock)::after {
   content: "";
   position: absolute;
@@ -3687,6 +3697,67 @@ button.aico-home-brand-card {
   margin-left: 0.25rem;
   color: var(--aico-fg);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── "Max. Bestellmenge erreicht" beside the total ──
+   Revealed by product-detail.js / quick-add.js while any max-order-quantity
+   cap binds; the info circle's popover (hover, focus or click) lists the
+   product-wide cap and every size at its own per-variant cap. */
+.aico-pdp-max-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.625rem;
+  color: #c2410c;
+  font-size: 0.8125rem;
+}
+.aico-pdp-max-note[hidden] {
+  display: none;
+}
+.aico-pdp-max-note-info {
+  position: relative;
+  display: inline-flex;
+}
+.aico-pdp-max-note-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.125rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-pdp-max-note-pop {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  left: -0.25rem;
+  width: max-content;
+  max-width: min(18rem, 88vw);
+  padding: 0.5rem 0.625rem;
+  background: var(--aico-bg);
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  color: var(--aico-fg);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  z-index: 35;
+  animation: aicoFadeInTool 120ms ease-out;
+}
+.aico-pdp-max-note-info:hover .aico-pdp-max-note-pop,
+.aico-pdp-max-note-info:focus-within .aico-pdp-max-note-pop,
+.aico-pdp-max-note-pop.is-open {
+  display: block;
+}
+.aico-pdp-max-note-pop-line {
+  display: block;
+}
+.aico-pdp-max-note-pop-line + .aico-pdp-max-note-pop-line {
+  margin-top: 0.25rem;
 }
 
 /* ── Buy actions ── */

@@ -411,6 +411,20 @@
               <p class="aico-pdp-size-total" data-aico-size-total>
                 {{ 'product.size_matrix.total' | t }}
                 <strong data-aico-size-total-value>0</strong>
+                {%- comment -%}
+                  Cap notice: revealed by product-detail.js when the product-wide
+                  or a per-variant max order quantity binds. The info circle's
+                  popover (hover or click) lists every cap currently reached.
+                {%- endcomment -%}
+                <span class="aico-pdp-max-note" data-aico-max-note role="status" hidden>
+                  <span class="aico-pdp-max-note-text">{{ 'product.aico_pdp_message.max_note_label' | t }}</span>
+                  <span class="aico-pdp-max-note-info" data-aico-max-note-info>
+                    <button type="button" class="aico-pdp-max-note-btn" data-aico-max-note-toggle aria-expanded="false" aria-label="{{ 'product.aico_pdp_message.max_note_label' | t }}">
+                      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="7.4" x2="8" y2="11.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.7" r="0.9" fill="currentColor" stroke="none"/></svg>
+                    </button>
+                    <span class="aico-pdp-max-note-pop" role="tooltip" data-aico-max-note-pop></span>
+                  </span>
+                </span>
               </p>
             </section>
           {% else %}
@@ -868,6 +882,8 @@
       error: {{ 'product.aico_pdp_message.error' | t | json }},
       max_quantity_reached: {{ 'product.aico_pdp_message.max_quantity_reached' | t | json }},
       max_quantity_variant_reached: {{ 'product.aico_pdp_message.max_quantity_variant_reached' | t | json }},
+      max_note_product: {{ 'product.aico_pdp_message.max_note_product' | t | json }},
+      max_note_variant: {{ 'product.aico_pdp_message.max_note_variant' | t | json }},
       button_add_hint: {{ 'product.aico_pdp_message.button_add_hint' | t | json }},
       button_update_hint: {{ 'product.aico_pdp_message.button_update_hint' | t | json }},
       button_quantity_hint: {{ 'product.aico_pdp_message.button_quantity_hint' | t | json }},

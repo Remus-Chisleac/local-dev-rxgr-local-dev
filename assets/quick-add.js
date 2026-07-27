@@ -390,11 +390,47 @@
     total.appendChild(totalValue);
     refs.body.appendChild(total);
 
-    var maxNote = document.createElement('p');
-    maxNote.className = 'aico-pdp-buy-hint aico-pdp-buy-hint-danger';
+    // Cap notice beside the total — same markup/classes as the PDP's
+    // (templates/product.liquid), so theme.css styles both.
+    var maxNote = document.createElement('span');
+    maxNote.className = 'aico-pdp-max-note';
     maxNote.hidden = true;
     maxNote.setAttribute('role', 'status');
-    refs.body.appendChild(maxNote);
+    var maxNoteText = document.createElement('span');
+    maxNoteText.className = 'aico-pdp-max-note-text';
+    maxNoteText.textContent = t('max_note_label', 'Max. order quantity reached');
+    maxNote.appendChild(maxNoteText);
+    var maxNoteInfo = document.createElement('span');
+    maxNoteInfo.className = 'aico-pdp-max-note-info';
+    var maxNoteToggle = document.createElement('button');
+    maxNoteToggle.type = 'button';
+    maxNoteToggle.className = 'aico-pdp-max-note-btn';
+    maxNoteToggle.setAttribute('aria-expanded', 'false');
+    maxNoteToggle.setAttribute('aria-label', t('max_note_label', 'Max. order quantity reached'));
+    maxNoteToggle.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+      + '<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+      + '<line x1="8" y1="7.4" x2="8" y2="11.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+      + '<circle cx="8" cy="4.7" r="0.9" fill="currentColor" stroke="none"/>'
+      + '</svg>';
+    maxNoteInfo.appendChild(maxNoteToggle);
+    var maxNotePop = document.createElement('span');
+    maxNotePop.className = 'aico-pdp-max-note-pop';
+    maxNotePop.setAttribute('role', 'tooltip');
+    maxNoteInfo.appendChild(maxNotePop);
+    maxNote.appendChild(maxNoteInfo);
+    total.appendChild(maxNote);
+    maxNoteToggle.addEventListener('click', function (event) {
+      event.preventDefault();
+      var open = maxNoteToggle.getAttribute('aria-expanded') === 'true';
+      maxNoteToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+      maxNotePop.classList.toggle('is-open', !open);
+    });
+    document.addEventListener('click', function (event) {
+      if (!maxNote.contains(event.target)) {
+        maxNoteToggle.setAttribute('aria-expanded', 'false');
+        maxNotePop.classList.remove('is-open');
+      }
+    });
 
     // Buy button — same markup/classes as the PDP's (icon + label span with
     // the add/update label pair). It is NEVER hard-`disabled` for "nothing
@@ -492,6 +528,9 @@
       } else {
         box.removeAttribute('title');
       }
+      // Soft orange wash while a CAP (not plain stock) binds — same class the
+      // PDP matrix uses (product-detail.js).
+      box.classList.toggle('aico-pdp-qty-box--at-max', !!reason && !input.disabled);
       var plus = box.querySelector('[data-aico-step="1"]');
       if (!plus || input.disabled) {
         return;
@@ -530,13 +569,8 @@
 
     function refresh(event) {
       var sum = 0;
-      var variantClampMax = null;
       inputs.forEach(function (input) {
-        var result = clampInput(input);
-        sum += result.value;
-        if (result.clampedByMax !== null) {
-          variantClampMax = result.clampedByMax;
-        }
+        sum += clampInput(input).value;
       });
 
       // Product-wide cap (coexists with the per-variant caps): absolute
@@ -564,6 +598,7 @@
       totalValue.textContent = String(sum);
 
       var atProductCap = productMaxQty !== null && sum >= productMaxQty;
+      var cappedSizes = [];
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
         var limit = ceilingOf(input);
@@ -581,20 +616,42 @@
         applyQtyCeiling(input, ceiling, kind, count);
         var cell = input.closest ? input.closest('.aico-pdp-size-cell') : null;
         if (cell) {
-          cell.classList.toggle('aico-pdp-size-cell-at-max', kind !== null && value >= ceiling);
           // Cart-mirror accent follows the live value, like the PDP.
           cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
         }
+        // A size feeds the note only when its OWN per-variant cap binds —
+        // the product-wide cap gets a single summary line instead.
+        var variantMax = parseInt(input.getAttribute('data-aico-variant-max'), 10);
+        if (!isNaN(variantMax) && variantMax > 0 && !input.disabled && value >= variantMax) {
+          var labelNode = cell ? cell.querySelector('.aico-pdp-size-cell-label') : null;
+          cappedSizes.push({
+            size: labelNode ? labelNode.textContent.trim() : '',
+            max: variantMax
+          });
+        }
       });
 
-      if (productClamped || atProductCap) {
-        maxNote.textContent = maxQtyMessage('product', productMaxQty);
-        maxNote.hidden = false;
-      } else if (variantClampMax !== null) {
-        maxNote.textContent = maxQtyMessage('variant', variantClampMax);
-        maxNote.hidden = false;
-      } else {
-        maxNote.hidden = true;
+      var lines = [];
+      if (atProductCap || productClamped) {
+        lines.push(t('max_note_product', 'This shoe has a max order quantity of {count}.')
+          .replace('{count}', String(productMaxQty)));
+      }
+      cappedSizes.forEach(function (entry) {
+        lines.push(t('max_note_variant', 'This shoe has a max order quantity of {count} for size {size}.')
+          .replace('{count}', String(entry.max))
+          .replace('{size}', entry.size));
+      });
+      maxNotePop.textContent = '';
+      lines.forEach(function (line) {
+        var row = document.createElement('span');
+        row.className = 'aico-pdp-max-note-pop-line';
+        row.textContent = line;
+        maxNotePop.appendChild(row);
+      });
+      maxNote.hidden = lines.length === 0;
+      if (lines.length === 0) {
+        maxNoteToggle.setAttribute('aria-expanded', 'false');
+        maxNotePop.classList.remove('is-open');
       }
 
       syncButtonState();

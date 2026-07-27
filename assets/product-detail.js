@@ -129,6 +129,9 @@
     } else {
       box.removeAttribute('title');
     }
+    // Soft orange wash on the qty box while a CAP (not plain stock) binds —
+    // the words live in the max-note beside the total.
+    box.classList.toggle('aico-pdp-qty-box--at-max', !!message && !input.disabled);
     var plus = box.querySelector('[data-aico-step="1"]');
     if (!plus || input.disabled) {
       return;
@@ -462,6 +465,9 @@
     }
     // Single-cell mode has no "Total" line — one input IS the total.
     var totalNode = form.querySelector('[data-aico-size-total-value]');
+    var noteNode = form.querySelector('[data-aico-max-note]');
+    var notePop = form.querySelector('[data-aico-max-note-pop]');
+    var noteToggle = form.querySelector('[data-aico-max-note-toggle]');
 
     function variantMaxOf(input) {
       var max = parseInt(input.getAttribute('data-aico-variant-max'), 10);
@@ -507,6 +513,58 @@
       return raw;
     }
 
+    // "Max. Bestellmenge erreicht" beside the total: shown while any cap
+    // binds; the info circle's popover lists the product-wide cap and/or
+    // every size sitting at its own per-variant cap.
+    function renderMaxNote(total, cappedSizes) {
+      if (!noteNode || !notePop) {
+        return;
+      }
+      var lines = [];
+      if (productMaxQty !== null && total >= productMaxQty) {
+        lines.push(
+          getLocaleHint('max_note_product', 'This shoe has a max order quantity of {count}.')
+            .replace('{count}', String(productMaxQty))
+        );
+      }
+      cappedSizes.forEach(function (entry) {
+        lines.push(
+          getLocaleHint('max_note_variant', 'This shoe has a max order quantity of {count} for size {size}.')
+            .replace('{count}', String(entry.max))
+            .replace('{size}', entry.size)
+        );
+      });
+      notePop.textContent = '';
+      lines.forEach(function (line) {
+        var row = document.createElement('span');
+        row.className = 'aico-pdp-max-note-pop-line';
+        row.textContent = line;
+        notePop.appendChild(row);
+      });
+      noteNode.hidden = lines.length === 0;
+      if (lines.length === 0 && noteToggle) {
+        noteToggle.setAttribute('aria-expanded', 'false');
+        notePop.classList.remove('is-open');
+      }
+    }
+
+    if (noteToggle && notePop) {
+      // Hover opens via CSS; the click toggle is for touch. Any click
+      // outside the note closes it again.
+      noteToggle.addEventListener('click', function (event) {
+        event.preventDefault();
+        var open = noteToggle.getAttribute('aria-expanded') === 'true';
+        noteToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+        notePop.classList.toggle('is-open', !open);
+      });
+      document.addEventListener('click', function (event) {
+        if (noteNode && !noteNode.contains(event.target)) {
+          noteToggle.setAttribute('aria-expanded', 'false');
+          notePop.classList.remove('is-open');
+        }
+      });
+    }
+
     function refresh(event) {
       var total = 0;
       inputs.forEach(function (input) {
@@ -546,6 +604,7 @@
       // contributes) — stamping it on the input stops the increment BEFORE the
       // value has to be pulled back. The reason surfaces only as the "+" hover
       // tooltip (applyQtyCeiling); no red border, no inline notice.
+      var cappedSizes = [];
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
         var variantMax = variantMaxOf(input);
@@ -571,8 +630,18 @@
         if (cell) {
           cell.classList.toggle('aico-pdp-size-cell-in-cart', value > 0);
         }
+        // A size counts as capped for the note only when its OWN per-variant
+        // max binds — the product-wide cap gets a single summary line instead.
+        if (variantMax !== null && !input.disabled && value >= variantMax) {
+          var labelNode = cell ? cell.querySelector('[data-aico-size-label]') : null;
+          cappedSizes.push({
+            size: labelNode ? labelNode.textContent.trim() : '',
+            max: variantMax
+          });
+        }
       });
 
+      renderMaxNote(total, cappedSizes);
       syncButtonState();
     }
 
