@@ -11657,18 +11657,27 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 .aico-cognito-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
   transition: opacity 0.25s ease;
 }
 .aico-cognito-embed.is-ready .aico-cognito-skeleton {
   opacity: 0;
   pointer-events: none;
 }
-.aico-cognito-skeleton-title { height: 1.75rem; width: min(22rem, 70%); border-radius: var(--aico-radius, 2px); }
-.aico-cognito-skeleton-field { display: flex; flex-direction: column; gap: 0.5rem; }
-.aico-cognito-skeleton-label { height: 0.875rem; width: min(12rem, 45%); border-radius: var(--aico-radius, 2px); }
-.aico-cognito-skeleton-input { height: 2.75rem; width: 100%; border-radius: var(--aico-radius, 2px); }
-.aico-cognito-skeleton-submit { height: 2.75rem; width: 10rem; border-radius: var(--aico-radius, 2px); }
+/* Heights mirror the measured rows of the real forms (see the snippet's
+   comment); the gap stands in for Cognito's own row spacing. */
+.aico-cognito-skeleton > [aria-hidden] { display: flex; flex-direction: column; gap: 1rem; }
+.aico-cognito-skeleton [class*="aico-cognito-skel-"] { border-radius: var(--aico-radius, 2px); }
+.aico-cognito-skel-title   { height: 2.25rem; width: min(26rem, 80%); }
+.aico-cognito-skel-intro   { height: 8rem;    width: 100%; }
+.aico-cognito-skel-readout { height: 1.5rem;  width: min(18rem, 55%); }
+.aico-cognito-skel-duo     { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.aico-cognito-skel-field   { height: 4.5rem;  width: 100%; }
+.aico-cognito-skel-choice-s  { height: 4.25rem; width: 100%; }
+.aico-cognito-skel-choice-m  { height: 5.25rem; width: 100%; }
+.aico-cognito-skel-choice-l  { height: 8.5rem;  width: 100%; }
+.aico-cognito-skel-choice-xl { height: 6.75rem; width: 100%; }
+.aico-cognito-skel-batch     { height: 16.5rem; width: 100%; }
+.aico-cognito-skel-comment   { height: 6.5rem;  width: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
   .aico-cognito-mount,
