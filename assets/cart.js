@@ -880,9 +880,11 @@
         return updates;
       },
 
+      // The server owns the verdict AND the fix now — the button shows
+      // whenever the cart is flagged, even before the dead lines are
+      // scrolled into view (the old loaded-lines gate hid it on first paint).
       hasFixableInvalidQuantity() {
-        if (!this.data || !this.data.aico_has_invalid_quantity) return false;
-        return this.plannedQuantityFixes().length > 0;
+        return !!(this.data && this.data.aico_has_invalid_quantity);
       },
 
       async fixInvalidQuantities() {
@@ -891,26 +893,20 @@
         if (this.hasPendingLineUpdates()) {
           await this.flushPendingLineUpdates();
         }
-        if (!this.hasFixableInvalidQuantity()) {
-          await this.refresh();
-          return false;
-        }
 
         this._fixingInvalid = true;
-        var updates = this.plannedQuantityFixes();
 
         try {
-          for (var i = 0; i < updates.length; i++) {
-            var row = updates[i];
-            var res = await fetch(routes.changeJsonUrl || '/cart/change.js', {
-              method: 'POST',
-              headers: jsonHeaders(),
-              credentials: 'same-origin',
-              body: formEncoded({ id: row.id, quantity: row.quantity, aico_delta: '1' }),
-            });
-            if (!res.ok) throw new Error('update failed');
-            this._applyMutationResponse(await res.json());
-          }
+          // ONE backend call clamps every over-stock line to live stock
+          // (removes zero-stock lines) — no per-line request loop.
+          var res = await fetch(routes.fixQuantitiesUrl || '/cart/aico_fix_quantities.js', {
+            method: 'POST',
+            headers: jsonHeaders(),
+            credentials: 'same-origin',
+            body: formEncoded({ aico_delta: '1' }),
+          });
+          if (!res.ok) throw new Error('fix failed');
+          this._applyMutationResponse(await res.json());
           await this.refresh();
           this.flash(
             translations.fixed_invalid_quantity || 'Quantities adjusted to available stock.',
