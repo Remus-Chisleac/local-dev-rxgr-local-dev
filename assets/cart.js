@@ -656,6 +656,11 @@
         var c = this.data;
         if (!c || c.empty) return false;
         if (c.aico_has_invalid_quantity || c.aico_has_invalid_price) return false;
+        // Belt over the summary flags: the same per-line check that paints a
+        // row red blocks checkout, even when the snapshot's aggregate flag
+        // lags the line data (the flags and the lines can come from
+        // different snapshot generations on the paged cart).
+        if (this.hasBlockedLines()) return false;
         if (shippingBlocked) return false;
         if (c.aico_status === 'ERROR' || c.aico_status === 'SAVING_LONGER_THAN_EXPECTED') {
           return false;
@@ -663,6 +668,18 @@
         // Stale SAVING from a prior batch add self-heals via refresh();
         // don't block checkout forever on the cart page snapshot.
         return true;
+      },
+
+      // Any LOADED line that must be fixed before checkout: over stock or
+      // flagged invalid by the server. Pages not yet loaded are covered by
+      // the aggregate flags above.
+      hasBlockedLines() {
+        var c = this.data;
+        if (!c || !Array.isArray(c.items)) return false;
+        var self = this;
+        return c.items.some(function (line) {
+          return self.lineExceedsStock(line) || line.aico_is_valid === false;
+        });
       },
 
       lineExceedsStock(line) {

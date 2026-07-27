@@ -11691,3 +11691,26 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   .aico-cognito-spinner { animation-duration: 2.4s; }
 }
 }
+
+/* Cart: per-product "adjust sizes" trigger (opens the quick-add size matrix). */
+.aico-cart-group-adjust {
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--aico-radius, 2px);
+  background: transparent;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  cursor: pointer;
+  color: inherit;
+}
+.aico-cart-group-adjust:hover {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-accent, #2563eb);
+}
+
+/* Cart: note under a disabled checkout CTA naming the blocker. */
+.aico-cart-checkout-blocked-note {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}

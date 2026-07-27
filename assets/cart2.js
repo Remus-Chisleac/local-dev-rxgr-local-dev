@@ -63,6 +63,19 @@
           }, 0);
         },
 
+        // Product handle for the quick-add ("adjust sizes") trigger, from the
+        // group's product URL — last path segment after /products/, locale
+        // prefix agnostic. Empty string hides the trigger.
+        groupHandle(group) {
+          var url = (group && group.url) || '';
+          var match = /\/products\/([^\/?#]+)/.exec(url);
+          try {
+            return match ? decodeURIComponent(match[1]) : '';
+          } catch (e) {
+            return match ? match[1] : '';
+          }
+        },
+
         groupHasInvalidLine(group) {
           var cart = Alpine.store('cart');
           return (group.lines || []).some(function (line) {

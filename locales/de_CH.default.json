@@ -484,7 +484,8 @@
       "shipping": "Versand",
       "shipping_at_checkout": "Wird an der Kasse berechnet",
       "total": "Gesamt",
-      "credit_limit": "Verfügbares Kreditlimit"
+      "credit_limit": "Verfügbares Kreditlimit",
+      "remove_invalid_to_continue": "Bitte entfernen Sie nicht verfügbare Artikel (oder setzen Sie die Menge auf 0), um zur Kasse zu gehen."
     },
     "alerts": {
       "shipping_blocked": "Der Versand ist für Ihr Konto derzeit gesperrt. Sie können keine Bestellung aufgeben — bitte wenden Sie sich an Ihren Aussendienst.",
@@ -494,7 +495,8 @@
     },
     "group": {
       "pcs": "Stk.",
-      "quantity_aria": "Gesamtmenge"
+      "quantity_aria": "Gesamtmenge",
+      "adjust_sizes": "Grössen anpassen"
     }
   },
   "checkout": {
@@ -541,7 +543,8 @@
       "cart_modified": "Ihr Warenkorb hat sich geändert. Bitte überprüfen Sie die Artikel, bevor Sie fortfahren.",
       "submit_failed": "Wir konnten Ihre Bestellung nicht übermitteln. Bitte versuchen Sie es erneut oder kontaktieren Sie Ihren Aussendienst.",
       "missing_fields": "Wählen Sie eine Rechnungs- und Lieferadresse sowie eine Zahlungsart, um fortzufahren.",
-      "payment_failed": "Die Zahlung konnte nicht gestartet werden. Es wurde keine Bestellung aufgegeben und Ihr Warenkorb ist unverändert — bitte versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart."
+      "payment_failed": "Die Zahlung konnte nicht gestartet werden. Es wurde keine Bestellung aufgegeben und Ihr Warenkorb ist unverändert — bitte versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart.",
+      "invalid_quantity": "Einige Artikel in Ihrem Warenkorb sind nicht mehr verfügbar. Bitte passen Sie Ihren Warenkorb an und versuchen Sie es erneut."
     },
     "processing_page": {
       "title": "Bestellung wird abgeschlossen",

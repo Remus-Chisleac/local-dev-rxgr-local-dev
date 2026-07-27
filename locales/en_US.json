@@ -484,7 +484,8 @@
       "shipping": "Shipping",
       "shipping_at_checkout": "Calculated at checkout",
       "total": "Total",
-      "credit_limit": "Available credit"
+      "credit_limit": "Available credit",
+      "remove_invalid_to_continue": "Remove unavailable items (or set their quantity to 0) to proceed to checkout."
     },
     "alerts": {
       "shipping_blocked": "Shipping is currently blocked for your account. You cannot place an order — please contact your sales representative.",
@@ -494,7 +495,8 @@
     },
     "group": {
       "pcs": "pcs",
-      "quantity_aria": "Total quantity"
+      "quantity_aria": "Total quantity",
+      "adjust_sizes": "Adjust sizes"
     }
   },
   "checkout": {
@@ -541,7 +543,8 @@
       "cart_modified": "Your cart has changed. Please review your items before continuing.",
       "submit_failed": "We couldn't submit your order. Please try again or contact your sales representative.",
       "missing_fields": "Choose a billing address, delivery address, and payment method to continue.",
-      "payment_failed": "The payment could not be started. No order was placed and your cart is unchanged — please try again or choose another payment method."
+      "payment_failed": "The payment could not be started. No order was placed and your cart is unchanged — please try again or choose another payment method.",
+      "invalid_quantity": "Some items in your cart are no longer available. Please adjust your cart and try again."
     },
     "processing_page": {
       "title": "Finalising your order",

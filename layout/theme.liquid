@@ -125,6 +125,7 @@
         checkout: {
           missing_fields: {{ 'checkout.errors.missing_fields' | t | json }},
           submit_failed: {{ 'checkout.errors.submit_failed' | t | json }},
+          invalid_quantity: {{ 'checkout.errors.invalid_quantity' | t | json }},
           payment_failed: {{ 'checkout.errors.payment_failed' | t | json }},
           cart_modified: {{ 'checkout.errors.cart_modified' | t | json }},
           login_required: {{ 'checkout.login_required' | t | json }},

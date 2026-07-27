@@ -523,6 +523,8 @@
           case 'missing_fields': return translations.missing_fields || 'Please fill in all required fields.';
           case 'empty_cart': return translations.cart_modified || 'Your cart has changed.';
           case 'unauthorized': return translations.login_required || 'Please sign in to continue.';
+          case 'invalid_quantity': return translations.invalid_quantity
+            || 'Some items in your cart are no longer available. Please adjust your cart and try again.';
           case 'payment_failed': return translations.payment_failed
             || 'The payment could not be started. No order was placed and your cart is unchanged — please try again.';
           default: return translations.submit_failed || 'Could not submit the order.';
