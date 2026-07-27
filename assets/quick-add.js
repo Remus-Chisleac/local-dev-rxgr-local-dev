@@ -6,9 +6,16 @@
 //
 // Same no-framework IIFE style as products-page.js; the modal DOM is built
 // on first open (production-cockpit modal pattern) and reused. Variants +
-// stock are NOT in the listing payload — the modal fetches the per-product
-// JSON endpoint (`routes.aico_product_json_url`, /products/<handle>.js) on
-// each open so stock is always fresh.
+// stock are NOT in the listing payload — the modal fetches the LEAN quick-add
+// endpoint (`routes.aico_quick_add_url`,
+// /aico-storefront-api/quick-add/<handle>) on each open so stock is always
+// fresh. That endpoint returns only what the matrix needs (variants, warehouse
+// stock, order caps); the Shopify-shaped /products/<handle>.js builds the whole
+// PDP drop — prices, colour siblings, specs — and cost ~460 ms for it.
+// Everything the lean payload drops is sourced locally instead: the shipping
+// block from `customer.aico_shipping_block` (it is a property of the SHOPPER,
+// not of the product) and the EU → UK/US/MM size labels from the chart the
+// theme bundles (assets/size-charts.js).
 //
 // Semantics: ABSOLUTE quantities, like the PDP matrix (`bulkUpdate()` →
 // POST /cart/update.js). Inputs are PRE-FILLED from the current cart, so
@@ -48,6 +55,145 @@
     return (window.Alpine && typeof window.Alpine.store === 'function')
       ? window.Alpine.store('cart')
       : null;
+  }
+
+  // ---- Size region labels (client-side) ---------------------------------
+  //
+  // Port of the backend's ProductSizeRegionLabelService: the canonical EU
+  // option value is a key into the gender block's per-region map. Charts come
+  // from the product's own override when it has one, else the static bundle
+  // (assets/size-charts.js). Anything unresolvable falls back to the EU value
+  // itself — the same thing the server does.
+
+  var REGION_CHART_KEY = { EU: 'EU', UK: 'UK', US: 'US', MM: 'Millimeters' };
+
+  function chartsFor(product) {
+    var own = product && product.aico_size_charts;
+    if (own && own.data && typeof own.data === 'object') {
+      return own.data;
+    }
+    return (window.AICO_SIZE_CHARTS && typeof window.AICO_SIZE_CHARTS === 'object')
+      ? window.AICO_SIZE_CHARTS
+      : null;
+  }
+
+  // Chart keys are strings like "40 2/3"; an option may differ in spacing or
+  // be numerically equal ("40" vs "40.0"). Mirrors normalizeChartKey().
+  function chartLookup(sizes, option) {
+    if (!sizes || typeof sizes !== 'object') {
+      return null;
+    }
+    if (Object.prototype.hasOwnProperty.call(sizes, option)) {
+      return String(sizes[option]);
+    }
+    var trimmed = String(option).trim();
+    var keys = Object.keys(sizes);
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i]).trim() === trimmed) {
+        return String(sizes[keys[i]]);
+      }
+    }
+    var num = trimmed !== '' && !isNaN(Number(trimmed)) ? Number(trimmed) : null;
+    if (num !== null) {
+      for (var j = 0; j < keys.length; j++) {
+        var keyNum = keys[j] !== '' && !isNaN(Number(keys[j])) ? Number(keys[j]) : null;
+        if (keyNum !== null && Math.abs(keyNum - num) < 0.0001) {
+          return String(sizes[keys[j]]);
+        }
+      }
+    }
+    return null;
+  }
+
+  // Gender block first (case-insensitive), then the server's fallback order.
+  function genderBlocks(charts, gender) {
+    var order = [];
+    if (gender) {
+      var needle = String(gender).trim().toLowerCase();
+      Object.keys(charts).forEach(function (key) {
+        if (String(key).toLowerCase() === needle) {
+          order.push(key);
+        }
+      });
+    }
+    ['women', 'men', 'unisex'].forEach(function (key) {
+      if (order.indexOf(key) === -1) {
+        order.push(key);
+      }
+    });
+    return order;
+  }
+
+  function sizeLabels(sizeValue, charts, gender) {
+    var value = String(sizeValue == null ? '' : sizeValue).trim();
+    var labels = { EU: value, UK: value, US: value, MM: value };
+    if (value === '' || !charts) {
+      return labels;
+    }
+    var blocks = genderBlocks(charts, gender);
+    REGIONS.forEach(function (region) {
+      for (var i = 0; i < blocks.length; i++) {
+        var block = charts[blocks[i]];
+        if (!block || typeof block !== 'object') {
+          continue;
+        }
+        var found = chartLookup(block[REGION_CHART_KEY[region]], value);
+        if (found !== null && found !== '') {
+          labels[region] = found;
+          return;
+        }
+      }
+    });
+    return labels;
+  }
+
+  // ---- Skeleton sizing --------------------------------------------------
+  //
+  // How many size cells to draw while loading. First choice is the real count
+  // the card carries (`data-aico-variant-count`, from the search index). That
+  // field is absent until the index is rebuilt, so remember what each handle
+  // actually turned out to have and reuse it on the next open; a handle seen
+  // for the first time gets a middle-of-the-road guess.
+  var VARIANT_COUNT_KEY = 'aico:quick-add:variant-count';
+  var DEFAULT_SKELETON_CELLS = 10;
+
+  function rememberedCounts() {
+    try {
+      var raw = window.sessionStorage.getItem(VARIANT_COUNT_KEY);
+      var parsed = raw ? JSON.parse(raw) : null;
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function rememberCount(handle, count) {
+    if (!handle || !count || count <= 0) {
+      return;
+    }
+    try {
+      var map = rememberedCounts();
+      if (map[handle] === count) {
+        return;
+      }
+      map[handle] = count;
+      window.sessionStorage.setItem(VARIANT_COUNT_KEY, JSON.stringify(map));
+    } catch (error) {
+      // Private mode / quota — the default guess still applies.
+    }
+  }
+
+  function skeletonCellCount(trigger) {
+    var attr = parseInt(trigger.getAttribute('data-aico-variant-count'), 10);
+    if (!isNaN(attr) && attr > 0) {
+      return attr;
+    }
+    var handle = trigger.getAttribute('data-aico-handle') || '';
+    var remembered = rememberedCounts()[handle];
+    if (typeof remembered === 'number' && remembered > 0) {
+      return remembered;
+    }
+    return DEFAULT_SKELETON_CELLS;
   }
 
   // ---- Modal shell (built once, reused per open) ------------------------
@@ -138,24 +284,134 @@
 
   // ---- States -----------------------------------------------------------
 
-  function renderLoading() {
+  // Loading state — a STRUCTURAL placeholder for the matrix, not a generic
+  // shimmer. The modal sits in an `align-items: center` overlay, so any
+  // difference between the loading height and the loaded height makes the
+  // panel jump AND re-centre when the payload lands. The old skeleton was one
+  // flat row of eight blocks (~3.5rem) in front of a ~22.7rem matrix.
+  //
+  // So this mirrors the final DOM piece for piece — toolbar, the real
+  // .aico-pdp-size-grid (same columns, same 3.25rem cell height), total row,
+  // submit button — with the cell count taken from the product's real variant
+  // count. The body also keeps a min-height of whatever the skeleton measured,
+  // so a wrong guess can only make the panel grow, never shrink.
+  function renderLoading(trigger) {
+    refs.body.style.minHeight = '';
     refs.body.innerHTML = '';
-    var wrap = document.createElement('div');
-    wrap.className = 'aico-quick-add-modal-loading';
-    for (var i = 0; i < 8; i++) {
-      var block = document.createElement('span');
-      block.className = 'aico-quick-add-skeleton-cell skeleton-block';
-      block.setAttribute('aria-hidden', 'true');
-      wrap.appendChild(block);
+
+    // Toolbar and total row are built from the SAME functions the loaded state
+    // uses — they depend on the page config and the cart, not on the payload,
+    // so they can be final already and contribute zero height difference.
+    var toolbar = buildToolbar();
+    Array.prototype.forEach.call(toolbar.tabs.querySelectorAll('button'), function (tab) {
+      tab.disabled = true;
+    });
+    toolbar.toolbar.setAttribute('aria-hidden', 'true');
+    refs.body.appendChild(toolbar.toolbar);
+
+    // The grid is the real .aico-pdp-size-grid (same column counts at the same
+    // breakpoints) filled with real-metric cells, so N skeleton cells occupy
+    // exactly the rows N real cells will.
+    var grid = document.createElement('div');
+    grid.className = 'aico-pdp-size-grid';
+    var cells = skeletonCellCount(trigger);
+    for (var i = 0; i < cells; i++) {
+      var cell = document.createElement('span');
+      cell.className = 'aico-pdp-size-cell aico-quick-add-skeleton-cell';
+      cell.setAttribute('aria-hidden', 'true');
+      var label = document.createElement('span');
+      label.className = 'aico-quick-add-skeleton-label skeleton-block';
+      cell.appendChild(label);
+      var qty = document.createElement('span');
+      qty.className = 'aico-quick-add-skeleton-qty skeleton-block';
+      cell.appendChild(qty);
+      grid.appendChild(cell);
     }
+    refs.body.appendChild(grid);
+
+    refs.body.appendChild(buildTotalRow().total);
+
+    var submit = document.createElement('span');
+    submit.className = 'aico-quick-add-skeleton-submit skeleton-block';
+    submit.setAttribute('aria-hidden', 'true');
+    refs.body.appendChild(submit);
+
     var srText = document.createElement('span');
     srText.className = 'aico-sr-only';
+    srText.setAttribute('role', 'status');
     srText.textContent = t('loading', 'Loading…');
-    wrap.appendChild(srText);
-    refs.body.appendChild(wrap);
+    refs.body.appendChild(srText);
+
+    // Lock the measured skeleton height in as a FLOOR for the loaded body: if
+    // the guessed cell count was low, the panel grows; it can never shrink,
+    // which is the jump shoppers actually notice (the modal is centred in the
+    // overlay, so a height change moves the whole panel).
+    refs.body.style.minHeight = refs.body.offsetHeight + 'px';
+  }
+
+  // ---- Shared pieces (identical in the loading and loaded states) --------
+
+  // Region tabs + size-guide link. Both come from the page config, so the
+  // toolbar is final before the payload arrives.
+  function buildToolbar() {
+    var toolbar = document.createElement('div');
+    toolbar.className = 'aico-quick-add-modal-toolbar';
+
+    var tabs = document.createElement('div');
+    tabs.className = 'aico-pdp-size-region-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', t('region_aria', 'Size system'));
+    var startRegion = REGIONS.indexOf(config.sizeRegion) !== -1 ? config.sizeRegion : 'EU';
+    REGIONS.forEach(function (region) {
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.setAttribute('role', 'tab');
+      tab.className = 'aico-pdp-size-region-tab' + (region === startRegion ? ' aico-pdp-size-region-tab-active' : '');
+      tab.setAttribute('aria-selected', region === startRegion ? 'true' : 'false');
+      tab.setAttribute('data-region', region);
+      tab.textContent = t('tab_' + region.toLowerCase(), region);
+      tabs.appendChild(tab);
+    });
+    toolbar.appendChild(tabs);
+
+    // Size-chart link only when the theme setting points at a gallery file
+    // (PDF / image / video) — nothing is rendered when it is unset.
+    var guideUrl = String(config.sizeGuideUrl || '');
+    if (guideUrl !== '') {
+      var guideWrap = document.createElement('span');
+      guideWrap.className = 'aico-pdp-size-guide-wrap';
+      var guideLink = document.createElement('a');
+      guideLink.className = 'aico-pdp-size-guide-link';
+      guideLink.href = guideUrl;
+      guideLink.target = '_blank';
+      guideLink.rel = 'noopener noreferrer';
+      guideLink.textContent = t('size_guide', 'Size guide');
+      guideWrap.appendChild(guideLink);
+      var guidePop = document.createElement('span');
+      guidePop.className = 'aico-pdp-size-guide-pop';
+      guidePop.setAttribute('role', 'tooltip');
+      guidePop.textContent = t('size_guide_tooltip', '');
+      guideWrap.appendChild(guidePop);
+      toolbar.appendChild(guideWrap);
+    }
+
+    return { toolbar: toolbar, tabs: tabs, startRegion: startRegion };
+  }
+
+  function buildTotalRow() {
+    var total = document.createElement('p');
+    total.className = 'aico-pdp-size-total';
+    total.appendChild(document.createTextNode(t('total', 'Total') + ' '));
+    var totalValue = document.createElement('strong');
+    totalValue.textContent = '0';
+    total.appendChild(totalValue);
+    return { total: total, totalValue: totalValue };
   }
 
   function renderNotice(message, productUrl) {
+    // A notice is a different state, not a shorter matrix — drop the
+    // skeleton's height floor rather than leave a mostly-empty tall panel.
+    refs.body.style.minHeight = '';
     refs.body.innerHTML = '';
     var note = document.createElement('p');
     note.className = 'aico-quick-add-modal-notice';
@@ -173,11 +429,20 @@
 
   // ---- Fetch ------------------------------------------------------------
 
-  function productJsonUrl(handle) {
-    var template = String(config.productJsonUrlTemplate || '/products/__HANDLE__.js');
-    var url = template.replace('__HANDLE__', encodeURIComponent(handle));
-    var localeParam = 'locale=' + encodeURIComponent(String(config.locale || ''));
-    return url + (url.indexOf('?') === -1 ? '?' : '&') + localeParam;
+  // The LEAN endpoint. No `locale` param — nothing in the payload is
+  // translated (the size labels are mapped client-side, the title comes off
+  // the card). Falls back to the Shopify product JSON only when the theme is
+  // rendered by a backend that predates the quick-add route, in which case the
+  // response is a superset and every field read below still resolves.
+  function quickAddUrl(handle) {
+    var template = String(config.quickAddUrlTemplate || '');
+    if (template !== '') {
+      return template.replace('__HANDLE__', encodeURIComponent(handle));
+    }
+    var legacy = String(config.productJsonUrlTemplate || '/products/__HANDLE__.js')
+      .replace('__HANDLE__', encodeURIComponent(handle));
+    return legacy + (legacy.indexOf('?') === -1 ? '?' : '&')
+      + 'locale=' + encodeURIComponent(String(config.locale || ''));
   }
 
   // ---- Matrix -----------------------------------------------------------
@@ -223,7 +488,10 @@
       return;
     }
 
-    var shippingBlocked = !!product.aico_shipping_blocked;
+    // The shipping block belongs to the SHOPPER (customer.aico_shipping_block,
+    // sourced from the debtor's crm_conditions), not to the product — so it
+    // comes from the page's config blob and costs the payload nothing.
+    var shippingBlocked = !!config.shippingBlocked;
     // Product-wide cap on the SUM across all variants — coexists with each
     // variant's own aico_max_quantity_per_order cap.
     var productMaxQty = Number(product.aico_max_quantity_per_order);
@@ -232,51 +500,17 @@
     }
 
     var inCart = cartQuantities();
+    var charts = chartsFor(product);
+    var gender = product.aico_production_gender || null;
 
     refs.body.innerHTML = '';
 
-    // Toolbar: region tabs + size-guide link (same classes as the PDP).
-    var toolbar = document.createElement('div');
-    toolbar.className = 'aico-quick-add-modal-toolbar';
-
-    var tabs = document.createElement('div');
-    tabs.className = 'aico-pdp-size-region-tabs';
-    tabs.setAttribute('role', 'tablist');
-    tabs.setAttribute('aria-label', t('region_aria', 'Size system'));
-    var startRegion = REGIONS.indexOf(config.sizeRegion) !== -1 ? config.sizeRegion : 'EU';
-    REGIONS.forEach(function (region) {
-      var tab = document.createElement('button');
-      tab.type = 'button';
-      tab.setAttribute('role', 'tab');
-      tab.className = 'aico-pdp-size-region-tab' + (region === startRegion ? ' aico-pdp-size-region-tab-active' : '');
-      tab.setAttribute('aria-selected', region === startRegion ? 'true' : 'false');
-      tab.setAttribute('data-region', region);
-      tab.textContent = t('tab_' + region.toLowerCase(), region);
-      tabs.appendChild(tab);
-    });
-    toolbar.appendChild(tabs);
-
-    // Size-chart link only when the theme setting points at a gallery file
-    // (PDF / image / video) — nothing is rendered when it is unset.
-    var guideUrl = String(config.sizeGuideUrl || '');
-    if (guideUrl !== '') {
-      var guideWrap = document.createElement('span');
-      guideWrap.className = 'aico-pdp-size-guide-wrap';
-      var guideLink = document.createElement('a');
-      guideLink.className = 'aico-pdp-size-guide-link';
-      guideLink.href = guideUrl;
-      guideLink.target = '_blank';
-      guideLink.rel = 'noopener noreferrer';
-      guideLink.textContent = t('size_guide', 'Size guide');
-      guideWrap.appendChild(guideLink);
-      var guidePop = document.createElement('span');
-      guidePop.className = 'aico-pdp-size-guide-pop';
-      guidePop.setAttribute('role', 'tooltip');
-      guidePop.textContent = t('size_guide_tooltip', '');
-      guideWrap.appendChild(guidePop);
-      toolbar.appendChild(guideWrap);
-    }
-    refs.body.appendChild(toolbar);
+    // Toolbar: region tabs + size-guide link (same classes as the PDP) —
+    // the SAME builder the loading skeleton already rendered.
+    var toolbarParts = buildToolbar();
+    var tabs = toolbarParts.tabs;
+    var startRegion = toolbarParts.startRegion;
+    refs.body.appendChild(toolbarParts.toolbar);
 
     // Size grid — mirrors the PDP cell markup so the theme.css matrix
     // styles apply unchanged.
@@ -307,9 +541,11 @@
       var label = document.createElement('span');
       label.className = 'aico-pdp-size-cell-label';
       label.setAttribute('data-aico-size-label', '');
+      // EU → UK/US/MM mapped here from the bundled chart (or the product's own
+      // override) instead of four label strings per variant in the payload.
+      var labels = sizeLabels(variant.aico_size_value, charts, gender);
       REGIONS.forEach(function (region) {
-        var value = variant['aico_size_label_' + region.toLowerCase()];
-        label.setAttribute(regionLabelAttr[region], (value != null && value !== '') ? String(value) : String(variant.aico_size_value));
+        label.setAttribute(regionLabelAttr[region], labels[region]);
       });
       label.textContent = label.getAttribute(regionLabelAttr[startRegion]);
       cell.appendChild(label);
@@ -382,12 +618,9 @@
     refs.body.appendChild(grid);
 
     // Total row + max-qty note + footer (submit + hints).
-    var total = document.createElement('p');
-    total.className = 'aico-pdp-size-total';
-    total.appendChild(document.createTextNode(t('total', 'Total') + ' '));
-    var totalValue = document.createElement('strong');
-    totalValue.textContent = '0';
-    total.appendChild(totalValue);
+    var totalParts = buildTotalRow();
+    var total = totalParts.total;
+    var totalValue = totalParts.totalValue;
     refs.body.appendChild(total);
 
     // Cap notice beside the total — same markup/classes as the PDP's
@@ -796,10 +1029,10 @@
       refs.title.removeAttribute('href');
     }
 
-    renderLoading();
+    renderLoading(trigger);
     var token = ++openToken;
 
-    fetch(productJsonUrl(handle), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    fetch(quickAddUrl(handle), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (response) {
         if (!response.ok) {
           throw new Error('quick-add fetch failed: ' + response.status);
@@ -807,6 +1040,10 @@
         return response.json();
       })
       .then(function (product) {
+        // Remember the real matrix size for this handle even if the modal was
+        // closed meanwhile — the next open gets an exact skeleton. Only the
+        // SIZED variants count: those are the cells the matrix draws.
+        rememberCount(handle, sizeVariants(product).length);
         if (token !== openToken || modal.hidden) {
           return; // closed or superseded while loading
         }
