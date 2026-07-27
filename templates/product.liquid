@@ -182,13 +182,39 @@
           addable.
         {%- endcomment -%}
         {% if product.aico_price_label %}
+        {%- comment -%}
+          SINGLE-CELL mode — a product with neither a size matrix nor any
+          option axis (accessories, mats, care products). It has exactly one
+          variant, resolvable server-side, so it can use the same
+          ABSOLUTE/mirror-the-cart contract the matrix uses: the stepper is
+          pre-filled from the cart, capped at warehouse stock, and the buy
+          button stays inactive until the shopper changes it. Without this the
+          stepper ADDs blindly — it started at 1 regardless of the cart and had
+          no stock ceiling, so an out-of-stock product could be "ordered" and
+          only failed at the cart.
+
+          Products with option dropdowns but no matrix keep the ADD contract:
+          their variant is only known after the options are picked, so neither
+          the cart pre-fill nor the stock cap is resolvable at render time.
+        {%- endcomment -%}
+        {%- assign single_cell = false -%}
+        {%- unless product.aico_has_size_matrix? -%}
+          {%- if product.options.size == 0 -%}
+            {%- assign single_cell = true -%}
+          {%- endif -%}
+        {%- endunless -%}
+        {%- assign absolute_qty = false -%}
+        {%- if product.aico_has_size_matrix? or single_cell -%}
+          {%- assign absolute_qty = true -%}
+        {%- endif -%}
         <form
           class="aico-pdp-buy"
           method="post"
-          action="{% if product.aico_has_size_matrix? %}{{ routes.cart_update_url }}{% else %}{{ routes.cart_add_url }}{% endif %}"
+          action="{% if absolute_qty %}{{ routes.cart_update_url }}{% else %}{{ routes.cart_add_url }}{% endif %}"
           data-aico-pdp-buy
           data-aico-cart-add
           data-aico-has-size-matrix="{% if product.aico_has_size_matrix? %}1{% else %}0{% endif %}"
+          data-aico-absolute-qty="{% if absolute_qty %}1{% else %}0{% endif %}"
           data-aico-max-qty="{{ product.aico_max_quantity_per_order }}"
         >
           <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
@@ -404,51 +430,112 @@
               </label>
             {% endfor %}
 
-            {%- comment -%}
-              Products without an option axis have a single variant whose id is
-              pre-filled below — so its own max order quantity is knowable
-              client-side and product-detail.js can cap the stepper. With
-              options the variant is only resolved server-side; there the
-              server clamp stays the only guard.
-            {%- endcomment -%}
             {%- assign legacy_variant = product.selected_or_first_available_variant -%}
-            <label class="aico-pdp-option-row">
-              <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
-              <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
-                <input
-                  type="number"
-                  class="aico-pdp-qty-input"
-                  name="quantity"
-                  min="1"
-                  step="1"
-                  value="1"
-                  inputmode="numeric"
-                  data-aico-qty-input
-                  {%- if product.options.size == 0 and legacy_variant.aico_max_quantity_per_order %} data-aico-variant-max="{{ legacy_variant.aico_max_quantity_per_order }}"{% endif %}
-                >
-                <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
-                  <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}">
-                    <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </button>
-                  <button type="button" class="aico-pdp-qty-box__step" data-aico-step="-1" tabindex="-1" aria-label="{{ 'product.size_matrix.decrease' | t }}">
-                    <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </button>
-                </span>
-              </span>
-            </label>
 
-            {% comment %}
-              Hidden field for the resolved variant id. The vanilla JS
-              fills this in when the user picks options; the server can
-              also resolve it from the option map as a fallback.
-              Products WITHOUT any option axis (e.g. single-variant sets)
-              have nothing to pick, so prefill the resolved variant id —
-              otherwise the client-side pre-flight misreads the blank id
-              as "no size selected" and blocks add-to-cart.
-            {% endcomment %}
-            {% if product.options.size == 0 %}
-              <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-aico-variant-id-input>
+            {% if single_cell %}
+              {%- comment -%}
+                One variant, no picker — a matrix of exactly one cell. Same
+                contract as a size cell: `updates[<variantId>]`, pre-filled
+                from the cart, `data-aico-initial` so the script can tell "no
+                change" from "zeroed to remove", and a max that is the stricter
+                of warehouse stock and the variant's max order quantity.
+              {%- endcomment -%}
+              {%- assign cell_cart_qty = 0 -%}
+              {%- if cart -%}
+                {%- for line in cart.items -%}
+                  {%- if line.variant_id == legacy_variant.id -%}
+                    {%- assign cell_cart_qty = line.quantity -%}
+                  {%- endif -%}
+                {%- endfor -%}
+              {%- endif -%}
+              {%- assign cell_max = legacy_variant.aico_stock_amount -%}
+              {%- if legacy_variant.aico_max_quantity_per_order and legacy_variant.aico_max_quantity_per_order < cell_max -%}
+                {%- assign cell_max = legacy_variant.aico_max_quantity_per_order -%}
+              {%- endif -%}
+              {%- comment -%}
+                A line already in the cart must stay removable even when the
+                variant has since gone out of stock — otherwise a disabled
+                input traps it on the PDP. So: freeze the control only when
+                there is nothing in the cart to take away, and never let the
+                ceiling fall below what the cart already holds (the shopper can
+                then only go down from there).
+              {%- endcomment -%}
+              {%- assign cell_frozen = false -%}
+              {%- unless legacy_variant.available? -%}
+                {%- if cell_cart_qty == 0 -%}
+                  {%- assign cell_frozen = true -%}
+                {%- endif -%}
+              {%- endunless -%}
+              {%- if cell_cart_qty > cell_max -%}
+                {%- assign cell_max = cell_cart_qty -%}
+              {%- endif -%}
+              <label class="aico-pdp-option-row">
+                <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
+                <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
+                  <input
+                    type="number"
+                    class="aico-pdp-qty-input"
+                    name="updates[{{ legacy_variant.id }}]"
+                    min="0"
+                    max="{{ cell_max }}"
+                    step="1"
+                    value="{{ cell_cart_qty }}"
+                    inputmode="numeric"
+                    data-aico-qty-input
+                    data-aico-size-qty
+                    data-aico-variant-id="{{ legacy_variant.id }}"
+                    data-aico-variant-stock="{{ legacy_variant.aico_stock_amount }}"
+                    data-aico-variant-max="{{ legacy_variant.aico_max_quantity_per_order }}"
+                    data-aico-initial="{{ cell_cart_qty }}"
+                    {% if cell_frozen %}disabled{% endif %}
+                  >
+                  <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
+                    <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}"{% if cell_frozen %} disabled{% endif %}>
+                      <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button type="button" class="aico-pdp-qty-box__step" data-aico-step="-1" tabindex="-1" aria-label="{{ 'product.size_matrix.decrease' | t }}"{% if cell_frozen %} disabled{% endif %}>
+                      <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </span>
+                </span>
+              </label>
+              <input type="hidden" name="id" value="{{ legacy_variant.id }}" data-aico-variant-id-input>
             {% else %}
+              {%- comment -%}
+                Optioned-but-matrix-less product: the variant is resolved only
+                after the shopper picks the options, so this stepper keeps ADD
+                semantics (starts at 1, posts `quantity` to cart_add_url) and
+                the server clamp stays the only stock guard.
+              {%- endcomment -%}
+              <label class="aico-pdp-option-row">
+                <span class="aico-pdp-option-legend">{{ 'product.quantity' | t }}</span>
+                <span class="aico-pdp-qty-box aico-pdp-qty-box--lg" data-aico-stepper>
+                  <input
+                    type="number"
+                    class="aico-pdp-qty-input"
+                    name="quantity"
+                    min="1"
+                    step="1"
+                    value="1"
+                    inputmode="numeric"
+                    data-aico-qty-input
+                  >
+                  <span class="aico-pdp-qty-box__spinners" aria-hidden="true">
+                    <button type="button" class="aico-pdp-qty-box__step" data-aico-step="1" tabindex="-1" aria-label="{{ 'product.size_matrix.increase' | t }}">
+                      <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 4 L4 1 L7 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button type="button" class="aico-pdp-qty-box__step" data-aico-step="-1" tabindex="-1" aria-label="{{ 'product.size_matrix.decrease' | t }}">
+                      <svg viewBox="0 0 8 5" width="8" height="5" aria-hidden="true"><path d="M1 1 L4 4 L7 1" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </span>
+                </span>
+              </label>
+
+              {% comment %}
+                Hidden field for the resolved variant id. The vanilla JS
+                fills this in when the user picks options; the server can
+                also resolve it from the option map as a fallback.
+              {% endcomment %}
               <input type="hidden" name="id" value="" data-aico-variant-id-input>
             {% endif %}
           {% endif %}
@@ -483,23 +570,27 @@
             boot. Rendering the solid button and letting JS demote it made
             the button flash orange on every page load.
 
-            Matrix mode always starts unchanged (every cell equals its cart
-            prefill), so it is always inactive on first paint. Legacy mode is
-            inactive only while a variant is still unresolved — an
-            option-less product ships a pre-filled variant id and a quantity
-            of 1, which IS submittable.
+            Both ABSOLUTE modes (matrix and single cell) always start unchanged
+            — every input equals its cart prefill — so they are inactive on
+            first paint. The optioned add-mode form is inactive only while its
+            variant is still unresolved.
+
+            `cell_frozen` is the harder stop: an out-of-stock single-cell
+            product with nothing in the cart has no reachable action at all, so
+            the button is `disabled` outright and the wrapper carries the
+            reason on hover (a disabled button takes no pointer events).
           {%- endcomment -%}
           {%- assign buy_button_inactive = false -%}
-          {%- if product.aico_has_size_matrix? or product.options.size > 0 -%}
+          {%- if absolute_qty or product.options.size > 0 -%}
             {%- assign buy_button_inactive = true -%}
           {%- endif -%}
-          <div class="aico-pdp-buy-actions" data-aico-buy-actions>
+          <div class="aico-pdp-buy-actions" data-aico-buy-actions{% if cell_frozen %} title="{{ 'product.aico_pdp_message.sold_out_hint' | t | escape }}"{% endif %}>
             <button
               type="submit"
               class="aico-pdp-buy-button{% if buy_button_inactive %} aico-pdp-buy-button--inactive{% endif %}"
               data-aico-buy-button
               {% if buy_button_inactive %}aria-disabled="true"{% endif %}
-              {% if product.aico_shipping_blocked? %}disabled{% endif %}
+              {% if product.aico_shipping_blocked? or cell_frozen %}disabled{% endif %}
             >
               <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
@@ -513,7 +604,7 @@
               >
                 {% if product.aico_shipping_blocked? %}
                   {{ 'product.restricted' | t }}
-                {% elsif product.aico_has_size_matrix? and product_cart_qty > 0 %}
+                {% elsif absolute_qty and product_cart_qty > 0 %}
                   {{ 'product.update_cart' | t }}
                 {% else %}
                   {{ 'product.add_to_cart' | t }}
@@ -778,7 +869,9 @@
       max_quantity_reached: {{ 'product.aico_pdp_message.max_quantity_reached' | t | json }},
       max_quantity_variant_reached: {{ 'product.aico_pdp_message.max_quantity_variant_reached' | t | json }},
       button_add_hint: {{ 'product.aico_pdp_message.button_add_hint' | t | json }},
-      button_update_hint: {{ 'product.aico_pdp_message.button_update_hint' | t | json }}
+      button_update_hint: {{ 'product.aico_pdp_message.button_update_hint' | t | json }},
+      button_quantity_hint: {{ 'product.aico_pdp_message.button_quantity_hint' | t | json }},
+      sold_out_hint: {{ 'product.aico_pdp_message.sold_out_hint' | t | json }}
     };
   </script>
   <script src="{{ 'product-detail.js' | asset_url }}" defer></script>

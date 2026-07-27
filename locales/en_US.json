@@ -410,7 +410,9 @@
       "max_quantity_reached": "Maximum order quantity of {count} for this product reached.",
       "max_quantity_variant_reached": "Maximum order quantity of {count} per size reached.",
       "button_add_hint": "Select a size to add it to your cart.",
-      "button_update_hint": "No changes — adjust a quantity to update your cart."
+      "button_update_hint": "No changes — adjust a quantity to update your cart.",
+      "button_quantity_hint": "Choose a quantity to add this to your cart.",
+      "sold_out_hint": "Out of stock — this item cannot be ordered right now."
     },
     "specs_label": {
       "colors": "Colors",

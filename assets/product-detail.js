@@ -64,6 +64,14 @@
     return;
   }
   var hasMatrix = form.getAttribute('data-aico-has-size-matrix') === '1';
+  // ABSOLUTE (mirror-the-cart) mode: every quantity input is pre-filled from
+  // the cart, carries `data-aico-initial`, and the form posts SET quantities
+  // to routes.cart_update_url. Two templates use it — the size matrix, and a
+  // product with one variant and no option axis ("single cell"). The
+  // remaining shape (options but no matrix) keeps ADD semantics because its
+  // variant is not resolvable until the shopper picks the options.
+  var isAbsolute = hasMatrix || form.getAttribute('data-aico-absolute-qty') === '1';
+  var isSingleCell = isAbsolute && !hasMatrix;
 
   // -------- Max order quantity (PIM "Max. Bestellmenge") -----------------
   //
@@ -420,7 +428,9 @@
   // alone. In legacy mode we resolve via a server round-trip after
   // submit (variant id stays empty client-side until cart-add lands).
   (function setupOptionMirror() {
-    if (hasMatrix) {
+    // Only the add-semantics form resolves a variant from option picks; the
+    // absolute modes bind each input to its own variant id up front.
+    if (isAbsolute) {
       return;
     }
     var variantInput = form.querySelector('[data-aico-variant-id-input]');
@@ -443,34 +453,55 @@
   // -------- Size matrix total -------------------------------------------
 
   (function setupMatrixTotal() {
-    if (!hasMatrix) {
+    if (!isAbsolute) {
       return;
     }
     var inputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
-    var totalNode = form.querySelector('[data-aico-size-total-value]');
-    if (inputs.length === 0 || !totalNode) {
+    if (inputs.length === 0) {
       return;
     }
+    // Single-cell mode has no "Total" line — one input IS the total.
+    var totalNode = form.querySelector('[data-aico-size-total-value]');
 
     function variantMaxOf(input) {
       var max = parseInt(input.getAttribute('data-aico-variant-max'), 10);
       return (!isNaN(max) && max > 0) ? max : null;
     }
 
-    // Clamp one cell to the stricter of its warehouse stock and its
-    // per-variant max order quantity.
-    function clamp(input) {
+    function initialOf(input) {
+      var initial = parseInt(input.getAttribute('data-aico-initial'), 10);
+      return isNaN(initial) || initial < 0 ? 0 : initial;
+    }
+
+    // The ceiling a cell may never be pushed above: warehouse stock, but never
+    // below what the cart already holds for it. Without that floor a line that
+    // outgrew its stock (or a variant that sold out after it was added) gets
+    // silently rewritten on page load — the shopper never touched the cell, yet
+    // the form now differs from the cart and the next submit quietly shrinks
+    // the line. Holding the prefill lets them see it and decide; the only
+    // direction still open to them is down.
+    function stockCeilingOf(input) {
       var stock = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
+      if (isNaN(stock)) {
+        return null;
+      }
+      return Math.max(stock, initialOf(input));
+    }
+
+    // Clamp one cell to the stricter of that ceiling and its per-variant max
+    // order quantity.
+    function clamp(input) {
+      var ceiling = stockCeilingOf(input);
       var variantMax = variantMaxOf(input);
       var raw = parseInt(input.value, 10);
       if (isNaN(raw) || raw < 0) {
         raw = 0;
       }
-      if (!isNaN(stock) && raw > stock) {
-        raw = stock;
+      if (ceiling !== null && raw > ceiling) {
+        raw = ceiling;
       }
-      if (variantMax !== null && raw > variantMax) {
-        raw = variantMax;
+      if (variantMax !== null && raw > variantMax && raw > initialOf(input)) {
+        raw = Math.max(variantMax, initialOf(input));
       }
       input.value = String(raw);
       return raw;
@@ -503,7 +534,9 @@
         }
       }
 
-      totalNode.textContent = String(total);
+      if (totalNode) {
+        totalNode.textContent = String(total);
+      }
 
       // Per-cell state: in-cart accent + the cell's ceiling. The server only
       // stamps `aico-pdp-size-cell-in-cart` at page load, so zeroing a size
@@ -516,8 +549,7 @@
       inputs.forEach(function (input) {
         var value = parseInt(input.value, 10) || 0;
         var variantMax = variantMaxOf(input);
-        var stock = parseInt(input.getAttribute('data-aico-variant-stock'), 10);
-        var ceiling = isNaN(stock) ? null : stock;
+        var ceiling = stockCeilingOf(input);
         var kind = null;
         var count = null;
         if (variantMax !== null && (ceiling === null || variantMax <= ceiling)) {
@@ -568,7 +600,9 @@
   //     server-side, so there the server clamp stays the only guard.
   var legacyMaxClamp = null;
   (function setupLegacyMaxQty() {
-    if (hasMatrix) {
+    // Absolute modes (matrix + single cell) do their own clamping in
+    // setupMatrixTotal — this one only serves the ADD-semantics stepper.
+    if (isAbsolute) {
       return;
     }
     var qtyInput = form.querySelector('[data-aico-qty-input]');
@@ -758,11 +792,11 @@
     // legacy mode we need at least one option resolved. The browser's
     // native required-field handling covers some of this, but matrix
     // mode is too dynamic for plain HTML constraints.
-    if (hasMatrix) {
-      // Matrix posts set ABSOLUTE quantities (mirror-cart semantics). Allow
-      // the submit only when the shopper changed a cell away from its
-      // prefilled cart value — including zeroing a size out to remove it.
-      // An unchanged matrix (already matches the cart, or empty) is a no-op.
+    if (isAbsolute) {
+      // Absolute posts set quantities (mirror-cart semantics). Allow the
+      // submit only when the shopper changed an input away from its prefilled
+      // cart value — including zeroing it out to remove the line. An unchanged
+      // form (already matches the cart, or empty) is a no-op.
       var sizeInputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
       var anyChanged = sizeInputs.some(function (input) {
         var n = parseInt(input.value, 10);
@@ -784,12 +818,12 @@
     // Progressive enhancement: route through the shared cart store so the
     // single source of truth (`Alpine.store('cart')`) mutates — header
     // badge, mini-cart contents, toast and drawer all update reactively,
-    // with no page navigation. Matrix mode sets ABSOLUTE line quantities
-    // via store.bulkUpdate() (/cart/update.js); legacy mode ADDS via
+    // with no page navigation. Absolute modes set line quantities via
+    // store.bulkUpdate() (/cart/update.js); the add-semantics form ADDs via
     // store.add() (/cart/add.js). If Alpine/the store is absent, fall
     // through to the native form POST (302) so no-JS still works.
     var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
-    var storeMethod = hasMatrix ? 'bulkUpdate' : 'add';
+    var storeMethod = isAbsolute ? 'bulkUpdate' : 'add';
     if (!store || typeof store[storeMethod] !== 'function') {
       return; // let the browser submit the form normally
     }
@@ -801,8 +835,14 @@
       button.setAttribute('disabled', 'disabled');
     }
 
+    // Captured BEFORE the baseline is re-synced: an absolute post that grew a
+    // line from nothing reads as an "added", anything else as an "updated".
+    var wasInCart = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]')).some(function (input) {
+      return (parseInt(input.getAttribute('data-aico-initial'), 10) || 0) > 0;
+    });
+
     var result;
-    if (hasMatrix) {
+    if (isAbsolute) {
       // Absolute update: { variantId: qty }, zeros included (0 removes).
       result = store.bulkUpdate(buildMatrixUpdates());
     } else {
@@ -820,14 +860,18 @@
     }
 
     Promise.resolve(result).then(function (ok) {
-      // The add() path flashes its own cart.added toast. The matrix
-      // bulkUpdate() path does not, so flash cart.updated ("Warenkorb
-      // aktualisiert") here on success.
-      if (ok !== false && hasMatrix && typeof store.flash === 'function') {
+      // The add() path flashes its own cart.added toast. The bulkUpdate()
+      // path does not, so flash one here on success — "Warenkorb
+      // aktualisiert" for a real update, "hinzugefügt" when the post grew a
+      // line the cart did not have before (the common single-cell case).
+      if (ok !== false && isAbsolute && typeof store.flash === 'function') {
         var cartT = (window.__AICO_T__ && window.__AICO_T__.cart) || {};
-        store.flash(cartT.updated || 'Cart updated.', 'success');
+        var message = wasInCart
+          ? (cartT.updated || 'Cart updated.')
+          : (cartT.added || cartT.updated || 'Added to cart.');
+        store.flash(message, 'success');
       }
-      if (ok !== false && hasMatrix) {
+      if (ok !== false && isAbsolute) {
         syncMatrixBaseline();
       }
       // Clear any stale inline pre-flight message.
@@ -888,7 +932,7 @@
     }
     var actionable;
     var hint = '';
-    if (hasMatrix) {
+    if (isAbsolute) {
       var sizeInputs = Array.prototype.slice.call(form.querySelectorAll('[data-aico-size-qty]'));
       actionable = sizeInputs.some(function (input) {
         var n = parseInt(input.value, 10);
@@ -900,14 +944,20 @@
       if (!actionable) {
         // Inactive for two different reasons: in "update" mode the cart
         // already holds this product and nothing was changed; in "add" mode
-        // the cart is empty and no size is picked. Pick the matching hint by
-        // whether any cell was prefilled from the cart (data-aico-initial>0).
+        // the cart is empty and nothing has been dialled in yet. Pick the
+        // matching hint by whether any input was prefilled from the cart
+        // (data-aico-initial > 0) — and, for the add case, whether the
+        // shopper picks a size (matrix) or just a quantity (single cell).
         var inCart = sizeInputs.some(function (input) {
           return (parseInt(input.getAttribute('data-aico-initial'), 10) || 0) > 0;
         });
-        hint = inCart
-          ? getLocaleHint('button_update_hint', 'No changes — adjust a quantity to update your cart.')
-          : getLocaleHint('button_add_hint', 'Select a size to add it to your cart.');
+        if (inCart) {
+          hint = getLocaleHint('button_update_hint', 'No changes — adjust a quantity to update your cart.');
+        } else if (isSingleCell) {
+          hint = getLocaleHint('button_quantity_hint', 'Choose a quantity to add this to your cart.');
+        } else {
+          hint = getLocaleHint('button_add_hint', 'Select a size to add it to your cart.');
+        }
       }
     } else {
       actionable = !!buildAddPayload();

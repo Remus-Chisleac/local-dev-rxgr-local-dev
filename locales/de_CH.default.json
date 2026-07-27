@@ -410,7 +410,9 @@
       "max_quantity_reached": "Maximale Bestellmenge von {count} für dieses Produkt erreicht.",
       "max_quantity_variant_reached": "Maximale Bestellmenge von {count} pro Grösse erreicht.",
       "button_add_hint": "Wählen Sie eine Grösse, um sie in den Warenkorb zu legen.",
-      "button_update_hint": "Keine Änderungen – passen Sie eine Menge an, um zu aktualisieren."
+      "button_update_hint": "Keine Änderungen – passen Sie eine Menge an, um zu aktualisieren.",
+      "button_quantity_hint": "Menge wählen, um in den Warenkorb zu legen.",
+      "sold_out_hint": "Nicht an Lager — dieser Artikel kann derzeit nicht bestellt werden."
     },
     "specs_label": {
       "colors": "Farben",
