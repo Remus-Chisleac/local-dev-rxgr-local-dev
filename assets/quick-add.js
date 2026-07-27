@@ -447,9 +447,11 @@
 
   // ---- Matrix -----------------------------------------------------------
 
-  // In-cart quantity per variant id — the prefill source. Reading the
-  // shared store (not a fresh /cart.js fetch) keeps open instant; the
-  // store is refreshed on every mutation and drawer open.
+  // In-cart quantity per variant id — the prefill FALLBACK, read from the
+  // shared store's items when a full cart happens to be loaded (cart page).
+  // The normal path passes a fresh per-product map fetched from
+  // /cart/aico_product_status.js into renderMatrix instead: the store no
+  // longer carries the full items array on catalog pages.
   function cartQuantities() {
     var store = cartStore();
     var items = store && store.data && Array.isArray(store.data.items) ? store.data.items : [];
@@ -471,7 +473,7 @@
     });
   }
 
-  function renderMatrix(product, trigger) {
+  function renderMatrix(product, trigger, inCartMap) {
     var productUrl = trigger.getAttribute('data-aico-url') || '';
     var variants = sizeVariants(product);
 
@@ -499,7 +501,7 @@
       productMaxQty = null;
     }
 
-    var inCart = cartQuantities();
+    var inCart = inCartMap || cartQuantities();
     var charts = chartsFor(product);
     var gender = product.aico_production_gender || null;
 
@@ -1047,7 +1049,18 @@
         if (token !== openToken || modal.hidden) {
           return; // closed or superseded while loading
         }
-        renderMatrix(product, trigger);
+        // Fresh per-product in-cart quantities for the prefill — the store
+        // no longer holds the full items array on catalog pages.
+        var store = cartStore();
+        var statusPromise = store && typeof store.fetchProductStatus === 'function'
+          ? store.fetchProductStatus(product.id)
+          : Promise.resolve(null);
+        return statusPromise.then(function (status) {
+          if (token !== openToken || modal.hidden) {
+            return;
+          }
+          renderMatrix(product, trigger, status && status.variants ? status.variants : null);
+        });
       })
       .catch(function () {
         if (token !== openToken || modal.hidden) {

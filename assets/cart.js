@@ -92,13 +92,24 @@
       _pendingLineUpdates: {},
       _lineUpdateDelay: 400,
 
-      // Mini-cart client-side pagination. `/cart.js` returns the whole
-      // items array (no server paging), and B2B carts can be large, so
-      // the side drawer reveals items a page at a time and grows on
-      // scroll. The header count stays authoritative over the full
-      // array (see itemCount) — never paginated.
-      _miniCartPageSize: 8,
-      miniCartVisibleCount: 8,
+      // Cart-generation guard: every backend response carries
+      // aico_generation (bumped on each mutation), so a slow response
+      // arriving after a newer one can be discarded instead of
+      // regressing the badge/totals.
+      _generation: 0,
+
+      // Mini-cart SERVER-SIDE pagination. On non-cart pages the seed is
+      // slim (data.items === null — see theme.liquid) and mutations
+      // return deltas, so the full items array is never shipped there.
+      // The drawer fetches its lines page by page from /cart.js
+      // (aico_page/aico_limit) and grows on scroll; drawerItems is its
+      // own list, independent of data.items.
+      _drawerPageSize: 8,
+      drawerItems: [],
+      drawerTotalLines: 0,
+      _drawerNextPage: 1,
+      _drawerLoading: false,
+      _drawerStale: true,
 
       _recalcTotals() {
         if (!this.data || !Array.isArray(this.data.items)) return;
@@ -118,19 +129,24 @@
 
       setLineQuantity(lineId, qty) {
         var next = Math.max(0, Number(qty || 0));
+        var line = null;
         if (this.data && Array.isArray(this.data.items)) {
-          var line = this.data.items.find(function (item) { return item.id === lineId; });
-          if (line) {
-            // Last line of defence: stepper clicks, typed input and any
-            // programmatic caller all funnel through here, so the stock /
-            // max-order-quantity ceiling is applied once, centrally. The server
-            // clamps too — this just stops the UI from showing a number that
-            // the next /cart.js response would silently walk back.
-            var max = this.lineMaxQuantity(line);
-            if (max !== null && next > max) next = max;
-            line.quantity = next;
-            this._recalcTotals();
-          }
+          line = this.data.items.find(function (item) { return item.id === lineId; });
+        }
+        // The drawer keeps its own (server-paged) line list — the stepper
+        // there must clamp and update optimistically too.
+        var drawerLine = this.drawerItems.find(function (item) { return item.id === lineId; });
+        if (line || drawerLine) {
+          // Last line of defence: stepper clicks, typed input and any
+          // programmatic caller all funnel through here, so the stock /
+          // max-order-quantity ceiling is applied once, centrally. The server
+          // clamps too — this just stops the UI from showing a number that
+          // the next response would silently walk back.
+          var max = this.lineMaxQuantity(line || drawerLine);
+          if (max !== null && next > max) next = max;
+          if (line) line.quantity = next;
+          if (drawerLine) drawerLine.quantity = next;
+          this._recalcTotals();
         }
 
         if (this._pendingLineUpdates[lineId]) {
@@ -158,9 +174,9 @@
         var pending = Object.keys(this._pendingLineUpdates).map(function (lineId) {
           clearTimeout(self._pendingLineUpdates[lineId]);
           delete self._pendingLineUpdates[lineId];
-          var line = self.data && self.data.items
-            ? self.data.items.find(function (item) { return String(item.id) === String(lineId); })
-            : null;
+          var byId = function (item) { return String(item.id) === String(lineId); };
+          var line = (self.data && Array.isArray(self.data.items) ? self.data.items.find(byId) : null)
+            || self.drawerItems.find(byId);
           return line ? self.update(lineId, line.quantity) : Promise.resolve();
         });
         await Promise.all(pending);
@@ -174,11 +190,77 @@
         window.location.href = href;
       },
 
+      // Discard responses older than the newest generation we've seen.
+      // Returns true when the payload may be applied.
+      _acceptGeneration(payload) {
+        var gen = Number((payload && payload.aico_generation) || 0);
+        if (gen && this._generation && gen < this._generation) return false;
+        if (gen > this._generation) this._generation = gen;
+        return true;
+      },
+
+      /**
+       * Apply an `aico_delta` mutation response: cart aggregates come from
+       * the payload; the touched lines' RESULTING state (server-clamped)
+       * upserts into whatever line lists are loaded — data.items on the
+       * cart/checkout pages, drawerItems in the mini-cart. Slim pages keep
+       * items === null; nothing ships the whole cart.
+       */
+      applyDelta(payload) {
+        if (!payload || payload.aico_delta !== true) return false;
+        if (!this._acceptGeneration(payload)) return true; // stale — consumed, ignored
+        if (!this.data) this.data = {};
+        var d = this.data;
+        d.id = payload.id;
+        d.item_count = Number(payload.item_count || 0);
+        d.total_price = Number(payload.total_price || 0);
+        d.empty = !!payload.empty;
+        if (payload.currency) d.currency = payload.currency;
+        d.aico_status = payload.aico_status;
+        d.aico_has_invalid_quantity = !!payload.aico_has_invalid_quantity;
+        d.aico_has_invalid_price = !!payload.aico_has_invalid_price;
+
+        var removed = payload.aico_removed_line_ids || [];
+        var touched = Array.isArray(payload.items) ? payload.items : [];
+
+        function patch(list, allowAppend) {
+          if (!Array.isArray(list)) return list;
+          var next = list.filter(function (line) { return removed.indexOf(line.id) === -1; });
+          touched.forEach(function (line) {
+            var idx = -1;
+            for (var i = 0; i < next.length; i++) {
+              if (next[i].id === line.id) { idx = i; break; }
+            }
+            if (idx !== -1) next[idx] = line;
+            else if (allowAppend) next.push(line);
+          });
+          return next;
+        }
+
+        if (Array.isArray(d.items)) d.items = patch(d.items, true);
+        // Drawer: update/remove in place, but never append (it is paged —
+        // a line not on a loaded page shows up via the stale reload).
+        this.drawerItems = patch(this.drawerItems, false);
+        if (payload.aico_total_lines !== undefined) {
+          this.drawerTotalLines = Number(payload.aico_total_lines || 0);
+        }
+        this._drawerStale = true;
+        return true;
+      },
+
+      // Apply a mutation response of either shape: delta (aico_delta=1
+      // backends) or the legacy full-cart JSON.
+      _applyMutationResponse(payload) {
+        if (this.applyDelta(payload)) return;
+        if (this._acceptGeneration(payload)) this.data = payload;
+      },
+
       async refresh() {
         try {
           var res = await fetch(routes.jsonUrl || '/cart.js', { headers: jsonHeaders(), credentials: 'same-origin' });
           if (!res.ok) return;
-          this.data = await res.json();
+          var payload = await res.json();
+          if (this._acceptGeneration(payload)) this.data = payload;
         } catch (e) {
           // Network blip — leave existing data in place rather than
           // wiping the visible cart.
@@ -196,6 +278,7 @@
         } else {
           body = { id: items.id, quantity: items.quantity };
         }
+        body.aico_delta = '1';
         try {
           var res = await fetch(routes.addJsonUrl || '/cart/add.js', {
             method: 'POST',
@@ -207,7 +290,7 @@
             this.flash(translations.add_error || 'Could not add to cart.', 'error');
             return false;
           }
-          this.data = await res.json();
+          this._applyMutationResponse(await res.json());
           this.flash(translations.added || 'Item added to cart.', 'success');
           return true;
         } catch (e) {
@@ -222,14 +305,14 @@
             method: 'POST',
             headers: jsonHeaders(),
             credentials: 'same-origin',
-            body: formEncoded({ id: lineId, quantity: qty }),
+            body: formEncoded({ id: lineId, quantity: qty, aico_delta: '1' }),
           });
           if (!res.ok) {
             this.flash(translations.update_error || 'Could not update cart.', 'error');
             await this.refresh();
             return false;
           }
-          this.data = await res.json();
+          this._applyMutationResponse(await res.json());
           if (qty === 0) {
             this.flash(translations.removed || 'Item removed.', 'success');
           }
@@ -256,6 +339,7 @@
           body['updates[' + variantId + ']'] = updatesMap[variantId];
         });
         if (Object.keys(body).length === 0) return false;
+        body.aico_delta = '1';
         try {
           var res = await fetch(routes.updateJsonUrl || '/cart/update.js', {
             method: 'POST',
@@ -267,7 +351,7 @@
             this.flash(translations.update_error || 'Could not update cart.', 'error');
             return false;
           }
-          this.data = await res.json();
+          this._applyMutationResponse(await res.json());
           return true;
         } catch (e) {
           this.flash(translations.update_error || 'Could not update cart.', 'error');
@@ -275,12 +359,41 @@
         }
       },
 
+      /**
+       * Cart quantities for ONE product — `{total_quantity, variants: {id: qty}}`
+       * from the aico_product_status endpoint. One indexed query server-side;
+       * used by the PDP stepper and quick-add prefill instead of reading the
+       * (no longer shipped) full items array.
+       */
+      async fetchProductStatus(productId) {
+        var empty = { product_id: productId, total_quantity: 0, variants: {} };
+        if (!productId) return empty;
+        try {
+          var url = routes.productStatusUrl || '/cart/aico_product_status.js';
+          url += (url.indexOf('?') === -1 ? '?' : '&') + 'product_id=' + encodeURIComponent(productId);
+          var res = await fetch(url, { headers: jsonHeaders(), credentials: 'same-origin' });
+          if (!res.ok) return empty;
+          var payload = await res.json();
+          return {
+            product_id: productId,
+            total_quantity: Number(payload.total_quantity || 0),
+            variants: payload.variants || {},
+          };
+        } catch (e) {
+          return empty;
+        }
+      },
+
       openDrawer() {
         if (this.drawerOpen) {
           return;
         }
-        // Fresh open → show the first page from the top.
-        this.resetMiniCartPagination();
+        // Fresh open → (re)load the first page when anything mutated the
+        // cart since the last load. Replaces the old open-triggered full
+        // /cart.js refresh — the drawer only ever fetches a page.
+        if (this._drawerStale || this.drawerItems.length === 0) {
+          this.loadDrawerPage(true);
+        }
         if (this._drawerCloseTimer) {
           clearTimeout(this._drawerCloseTimer);
           this._drawerCloseTimer = null;
@@ -346,26 +459,64 @@
         this._toastTimer = setTimeout(function () { self.toast = null; }, 3500);
       },
 
-      // ── Mini-cart pagination (client-side, load-on-scroll) ──
-      // The visible slice of the cart for the side drawer. The full
-      // array still backs itemCount()/the full cart page.
-      miniCartItems() {
-        return (this.data && Array.isArray(this.data.items)) ? this.data.items : [];
+      // ── Mini-cart pagination (server-side, load-on-scroll) ──
+      // The drawer fetches pages from /cart.js?aico_page=N&aico_limit=M —
+      // the whole items array is never shipped. The header badge stays
+      // authoritative from data.item_count (updated by every response).
+      async loadDrawerPage(reset) {
+        if (this._drawerLoading) return;
+        this._drawerLoading = true;
+        try {
+          var page = reset ? 1 : this._drawerNextPage;
+          var url = routes.jsonUrl || '/cart.js';
+          url += (url.indexOf('?') === -1 ? '?' : '&')
+            + 'aico_page=' + page + '&aico_limit=' + this._drawerPageSize;
+          var res = await fetch(url, { headers: jsonHeaders(), credentials: 'same-origin' });
+          if (!res.ok) return;
+          var payload = await res.json();
+          var items = Array.isArray(payload.items) ? payload.items : [];
+          if (this._acceptGeneration(payload)) {
+            // The page response carries the cart aggregates too — keep the
+            // badge/summary in sync while we're here.
+            if (!this.data) this.data = {};
+            this.data.item_count = Number(payload.item_count || 0);
+            this.data.total_price = Number(payload.total_price || 0);
+            this.data.empty = !!payload.empty;
+            this.data.aico_status = payload.aico_status;
+            this.data.aico_has_invalid_quantity = !!payload.aico_has_invalid_quantity;
+            this.data.aico_has_invalid_price = !!payload.aico_has_invalid_price;
+          }
+          this.drawerTotalLines = Number(payload.aico_total_lines || items.length);
+          if (reset) {
+            this.drawerItems = items;
+            this._drawerNextPage = 2;
+            this._drawerStale = false;
+          } else {
+            var known = {};
+            this.drawerItems.forEach(function (line) { known[line.id] = true; });
+            var self = this;
+            items.forEach(function (line) {
+              if (!known[line.id]) self.drawerItems.push(line);
+            });
+            this._drawerNextPage = page + 1;
+          }
+        } catch (e) {
+          // Network blip — keep whatever pages are already shown.
+        } finally {
+          this._drawerLoading = false;
+        }
       },
       miniCartVisibleItems() {
-        return this.miniCartItems().slice(0, this.miniCartVisibleCount);
+        return this.drawerItems;
       },
       miniCartHasMore() {
-        return this.miniCartItems().length > this.miniCartVisibleCount;
+        return this.drawerItems.length < this.drawerTotalLines;
       },
-      resetMiniCartPagination() {
-        this.miniCartVisibleCount = this._miniCartPageSize;
-      },
-      // Bump the visible slice by a page. Bound to the drawer body's
-      // scroll handler; no-op once everything is shown.
+      // Fetch the next page. Bound to the drawer body's scroll handler and
+      // the "load more" button; no-op once everything is shown.
       loadMoreMiniCart() {
         if (this.miniCartHasMore()) {
-          this.miniCartVisibleCount += this._miniCartPageSize;
+          this.loadDrawerPage(false);
         }
       },
       // Scroll-driven reveal: when the body is scrolled near its bottom
@@ -627,10 +778,10 @@
               method: 'POST',
               headers: jsonHeaders(),
               credentials: 'same-origin',
-              body: formEncoded({ id: row.id, quantity: row.quantity }),
+              body: formEncoded({ id: row.id, quantity: row.quantity, aico_delta: '1' }),
             });
             if (!res.ok) throw new Error('update failed');
-            this.data = await res.json();
+            this._applyMutationResponse(await res.json());
           }
           await this.refresh();
           this.flash(
@@ -659,23 +810,15 @@
       },
     });
 
-    // Mini-cart lazy refresh — when the drawer opens, fetch fresh
-    // contents so the panel never shows stale data after another tab
-    // mutated the cart.
-    Alpine.effect(function () {
-      var open = Alpine.store('cart').drawerOpen;
-      if (open) Alpine.store('cart').refresh();
-    });
-
-    // Whenever the cart data is replaced (add / refresh / update), clamp
-    // the mini-cart's visible slice back to the first page so a fresh
-    // add doesn't leave a huge slice from a prior reveal. Reading
-    // `.data` registers the dependency; `_recalcTotals` mutates items
-    // in place (same object ref) so qty tweaks don't reset the slice.
+    // Whenever the cart data is REPLACED wholesale (a full refresh / a
+    // legacy full-cart response), the drawer's paged list may no longer
+    // match — mark it stale so the next open reloads page 1. Reading
+    // `.data` registers the dependency; delta merges mutate in place
+    // (same object ref) and maintain the drawer themselves.
     Alpine.effect(function () {
       var data = Alpine.store('cart').data; // track replacement
       void data;
-      Alpine.store('cart').resetMiniCartPagination();
+      Alpine.store('cart')._drawerStale = true;
     });
   }
 

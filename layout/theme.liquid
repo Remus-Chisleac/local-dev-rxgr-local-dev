@@ -87,6 +87,7 @@
           clearUrl: {{ routes.cart_clear_url | json }},
           discountUrl: {{ routes.aico_cart_discount_url | json }},
           jsonUrl: {{ routes.aico_cart_json_url | json }},
+          productStatusUrl: {{ routes.aico_cart_product_status_json_url | json }},
           shippingJsonUrl: {{ routes.aico_cart_shipping_json_url | json }},
           vatJsonUrl: {{ routes.aico_cart_vat_json_url | json }},
           addJsonUrl: {{ routes.aico_cart_add_json_url | json }},
@@ -149,12 +150,23 @@
     </script>
     {% if cart %}
       {%- comment -%}
-        SSR'd cart snapshot read by assets/cart.js on init so the header
-        badge / mini-cart show the right contents on first paint without
-        a follow-up /cart.js fetch. The `| json` filter walks the drop
-        with reflection — sufficient for cart + line-item shapes.
+        SSR'd cart seed read by assets/cart.js on init so the header badge /
+        mini-cart show the right contents on first paint without a follow-up
+        /cart.js fetch.
+
+        Only the cart/checkout templates get the FULL drop (their Alpine
+        views iterate cart.data.items). Every other page gets a SLIM seed —
+        aggregates only, items: null — so a 100-line B2B cart is never
+        serialized onto every page. The mini-cart drawer fetches its lines
+        page-by-page (/cart.js?aico_page=N) and the PDP / quick-add read
+        per-product quantities from /cart/aico_product_status.js instead.
       {%- endcomment -%}
+      {%- assign aico_cart_template_root = template.name | default: '' -%}
+      {%- if aico_cart_template_root == 'cart' or aico_cart_template_root == 'cart2' or aico_cart_template_root == 'checkout' or template.directory == 'checkout' -%}
       <script id="aico-cart-data" type="application/json">{{ cart | json }}</script>
+      {%- else -%}
+      <script id="aico-cart-data" type="application/json">{"id": {{ cart.id | json }}, "item_count": {{ cart.item_count | json }}, "total_price": {{ cart.total_price | json }}, "currency": {{ cart.currency | json }}, "empty": {{ cart.empty | json }}, "aico_status": {{ cart.aico_status | json }}, "aico_has_invalid_quantity": {{ cart.aico_has_invalid_quantity | json }}, "aico_has_invalid_price": {{ cart.aico_has_invalid_price | json }}, "aico_discount_code": {{ cart.aico_discount_code | json }}, "aico_discount_value": {{ cart.aico_discount_value | json }}, "aico_discount_percentage": {{ cart.aico_discount_percentage | json }}, "items": null, "aico_slim_seed": true}</script>
+      {%- endif -%}
     {% endif %}
     {% if aico_search_config %}
       {%- comment -%}

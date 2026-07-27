@@ -148,22 +148,51 @@
     }
   }
 
-  // In-cart quantity for this product, summed across all its lines — read
-  // from the shared Alpine cart store (already booted for the header
-  // badge/mini-cart). 0 when the store isn't available yet.
+  // In-cart quantity for this product, summed across all its lines.
+  //
+  // The cart store no longer ships the full items array on catalog pages,
+  // so the figure comes from /cart/aico_product_status.js — fetched once on
+  // load and re-fetched after every mutation this page performs
+  // (refreshProductCartStatus). The store's items stay as a fallback for
+  // pages that do hold the full cart.
+  var productCartQuantity = null;
+
+  function pdpProductId() {
+    var idInput = form.querySelector('input[name="product_id"]');
+    return idInput && idInput.value ? String(idInput.value) : null;
+  }
+
   function inCartProductQuantity() {
     try {
-      var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
-      var items = store && store.data && Array.isArray(store.data.items) ? store.data.items : [];
-      var idInput = form.querySelector('input[name="product_id"]');
-      var productId = idInput && idInput.value ? String(idInput.value) : null;
+      var productId = pdpProductId();
       if (!productId) return 0;
-      return items.reduce(function (sum, line) {
-        return String(line.product_id) === productId ? sum + Number(line.quantity || 0) : sum;
-      }, 0);
+      var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
+      if (store && store.data && Array.isArray(store.data.items)) {
+        return store.data.items.reduce(function (sum, line) {
+          return String(line.product_id) === productId ? sum + Number(line.quantity || 0) : sum;
+        }, 0);
+      }
+      return Number(productCartQuantity || 0);
     } catch (error) {
       return 0;
     }
+  }
+
+  // Fetch this product's cart quantities and re-derive whatever depends on
+  // them (the legacy stepper's cap clamp). Cheap: one indexed query
+  // server-side, no cart build.
+  function refreshProductCartStatus() {
+    var productId = pdpProductId();
+    var store = window.Alpine && window.Alpine.store ? window.Alpine.store('cart') : null;
+    if (!productId || !store || typeof store.fetchProductStatus !== 'function') {
+      return Promise.resolve();
+    }
+    return store.fetchProductStatus(productId).then(function (status) {
+      productCartQuantity = status ? Number(status.total_quantity || 0) : null;
+      if (typeof legacyMaxClamp === 'function') {
+        legacyMaxClamp();
+      }
+    });
   }
 
   // -------- Gallery ------------------------------------------------------
@@ -739,9 +768,11 @@
     legacyMaxClamp = clampLegacy;
     qtyInput.addEventListener('input', clampLegacy);
     qtyInput.addEventListener('change', clampLegacy);
-    // The Alpine cart store hydrates asynchronously after load — re-run
-    // once it has had a chance to fetch the cart.
-    setTimeout(clampLegacy, 1000);
+    // The in-cart figure arrives async from the product-status endpoint
+    // (the Alpine store must be booted for the fetch helper) — the fetch
+    // re-runs the clamp when it lands; the late retry covers a slow boot.
+    refreshProductCartStatus();
+    setTimeout(refreshProductCartStatus, 1000);
     clampLegacy();
   })();
 
@@ -953,8 +984,10 @@
       if (button) {
         button.removeAttribute('disabled');
       }
-      // The cart contents changed — re-derive the room left under the
-      // product-wide max (may disable the button when the cap is hit).
+      // The cart contents changed — re-fetch this product's in-cart
+      // quantities (re-runs the cap clamp when they land), then re-derive
+      // the button state.
+      refreshProductCartStatus();
       if (legacyMaxClamp) {
         legacyMaxClamp();
       }
