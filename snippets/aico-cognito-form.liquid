@@ -47,6 +47,7 @@
 
       <script>
         (function () {
+          window.__AICO_COGNITO_RAN__ = (window.__AICO_COGNITO_RAN__ || 0) + 1;
           var box = document.currentScript.closest('[data-aico-cognito]');
           var mount = box.querySelector('[data-aico-cognito-mount]');
           var spinner = box.querySelector('[data-aico-cognito-loading]');
