@@ -57,6 +57,18 @@
   // ---- Config defaults --------------------------------------------
 
   var SIZE_FACET_ATTRIBUTE = (config.facetAttributes && config.facetAttributes.sizes) || 'size.data.filterValue';
+  // The shopper's warehouse. Raw size values are `<warehouseId>-<euSize>` and
+  // the index only emits a warehouse for the sizes it actually stocks, so the
+  // size row is scoped to this id — otherwise a chip, and the filter clause it
+  // expands to, matches sizes held in warehouses the shopper cannot order
+  // from, while the grid itself is gated on `inStockWarehouseIds = {id}`.
+  // Null (guest / no debtor context) means no scoping.
+  var WAREHOUSE_ID = (config.scope && config.scope.warehouseId) || null;
+  // Stands in for a selected size that has no stock in the shopper's
+  // warehouse: the raw values are `<warehouseId>-<euSize>`, so this can never
+  // match a document and the selection reads as "zero results" rather than
+  // silently dropping out of the filter.
+  var NO_SIZE_MATCH_VALUE = '__aico_no_size__';
   var EU_SIZES = Array.isArray(config.euSizes) ? config.euSizes.slice() : [];
   var EU_SIZES_SET = {};
   for (var ei = 0; ei < EU_SIZES.length; ei++) {
@@ -175,6 +187,14 @@
     return m ? m[1] : String(value);
   }
 
+  // Mirrors ProductCatalogLoader::rawSizeInWarehouse.
+  function rawSizeInWarehouse(value) {
+    if (!WAREHOUSE_ID) {
+      return true;
+    }
+    return String(value).indexOf(WAREHOUSE_ID + '-') === 0;
+  }
+
   // Size-grouping universe: the set getEuSizeGroup checks band patterns
   // against. The server ships `config.euSizes` empty and leaves the ⅓-step
   // grouping to the client, so we seed a canonical EU ⅓-step ladder (matches
@@ -204,7 +224,7 @@
     if (!distribution) {
       return [];
     }
-    var values = Object.keys(distribution);
+    var values = Object.keys(distribution).filter(function (raw) { return rawSizeInWarehouse(raw); });
     if (!values.length) {
       return [];
     }
@@ -245,6 +265,9 @@
     }
     var rawByEu = {};
     Object.keys(distribution).forEach(function (raw) {
+      if (!rawSizeInWarehouse(raw)) {
+        return;
+      }
       var eu = stripWarehousePrefix(raw);
       if (!rawByEu[eu]) {
         rawByEu[eu] = [];
@@ -326,10 +349,17 @@
         // are AND'd (one clause each), so a product must be available in
         // every chosen size — e.g. 34 AND 37, each incl. its thirds.
         var sizeDistribution = state.lastDistribution[SIZE_FACET_ATTRIBUTE] || {};
+        // Only once a distribution has been seen can "no raw values" be read
+        // as "this size is not available" — before the first response it just
+        // means "not known yet", where dropping the clause (showing everything)
+        // beats claiming zero results.
+        var haveDistribution = Object.keys(sizeDistribution).length > 0;
         values.forEach(function (display) {
           var bandRaws = expandSelectedDisplaysToRawValues([display], sizeDistribution);
           if (bandRaws.length) {
             parts.push(stringFacetOrClause(SIZE_FACET_ATTRIBUTE, bandRaws));
+          } else if (haveDistribution) {
+            parts.push(stringFacetOrClause(SIZE_FACET_ATTRIBUTE, [NO_SIZE_MATCH_VALUE]));
           }
         });
         return;
