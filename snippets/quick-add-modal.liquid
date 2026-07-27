@@ -5,18 +5,10 @@
   script; the modal DOM itself is built by the script on first open (same
   pattern as the production-cockpit reminder modal).
 
-  The modal fetches `routes.aico_quick_add_url` (the LEAN per-product
-  variants + stock payload) on open and submits through the shared Alpine cart
-  store's bulkUpdate() — the same absolute-quantity path as the PDP size
-  matrix — so the header badge, mini-cart and toast all update reactively.
-
-  Two things the payload deliberately does NOT carry, because they are not
-  properties of the product, are supplied here instead:
-    - the shipping block, which belongs to the SHOPPER
-      (`customer.aico_shipping_block`, from the debtor's CRM conditions);
-    - the EU → UK/US/MM size labels, which are pure presentation and ship as a
-      content-hashed theme asset (assets/size-charts.js) instead of four label
-      strings per variant on every request.
+  The modal fetches `routes.aico_product_json_url` (per-product variants +
+  stock) on open and submits through the shared Alpine cart store's
+  bulkUpdate() — the same absolute-quantity path as the PDP size matrix —
+  so the header badge, mini-cart and toast all update reactively.
 {% endcomment %}
 
 {%- comment -%}
@@ -36,14 +28,7 @@
 {%- assign aico_quick_add_size_guide_url = settings.aico_pdp_size_guide_media | aico_media_url -%}
 
 <script id="aico-quick-add-config" type="application/json">{
-  "quickAddUrlTemplate": {{ routes.aico_quick_add_url | json }},
-  {%- comment -%}
-    Legacy fallback: the Shopify-shaped product JSON. quick-add.js only uses it
-    when `quickAddUrlTemplate` is empty (theme rendered by a backend without
-    the lean route yet) — its payload is a superset, so the modal still works.
-  {%- endcomment -%}
   "productJsonUrlTemplate": {{ routes.aico_product_json_url | json }},
-  "shippingBlocked": {{ customer.aico_shipping_block | json }},
   "locale": {{ request.locale.iso_code | default: shop.default_locale | json }},
   "sizeRegion": {{ aico_quick_add_region | json }},
   "sizeGuideUrl": {{ aico_quick_add_size_guide_url | default: '' | json }},
@@ -79,11 +64,4 @@
     "open_aria": {{ 'products.quick_add.open_aria' | t | json }}
   }
 }</script>
-{%- comment -%}
-  Size charts BEFORE quick-add.js: both are deferred, so execution order is
-  document order and `window.AICO_SIZE_CHARTS` is set before the modal script
-  runs. Missing charts are not fatal — the modal then labels every region with
-  the canonical EU value, exactly like the server's own fallback.
-{%- endcomment -%}
-<script src="{{ 'size-charts.js' | asset_url }}" defer></script>
 <script src="{{ 'quick-add.js' | asset_url }}" defer></script>

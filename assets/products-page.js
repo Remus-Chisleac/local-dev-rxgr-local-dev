@@ -988,14 +988,6 @@
       quickAdd.setAttribute('data-aico-handle', urlHandle);
       quickAdd.setAttribute('data-aico-title', title);
       quickAdd.setAttribute('data-aico-url', link.href);
-      // Real variant count (search index) — sizes the quick-add modal's
-      // loading skeleton to the matrix that replaces it. Absent until the
-      // index carries the field; quick-add.js then falls back to a
-      // remembered/default count.
-      var variantCount = parseInt(hit.variantCount, 10);
-      if (!isNaN(variantCount) && variantCount > 0) {
-        quickAdd.setAttribute('data-aico-variant-count', String(variantCount));
-      }
       quickAdd.setAttribute('aria-haspopup', 'dialog');
       quickAdd.setAttribute('aria-label', quickAddOpenAria.replace('{title}', title));
       quickAdd.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'

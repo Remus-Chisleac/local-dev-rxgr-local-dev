@@ -11569,50 +11569,15 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   cursor: not-allowed;
 }
 
-/* Loading skeleton — a STRUCTURAL stand-in for the size matrix, not a
-   generic shimmer. The modal is centred in a flex overlay, so any height
-   difference between the loading and loaded states makes the panel jump and
-   re-centre when the payload lands. The skeleton therefore reuses the real
-   .aico-pdp-size-grid (same breakpoints/columns) and real .aico-pdp-size-cell
-   boxes, and the toolbar + total row are rendered for real (they depend on the
-   page config, not the payload). Only the cell COUNT is a guess — from the
-   card's data-aico-variant-count, else a remembered/default count — and the
-   body carries the measured skeleton height as a min-height so a low guess can
-   only grow the panel, never shrink it. */
+/* Loading skeleton — a row of pulsing size-cell placeholders. */
+.aico-quick-add-modal-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: 0.5rem;
+}
 .aico-quick-add-skeleton-cell {
-  pointer-events: none;
-  cursor: default;
-}
-.aico-quick-add-skeleton-cell:hover {
-  border-color: var(--aico-border);
-  box-shadow: none;
-}
-.aico-quick-add-skeleton-label {
-  grid-column: 1;
   display: block;
-  width: 70%;
-  height: 0.875rem;
-  border-radius: var(--aico-radius, 2px);
-  background: var(--aico-skeleton, rgba(0, 0, 0, 0.08));
-  animation: aico-quick-add-pulse 1.2s ease-in-out infinite;
-}
-/* Same footprint as the modal's real qty box (3.25rem × 1.875rem). */
-.aico-quick-add-skeleton-qty {
-  grid-column: 2;
-  display: block;
-  width: 3.25rem;
-  height: 1.875rem;
-  border-radius: var(--aico-radius, 2px);
-  background: var(--aico-skeleton, rgba(0, 0, 0, 0.08));
-  animation: aico-quick-add-pulse 1.2s ease-in-out infinite;
-}
-/* Stands in for the submit button: same 3rem height and 1rem top margin as
-   .aico-pdp-buy-button + .aico-quick-add-submit. */
-.aico-quick-add-skeleton-submit {
-  display: block;
-  width: 100%;
-  height: 3rem;
-  margin-top: 1rem;
+  height: 3.5rem;
   border-radius: var(--aico-radius, 2px);
   background: var(--aico-skeleton, rgba(0, 0, 0, 0.08));
   animation: aico-quick-add-pulse 1.2s ease-in-out infinite;

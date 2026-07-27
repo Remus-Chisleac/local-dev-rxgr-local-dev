@@ -27,11 +27,6 @@
     eager              true → loading="eager" on the image (above-the-fold)
     show_reviews       true → render the per-product reviews widget (needs sku)
     skeleton           true → render placeholder shapes (no real data yet)
-    variant_count      number of variants (product.aico_variant_count) — emitted
-                       on the quick-add trigger so the modal's loading skeleton
-                       is the height of the size matrix that replaces it. Absent
-                       until the search index carries the field; the modal then
-                       falls back to a remembered/default count.
     quick_add          product url handle → render the quick add-to-cart button
                        (b2b-shop card parity). Callers pass it ONLY for
                        available products; the button is additionally skipped
@@ -135,8 +130,6 @@
         data-aico-handle="{{ quick_add | escape }}"
         data-aico-title="{{ title | escape }}"
         data-aico-url="{{ url | escape }}"
-        {%- comment -%} `!= blank` only — a nil > 0 comparison is not safe in Liquid, and the script ignores a 0/absent value the same way. {%- endcomment -%}
-        {%- if variant_count != blank %} data-aico-variant-count="{{ variant_count }}"{% endif %}
         aria-haspopup="dialog"
         aria-label="{{ 'products.quick_add.open_aria' | t | replace: '{title}', title }}"
       >
