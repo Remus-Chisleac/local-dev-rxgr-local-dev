@@ -11,10 +11,15 @@
   empty CustomerNumber.
 
   The form is fetched from cognitoforms.com, so there is a visible gap before it
-  paints. A spinner stands in during that gap and crossfades to the real form
-  (assets/aico-cognito-form.js). Both live in the same grid cell so the swap
-  can't shift the page. `seamless.js` injects the form next to its own script
-  tag, i.e. inside `.aico-cognito-mount`.
+  paints. A spinner stands in during that gap and crossfades to the real form.
+  Both live in the same grid cell so the swap can't shift the page.
+  `seamless.js` injects the form next to its own script tag, i.e. inside
+  `.aico-cognito-mount`.
+
+  The reveal runs INLINE, not from a deferred asset: measured on this page, a
+  deferred asset after seamless.js never executed, so the spinner turned
+  forever. It also polls rather than observing mutations — an observer attaches
+  after seamless.js has finished mutating the mount and never fires.
 
   Accepts: form_id — Cognito form id (theme setting; differs per page).
 {%- endcomment -%}
@@ -39,10 +44,32 @@
           });
         </script>
       </div>
+
+      <script>
+        (function () {
+          var box = document.currentScript.closest('[data-aico-cognito]');
+          var mount = box.querySelector('[data-aico-cognito-mount]');
+          var spinner = box.querySelector('[data-aico-cognito-loading]');
+          var waited = 0;
+          var timer = setInterval(function () {
+            waited += 100;
+            // `.cog-body` is the rendered form body; the <form> appears before it
+            // is populated, so waiting on the body avoids revealing an empty frame.
+            // Give up after 15s so a slow or blocked Cognito still shows the form.
+            if (!mount.querySelector('.cog-body') && waited < 15000) return;
+            clearInterval(timer);
+            requestAnimationFrame(function () {
+              box.classList.add('is-ready');
+              if (!spinner) return;
+              var drop = function () { if (spinner.parentNode) spinner.parentNode.removeChild(spinner); };
+              spinner.addEventListener('transitionend', drop);
+              setTimeout(drop, 600);
+            });
+          }, 100);
+        })();
+      </script>
     </div>
   {%- else -%}
     <p class="aico-cognito-form-unavailable">{{ 'aico_forms.unavailable' | t }}</p>
   {%- endif -%}
 </main>
-
-<script src="{{ 'aico-cognito-form.js' | asset_url }}" defer></script>
