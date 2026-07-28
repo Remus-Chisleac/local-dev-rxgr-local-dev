@@ -547,8 +547,14 @@
     },
     "processing_page": {
       "title": "Bestellung wird abgeschlossen",
-      "body": "Wir bestätigen die Zahlung mit unserem Anbieter. Bitte schliessen Sie diese Seite nicht — Sie werden automatisch weitergeleitet, sobald der Vorgang abgeschlossen ist.",
+      "body": "Wir erfassen Ihre Bestellung. Bitte schliessen Sie diese Seite nicht — Sie werden automatisch weitergeleitet, sobald der Vorgang abgeschlossen ist.",
       "fallback": "Es dauert länger als erwartet? Prüfen Sie Ihren Posteingang auf eine Bestätigungs-E-Mail oder kontaktieren Sie Ihren Aussendienst.",
+      "step": {
+        "validating": "Warenkorb wird geprüft",
+        "processing": "Positionen werden erfasst",
+        "payment": "Zahlung wird vorbereitet",
+        "finalizing": "Bestellung wird abgeschlossen"
+      },
       "failed_title": "Zahlung konnte nicht gestartet werden",
       "failed_body": "Die Verbindung zu unserem Zahlungsanbieter ist fehlgeschlagen. Es wurde keine Bestellung aufgegeben, nichts wurde belastet und Ihr Warenkorb ist unverändert. Bitte versuchen Sie es erneut oder kontaktieren Sie Ihren Aussendienst.",
       "back_to_checkout": "Zurück zur Kasse"

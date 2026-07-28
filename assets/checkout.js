@@ -493,21 +493,20 @@
                 self.submitting = false;
                 return;
               }
-              if (data.hosted_page_url) {
-                window.location = data.hosted_page_url;
-                return;
-              }
-              // Route by payment type, mirroring the legacy b2b-shop: only
-              // credit-card orders wait on the processing page (they need the
-              // Adyen round-trip / async payment confirmation). Every other
-              // payment condition goes straight to the thank-you page — the
-              // order keeps saving in the background and does not block the
-              // shopper on a spinner.
-              var selectedMethod = self.selectedPaymentMethod;
-              var isCreditCardPayment = !!(selectedMethod && selectedMethod.is_credit_card);
-              if (isCreditCardPayment && data.order_id) {
+              // EVERY order now waits on the processing page — it is the one
+              // place that reports where the save actually stands and then
+              // routes the shopper: to the payment provider when the order
+              // needs paying, to the confirmation otherwise. Sending
+              // non-card orders straight to the confirmation is what used to
+              // leave a shopper looking at a still-full cart while their
+              // order was saving behind them.
+              if (data.order_id) {
                 var processing = routes.processingUrl || '/checkout/processing';
                 window.location = processing + '?order_id=' + encodeURIComponent(String(data.order_id));
+                return;
+              }
+              if (data.hosted_page_url) {
+                window.location = data.hosted_page_url;
                 return;
               }
               // The confirmation URL carries ONLY the order number, as a path
@@ -540,6 +539,18 @@
     };
   }
 
+  // The stages the processing page walks the shopper through, in order. The
+  // backend names them (OrderSubmitProgress::STAGE_*); the page only needs
+  // their ORDER, to decide which ones are already behind it — a late-arriving
+  // event must never walk the display backwards.
+  var PROCESSING_STAGES = ['validating', 'processing', 'payment', 'finalizing'];
+
+  // Polling is the FALLBACK now that the save broadcasts its own progress, so
+  // it can be slower than the old 2s — but the cap still has to cover the
+  // longest save a shopper may sit through (2s × 150 ≈ 5 minutes).
+  var POLL_INTERVAL_MS = 2000;
+  var POLL_MAX_ATTEMPTS = 150;
+
   function buildCheckoutProcessingPage() {
     return {
       elapsed: 0,
@@ -547,6 +558,14 @@
       // and discount intact) and no order was placed. The template swaps the
       // spinner for the failure card with a back-to-checkout link.
       failed: false,
+      // Where the save stands right now, and — during `processing` — how many
+      // of the cart's positions are written.
+      stage: 'validating',
+      processed: 0,
+      total: 0,
+      // The save outlived its own wait loop (SAVING_LONGER_THAN_EXPECTED). The
+      // order is still coming; the page says so instead of looking stuck.
+      delayed: false,
       _interval: null,
       _pusher: null,
       _channel: null,
@@ -560,9 +579,10 @@
         var orderId = query.get('order_id');
         if (!orderId) return;
 
-        // The Pusher event only fires for orders that reach SAVED — a
-        // failed payment-session order never broadcasts. Poll ALWAYS, with
-        // the broadcast as the fast path; _done dedupes the two signals.
+        // Poll ALWAYS: the broadcasts are the fast path, but a page that just
+        // loaded needs the current state at once (the save may already be
+        // finished), and a socket that never connects must not strand the
+        // shopper. `_done` dedupes the two signals.
         this.pollStatus(orderId);
 
         if (!pusherConfig || !window.Pusher) return;
@@ -577,7 +597,38 @@
           this._channel.bind('AicoShopOrderCreatedEvent', function (data) {
             self.navigateToThankYou(data || {});
           });
+          this._channel.bind('OrderSubmitProgressEvent', function (data) {
+            self.applyProgress(data || {});
+          });
         } catch (e) { /* polling already runs */ }
+      },
+
+      // Fold a progress report (broadcast or poll) into the display. Stages
+      // only ever move FORWARD: events can arrive out of order, and a bar that
+      // jumps back reads as a bug to the shopper.
+      applyProgress: function (data) {
+        if (this._done) return;
+        var incoming = String(data.stage || '');
+        if (incoming === 'failed') {
+          this.showPaymentFailed();
+          return;
+        }
+        if (incoming === 'delayed') {
+          this.delayed = true;
+          return;
+        }
+        var next = PROCESSING_STAGES.indexOf(incoming);
+        if (next > PROCESSING_STAGES.indexOf(this.stage)) {
+          this.stage = incoming;
+        }
+        if (Number(data.total) > 0) this.total = Number(data.total);
+        if (Number(data.processed) > this.processed) this.processed = Number(data.processed);
+      },
+
+      // True once `name` is the stage we are in or one we have passed — the
+      // template ticks off the completed steps with it.
+      stageReached: function (name) {
+        return PROCESSING_STAGES.indexOf(this.stage) >= PROCESSING_STAGES.indexOf(name);
       },
 
       showPaymentFailed: function () {
@@ -627,7 +678,7 @@
             .then(function (body) {
               if (self._done) return;
               if (!body) {
-                if (attempts < 60) setTimeout(tick, 2000);
+                if (attempts < POLL_MAX_ATTEMPTS) setTimeout(tick, POLL_INTERVAL_MS);
                 return;
               }
               // ERROR = the Adyen payment session could not be created; the
@@ -638,21 +689,25 @@
                 self.showPaymentFailed();
                 return;
               }
+              self.applyProgress(body);
               var status = body.status || body.payment_status;
               if (status && status !== 'SAVING' && status !== 'paymentPending') {
                 self.navigateToThankYou({
                   hosted_page_url: body.hosted_page_url,
                   ecommerce_order_number: body.ecommerce_order_number,
                 });
-              } else if (attempts < 60) {
-                setTimeout(tick, 2000);
+              } else if (attempts < POLL_MAX_ATTEMPTS) {
+                setTimeout(tick, POLL_INTERVAL_MS);
               }
             })
             .catch(function () {
-              if (attempts < 60) setTimeout(tick, 2000);
+              if (attempts < POLL_MAX_ATTEMPTS) setTimeout(tick, POLL_INTERVAL_MS);
             });
         };
-        setTimeout(tick, 2000);
+        // Read the state IMMEDIATELY, then settle into the interval: a small
+        // cart is already saved by the time this page renders, and waiting out
+        // the first interval would show a spinner for nothing.
+        tick();
       },
     };
   }

@@ -1,13 +1,14 @@
 {% comment %}
-  Pre-payment waiting page for credit-card orders whose save runs async
-  (large carts: the submit response has no hosted_page_url yet). The URL
-  query carries `?order_id=...` only. checkout.js subscribes via Pusher
+  The waiting page EVERY checkout passes through. The URL query carries
+  `?order_id=...` only. checkout.js subscribes via Pusher
   (`window.__AICO_PUSHER__`, emitted by the layout when the backend has
-  Pusher configured) to `AicoShopOrderCreatedEvent` for that order; the
-  event's `url` is the Adyen hosted payment page and the shopper is
-  redirected there. Without Pusher it polls /checkout/payment-status,
-  whose response carries `hosted_page_url` once the order is saved.
-  Only URL-less events/orders go straight to /checkout/thank-you.
+  Pusher configured) to two events on the order's channel:
+  `OrderSubmitProgressEvent` (the stage + how many positions are written,
+  rendered as the step list below) and `AicoShopOrderCreatedEvent`, whose
+  `url` is the Adyen hosted payment page. Without Pusher it polls
+  /checkout/payment-status, which answers the same stage/processed/total
+  plus `hosted_page_url` once the order is saved. Orders with a payment URL
+  go to the provider, the rest to /checkout/thank-you.
 {% endcomment %}
 
 <main class="aico-checkout-processing"
@@ -45,7 +46,36 @@
         <span class="aico-ty-reveal" x-show="failed" x-cloak>{{ 'checkout.processing_page.failed_title' | t }}</span>
       </h1>
       <p class="aico-checkout-processing-body" x-show="!failed">{{ 'checkout.processing_page.body' | t }}</p>
-      <p class="aico-checkout-processing-fallback" x-show="!failed && elapsed > 30" x-cloak>
+
+      {%- comment -%}
+        The steps of the save, in the order the backend reports them. Each row
+        is one of three states — done (checked), current (pulsing dot), pending
+        (dim) — driven by `stage`, which only ever moves forward. The
+        "processing" row additionally counts the positions as they land, so a
+        large cart shows real movement instead of a spinner that could equally
+        mean "stuck".
+      {%- endcomment -%}
+      <ol class="aico-checkout-steps" x-show="!failed" aria-live="polite">
+        {%- assign step_keys = 'validating,processing,payment,finalizing' | split: ',' -%}
+        {%- for step_key in step_keys -%}
+          <li class="aico-checkout-step"
+              :class="{
+                'is-done': stageReached('{{ step_key }}') && stage !== '{{ step_key }}',
+                'is-current': stage === '{{ step_key }}'
+              }">
+            <span class="aico-checkout-step-marker" aria-hidden="true"></span>
+            <span class="aico-checkout-step-label">
+              {{ 'checkout.processing_page.step.' | append: step_key | t }}
+              {%- if step_key == 'processing' -%}
+                <span class="aico-checkout-step-count" x-show="total > 0" x-cloak
+                      x-text="processed + ' / ' + total"></span>
+              {%- endif -%}
+            </span>
+          </li>
+        {%- endfor -%}
+      </ol>
+
+      <p class="aico-checkout-processing-fallback" x-show="!failed && (delayed || elapsed > 30)" x-cloak>
         {{ 'checkout.processing_page.fallback' | t }}
       </p>
       <p class="aico-checkout-processing-body aico-ty-reveal" x-show="failed" x-cloak>

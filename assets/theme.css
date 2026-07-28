@@ -5491,6 +5491,79 @@ button.aico-home-brand-card {
 .aico-checkout-processing-title { margin: 0; font-size: 1.25rem; font-weight: 600; }
 .aico-checkout-processing-body { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 .aico-checkout-processing-fallback { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--aico-muted-fg, #6b7280); }
+/* Save progress: one row per stage, left-aligned inside the centred card so
+   the labels read as a checklist rather than a stack of centred sentences.
+   Three states — pending (dim, hollow), current (accent, breathing dot),
+   done (accent, check). Only `is-done`/`is-current` are set by Alpine;
+   pending is the base style, so a row never depends on a class being
+   REMOVED to look right. */
+.aico-checkout-steps {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  width: 100%;
+  max-width: 18rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.aico-checkout-step {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.9375rem;
+  color: var(--aico-muted-fg, #6b7280);
+  opacity: 0.55;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+.aico-checkout-step-marker {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  position: relative;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.aico-checkout-step.is-current,
+.aico-checkout-step.is-done { opacity: 1; }
+.aico-checkout-step.is-current { color: var(--color-accent, #2563eb); font-weight: 600; }
+.aico-checkout-step.is-current .aico-checkout-step-marker {
+  background: currentColor;
+  animation: aico-step-breathe 1.4s ease-in-out infinite;
+}
+.aico-checkout-step.is-done { color: var(--aico-fg, #111827); }
+.aico-checkout-step.is-done .aico-checkout-step-marker {
+  border-color: var(--color-accent, #2563eb);
+  background: var(--color-accent, #2563eb);
+}
+/* The tick is drawn, not an asset: two borders on a rotated box. */
+.aico-checkout-step.is-done .aico-checkout-step-marker::after {
+  content: '';
+  position: absolute;
+  left: 0.3125rem;
+  top: 0.125rem;
+  width: 0.25rem;
+  height: 0.5rem;
+  border: solid #ffffff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.aico-checkout-step-label { display: inline-flex; align-items: baseline; gap: 0.375rem; }
+.aico-checkout-step-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--aico-muted-fg, #6b7280);
+}
+@keyframes aico-step-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.7); opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aico-checkout-step.is-current .aico-checkout-step-marker { animation: none; }
+}
 /* Payment-session failure: same hand-off choreography as the thank-you
    confirm, but to the orange warning — the medallion flip itself is the
    shared .aico-ty-status--warn pop; these rules only rise the failed copy
