@@ -5528,15 +5528,15 @@ button.aico-home-brand-card {
 }
 .aico-checkout-step.is-current,
 .aico-checkout-step.is-done { opacity: 1; }
-.aico-checkout-step.is-current { color: var(--color-accent, #2563eb); font-weight: 600; }
+.aico-checkout-step.is-current { color: var(--aico-ty-spinner, #e8702d); font-weight: 600; }
 .aico-checkout-step.is-current .aico-checkout-step-marker {
   background: currentColor;
   animation: aico-step-breathe 1.4s ease-in-out infinite;
 }
 .aico-checkout-step.is-done { color: var(--aico-fg, #111827); }
 .aico-checkout-step.is-done .aico-checkout-step-marker {
-  border-color: var(--color-accent, #2563eb);
-  background: var(--color-accent, #2563eb);
+  border-color: var(--aico-ty-spinner, #e8702d);
+  background: var(--aico-ty-spinner, #e8702d);
 }
 /* The tick is drawn, not an asset: two borders on a rotated box. */
 .aico-checkout-step.is-done .aico-checkout-step-marker::after {
