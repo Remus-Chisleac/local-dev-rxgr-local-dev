@@ -245,8 +245,10 @@
                   {%- endif -%}
                 {%- endif -%}
               {%- endfor -%}
-              {%- assign terms_link_text = 'checkout.terms.link_text' | t -%}
-              {{ 'checkout.terms.label' | t | replace: '{link}', '<a href="' | append: terms_url | append: '" target="_blank" rel="noopener noreferrer">' | append: terms_link_text | append: '</a>' }}
+              {%- capture terms_anchor -%}
+                <a href="{{ terms_url }}" target="_blank" rel="noopener noreferrer">{{ 'checkout.terms.link_text' | t }}</a>
+              {%- endcapture -%}
+              {{ 'checkout.terms.label' | t | replace: '{link}', terms_anchor }}
             </span>
           </label>
           <template x-if="termsError">
