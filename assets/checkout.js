@@ -502,7 +502,17 @@
               // order was saving behind them.
               if (data.order_id) {
                 var processing = routes.processingUrl || '/checkout/processing';
-                window.location = processing + '?order_id=' + encodeURIComponent(String(data.order_id));
+                var processingQuery = '?order_id=' + encodeURIComponent(String(data.order_id));
+                // Carry the order NUMBER through as well. The confirmation page
+                // is addressed by number, and this response is the earliest
+                // place that has it — without it a shopper whose status read
+                // has not linked the ecommerce order yet lands on a
+                // confirmation that can only say `?order_id=`, which shows no
+                // number and no total.
+                if (data.ecommerce_order_number) {
+                  processingQuery += '&order=' + encodeURIComponent(String(data.ecommerce_order_number));
+                }
+                window.location = processing + processingQuery;
                 return;
               }
               if (data.hosted_page_url) {
@@ -655,9 +665,13 @@
         // preserved. Only the order reference moves into the path.
         var query = new URLSearchParams(window.location.search);
         var orderId = query.get('order_id');
+        // `?order=` is the number the submit response handed this page; it is
+        // the fallback when the status read has no ecommerce order linked yet.
+        var orderNumber = data.ecommerce_order_number || query.get('order');
         query.delete('order_id');
         query.delete('order_number');
-        var url = thankYouUrlFor(data.ecommerce_order_number, orderId);
+        query.delete('order');
+        var url = thankYouUrlFor(orderNumber, orderId);
         var rest = query.toString();
         if (!rest) {
           window.location = url;
