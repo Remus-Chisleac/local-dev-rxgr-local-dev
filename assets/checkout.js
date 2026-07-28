@@ -581,6 +581,10 @@
       // The save outlived its own wait loop (SAVING_LONGER_THAN_EXPECTED). The
       // order is still coming; the page says so instead of looking stuck.
       delayed: false,
+      // Whether this order has anything to pay, and whether its payment page is
+      // ready. Both come off /checkout/payment-status; see showStep/stepDone.
+      requiresPayment: false,
+      paymentReady: false,
       _interval: null,
       _pusher: null,
       _channel: null,
@@ -645,12 +649,41 @@
         }
         if (Number(data.total) > 0) this.total = Number(data.total);
         if (Number(data.processed) > this.processed) this.processed = Number(data.processed);
+        if (typeof data.requires_payment !== 'undefined') {
+          this.requiresPayment = !!data.requires_payment;
+        }
+        if (data.hosted_page_url) this.paymentReady = true;
       },
 
       // True once `name` is the stage we are in or one we have passed — the
       // template ticks off the completed steps with it.
       stageReached: function (name) {
         return PROCESSING_STAGES.indexOf(this.stage) >= PROCESSING_STAGES.indexOf(name);
+      },
+
+      // Whether this step belongs in THIS order's list. Payment only concerns
+      // orders that actually have something to pay: on every other payment
+      // condition the row could never light up, so it sat there permanently
+      // pending and then flipped to done without ever meaning anything.
+      // Defaults to hidden so the common case never flickers — it appears once
+      // the first status read reports the order needs paying.
+      showStep: function (name) {
+        return name !== 'payment' || this.requiresPayment;
+      },
+
+      // Payment is a READINESS marker, not a stage the backend walks through:
+      // the session is created before the positions are written, and the stage
+      // stream never emits it. It reads as done once the payment page exists
+      // (or once the save has moved past it), and it never pulses as current.
+      stepDone: function (name) {
+        if (name === 'payment') {
+          return this.paymentReady || this.stageReached('finalizing');
+        }
+        return this.stageReached(name) && this.stage !== name;
+      },
+
+      stepCurrent: function (name) {
+        return name !== 'payment' && this.stage === name;
       },
 
       showPaymentFailed: function () {

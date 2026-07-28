@@ -59,9 +59,10 @@
         {%- assign step_keys = 'validating,processing,payment,finalizing' | split: ',' -%}
         {%- for step_key in step_keys -%}
           <li class="aico-checkout-step"
+              x-show="showStep('{{ step_key }}')"
               :class="{
-                'is-done': stageReached('{{ step_key }}') && stage !== '{{ step_key }}',
-                'is-current': stage === '{{ step_key }}'
+                'is-done': stepDone('{{ step_key }}'),
+                'is-current': stepCurrent('{{ step_key }}')
               }">
             <span class="aico-checkout-step-marker" aria-hidden="true"></span>
             <span class="aico-checkout-step-label">
