@@ -135,8 +135,8 @@
         }{% endif %}
       };
       window.__AICO_FLAGS__ = {
-        {%- comment -%} B2B credit-limit gating: warns on the cart and blocks non-credit-card checkout when the total exceeds the available credit. {%- endcomment -%}
-        credit_limit_enforcement: true
+        {%- comment -%} B2B credit-limit gating: warns on the cart and blocks non-credit-card checkout when the total exceeds the available credit. Toggled per shop via the "Checkout" theme setting. {%- endcomment -%}
+        credit_limit_enforcement: {% if settings.aico_credit_limit_enforcement %}true{% else %}false{% endif %}
       };
       {% if aico_pusher %}
       {%- comment -%} Public Pusher credentials (key + cluster only) for the

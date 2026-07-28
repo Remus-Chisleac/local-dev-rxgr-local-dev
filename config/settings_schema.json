@@ -145,6 +145,19 @@
     ]
   },
   {
+    "name": "Checkout",
+    "info": "Payment and order-submission behavior of the checkout page.",
+    "settings": [
+      {
+        "id": "aico_credit_limit_enforcement",
+        "type": "checkbox",
+        "label": "Enforce the debtor credit limit",
+        "info": "When enabled, a cart total above the debtor's available credit shows a cart warning and restricts checkout to credit-card payment. Disable to allow every payment method regardless of credit.",
+        "default": true
+      }
+    ]
+  },
+  {
     "name": "Error messages",
     "info": "Shopper-facing error messages (toast + error list bubble) for failed actions like add-to-cart or preorder/checkout submit. Hidden by default; the code stays in the theme but nothing is shown unless enabled.",
     "settings": [

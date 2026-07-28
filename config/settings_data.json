@@ -47,6 +47,7 @@
   "aico_hotjar_enabled": true,
   "aico_hotjar_embed_code": "aico://secrets/aico_hotjar_embed_code",
   "aico_show_error_messages": false,
+  "aico_credit_limit_enforcement": false,
   "aico_cognito_form_key": "yQBia8R8_UOttwSO73Mwcw",
   "aico_cognito_return_center_form_id": "208",
   "aico_cognito_self_repair_form_id": "255",
