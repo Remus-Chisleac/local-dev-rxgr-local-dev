@@ -191,42 +191,39 @@
   }
 
   // ============================================================
-  // hero — authored fields per aiconeo elements.ts:
-  // backgroundImage, headline, subheadline, buttonText, buttonUrl, overlayOpacity.
-  // Generic (not storefront-gated): renders from authored content alone.
-  // Visual language mirrors the retired .aico-brand-hero (photo + optional
-  // darkening + copy).
+  // hero — IMAGE ONLY.
+  //
+  // The banner artwork carries its own headline ("FINALLY PAIN-FREE",
+  // "Shoes for your health."), so the authored overlay copy printed it a
+  // second time and sat on top of the artwork. headline/subheadline/button
+  // are therefore no longer rendered; they stay in the document so the
+  // builder can still show them and a future design can bring them back.
+  //
+  // The photo is in FLOW (not absolutely positioned): the hero is then
+  // exactly as tall as the image is wide, so the banner keeps its shape at
+  // every window size instead of being cropped by a fixed min-height. This
+  // is the old b2b-shop's BrandBannerSection behaviour (aspectRatio 8/2 +
+  // objectFit contain) without its hardcoded ratio — any banner shape works,
+  // and nothing is letterboxed.
   // ============================================================
 
   Neo.registerType('hero', function (el) {
     var content = el.content || {};
     var image = content.backgroundImage || '';
-    var headline = stripOuterParagraph(content.headline || '');
-    var subheadline = stripOuterParagraph(content.subheadline || '');
-    var ctaText = content.buttonText || '';
-    var ctaUrl = normalizeUrl(content.buttonUrl || '');
+    if (!image) return '';
+
     var overlay = parseFloat(content.overlayOpacity);
     if (!isFinite(overlay) || overlay <= 0) overlay = 0;
     if (overlay > 100) overlay = 100;
-    if (!image && !headline && !subheadline) return '';
 
+    // The hero is the page's LCP banner — load eagerly, unlike the cards below.
     var html = '<div class="aico-neo-hero"' + inlineStyleAttr(el) + '>';
-    if (image) {
-      // The hero is the page's LCP banner — load eagerly, unlike the cards below.
-      html += '<img class="aico-neo-hero-photo" src="' + escapeAttr(image) + '" alt="" loading="eager">';
-      // Darkening is authored, never baked in: aiconeo's overlayOpacity slider
-      // (0-100%, absent/0 = untinted banner), same semantics as the builder preview.
-      if (overlay > 0) {
-        html += '<div class="aico-neo-hero-scrim" aria-hidden="true" style="opacity:' + (overlay / 100) + '"></div>';
-      }
+    html += '<img class="aico-neo-hero-photo" src="' + escapeAttr(image) + '" alt="" loading="eager">';
+    // Darkening is authored, never baked in: aiconeo's overlayOpacity slider
+    // (0-100%, absent/0 = untinted banner), same semantics as the builder preview.
+    if (overlay > 0) {
+      html += '<div class="aico-neo-hero-scrim" aria-hidden="true" style="opacity:' + (overlay / 100) + '"></div>';
     }
-    html += '<div class="aico-neo-hero-inner"><div class="aico-neo-hero-copy' + (image ? '' : ' aico-neo-hero-copy--plain') + '">';
-    if (headline) html += '<h2 class="aico-neo-hero-heading">' + headline + '</h2>';
-    if (subheadline) html += '<p class="aico-neo-hero-sub">' + subheadline + '</p>';
-    if (ctaText && ctaUrl) {
-      html += '<a class="aico-button aico-button-primary aico-neo-hero-cta" href="' + escapeAttr(ctaUrl) + '">' + escapeHtml(ctaText) + '</a>';
-    }
-    html += '</div></div>';
     html += '</div>';
     return html;
   });

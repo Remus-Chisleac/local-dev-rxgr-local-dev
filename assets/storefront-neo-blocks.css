@@ -10,26 +10,30 @@
  * global --aico-radius token (2px). Mobile-first.
  */
 
-/* ── hero — banner photo + optional overlay + copy (mirrors .aico-brand-hero) ── */
+/* ── hero — banner photo only (no overlay copy) ── */
+
+/*
+ * The photo is in FLOW and keeps its intrinsic ratio: the hero is exactly as
+ * tall as the image renders at the current width, so a wide banner keeps its
+ * shape at every window size instead of being cropped by a fixed min-height +
+ * object-fit:cover. Same intent as the old b2b-shop BrandBannerSection
+ * (aspectRatio 8/2 + objectFit contain), minus its hardcoded ratio — so a
+ * banner of any shape fits with no crop and no letterboxing.
+ *
+ * The overlay copy (heading / sub / CTA) is no longer rendered — the banner
+ * artwork carries its own headline — so its rules are gone with it.
+ */
 
 .aico-neo-hero {
   position: relative;
   overflow: hidden;
-  min-height: clamp(16rem, 42vw, 22rem);
   border-radius: var(--aico-radius, 2px);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
 }
 
 .aico-neo-hero-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
   display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* Only emitted when the hero authored a non-zero overlayOpacity; the renderer
@@ -39,53 +43,6 @@
   position: absolute;
   inset: 0;
   background: #000;
-}
-
-.aico-neo-hero-inner {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 3rem);
-  box-sizing: border-box;
-}
-
-.aico-neo-hero-copy {
-  min-width: 0;
-  max-width: 36rem;
-  color: #ffffff;
-}
-/* No banner photo → dark-on-light copy on the page background. */
-.aico-neo-hero-copy--plain {
-  color: var(--aico-fg, #18181b);
-}
-.aico-neo-hero-copy--plain .aico-neo-hero-heading {
-  color: var(--aico-fg, #18181b);
-  text-shadow: none;
-}
-.aico-neo-hero-copy--plain .aico-neo-hero-sub {
-  color: var(--aico-muted-fg, #52525b);
-}
-
-.aico-neo-hero-heading {
-  margin: 0 0 0.5rem;
-  font-size: clamp(1.875rem, 4.5vw, 2.65rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.08;
-  color: #ffffff;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
-}
-
-.aico-neo-hero-sub {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-
-.aico-neo-hero-cta {
-  display: inline-flex;
-  margin-top: 0.75rem;
 }
 
 /* ── single product card (product-card element) ── */
