@@ -11757,8 +11757,8 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 }
 .aico-cognito-loading-text { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 
-/* Store chrome for the provider's form: a white card with 50px of breathing room
-   that takes the width of the page column instead of Cognito's 800px default.
+/* Store chrome for the provider's form: a white card, 50px of breathing room,
+   capped at 900px instead of Cognito's 800px default.
    Cognito ships `cog-cognito--protect-css`, which zeroes padding/background from
    `:root:root:root .cog-cognito--styled…` (specificity 0,5,0) and sizes the form
    from `--form__width` — so a plain rule on the form is ignored. The width goes
@@ -11766,11 +11766,12 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
    needs !important to clear the shield. The form centres itself (`html
    .cog-cognito { margin: 0 auto }`), so no margin is set here. */
 .aico-cognito-mount .cog-cognito.cog-form {
-  /* Cognito applies this var as the form's max-width (default 800px), which
-     pinned the form to a fixed-looking card inside a 1360px page column.
-     100% lets it take the page container's width and stay a cap, not a width —
-     it still shrinks with the viewport. */
-  --form__width: 100%;
+  /* A 900px CAP, not a fixed width — the form still shrinks with the viewport.
+     The var is Cognito's own max-width knob (their responsive breakpoints read
+     it, so data-width stays in step); the explicit max-width states the cap in
+     our own rule and survives a rename of that var. */
+  --form__width: 900px;
+  max-width: 900px !important;
   /* Their inner gutter: 2px by default, i.e. fields flush to the card edge.
      Feeding this var (rather than padding) keeps their responsive formula,
      which tempers it to ~33px on a 390px screen. */
