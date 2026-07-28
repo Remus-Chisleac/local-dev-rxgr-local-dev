@@ -231,7 +231,20 @@
                    x-model="termsAccepted"
                    required>
             <span>
+              {%- comment -%}
+                The AGB link must point at the same document as the footer's Terms &
+                Conditions entry, including its locale override (layout/theme.liquid).
+              {%- endcomment -%}
+              {%- assign terms_locale = request.locale.iso_code | default: shop.default_locale -%}
               {%- assign terms_url = 'checkout.terms.url' | t -%}
+              {%- for footer_link in linklists.footer.links -%}
+                {%- if footer_link.aico_title_key == 'home_page.footer.terms' -%}
+                  {%- assign terms_url = footer_link.url -%}
+                  {%- if footer_link.aico_url_de_ch and terms_locale == 'de_CH' -%}
+                    {%- assign terms_url = footer_link.aico_url_de_ch -%}
+                  {%- endif -%}
+                {%- endif -%}
+              {%- endfor -%}
               {%- assign terms_link_text = 'checkout.terms.link_text' | t -%}
               {{ 'checkout.terms.label' | t | replace: '{link}', '<a href="' | append: terms_url | append: '" target="_blank" rel="noopener noreferrer">' | append: terms_link_text | append: '</a>' }}
             </span>

@@ -506,11 +506,25 @@
         <span class="aico-preorder-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
         <textarea name="notes" rows="3" data-aico-preorder-notes></textarea>
       </label>
-      {% if preorder_session.terms_pdf_url != blank %}
+      {%- comment -%}
+        The AGB link must point at the same document as the footer's Terms &
+        Conditions entry, including its locale override (layout/theme.liquid).
+      {%- endcomment -%}
+      {%- assign terms_locale = request.locale.iso_code | default: shop.default_locale -%}
+      {%- assign terms_url = preorder_session.terms_pdf_url -%}
+      {%- for footer_link in linklists.footer.links -%}
+        {%- if footer_link.aico_title_key == 'home_page.footer.terms' -%}
+          {%- assign terms_url = footer_link.url -%}
+          {%- if footer_link.aico_url_de_ch and terms_locale == 'de_CH' -%}
+            {%- assign terms_url = footer_link.aico_url_de_ch -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {% if terms_url != blank %}
         <label class="aico-preorder-terms">
           <input type="checkbox" data-aico-preorder-terms>
           <span>{{ 'aico_preorder.summary.terms_prefix' | t }}
-            <a href="{{ preorder_session.terms_pdf_url }}" target="_blank" rel="noopener">{{ 'aico_preorder.summary.terms_link' | t }}</a>
+            <a href="{{ terms_url }}" target="_blank" rel="noopener">{{ 'aico_preorder.summary.terms_link' | t }}</a>
           </span>
         </label>
       {% else %}
