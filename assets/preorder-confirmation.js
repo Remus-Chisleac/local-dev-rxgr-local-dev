@@ -74,10 +74,15 @@
   // back reads as a bug). `failed` is terminal and handled separately.
   var PROGRESS_STAGES = ['checking', 'saving', 'updating', 'finalizing'];
   // Poll cadence while the panel shows the processing state. The socket is the
-  // fast path; this is the guarantee. Capped so an abandoned tab does not poll
-  // forever — the cap comfortably covers the backend's 15-minute
-  // stale-processing fallback, whose answer the last polls pick up.
+  // fast path; the poll is the guarantee. While the pusher channel is
+  // confirmed live the poll stretches to a slow heartbeat (it would only
+  // duplicate what the broadcasts already deliver); the moment the socket is
+  // not connected it tightens back to the fast cadence. Capped so an
+  // abandoned tab does not poll forever — the cap comfortably covers the
+  // backend's 15-minute stale-processing fallback, whose answer the last
+  // polls pick up.
   var POLL_INTERVAL_MS = 2500;
+  var POLL_INTERVAL_SOCKET_LIVE_MS = 15000;
   var POLL_MAX_ATTEMPTS = 380;
   // No stage/count movement for this long → swap in the "taking longer than
   // expected" copy (cleared again by the next movement).
@@ -151,6 +156,7 @@
     this._errored = false; // terminal error state rendered — transports stopped
     this._pollTimer = null; // processing-state safety-net poll (see header)
     this._pollAttempts = 0;
+    this._socketLive = false; // pusher channel confirmed connected → slow poll
     this._pusherClient = null;
     this._pusherSubscribed = false; // attempted a subscription
   }
@@ -213,6 +219,7 @@
     if (this._pollTimer || this._errored || this.detailLoaded) return;
     if (this._pollAttempts >= POLL_MAX_ATTEMPTS) return;
     var self = this;
+    var interval = this._socketLive ? POLL_INTERVAL_SOCKET_LIVE_MS : POLL_INTERVAL_MS;
     this._pollTimer = setTimeout(function () {
       self._pollTimer = null;
       if (self._errored || self.detailLoaded) return;
@@ -226,7 +233,7 @@
       }
       self.fetchConfirmation();
       self._schedulePoll();
-    }, POLL_INTERVAL_MS);
+    }, interval);
   };
 
   /**
@@ -772,13 +779,19 @@
             forceTLS: true,
           });
           var channel = self._pusherClient.subscribe(config.channel);
-          // Channel confirmed live → pusher is now the source of truth: stop
 
           channel.bind('pusher:subscription_succeeded', function () {
-            // Reconcile ONLY for a PDF that landed while the socket was being
-            // set up. While the submit is still processing there is nothing to
-            // reconcile — PreorderProcessedEvent carries that news.
+            // Channel confirmed live → the socket is the fast path now; the
+            // poll drops to its slow heartbeat (see _schedulePoll). Reconcile
+            // ONLY for a PDF that landed while the socket was being set up —
+            // while the submit is still processing there is nothing to
+            // reconcile, PreorderProcessedEvent carries that news.
+            self._socketLive = true;
             if (self.detailLoaded && !self.pdfReady) self.fetchConfirmation();
+          });
+          // Socket no longer connected → the poll is the transport again.
+          self._pusherClient.connection.bind('state_change', function (states) {
+            self._socketLive = states && states.current === 'connected';
           });
           // The async submit/edit finished processing — the details are final;
           // re-fetch the confirmation to swap the processing spinner for them.
