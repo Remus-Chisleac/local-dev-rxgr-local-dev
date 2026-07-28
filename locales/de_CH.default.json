@@ -869,7 +869,8 @@
       "no_results": "Keine Ergebnisse für",
       "sale": "Sale"
     },
-    "close": "Schliessen"
+    "close": "Schliessen",
+    "loading": "Wird berechnet …"
   },
   "contact": {
     "title": "Kontaktieren Sie uns jederzeit, wenn Sie Probleme haben",

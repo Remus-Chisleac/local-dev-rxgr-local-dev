@@ -364,6 +364,13 @@
         return true;
       },
 
+      // The summary rows show the animated dots while the backend totals are
+      // in flight; the '…' the two display helpers return is the fallback for
+      // any caller that still reads them as plain text.
+      totalsPending: function () {
+        return !this.totalsLoaded || this.totalsLoading;
+      },
+
       shippingDisplay: function () {
         // Same pending placeholder as vatDisplay so the two rows never mix
         // "…" with the calculated-at-checkout text while totals reload.

@@ -289,7 +289,10 @@
           </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.shipping' | t }}</dt>
-            <dd x-text="shippingDisplay()"></dd>
+            <dd>
+              <template x-if="totalsPending()">{% render 'aico-loading-dots' %}</template>
+              <template x-if="!totalsPending()"><span x-text="shippingDisplay()"></span></template>
+            </dd>
           </div>
           <div class="aico-checkout-summary-row">
             <dt>{{ 'checkout.summary.cc_fee' | t }}</dt>
@@ -297,7 +300,10 @@
           </div>
           <div class="aico-checkout-summary-row">
             <dt x-text="vatLabel()">{{ 'checkout.summary.vat' | t }}</dt>
-            <dd x-text="vatDisplay()"></dd>
+            <dd>
+              <template x-if="totalsPending()">{% render 'aico-loading-dots' %}</template>
+              <template x-if="!totalsPending()"><span x-text="vatDisplay()"></span></template>
+            </dd>
           </div>
         </dl>
 

@@ -11699,3 +11699,36 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
   font-size: 0.85rem;
   color: #b91c1c;
 }
+
+/* Loading dots — the "we are calculating" cue on the checkout summary rows.
+   Sized in em so the dots track the row's font size. */
+.aico-loading-dots {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.22em;
+  height: 1em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.aico-loading-dots span {
+  display: block;
+  width: 0.3em;
+  height: 0.3em;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  animation: aico-loading-dot 1.05s ease-in-out infinite;
+}
+
+.aico-loading-dots span:nth-child(2) { animation-delay: 0.14s; }
+.aico-loading-dots span:nth-child(3) { animation-delay: 0.28s; }
+
+@keyframes aico-loading-dot {
+  0%, 75%, 100% { transform: translateY(0); opacity: 0.45; }
+  35% { transform: translateY(-0.34em); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aico-loading-dots span { animation: none; }
+}

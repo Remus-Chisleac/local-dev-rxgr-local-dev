@@ -869,7 +869,8 @@
       "no_results": "No results for",
       "sale": "Sale"
     },
-    "close": "Close"
+    "close": "Close",
+    "loading": "Calculating …"
   },
   "contact": {
     "title": "Contact us anytime if you have any issues",
