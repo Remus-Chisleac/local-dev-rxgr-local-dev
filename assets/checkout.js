@@ -154,8 +154,13 @@
       _refreshInFlight: null,
       _totalsInFlight: null,
       _deliveryRefreshTimer: null,
+      _started: false,
 
       init: function () {
+        // See the note on the processing page's init(): init runs twice, and
+        // without this the cart + totals were fetched twice on every load.
+        if (this._started) return Promise.resolve();
+        this._started = true;
         var self = this;
         if (!self.paymentMethodId && self.paymentMethods.length > 0) {
           self.paymentMethodId = self.paymentMethods[0].id;
@@ -580,8 +585,15 @@
       _pusher: null,
       _channel: null,
       _done: false,
+      _started: false,
 
+      // Alpine 3 runs a component's `init()` itself AND the templates also carry
+      // `x-init="init()"`, so this runs TWICE per page. Everything below fires
+      // network work, so the second run doubled every request — two status
+      // polls per interval, two summary loads, two cart refreshes.
       init: function () {
+        if (this._started) return;
+        this._started = true;
         var self = this;
         this._interval = setInterval(function () { self.elapsed += 1; }, 1000);
 
@@ -757,8 +769,12 @@
       _channel: null,
       // When the page started waiting — see MIN_SPINNER_MS below.
       _openedAt: 0,
+      // See the note on the processing page's init(): init runs twice.
+      _started: false,
 
       init: function () {
+        if (this._started) return;
+        this._started = true;
         var query = new URLSearchParams(window.location.search);
         // `order` is the canonical param; `order_number` / `orderRef` are the
         // legacy dialects (old bookmarks, and Adyen's returnUrl, which is
