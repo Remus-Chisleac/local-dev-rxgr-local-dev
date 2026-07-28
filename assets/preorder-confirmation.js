@@ -9,19 +9,25 @@
  *   - per-date delivery dates (+ their order numbers),
  *   - a PDF area: "generating…" → a working download link once it lands.
  *
- * Transport is PUSHER-driven. When the backend has an active broadcast driver
- * the confirmation payload carries a `pusher` block ({ key, cluster, channel,
- * event }) assembled from aico's broadcasting config, and `confirmation.js` is
- * then fetched exactly TWICE for a submit: once on arrival (initial data +
- * the channel to subscribe to) and once on PreorderProcessedEvent (the final
- * details). Everything in between — the submit progress and the PDF — arrives
- * as broadcasts; no timer runs while the socket is healthy.
+ * Transport is PUSHER-first with a POLL SAFETY NET while processing. When the
+ * backend has an active broadcast driver the confirmation payload carries a
+ * `pusher` block ({ key, cluster, channel, event }) assembled from aico's
+ * broadcasting config; the submit progress, the processed signal and the PDF
+ * then arrive as broadcasts. But as long as the panel shows the PROCESSING
+ * state it ALSO polls the endpoint (POLL_INTERVAL_MS) — a submit or edit
+ * mutates a live preorder, so its terminal states (details or the error card)
+ * must reach the shopper even when the socket never connects or a worker dies
+ * mid-pipeline. The poll stops the moment a terminal state renders; after the
+ * details land the PDF reveal is socket/reload-driven as before.
  *
- * There is deliberately NO retry/poll loop. A dropped socket message is not
- * worth defending against here: this panel's state is entirely re-derivable
- * from the endpoint, so reloading the page shows whatever is true at that
- * moment. A deployment with no broadcast driver therefore leaves the wait state
- * up until the shopper reloads — the same outcome, one keystroke later.
+ * The wait message is a single line that each backend STAGE replaces in place
+ * (checking → saving → updating → finalizing, from the progress payload's
+ * `stage`), exactly like the old processing → almost-there swap — deliberately
+ * NOT the checkout's step checklist. During `updating`, processed/total counts
+ * REAL work units (changed + newly-added lines on an edit; all lines on a
+ * first submit). A `failed` stage — or an { error: true } payload — swaps to
+ * the error card. When nothing has moved for a while the message swaps to the
+ * "taking longer than expected" copy until progress resumes.
  *
  * Backend contract (GET /preorder/cart/confirmation.js?cart_id=):
  *   { aico_confirmation: {
@@ -63,6 +69,19 @@
   // from spinner to checkmark. Updates that arrive inside the window are not
   // dropped, only deferred (the newest wins).
   var MIN_PROGRESS_DWELL_MS = 550;
+  // Backend stages, in order — the wait message is replaced per stage and only
+  // ever moves FORWARD (events can arrive out of order; a message that jumps
+  // back reads as a bug). `failed` is terminal and handled separately.
+  var PROGRESS_STAGES = ['checking', 'saving', 'updating', 'finalizing'];
+  // Poll cadence while the panel shows the processing state. The socket is the
+  // fast path; this is the guarantee. Capped so an abandoned tab does not poll
+  // forever — the cap comfortably covers the backend's 15-minute
+  // stale-processing fallback, whose answer the last polls pick up.
+  var POLL_INTERVAL_MS = 2500;
+  var POLL_MAX_ATTEMPTS = 380;
+  // No stage/count movement for this long → swap in the "taking longer than
+  // expected" copy (cleared again by the next movement).
+  var DELAYED_AFTER_MS = 60000;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
@@ -123,10 +142,15 @@
     this._lastProgressAt = 0; // when the last progress state was painted
     this._progressQueue = []; // states waiting out the dwell window, in order
     this._dwellTimer = null;
-    this._progressTotal = 0; // line-item total, once any counter has surfaced
-    this._almostThere = false; // every line item counted; only the wrap-up left
+    this._progressTotal = 0; // work-unit total, once any counter has surfaced
+    this._almostThere = false; // every work unit counted; only the wrap-up left
+    this._stage = ''; // furthest backend stage rendered (forward-only)
+    this._delayed = false; // no movement for DELAYED_AFTER_MS — calmer copy shown
     this._sawProcessing = false; // a processing block was seen at least once
+    this._processingSince = 0; // when the processing state first rendered
     this._errored = false; // terminal error state rendered — transports stopped
+    this._pollTimer = null; // processing-state safety-net poll (see header)
+    this._pollAttempts = 0;
     this._pusherClient = null;
     this._pusherSubscribed = false; // attempted a subscription
   }
@@ -164,25 +188,82 @@
   Confirmation.prototype.renderPending = function () {
     this.root.classList.add('aico-preorder-confirmation--processing');
     this.root.setAttribute('aria-busy', 'true');
+    if (!this._processingSince) this._processingSince = Date.now();
     var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
     if (headerEl) {
       headerEl.textContent = copyOf(this.root, 'processing-title', 'We are processing your preorder…');
     }
     this.renderProcessingMessage();
     this.setPdfState('generating');
+    // Safety-net poll for every way of arriving in the wait state (fresh
+    // submit, reload mid-processing, server-rendered processing shell). No-op
+    // when already scheduled.
+    this._schedulePoll();
   };
 
   /**
-   * The sub-copy under the processing title. Written through a helper because
+   * Processing-state safety net: as long as the panel is waiting, re-read the
+   * confirmation every POLL_INTERVAL_MS so the terminal states — the details
+   * or the error card — land even when no broadcast ever arrives (socket
+   * blocked, worker died, driver off). Self-terminating: stops on a terminal
+   * state, and the attempt cap outlives the backend's own stale-processing
+   * fallback, whose stale-but-stable answer the last polls pick up.
+   */
+  Confirmation.prototype._schedulePoll = function () {
+    if (this._pollTimer || this._errored || this.detailLoaded) return;
+    if (this._pollAttempts >= POLL_MAX_ATTEMPTS) return;
+    var self = this;
+    this._pollTimer = setTimeout(function () {
+      self._pollTimer = null;
+      if (self._errored || self.detailLoaded) return;
+      self._pollAttempts += 1;
+      // Nothing has moved for a while — swap in the calmer "taking longer
+      // than expected" copy until progress resumes (_renderProgress clears it).
+      var lastMovement = Math.max(self._lastProgressAt, self._processingSince);
+      if (!self._delayed && lastMovement && Date.now() - lastMovement > DELAYED_AFTER_MS) {
+        self._delayed = true;
+        self.renderProcessingMessage();
+      }
+      self.fetchConfirmation();
+      self._schedulePoll();
+    }, POLL_INTERVAL_MS);
+  };
+
+  /**
+   * The single wait-message line under the processing title — each state
+   * REPLACES the previous text in place (the panel's long-standing behavior;
+   * deliberately not a step checklist). Written through a helper because
    * renderPending() runs again on every processing payload, and a plain
-   * assignment there would keep undoing the "almost there" swap.
+   * assignment there would keep undoing the current stage's swap.
+   *
+   * Priority: "taking longer than expected" (no movement lately) → the
+   * finalizing stage → "almost there" (all work units counted, wrap-up
+   * pending) → the current backend stage's copy → the generic processing copy.
    */
   Confirmation.prototype.renderProcessingMessage = function () {
     var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
     if (!messageEl) return;
-    messageEl.textContent = this._almostThere
-      ? copyOf(this.root, 'almost-there', copyOf(this.root, 'processing-message', ''))
-      : copyOf(this.root, 'processing-message', '');
+    var fallback = copyOf(this.root, 'processing-message', '');
+    if (this._delayed) {
+      messageEl.textContent = copyOf(this.root, 'delayed', fallback);
+      return;
+    }
+    if (this._stage === 'finalizing') {
+      messageEl.textContent = copyOf(this.root, 'stage-finalizing', copyOf(this.root, 'almost-there', fallback));
+      return;
+    }
+    if (this._almostThere) {
+      messageEl.textContent = copyOf(this.root, 'almost-there', fallback);
+      return;
+    }
+    if (this._stage) {
+      var stageCopy = copyOf(this.root, 'stage-' + this._stage, '');
+      if (stageCopy) {
+        messageEl.textContent = stageCopy;
+        return;
+      }
+    }
+    messageEl.textContent = fallback;
   };
 
   Confirmation.prototype.clearPending = function () {
@@ -204,17 +285,22 @@
     this.clearPending();
     this.root.hidden = false;
     this.root.classList.add('aico-preorder-confirmation--error');
+    // A failed EDIT keeps the previously submitted preorder — say that,
+    // instead of the first-submit copy's "your preorder was not placed".
+    var isUpdate = !!this._errorIsUpdate;
+    var fallbackTitle = 'We could not process your preorder';
+    var fallbackMessage = 'Something went wrong while processing your preorder. Please go back to the preorder page and try again.';
     var headerEl = this.root.querySelector('[data-aico-confirmation-header]');
     if (headerEl) {
-      headerEl.textContent = copyOf(this.root, 'error-title', 'We could not process your preorder');
+      headerEl.textContent = isUpdate
+        ? copyOf(this.root, 'update-error-title', copyOf(this.root, 'error-title', fallbackTitle))
+        : copyOf(this.root, 'error-title', fallbackTitle);
     }
     var messageEl = this.root.querySelector('[data-aico-confirmation-message]');
     if (messageEl) {
-      messageEl.textContent = copyOf(
-        this.root,
-        'error-message',
-        'Something went wrong while processing your preorder. Please go back to the preorder page and try again.',
-      );
+      messageEl.textContent = isUpdate
+        ? copyOf(this.root, 'update-error-message', copyOf(this.root, 'error-message', fallbackMessage))
+        : copyOf(this.root, 'error-message', fallbackMessage);
     }
   };
 
@@ -253,9 +339,9 @@
   };
 
   /**
-   * Fetch the confirmation block. Called exactly twice for a normal submit — on
-   * arrival (initial state + the pusher channel) and on PreorderProcessedEvent
-   * (the final details). Nothing here schedules a repeat: the server pushes.
+   * Fetch the confirmation block: on arrival, on PreorderProcessedEvent, and
+   * from the processing-state safety-net poll (_schedulePoll). Idempotent —
+   * apply() folds whatever comes back into the current state.
    */
   Confirmation.prototype.fetchConfirmation = function () {
     var self = this;
@@ -305,6 +391,13 @@
     // wait was extended for. The panel still showing --processing is the real
     // condition, and _renderProgress checks it.
     if (this._errored || !data) return;
+    // Terminal failure broadcast (FailPreorderEdit / a compensated submit):
+    // skip the dwell queue and show the error card — the marker also reaches
+    // the poll via { error: true }, whichever lands first wins.
+    if (String(data.stage || '') === 'failed') {
+      this._swapToState(this.renderError.bind(this));
+      return;
+    }
     this._progressQueue.push(data);
     // A three-event submit (0/X, part-way, X/X) can land inside a couple of
     // frames, so states are QUEUED rather than overwritten — collapsing to the
@@ -337,12 +430,27 @@
   Confirmation.prototype._renderProgress = function (data) {
     if (this._errored || !data) return;
     if (!this.root.classList.contains('aico-preorder-confirmation--processing')) return;
+
+    // Stage first: it may arrive with no counter at all (checking/saving, or a
+    // no-op edit that never seeds one). Forward-only — see PROGRESS_STAGES.
+    var incomingStage = String(data.stage || '');
+    if (PROGRESS_STAGES.indexOf(incomingStage) > PROGRESS_STAGES.indexOf(this._stage)) {
+      this._stage = incomingStage;
+      this._delayed = false; // movement — drop the "taking longer" copy
+      this._lastProgressAt = Date.now();
+      this.renderProcessingMessage();
+    }
+
     var processed = Number(data.processed);
     var total = Number(data.total);
     if (!isFinite(processed) || !isFinite(total) || total <= 0) return;
     processed = Math.max(0, Math.min(Math.round(processed), Math.round(total)));
     total = Math.round(total);
     if (processed < this._progressSeen) return;
+    if (processed > this._progressSeen && this._delayed) {
+      this._delayed = false;
+      this.renderProcessingMessage();
+    }
     this._progressSeen = processed;
     this._progressTotal = total;
     this._lastProgressAt = Date.now();
@@ -457,11 +565,12 @@
   Confirmation.prototype.apply = function (confirmation) {
     if (!confirmation || typeof confirmation !== 'object') return;
 
-    // The queued submit failed with nothing committed (pre-batch stock check,
-    // batch failure with a full compensation): no details will ever arrive for
-    // this cart — show the error state instead of spinning forever. Shares the
-    // animated swap with the confirmed path.
+    // The queued submit/edit failed: no fresh details will arrive for this
+    // cart — show the error state instead of spinning forever. Shares the
+    // animated swap with the confirmed path. is_update selects the truthful
+    // copy (a failed edit keeps the previously submitted preorder).
     if (confirmation.error) {
+      this._errorIsUpdate = !!confirmation.is_update;
       this._swapToState(this.renderError.bind(this));
       return;
     }
