@@ -11757,6 +11757,21 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
 }
 .aico-cognito-loading-text { margin: 0; color: var(--aico-muted-fg, #6b7280); }
 
+/* Store chrome for the provider's form: a white card with 50px of breathing room
+   and 900px wide instead of Cognito's default 800.
+   Cognito ships `cog-cognito--protect-css`, which zeroes padding/background from
+   `:root:root:root .cog-cognito--styled…` (specificity 0,5,0) and sizes the form
+   from `--form__width` — so a plain rule on the form is ignored. The width goes
+   through their own var (that is what their responsive rules read); the rest
+   needs !important to clear the shield. The form centres itself (`html
+   .cog-cognito { margin: 0 auto }`), so no margin is set here. */
+.aico-cognito-mount .cog-cognito.cog-form {
+  --form__width: 900px;
+  padding-top: 50px !important;
+  padding-bottom: 50px !important;
+  background: #fff !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aico-cognito-mount,
   .aico-cognito-loading { transition-duration: 0.01ms; }
