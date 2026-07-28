@@ -11767,6 +11767,10 @@ html:has(.aico-preorder-cart-panel) { overflow-x: clip; }
    .cog-cognito { margin: 0 auto }`), so no margin is set here. */
 .aico-cognito-mount .cog-cognito.cog-form {
   --form__width: 900px;
+  /* Their inner gutter: 2px by default, i.e. fields flush to the card edge.
+     Feeding this var (rather than padding) keeps their responsive formula,
+     which tempers it to ~33px on a 390px screen. */
+  --form__margins: 50px;
   padding-top: 50px !important;
   padding-bottom: 50px !important;
   background: #fff !important;
