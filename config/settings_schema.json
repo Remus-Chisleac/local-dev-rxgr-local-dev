@@ -53,6 +53,13 @@
         "id": "aico_brand_campaigns",
         "type": "paragraph",
         "content": "Edited as JSON in config/settings_data.json under \"aico_brand_campaigns\": { \"<brand-handle>\": { \"hero_title\": \"…\", \"hero_cta_label\": \"…\", \"hero_cta_url\": \"/products/<handle>\", \"hero_image\": \"https://…\", \"featured_skus\": [\"SKU1\",\"SKU2\",\"SKU3\",\"SKU4\"] } }. Omit hero_image to fall back to the brand’s own image; omit a field to hide it."
+      },
+      {
+        "id": "aico_pageless_brand_handles",
+        "type": "text",
+        "label": "Brands without a brand page",
+        "default": "b-grade",
+        "info": "Comma-separated brand url handles that must never render a brand page — e.g. \"b-grade\". /brand/<handle> switches the shopper's brand and sends them to the home page instead, even when an old page still exists. Brands that have no brand page at all already behave this way; list one here only to suppress a page that IS authored. Remove the handle once a real page is ready."
       }
     ]
   },
