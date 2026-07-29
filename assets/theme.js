@@ -135,6 +135,36 @@
   });
 })();
 
+// Quantity boxes preselect their contents when focus ENTERS them, so the first
+// keystroke replaces the quantity instead of extending it: clicking a size-grid
+// cell holding "5" and typing "0" used to leave "50" behind — a tenfold order
+// the buyer never asked for. Only the entering focus selects; a second click
+// inside the same box still places a caret, so a multi-digit quantity can be
+// corrected digit by digit.
+(function () {
+  'use strict';
+
+  // Every quantity-entry control in the theme: the PDP size matrix, its
+  // single-variant and quick-add-drawer variants (data-aico-size-qty), the PDP
+  // legacy stepper, the preorder size × date grid and the cart lines.
+  var QUANTITY_INPUTS = [
+    '[data-aico-size-qty]',
+    '[data-aico-qty-input]',
+    '[data-aico-preorder-qty]',
+    '.aico-qty-input'
+  ].join(',');
+
+  // Delegated, because the quick-add drawer, the preorder catalog and the
+  // Alpine cart all build (and rebuild) their inputs after load — a per-input
+  // listener would need re-attaching on every render.
+  document.addEventListener('focusin', function (event) {
+    var input = event.target && event.target.closest ? event.target.closest(QUANTITY_INPUTS) : null;
+    if (!input || input.disabled || input.readOnly || input.value === '') {
+      return;
+    }
+    input.select();
+  });
+})();
 
 // Keep the locale switcher pointing at the page as it is NOW. The pill hrefs
 // come from `aico_locale_url`, which renders the request's path — but several
