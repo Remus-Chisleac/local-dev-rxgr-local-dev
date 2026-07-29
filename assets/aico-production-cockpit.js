@@ -736,9 +736,13 @@
 
         var href = productHref(product);
         var displayName = product.productionName || product.name || '';
+        // Manual entries have no image; like the legacy tool, the "Coming soon"
+        // tag takes the thumbnail's place instead of trailing the model name.
         var imageInner = product.image
           ? '<img class="aico-cockpit-thumb" src="' + escapeAttr(product.image) + '" alt="" loading="lazy">'
-          : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>';
+          : (product.isManualEntry
+            ? '<span class="aico-cockpit-badge aico-cockpit-badge--thumb">' + escapeHtml(t('coming_soon', 'Coming soon')) + '</span>'
+            : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>');
         var nameInner = href
           ? '<a class="aico-cockpit-model-link" href="' + escapeAttr(href) + '">' + escapeHtml(displayName) + '</a>'
           : escapeHtml(displayName);
@@ -748,9 +752,7 @@
           '<td class="aico-cockpit-cell aico-cockpit-cell--image">' +
             (href ? '<a class="aico-cockpit-thumb-link" href="' + escapeAttr(href) + '">' + imageInner + '</a>' : imageInner) +
           '</td>' +
-          '<td class="aico-cockpit-cell aico-cockpit-cell--model">' + nameInner +
-            (product.isManualEntry ? ' <span class="aico-cockpit-badge">' + escapeHtml(t('coming_soon', 'Coming soon')) + '</span>' : '') +
-          '</td>' +
+          '<td class="aico-cockpit-cell aico-cockpit-cell--model">' + nameInner + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--sku">' + escapeHtml(product.sku || '') + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--date">' + escapeHtml(formatDate(product.date)) + '</td>' +
           '<td class="aico-cockpit-cell aico-cockpit-cell--action">' +
