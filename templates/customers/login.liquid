@@ -20,6 +20,12 @@
       <h1 class="aico-auth-title">{{ 'customer.login_page.title' | t }}</h1>
       <p class="aico-auth-subtitle">{{ 'customer.login_page.description' | t }}</p>
 
+      {% if form.posted_successfully? and form.form_type == 'reset_customer_password' %}
+        <p class="aico-auth-success" role="status">
+          {{ 'customer.reset_password.success' | t }}
+        </p>
+      {% endif %}
+
       {% if form.errors and form.form_type == 'customer_login' %}
         <p class="aico-auth-error" role="alert">
           {{ 'customer.login_page.error' | t }}

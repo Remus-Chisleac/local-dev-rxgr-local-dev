@@ -6,6 +6,7 @@
     { "template": "customers/login", "path": "account/login", "page_type": "customers/login", "menu": false },
     { "template": "customers/register", "path": "account/register", "page_type": "customers/register", "menu": false },
     { "template": "customers/recover_password", "path": "account/recover", "page_type": "customers/reset_password", "menu": false },
+    { "template": "customers/reset_password", "path": "set-password", "page_type": "customers/reset_password", "menu": false },
     { "template": "customers/addresses", "path": "account/addresses", "page_type": "customers/addresses" },
     { "template": "customers/aico_store_locator", "path": "account/store-locator", "page_type": "custom", "name": "StoreLocator" },
     { "template": "customers/orders", "path": "account/orders", "page_type": "custom", "name": "Orders" },

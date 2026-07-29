@@ -150,6 +150,20 @@
       "success": "If an account exists for that email, we've sent reset instructions.",
       "cancel": "Back to sign in"
     },
+    "reset_password": {
+      "title": "Set your password",
+      "subtext": "Choose a password for your account to continue to the shop.",
+      "email": "Email",
+      "password": "New password",
+      "password_confirm": "Confirm password",
+      "submit": "Save password",
+      "cancel": "Back to sign in",
+      "success": "Your password has been set. Please sign in.",
+      "password_mismatch": "The two passwords don't match.",
+      "weak_password": "Your password must be at least 6 characters long.",
+      "invalid_token": "This link is no longer valid. Please request a new one.",
+      "request_new_link": "Request a new link"
+    },
     "account": {
       "billing_addresses_title": "Your billing addresses",
       "delivery_addresses_title": "Your delivery addresses",

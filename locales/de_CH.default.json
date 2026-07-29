@@ -150,6 +150,20 @@
       "success": "Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen eine Anleitung gesendet.",
       "cancel": "Zurück zur Anmeldung"
     },
+    "reset_password": {
+      "title": "Passwort festlegen",
+      "subtext": "Legen Sie ein Passwort für Ihr Konto fest, um zum Shop zu gelangen.",
+      "email": "E-Mail",
+      "password": "Neues Passwort",
+      "password_confirm": "Passwort bestätigen",
+      "submit": "Passwort speichern",
+      "cancel": "Zurück zur Anmeldung",
+      "success": "Ihr Passwort wurde gesetzt. Bitte melden Sie sich an.",
+      "password_mismatch": "Die beiden Passwörter stimmen nicht überein.",
+      "weak_password": "Ihr Passwort muss mindestens 6 Zeichen lang sein.",
+      "invalid_token": "Dieser Link ist nicht mehr gültig. Bitte fordern Sie einen neuen an.",
+      "request_new_link": "Neuen Link anfordern"
+    },
     "account": {
       "billing_addresses_title": "Ihre Rechnungsadressen",
       "delivery_addresses_title": "Ihre Lieferadressen",
