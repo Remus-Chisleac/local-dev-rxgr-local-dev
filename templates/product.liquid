@@ -169,9 +169,9 @@
               {%- comment -%}
                 No resolved price for this shopper — no entitled price-list row
                 in their currency, or no debtor at all. Say so instead of
-                rendering an empty block: the cart cannot price the line either
-                (it lands as `aico_is_valid: false`), so the buy button below is
-                disabled to match rather than letting a 0.00 line be added.
+                leaving the block empty; the buy panel below is already gated on
+                the same `aico_price_label`, so the product stays unbuyable and
+                this is the only thing that explains why.
               {%- endcomment -%}
               <p class="aico-pdp-price aico-pdp-price-on-request">{{ 'product.price_on_request' | t }}</p>
             {% endif %}
@@ -215,15 +215,6 @@
         {%- if product.aico_has_size_matrix? or single_cell -%}
           {%- assign absolute_qty = true -%}
         {%- endif -%}
-        {%- comment -%}
-          No price resolved for this shopper (see the price block above). The
-          cart cannot price the line either, so adding it would put a 0.00
-          position in the basket — freeze the buy action instead.
-        {%- endcomment -%}
-        {%- assign aico_unpriced = false -%}
-        {%- unless product.aico_price_label -%}
-          {%- assign aico_unpriced = true -%}
-        {%- endunless -%}
         <form
           class="aico-pdp-buy"
           method="post"
@@ -622,13 +613,13 @@
           {%- if absolute_qty or product.options.size > 0 -%}
             {%- assign buy_button_inactive = true -%}
           {%- endif -%}
-          <div class="aico-pdp-buy-actions" data-aico-buy-actions{% if aico_unpriced %} title="{{ 'product.price_on_request' | t | escape }}"{% elsif cell_frozen %} title="{{ 'product.aico_pdp_message.sold_out_hint' | t | escape }}"{% endif %}>
+          <div class="aico-pdp-buy-actions" data-aico-buy-actions{% if cell_frozen %} title="{{ 'product.aico_pdp_message.sold_out_hint' | t | escape }}"{% endif %}>
             <button
               type="submit"
               class="aico-pdp-buy-button{% if buy_button_inactive %} aico-pdp-buy-button--inactive{% endif %}"
               data-aico-buy-button
               {% if buy_button_inactive %}aria-disabled="true"{% endif %}
-              {% if product.aico_shipping_blocked? or cell_frozen or aico_unpriced %}disabled{% endif %}
+              {% if product.aico_shipping_blocked? or cell_frozen %}disabled{% endif %}
             >
               <svg class="aico-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
@@ -640,9 +631,7 @@
                 data-label-add="{{ 'product.add_to_cart' | t | escape }}"
                 data-label-update="{{ 'product.update_cart' | t | escape }}"
               >
-                {% if aico_unpriced %}
-                  {{ 'product.price_on_request' | t }}
-                {% elsif product.aico_shipping_blocked? %}
+                {% if product.aico_shipping_blocked? %}
                   {{ 'product.restricted' | t }}
                 {% elsif absolute_qty and product_cart_qty > 0 %}
                   {{ 'product.update_cart' | t }}
