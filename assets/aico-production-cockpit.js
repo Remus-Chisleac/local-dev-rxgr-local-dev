@@ -214,6 +214,15 @@
     desc: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 10 12 16 18 10"/></svg>'
   };
 
+  // lucide "external-link" — marks the model name as a link to the PDP now that
+  // the link itself renders in the same colour as the rest of the row.
+  var EXTERNAL_LINK_ICON =
+    '<svg class="aico-cockpit-model-link-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M15 3h6v6"/>' +
+    '<path d="M10 14 21 3"/>' +
+    '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+    '</svg>';
+
   // Group a product's variants into "available from <date>" buckets, ascending
   // (undated last), each sorted by size — matches the legacy reminder modal.
   function groupVariantsByDate(variants) {
@@ -744,7 +753,10 @@
             ? '<span class="aico-cockpit-badge aico-cockpit-badge--thumb">' + escapeHtml(t('coming_soon', 'Coming soon')) + '</span>'
             : '<span class="aico-cockpit-thumb aico-cockpit-thumb--empty" aria-hidden="true"></span>');
         var nameInner = href
-          ? '<a class="aico-cockpit-model-link" href="' + escapeAttr(href) + '">' + escapeHtml(displayName) + '</a>'
+          ? '<a class="aico-cockpit-model-link" href="' + escapeAttr(href) + '">' +
+              '<span class="aico-cockpit-model-link-text">' + escapeHtml(displayName) + '</span>' +
+              EXTERNAL_LINK_ICON +
+            '</a>'
           : escapeHtml(displayName);
 
         tr.innerHTML =
