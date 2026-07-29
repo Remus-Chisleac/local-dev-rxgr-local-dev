@@ -9,7 +9,7 @@
   of the site. Computed once here so both the head and body gate on it.
 {%- endcomment -%}
 {%- assign aico_is_auth_shell = false -%}
-{%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' -%}
+{%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' or template.name == 'customers/reset_password' -%}
   {%- assign aico_is_auth_shell = true -%}
 {%- endif -%}
   <meta charset="utf-8">
@@ -33,13 +33,14 @@
   {%- endcomment -%}
   <script src="{{ 'aico-utils.js' | asset_url }}" defer></script>
   {%- comment -%}
-    Only the unauthenticated auth pages (login / recover / register) use the
+    Only the unauthenticated auth pages (login / recover / register /
+    set-password) use the
     bare, centered auth shell. Authenticated profile pages under customers/
     (account, addresses, aico_store_locator) render inside the full site chrome
     — gating on template.directory would wrongly strip their header/footer.
   {%- endcomment -%}
   {%- assign aico_is_auth_shell = false -%}
-  {%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' -%}
+  {%- if template.name == 'customers/login' or template.name == 'customers/recover_password' or template.name == 'customers/register' or template.name == 'customers/reset_password' -%}
     {%- assign aico_is_auth_shell = true -%}
   {%- endif -%}
   {% if aico_is_auth_shell %}
