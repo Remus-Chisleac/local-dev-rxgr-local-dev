@@ -457,7 +457,14 @@
               {%- assign cell_cart_qty = 0 -%}
               {%- if cart -%}
                 {%- for line in cart.items -%}
-                  {%- if line.variant_id == legacy_variant.id -%}
+                  {%- comment -%}
+                    Match by product id, not variant id: a single-cell product
+                    has at most one cart line, and a variant-LESS product's
+                    line carries `variant_id: nil` (its synthetic default posts
+                    the product id), so a variant-id match misses it and the
+                    prefill reads 0 while the cart holds the product.
+                  {%- endcomment -%}
+                  {%- if line.product_id == product.id -%}
                     {%- assign cell_cart_qty = line.quantity -%}
                   {%- endif -%}
                 {%- endfor -%}
