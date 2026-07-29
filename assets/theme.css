@@ -9471,7 +9471,8 @@ html.aico-preorder-gallery-open {
   display: block; width: 100%; height: auto;
   border-radius: var(--aico-radius); margin-bottom: 1.75rem;
 }
-.aico-cockpit-model-link { color: var(--color-accent); text-decoration: none; font-weight: 600; }
+/* Neutral like .aico-cart-line-title — orange stays reserved for the row CTA. */
+.aico-cockpit-model-link { color: var(--aico-fg, #1a1a1a); text-decoration: none; font-weight: 500; }
 .aico-cockpit-model-link:hover { text-decoration: underline; }
 .aico-cockpit-thumb-link { display: inline-block; }
 .aico-cockpit-head { margin-bottom: 1.5rem; max-width: 60rem; }
