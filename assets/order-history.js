@@ -992,7 +992,7 @@
 
   function collectDocuments(order) {
     var buckets = order.orderDocuments || {};
-    var keys = ['invoices', 'proformaInvoices', 'exportInvoices', 'preorderDocuments', 'orderConfirmations'];
+    var keys = ['invoices', 'proformaInvoices', 'exportInvoices', 'preorderDocuments', 'orderConfirmations', 'creditNotes'];
     var collected = [];
     for (var k = 0; k < keys.length; k++) {
       var rows = buckets[keys[k]] || [];

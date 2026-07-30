@@ -246,7 +246,7 @@
         "search_users": "Search users",
         "unassigned": "Unassigned",
         "search_label": "Search",
-        "search_placeholder": "Search by order no., product name or size SKU",
+        "search_placeholder": "Search by order no., document no., product name or size SKU",
         "reset": "Reset filters",
         "size_region": "Size type"
       },
@@ -284,7 +284,8 @@
         "type_proforma": "Pro forma invoice",
         "type_export": "Export invoice",
         "type_preorder": "Preorder",
-        "type_order_confirmation": "Order confirmation"
+        "type_order_confirmation": "Order confirmation",
+        "type_credit_note": "Credit note"
       }
     },
     "aico_store_locator": {

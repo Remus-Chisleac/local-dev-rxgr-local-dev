@@ -246,7 +246,7 @@
         "search_users": "Benutzer suchen",
         "unassigned": "Nicht zugeordnet",
         "search_label": "Suche",
-        "search_placeholder": "Suche nach Bestellnr., Produktname oder Grössen-SKU",
+        "search_placeholder": "Suche nach Bestellnr., Dokumentnr., Produktname oder Grössen-SKU",
         "reset": "Filter zurücksetzen",
         "size_region": "Grössentyp"
       },
@@ -284,7 +284,8 @@
         "type_proforma": "Proforma-Rechnung",
         "type_export": "Exportrechnung",
         "type_preorder": "Vorbestellung",
-        "type_order_confirmation": "Auftragsbestätigung"
+        "type_order_confirmation": "Auftragsbestätigung",
+        "type_credit_note": "Gutschrift"
       }
     },
     "aico_store_locator": {
