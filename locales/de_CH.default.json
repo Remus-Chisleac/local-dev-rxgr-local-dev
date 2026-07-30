@@ -661,7 +661,8 @@
       "delivery_placeholder": "Lieferadresse wählen",
       "view_grid": "Rasteransicht",
       "view_list": "Listenansicht",
-      "b2b_search_placeholder": "B2B suchen…"
+      "b2b_search_placeholder": "B2B suchen…",
+      "b2b_loading_more": "Weitere werden geladen…"
     },
     "catalog": {
       "section_aria": "PreOrder-Produkte",

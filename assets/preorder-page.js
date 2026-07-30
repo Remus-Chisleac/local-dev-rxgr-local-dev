@@ -91,32 +91,39 @@
     wrapper.classList.remove('aico-preorder-custom-select-open');
   }
 
+  // One option row of a custom select. Extracted from populateList so a
+  // paginated select (the B2B picker) can append the next page's rows to an
+  // open dropdown without rebuilding — a rebuild resets the scroll position.
+  function buildOptionRow(wrapper, native, opt) {
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.setAttribute('role', 'option');
+    row.dataset.value = opt.value;
+    row.className = 'aico-preorder-custom-select-option';
+    row.textContent = opt.textContent;
+    row.disabled = opt.disabled;
+    row.setAttribute(
+      'aria-selected',
+      native.options[native.selectedIndex] === opt ? 'true' : 'false',
+    );
+    row.addEventListener('click', function (event) {
+      event.preventDefault();
+      if (opt.value !== native.value) {
+        native.value = opt.value;
+        native.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      closeDropdown(wrapper);
+      syncCustomSelect(wrapper);
+    });
+    return row;
+  }
+
   function populateList(wrapper, native) {
     var list = wrapper.querySelector('[data-aico-custom-select-list]');
     if (!list) return;
     list.innerHTML = '';
-    Array.prototype.forEach.call(native.options, function (opt, index) {
-      var row = document.createElement('button');
-      row.type = 'button';
-      row.setAttribute('role', 'option');
-      row.dataset.value = opt.value;
-      row.className = 'aico-preorder-custom-select-option';
-      row.textContent = opt.textContent;
-      row.disabled = opt.disabled;
-      row.setAttribute(
-        'aria-selected',
-        native.selectedIndex === index ? 'true' : 'false',
-      );
-      row.addEventListener('click', function (event) {
-        event.preventDefault();
-        if (opt.value !== native.value) {
-          native.value = opt.value;
-          native.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        closeDropdown(wrapper);
-        syncCustomSelect(wrapper);
-      });
-      list.appendChild(row);
+    Array.prototype.forEach.call(native.options, function (opt) {
+      list.appendChild(buildOptionRow(wrapper, native, opt));
     });
   }
 
@@ -998,6 +1005,32 @@
       }
     }
 
+    // Append rows to an already-populated select (the B2B picker's next page)
+    // WITHOUT clearing it: the current selection, the rows already rendered and
+    // the dropdown's scroll position all survive, so scroll-loading feels like
+    // one continuous list.
+    function appendSelectOptions(name, rows) {
+      var select = root.querySelector('[data-aico-preorder-select="' + name + '"]');
+      if (!select || !rows || !rows.length) return;
+      var wrapper = select.closest('[data-aico-custom-select]');
+      var list = wrapper ? wrapper.querySelector('[data-aico-custom-select-list]') : null;
+      rows.forEach(function (row) {
+        var opt = document.createElement('option');
+        opt.value = String(row.id);
+        opt.textContent = row.label || '';
+        if (row.country) opt.dataset.country = row.country;
+        select.appendChild(opt);
+        if (list) list.appendChild(buildOptionRow(wrapper, select, opt));
+      });
+      if (select.disabled) {
+        select.disabled = false;
+        if (wrapper) {
+          var trigger = wrapper.querySelector('[data-aico-custom-select-trigger]');
+          if (trigger) trigger.disabled = false;
+        }
+      }
+    }
+
     // Force the already-placed-preorder check to re-run from scratch on the next
     // flow update — called whenever the buyer changes B2B / debtor / address, so
     // a stale acknowledgement never hides a different context's existing preorder.
@@ -1153,20 +1186,56 @@
     // Mirrors b2b-shop's SortFilterControl: the B2B list comes from the
     // active preorder session and is filtered SERVER-SIDE via
     // `filter[searchTerm]` (same endpoint/service the old shop calls).
-    function loadB2bs(searchTerm, keepOpen) {
+    //
+    // The list is PAGINATED: only the first page is fetched up front (loading
+    // every B2B eagerly serialized ~64KB and competed for a PHP worker with
+    // session.js/products.js at page load), and the following pages are pulled
+    // as the manager scrolls the dropdown to its end. A manager assigned more
+    // than a page worth of B2Bs can therefore reach all of them by scrolling,
+    // not only the first page or whatever the search box narrows to.
+    var B2B_PAGE_SIZE = 20;
+    // 0-based, matches the endpoint's `page[number]` (b2b-shop's currentPage
+    // default of 0): page 0 is the first page; sending 1 skips it and drops
+    // single search hits that live on page 0.
+    var b2bPage = 0;
+    var b2bSearchTerm = '';
+    var b2bHasMore = false;
+    var b2bLoadingPage = false;
+    // Bumped on every reset (initial load / new search term) so a page that is
+    // still in flight for the previous term can't append to the new list.
+    var b2bFetchToken = 0;
+    // The endpoint pages by OFFSET without an ORDER BY, so the same row can
+    // show up on two pages — dedupe by id instead of trusting the offsets.
+    var b2bSeenIds = {};
+
+    function b2bDropdownPanel() {
+      var field = root.querySelector('[data-aico-preorder-b2b-field]');
+      return field ? field.querySelector('[data-aico-custom-select-dropdown]') : null;
+    }
+
+    // Footer row inside the dropdown, shown only while the next page is in
+    // flight (the trigger's spinner is hidden behind the open panel).
+    function setB2bLoadingMore(isLoading) {
+      var panel = b2bDropdownPanel();
+      var sentinel = panel ? panel.querySelector('[data-aico-preorder-b2b-more]') : null;
+      if (sentinel) sentinel.hidden = !isLoading;
+    }
+
+    function fetchB2bPage(pageNumber, options) {
       if (!isManager || !b2bsUrl) return;
-      setB2bLoading(true);
+      var opts = options || {};
+      var isReset = !!opts.reset;
+      var token = isReset ? ++b2bFetchToken : b2bFetchToken;
+      b2bLoadingPage = true;
+      if (isReset) {
+        setB2bLoading(true);
+      } else {
+        setB2bLoadingMore(true);
+      }
       var url = new URL(b2bsUrl, window.location.origin);
-      // Pagination is 0-based (matches b2b-shop's currentPage default of 0):
-      // page 0 is the first page; sending 1 skips the first 100 B2Bs and
-      // drops single search hits that live on page 0.
-      url.searchParams.set('page[number]', '0');
-      // Only seed the dropdown with the first handful of B2Bs (the list is a
-      // searchable select — the manager types to filter SERVER-SIDE for the
-      // rest). Loading 100 eagerly serialized ~64KB on every page view and
-      // competed for a PHP worker with session.js/products.js at load time.
-      url.searchParams.set('page[size]', '10');
-      if (searchTerm) url.searchParams.set('filter[searchTerm]', searchTerm);
+      url.searchParams.set('page[number]', String(pageNumber));
+      url.searchParams.set('page[size]', String(B2B_PAGE_SIZE));
+      if (b2bSearchTerm) url.searchParams.set('filter[searchTerm]', b2bSearchTerm);
       fetch(url.toString(), {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
@@ -1175,14 +1244,34 @@
           return res.json();
         })
         .then(function (json) {
-          b2bData = (json && json.data) || [];
-          repopulateAddressSelect(
-            'b2b_id',
-            b2bData.map(function (b) {
-              return { id: b.id, label: b.company };
-            }),
-          );
-          if (keepOpen) {
+          if (token !== b2bFetchToken) return;
+          var rows = (json && json.data) || [];
+          var meta = (json && json.meta) || null;
+          var total = meta && typeof meta.total === 'number' ? meta.total : null;
+          b2bPage = pageNumber;
+          if (isReset) {
+            b2bData = [];
+            b2bSeenIds = {};
+          }
+          var fresh = [];
+          rows.forEach(function (b2b) {
+            var key = String(b2b.id);
+            if (b2bSeenIds[key]) return;
+            b2bSeenIds[key] = true;
+            b2bData.push(b2b);
+            fresh.push({ id: b2b.id, label: b2b.company });
+          });
+          // More pages exist while fewer than `total` are loaded; without a
+          // total (older backend), a full page implies another one follows.
+          b2bHasMore = total !== null
+            ? b2bData.length < total
+            : rows.length >= B2B_PAGE_SIZE;
+          if (isReset) {
+            repopulateAddressSelect('b2b_id', fresh);
+          } else {
+            appendSelectOptions('b2b_id', fresh);
+          }
+          if (opts.keepOpen) {
             var wrapper = root.querySelector('[data-aico-preorder-b2b-field] [data-aico-custom-select]');
             if (wrapper) {
               wrapper.classList.add('aico-preorder-custom-select-open');
@@ -1192,9 +1281,51 @@
             var input = root.querySelector('[data-aico-preorder-b2b-search]');
             if (input) input.focus();
           }
+          b2bLoadingPage = false;
+          if (isReset) {
+            setB2bLoading(false);
+          } else {
+            setB2bLoadingMore(false);
+          }
+          // A page that doesn't overflow the dropdown leaves nothing to
+          // scroll, so no scroll event would ever ask for the next one.
+          if (fresh.length) fillB2bPanel();
         })
-        .catch(function () {})
-        .finally(function () { setB2bLoading(false); });
+        .catch(function () {
+          if (token !== b2bFetchToken) return;
+          // Don't retry the same page on every scroll tick after a failure;
+          // a new search (or reopening after one) starts over.
+          b2bHasMore = false;
+          b2bLoadingPage = false;
+          if (isReset) {
+            setB2bLoading(false);
+          } else {
+            setB2bLoadingMore(false);
+          }
+        });
+    }
+
+    // Keep pulling pages until the open dropdown actually scrolls — otherwise
+    // the scroll listener can never take over.
+    function fillB2bPanel() {
+      var panel = b2bDropdownPanel();
+      if (!panel || panel.hidden) return;
+      if (panel.scrollHeight > panel.clientHeight + 4) return;
+      loadMoreB2bs();
+    }
+
+    function loadMoreB2bs() {
+      if (!isManager || !b2bsUrl) return;
+      if (b2bLoadingPage || !b2bHasMore) return;
+      fetchB2bPage(b2bPage + 1, {});
+    }
+
+    // Reset to page 0 — initial load and every new search term.
+    function loadB2bs(searchTerm, keepOpen) {
+      if (!isManager || !b2bsUrl) return;
+      b2bSearchTerm = searchTerm || '';
+      b2bHasMore = false;
+      fetchB2bPage(0, { reset: true, keepOpen: keepOpen });
     }
 
     // Multi-select date filter: "All" + each delivery date as toggleable rows
@@ -2339,6 +2470,29 @@
       event.preventDefault();
       event.returnValue = '';
     });
+
+    // Infinite scroll for the B2B picker: the dropdown panel is the scroll
+    // container (max-height + overflow), so pull the next page as it nears the
+    // bottom — ~1.5 rows early, so the list reads as continuous.
+    var b2bPanelEl = b2bDropdownPanel();
+    if (b2bPanelEl) {
+      b2bPanelEl.addEventListener('scroll', function () {
+        var distanceToBottom =
+          b2bPanelEl.scrollHeight - b2bPanelEl.scrollTop - b2bPanelEl.clientHeight;
+        if (distanceToBottom <= 56) loadMoreB2bs();
+      });
+    }
+
+    // Opening the dropdown can reveal a list that doesn't overflow yet (a short
+    // first page, or a narrow search); top it up so scrolling is possible.
+    var b2bTriggerEl = root.querySelector(
+      '[data-aico-preorder-b2b-field] [data-aico-custom-select-trigger]',
+    );
+    if (b2bTriggerEl) {
+      b2bTriggerEl.addEventListener('click', function () {
+        setTimeout(fillB2bPanel, 0);
+      });
+    }
 
     var b2bSearchInput = root.querySelector('[data-aico-preorder-b2b-search]');
     if (b2bSearchInput) {

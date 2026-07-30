@@ -5906,11 +5906,39 @@ button.aico-home-brand-card {
 .aico-preorder-setup-filters {
   display: contents;
 }
+/* The dropdown panel itself scrolls (the B2B list is paginated and grows as the
+   manager scrolls), so pin the search box to the top instead of letting it
+   scroll out of reach. */
 .aico-preorder-b2b-search-wrap {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   width: 100%;
   padding: 0.5rem 0.6rem;
+  background: var(--aico-bg);
   border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+/* "Loading more…" footer while the next page of B2Bs is in flight. */
+.aico-preorder-b2b-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-preorder-b2b-more[hidden] {
+  display: none;
+}
+.aico-preorder-b2b-more-spinner {
+  flex: 0 0 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
 }
 .aico-preorder-b2b-search-input {
   width: 100%;

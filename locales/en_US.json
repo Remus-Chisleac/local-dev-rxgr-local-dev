@@ -661,7 +661,8 @@
       "delivery_placeholder": "Select delivery address",
       "view_grid": "Grid view",
       "view_list": "List view",
-      "b2b_search_placeholder": "Search B2B…"
+      "b2b_search_placeholder": "Search B2B…",
+      "b2b_loading_more": "Loading more…"
     },
     "catalog": {
       "section_aria": "Preorder products",

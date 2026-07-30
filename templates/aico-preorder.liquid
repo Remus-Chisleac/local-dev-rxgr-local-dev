@@ -187,6 +187,12 @@
                          placeholder="{{ 'aico_preorder.filters.b2b_search_placeholder' | t }}" autocomplete="off">
                 </div>
                 <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+                {%- comment -%} Footer row shown while the next page of B2Bs is being
+                   fetched: the list is paginated and loads on scroll (preorder-page.js). {%- endcomment -%}
+                <div class="aico-preorder-b2b-more" data-aico-preorder-b2b-more hidden>
+                  <span class="aico-preorder-b2b-more-spinner" aria-hidden="true"></span>
+                  <span>{{ 'aico_preorder.filters.b2b_loading_more' | t }}</span>
+                </div>
               </div>
             </div>
           </div>
