@@ -37,6 +37,7 @@
     { "template": "product", "path": "shop/:handle", "page_type": "product", "menu": false },
 
     { "template": "aico-preorder", "path": "preorder", "page_type": "custom", "name": "Preorder" },
+    { "template": "aico-preorder2", "path": "preorder2", "page_type": "custom", "name": "Preorder2", "menu": false },
     { "template": "aico-preorder-thank-you", "path": "preorder/thank-you", "page_type": "custom", "name": "PreorderThankYou", "menu": false },
 
     { "template": "contact", "path": "kontakt", "page_type": "custom", "name": "Contact" },

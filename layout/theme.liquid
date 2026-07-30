@@ -344,7 +344,19 @@
             {%- endif -%}
           </a>
 
+          {%- comment -%} The preorder tool owns the whole viewport and brings its
+             own search: on /preorder2 the global search, the shopper cart and the
+             customer-view toggle are suppressed so they don't compete with the
+             preorder controls that dock into this row (see
+             templates/aico-preorder2.liquid). The menu button stays — navigation
+             out of the tool still has to work. /preorder keeps the full header. {%- endcomment -%}
+          {%- assign aico_hide_shop_chrome = false -%}
+          {%- if template.name == 'aico-preorder2' -%}
+            {%- assign aico_hide_shop_chrome = true -%}
+          {%- endif -%}
+
           <div class="aico-header-actions">
+            {% unless aico_hide_shop_chrome %}
             {% if customer %}
               <button type="button"
                       class="aico-icon-button aico-customer-view-toggle"
@@ -395,6 +407,7 @@
                     aria-hidden="true"></span>
               <span class="aico-sr-only" x-text="$store.cart && $store.cart.itemCountLabel()"></span>
             </a>
+            {% endunless %}
 
             <button type="button" class="aico-menu-button"
                     x-data
