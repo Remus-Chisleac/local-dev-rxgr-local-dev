@@ -52,6 +52,8 @@
   "aico_cognito_return_center_form_id": "208",
   "aico_cognito_self_repair_form_id": "255",
   "aico_search_brand_ids": "",
+  "aico_search_blocked_brand_ids": "b-grade",
+  "aico_search_hide_out_of_stock": true,
   "aico_pageless_brand_handles": "b-grade",
   "aico_preorder_hero_bg_asset": "preorder.png",
   "heading": "Welcome to your new shop",

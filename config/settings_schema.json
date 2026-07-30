@@ -71,7 +71,21 @@
         "type": "text",
         "label": "Searchable brands",
         "default": "",
-        "info": "Comma-separated brand IDs (or names) the search drawer may return — e.g. \"3,6,7\" or \"kybun, Joya, kybunjoya\". Leave empty to allow every brand the shopper can access. Shoppers still only see brands they have access to."
+        "info": "Comma-separated brand IDs, names or url handles the search drawer may return — e.g. \"3,6,7\" or \"kybun, Joya, kybunjoya\". Leave empty to allow every brand the shopper can access. Shoppers still only see brands they have access to."
+      },
+      {
+        "id": "aico_search_blocked_brand_ids",
+        "type": "text",
+        "label": "Brands excluded from search",
+        "default": "b-grade",
+        "info": "Comma-separated brand IDs, names or url handles the search drawer must never return — e.g. \"b-grade\". Wins over “Searchable brands”, so a single odd brand can be hidden without listing every other one. Leave empty to exclude nothing."
+      },
+      {
+        "id": "aico_search_hide_out_of_stock",
+        "type": "checkbox",
+        "label": "Hide out-of-stock products in search",
+        "default": true,
+        "info": "On: search applies the same warehouse stock gate as the product grid, so products with no stock in the shopper's warehouse are not returned. Off: they are returned and marked “Out of stock” with the next incoming-goods date. Turn this off once production-cockpit incoming-goods data is complete."
       }
     ]
   },
