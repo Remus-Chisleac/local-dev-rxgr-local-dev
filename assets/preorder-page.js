@@ -1261,11 +1261,11 @@
             b2bData.push(b2b);
             fresh.push({ id: b2b.id, label: b2b.company });
           });
-          // More pages exist while fewer than `total` are loaded; without a
-          // total (older backend), a full page implies another one follows.
-          b2bHasMore = total !== null
-            ? b2bData.length < total
-            : rows.length >= B2B_PAGE_SIZE;
+          // A short page means the server has nothing left — the only reliable
+          // end marker, since deduping can keep the loaded count permanently
+          // below `total`. `total` then just stops one empty request earlier.
+          b2bHasMore = rows.length >= B2B_PAGE_SIZE
+            && (total === null || b2bData.length < total);
           if (isReset) {
             repopulateAddressSelect('b2b_id', fresh);
           } else {
