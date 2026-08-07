@@ -3012,7 +3012,13 @@ html:has(.aico-preorder2-cart-panel) { overflow-x: clip; }
 .aico-preorder2-dock-display-trigger { padding: 0 0.5rem; }
 .aico-preorder2-dock-display-panel {
   min-width: 15rem;
+  max-height: 16rem;
   padding: 0.5rem 0.6rem;
+}
+/* Display-option rows carry sentence-length labels — let them wrap instead of
+   overflowing the panel (the listbox options above stay nowrap). */
+.aico-preorder2-dock-display-panel .aico-preorder2-dock-option {
+  white-space: normal;
 }
 .aico-preorder2-dock-display-heading {
   margin: 0 0 0.3rem;
