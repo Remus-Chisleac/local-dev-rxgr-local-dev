@@ -404,6 +404,9 @@
 
     var ticking = false;
     function onScroll() {
+      // Any page scroll closes an open dock dropdown (scrolling inside the
+      // panel itself doesn't bubble to window, so its list stays scrollable).
+      closeOpenDropdown();
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(function () {

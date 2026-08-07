@@ -192,6 +192,18 @@
           .querySelectorAll('[data-aico-custom-select].aico-preorder2-custom-select-open')
           .forEach(closeDropdown);
       });
+      // Page scroll closes any open dropdown — an absolutely-positioned panel
+      // left open while its anchor scrolls away reads as detached UI. Scrolling
+      // INSIDE a panel doesn't bubble to window, so lists stay scrollable.
+      window.addEventListener(
+        'scroll',
+        function () {
+          document
+            .querySelectorAll('[data-aico-custom-select].aico-preorder2-custom-select-open')
+            .forEach(closeDropdown);
+        },
+        { passive: true },
+      );
     }
   }
 
@@ -2615,6 +2627,13 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && panel && !panel.hidden) closePanel();
     });
+    window.addEventListener(
+      'scroll',
+      function () {
+        if (panel && !panel.hidden) closePanel();
+      },
+      { passive: true },
+    );
 
     if (stripInput) {
       stripInput.addEventListener('change', function () {

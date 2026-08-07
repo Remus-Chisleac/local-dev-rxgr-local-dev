@@ -1361,8 +1361,13 @@ html.aico-preorder2-gallery-open {
   vertical-align: middle;
 }
 .aico-preorder2-no-matches { font-style: italic; }
-/* Instant-search "searching" spinner inside the search field. */
+/* Instant-search "searching" spinner inside the search field. The input keeps
+   a reserved right zone for it so the clear (×) button never sits under the
+   spinner while both are visible. */
 .aico-preorder2-field-control--searchable { position: relative; }
+.aico-preorder2-field-control--searchable .aico-preorder2-search-input {
+  padding-right: 1.5rem;
+}
 .aico-preorder2-search-spinner {
   position: absolute;
   top: 50%;
@@ -2921,7 +2926,24 @@ html:has(.aico-preorder2-cart-panel) { overflow-x: clip; }
   font: inherit;
   color: inherit;
 }
-.aico-preorder2-dock-search-input::-webkit-search-cancel-button { cursor: pointer; }
+/* Simple thin × for both search fields — replaces the browser's default
+   search-cancel icon, which reads too heavy next to the muted field chrome. */
+.aico-preorder2-search-input::-webkit-search-cancel-button,
+.aico-preorder2-dock-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  background-color: var(--aico-muted-fg);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  cursor: pointer;
+}
+.aico-preorder2-search-input::-webkit-search-cancel-button:hover,
+.aico-preorder2-dock-search-input::-webkit-search-cancel-button:hover {
+  background-color: var(--aico-fg);
+}
 .aico-preorder2-dock-select { position: relative; }
 .aico-preorder2-dock-select-trigger {
   cursor: pointer;
