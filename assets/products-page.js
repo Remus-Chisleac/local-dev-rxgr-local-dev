@@ -888,9 +888,10 @@
     // different): magnitudes aren't comparable then, show the RRP as-is.
     var rrpCc = pricing.rrpCurrencyCode || cc;
     var rrpForeign = !!(pricing.rrpCurrencyCode && cc && pricing.rrpCurrencyCode !== cc);
+    // A zero/negative RRP is a data gap, never rendered ("UVP 0.00 USD").
     var rrpRaw = pricing.isOnSale ? (pricing.rrpDiscount != null ? pricing.rrpDiscount : pricing.rrp) : pricing.rrp;
-    var rrpLabel = (rrpRaw != null && (rrpForeign || rrpRaw > displayedAmount)) ? formatMoney(rrpRaw, rrpCc, loc) : null;
-    var compareRrpLabel = (pricing.isOnSale && pricing.rrp != null && (rrpForeign || pricing.rrp > pricing.sellingPrice)) ? formatMoney(pricing.rrp, rrpCc, loc) : null;
+    var rrpLabel = (rrpRaw != null && rrpRaw > 0 && (rrpForeign || rrpRaw > displayedAmount)) ? formatMoney(rrpRaw, rrpCc, loc) : null;
+    var compareRrpLabel = (pricing.isOnSale && pricing.rrp != null && pricing.rrp > 0 && (rrpForeign || pricing.rrp > pricing.sellingPrice)) ? formatMoney(pricing.rrp, rrpCc, loc) : null;
     var isDiscontinued = !!hit.isDiscontinued;
 
     var article = document.createElement('article');
