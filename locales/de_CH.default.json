@@ -663,7 +663,8 @@
       "view_grid": "Rasteransicht",
       "view_list": "Listenansicht",
       "b2b_search_placeholder": "B2B suchen…",
-      "b2b_loading_more": "Weitere werden geladen…"
+      "b2b_loading_more": "Weitere werden geladen…",
+      "dock_search_label": "PreOrder-Produktsuche"
     },
     "catalog": {
       "section_aria": "PreOrder-Produkte",

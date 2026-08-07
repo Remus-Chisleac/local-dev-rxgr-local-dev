@@ -1,16 +1,18 @@
 {% comment %}
-  AICO preorder page — /preorder2 VARIANT.
+  AICO preorder page — /preorder2 VARIANT (fully forked).
 
-  A duplicate of `aico-preorder.liquid` that exists so preorder-tool changes can
-  be trialled without touching the live /preorder page. The ONLY differences are
-  the `aico-preorder2` class + `data-aico-preorder2` marker on <main>, the header
-  dock below, and the extra `preorder2-header.js` include — every other line, and
-  every other JS asset, is shared verbatim with /preorder.
+  A fork of `aico-preorder.liquid` that exists so preorder-tool changes can be
+  trialled without touching the live /preorder page. EVERYTHING here is a
+  separate copy: this template, the `preorder2-{page,catalog,cart,stock,
+  confirmation}.js` bundles, and `preorder2-page.css` — all generated from the
+  /preorder originals with every `aico-preorder` class/data-attribute renamed to
+  `aico-preorder2`, so no theme.css preorder rule and no shared bundle touches
+  this page. Edit the preorder2-* files freely; keep /preorder's files alone.
 
-  Deliberately NOT duplicated: preorder-page.js / preorder-catalog.js / the cart
-  + confirmation bundles. An earlier preorder2 attempt forked those (~2k lines)
-  and was deleted as dead weight; this variant reuses them unchanged so the two
-  pages cannot drift.
+  On top of the plain copy this variant adds the header dock below (title +
+  mirrored search/dates/size controls docking over the sticky header, driven by
+  `preorder2-header.js`) and hides the global search/cart/customer-view chrome
+  (gated on `template.name` in layout/theme.liquid).
 
   The drop (`aico_preorder`) reaches this template through the build-time drops
   manifest — the renderer schedules whatever keys a template's Liquid names, so
@@ -21,66 +23,67 @@
 {%- comment -%} The active session (title, banner image, gradient colors, deadline)
    is resolved per buyer/debtor and hydrated CLIENT-SIDE from
    `preorder/session.js` — it is not bound to the Liquid drop at first render
-   (same as the countdown). The hero is therefore a shell that `preorder-page.js`
+   (same as the countdown). The hero is therefore a shell that `preorder2-page.js`
    fills in: title from `welcomeMessage`, image from `collectionImage`, and the
    full-bleed vertical gradient from `gradientColorStart/End`. No hardcoded asset. {%- endcomment -%}
 
-<main class="aico-preorder aico-preorder2" role="main"
-      data-aico-preorder
+<link rel="stylesheet" href="{{ 'preorder2-page.css' | asset_url }}">
+
+<main class="aico-preorder2" role="main"
       data-aico-preorder2
-      data-aico-preorder-user-id="{{ customer.id }}"
-      data-aico-preorder-context-url="{{ routes.aico_account_preorder_context_url }}"
-      data-aico-preorder-session-url="{{ routes.aico_preorder_session_url }}"
-      data-aico-preorder-products-url="{{ routes.aico_preorder_products_url }}"
-      data-aico-preorder-product-images-url="{{ routes.aico_preorder_product_images_url }}"
-      data-aico-preorder-cart-url="{{ routes.aico_preorder_cart_url }}"
-      data-aico-preorder-cart-add-url="{{ routes.aico_preorder_cart_add_url }}"
-      data-aico-preorder-cart-change-url="{{ routes.aico_preorder_cart_change_url }}"
-      data-aico-preorder-cart-clear-url="{{ routes.aico_preorder_cart_clear_url }}"
-      data-aico-preorder-cart-submit-url="{{ routes.aico_preorder_cart_submit_url }}"
-      data-aico-preorder-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
-      data-aico-preorder-addresses-url="{{ routes.aico_preorder_addresses_url }}"
-      data-aico-preorder-eligibility-url="{{ routes.aico_preorder_eligibility_url }}"
-      data-aico-preorder-b2bs-url="{{ routes.aico_preorder_b2bs_url }}"
-      data-aico-preorder-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
-      data-aico-preorder-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
-      data-aico-preorder-enable-cart="1"
-      data-aico-preorder-copy-select-debtor="{{ 'aico_preorder.catalog.select_debtor' | t | escape }}"
-      data-aico-preorder-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
-      data-aico-preorder-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"
-      data-aico-preorder-copy-loading="{{ 'aico_preorder.catalog.loading' | t | escape }}"
-      data-aico-preorder-copy-error="{{ 'aico_preorder.catalog.error' | t | escape }}"
-      data-aico-preorder-copy-select-addresses="{{ 'aico_preorder.catalog.select_addresses' | t | escape }}"
-      data-aico-preorder-copy-total="{{ 'aico_preorder.summary.total' | t | escape }}"
-      data-aico-preorder-copy-discount="{{ 'aico_preorder.summary.discount' | t | escape }}"
-      data-aico-preorder-copy-saving="{{ 'aico_preorder.summary.saving' | t | escape }}"
-      data-aico-preorder-copy-saved="{{ 'aico_preorder.summary.saved' | t | escape }}"
-      data-aico-preorder-copy-submitting="{{ 'aico_preorder.summary.submitting' | t | escape }}"
-      data-aico-preorder-copy-submitted="{{ 'aico_preorder.summary.submitted' | t | escape }}"
-      data-aico-preorder-copy-committed="{{ 'aico_preorder.summary.committed_warning' | t | escape }}"
-      data-aico-preorder-copy-products-heading="{{ 'aico_preorder.catalog.products_heading' | t | escape }}"
-      data-aico-preorder-copy-row-total="{{ 'aico_preorder.catalog.row_total' | t | escape }}"
-      data-aico-preorder-copy-product-total="{{ 'aico_preorder.catalog.product_total' | t | escape }}"
-      data-aico-preorder-copy-pcs="{{ 'aico_preorder.catalog.pcs' | t | escape }}"
-      data-aico-preorder-copy-flyer-total="{{ 'aico_preorder.flyers.total' | t | escape }}"
-      data-aico-preorder-copy-billing="{{ 'aico_preorder.summary.billing_address' | t | escape }}"
-      data-aico-preorder-copy-delivery="{{ 'aico_preorder.summary.delivery_address' | t | escape }}"
-      data-aico-preorder-copy-excl-vat="{{ 'aico_preorder.summary.excl_vat' | t | escape }}"
-      data-aico-preorder-copy-subtotal="{{ 'aico_preorder.summary.subtotal' | t | escape }}"
-      data-aico-preorder-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
-      {% if preorder_session.deadline_at %}data-aico-preorder-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
+      data-aico-preorder2-user-id="{{ customer.id }}"
+      data-aico-preorder2-context-url="{{ routes.aico_account_preorder_context_url }}"
+      data-aico-preorder2-session-url="{{ routes.aico_preorder_session_url }}"
+      data-aico-preorder2-products-url="{{ routes.aico_preorder_products_url }}"
+      data-aico-preorder2-product-images-url="{{ routes.aico_preorder_product_images_url }}"
+      data-aico-preorder2-cart-url="{{ routes.aico_preorder_cart_url }}"
+      data-aico-preorder2-cart-add-url="{{ routes.aico_preorder_cart_add_url }}"
+      data-aico-preorder2-cart-change-url="{{ routes.aico_preorder_cart_change_url }}"
+      data-aico-preorder2-cart-clear-url="{{ routes.aico_preorder_cart_clear_url }}"
+      data-aico-preorder2-cart-submit-url="{{ routes.aico_preorder_cart_submit_url }}"
+      data-aico-preorder2-thank-you-url="{{ routes.aico_preorder_thank_you_url }}"
+      data-aico-preorder2-addresses-url="{{ routes.aico_preorder_addresses_url }}"
+      data-aico-preorder2-eligibility-url="{{ routes.aico_preorder_eligibility_url }}"
+      data-aico-preorder2-b2bs-url="{{ routes.aico_preorder_b2bs_url }}"
+      data-aico-preorder2-is-manager="{% if aico_preorder.is_manager %}1{% else %}0{% endif %}"
+      data-aico-preorder2-selected-debtor-id="{{ aico_preorder.selected_debtor_id }}"
+      data-aico-preorder2-enable-cart="1"
+      data-aico-preorder2-copy-select-debtor="{{ 'aico_preorder.catalog.select_debtor' | t | escape }}"
+      data-aico-preorder2-is-stock-relevant="{% if preorder_session.is_stock_relevant %}1{% else %}0{% endif %}"
+      data-aico-preorder2-copy-empty="{{ 'aico_preorder.catalog.empty' | t | escape }}"
+      data-aico-preorder2-copy-loading="{{ 'aico_preorder.catalog.loading' | t | escape }}"
+      data-aico-preorder2-copy-error="{{ 'aico_preorder.catalog.error' | t | escape }}"
+      data-aico-preorder2-copy-select-addresses="{{ 'aico_preorder.catalog.select_addresses' | t | escape }}"
+      data-aico-preorder2-copy-total="{{ 'aico_preorder.summary.total' | t | escape }}"
+      data-aico-preorder2-copy-discount="{{ 'aico_preorder.summary.discount' | t | escape }}"
+      data-aico-preorder2-copy-saving="{{ 'aico_preorder.summary.saving' | t | escape }}"
+      data-aico-preorder2-copy-saved="{{ 'aico_preorder.summary.saved' | t | escape }}"
+      data-aico-preorder2-copy-submitting="{{ 'aico_preorder.summary.submitting' | t | escape }}"
+      data-aico-preorder2-copy-submitted="{{ 'aico_preorder.summary.submitted' | t | escape }}"
+      data-aico-preorder2-copy-committed="{{ 'aico_preorder.summary.committed_warning' | t | escape }}"
+      data-aico-preorder2-copy-products-heading="{{ 'aico_preorder.catalog.products_heading' | t | escape }}"
+      data-aico-preorder2-copy-row-total="{{ 'aico_preorder.catalog.row_total' | t | escape }}"
+      data-aico-preorder2-copy-product-total="{{ 'aico_preorder.catalog.product_total' | t | escape }}"
+      data-aico-preorder2-copy-pcs="{{ 'aico_preorder.catalog.pcs' | t | escape }}"
+      data-aico-preorder2-copy-flyer-total="{{ 'aico_preorder.flyers.total' | t | escape }}"
+      data-aico-preorder2-copy-billing="{{ 'aico_preorder.summary.billing_address' | t | escape }}"
+      data-aico-preorder2-copy-delivery="{{ 'aico_preorder.summary.delivery_address' | t | escape }}"
+      data-aico-preorder2-copy-excl-vat="{{ 'aico_preorder.summary.excl_vat' | t | escape }}"
+      data-aico-preorder2-copy-subtotal="{{ 'aico_preorder.summary.subtotal' | t | escape }}"
+      data-aico-preorder2-copy-stock-warning="{{ 'aico_preorder.summary.stock_warning' | t | escape }}"
+      {% if preorder_session.deadline_at %}data-aico-preorder2-deadline="{{ preorder_session.deadline_at }}"{% endif %}>
 
   {%- comment -%} SSR-embedded session payload — the exact shape preorder/session.js
-       returns in `data`. preorder-page.js hydrates from this at first paint and only
+       returns in `data`. preorder2-page.js hydrates from this at first paint and only
        falls back to fetching session.js when it is null/absent. {%- endcomment -%}
-  <script type="application/json" data-aico-preorder-session-json>{{ aico_preorder.session_payload | json }}</script>
+  <script type="application/json" data-aico-preorder2-session-json>{{ aico_preorder.session_payload | json }}</script>
 
   {%- comment -%} ── Header dock (preorder2 only) ──
        Once the hero (title) and the catalog tools (search / delivery dates /
        size type) scroll up behind the sticky site header, they fade in HERE,
        overlaid on the header row. The real controls never move — this is a
        MIRROR that forwards input to them — so every `root.querySelector(...)`
-       binding in preorder-page.js keeps resolving exactly as it does on
+       binding in preorder2-page.js keeps resolving exactly as it does on
        /preorder. assets/preorder2-header.js fills and drives this shell; it is
        empty until then.
 
@@ -96,22 +99,30 @@
       <span class="aico-preorder2-dock-title" data-aico-preorder2-dock-title></span>
 
       <div class="aico-preorder2-dock-tools" data-aico-preorder2-dock-tools>
-        <label class="aico-preorder2-dock-search">
-          <span class="aico-sr-only">{{ 'aico_preorder.filters.search_label' | t }}</span>
-          <svg class="aico-preorder2-dock-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
-          </svg>
-          <input type="search" class="aico-preorder2-dock-search-input"
-                 data-aico-preorder2-dock-search
-                 placeholder="{{ 'aico_preorder.filters.search_placeholder' | t }}"
-                 autocomplete="off">
-        </label>
+        {%- comment -%} Each dock control carries a visible mini-title: in the
+           header these mirrors sit where site-wide chrome lives, so the search
+           especially must say it is the PREORDER product search. {%- endcomment -%}
+        <div class="aico-preorder2-dock-field">
+          <span class="aico-preorder2-dock-field-label" aria-hidden="true">{{ 'aico_preorder.filters.dock_search_label' | t }}</span>
+          <label class="aico-preorder2-dock-search">
+            <span class="aico-sr-only">{{ 'aico_preorder.filters.dock_search_label' | t }}</span>
+            <svg class="aico-preorder2-dock-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input type="search" class="aico-preorder2-dock-search-input"
+                   data-aico-preorder2-dock-search
+                   placeholder="{{ 'aico_preorder.filters.search_placeholder' | t }}"
+                   autocomplete="off">
+          </label>
+        </div>
 
         {%- comment -%} Delivery dates. The real control is a MULTI-select
            checkbox list (its native <select> is a stub — state lives in JS), so
            this mirror clones the real option rows and forwards clicks to them
            rather than mirroring a value. {%- endcomment -%}
-        <div class="aico-preorder2-dock-select" data-aico-preorder2-dock-dates>
+        <div class="aico-preorder2-dock-field">
+          <span class="aico-preorder2-dock-field-label" aria-hidden="true">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
+          <div class="aico-preorder2-dock-select" data-aico-preorder2-dock-dates>
           <button type="button" class="aico-preorder2-dock-select-trigger"
                   data-aico-preorder2-dock-dates-trigger
                   aria-haspopup="listbox" aria-expanded="false"
@@ -125,12 +136,15 @@
             </svg>
           </button>
           <div class="aico-preorder2-dock-select-dropdown" data-aico-preorder2-dock-dates-list role="listbox" hidden></div>
+          </div>
         </div>
 
         {%- comment -%} Size type — a plain single-select mirror: picking an
            option writes the real native <select> and dispatches `change`, which
-           is what preorder-page.js binds (and what relabels its custom UI). {%- endcomment -%}
-        <div class="aico-preorder2-dock-select" data-aico-preorder2-dock-size>
+           is what preorder2-page.js binds (and what relabels its custom UI). {%- endcomment -%}
+        <div class="aico-preorder2-dock-field">
+          <span class="aico-preorder2-dock-field-label" aria-hidden="true">{{ 'aico_preorder.filters.size_region_label' | t }}</span>
+          <div class="aico-preorder2-dock-select" data-aico-preorder2-dock-size>
           <button type="button" class="aico-preorder2-dock-select-trigger"
                   data-aico-preorder2-dock-size-trigger
                   aria-haspopup="listbox" aria-expanded="false"
@@ -141,6 +155,25 @@
             </svg>
           </button>
           <div class="aico-preorder2-dock-select-dropdown" data-aico-preorder2-dock-size-list role="listbox" hidden></div>
+          </div>
+        </div>
+
+        {%- comment -%} Display options mirror — same gear as the filter bar's.
+           Rows are cloned from the real panel on open and clicks are forwarded
+           to its inputs, so view state + persistence stay in preorder2-page.js.
+           No mini-title: the real bar's gear is untitled too. {%- endcomment -%}
+        <div class="aico-preorder2-dock-select aico-preorder2-dock-display" data-aico-preorder2-dock-display>
+          <button type="button" class="aico-preorder2-dock-select-trigger aico-preorder2-dock-display-trigger"
+                  data-aico-preorder2-dock-display-trigger
+                  aria-haspopup="dialog" aria-expanded="false"
+                  aria-label="{{ 'aico_preorder.display.button_label' | t | escape }}"
+                  title="{{ 'aico_preorder.display.button_label' | t | escape }}">
+            <svg class="aico-preorder2-dock-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+          <div class="aico-preorder2-dock-select-dropdown aico-preorder2-dock-display-panel" data-aico-preorder2-dock-display-list role="dialog" aria-label="{{ 'aico_preorder.display.button_label' | t | escape }}" hidden></div>
         </div>
       </div>
     </div>
@@ -148,57 +181,57 @@
 
   {%- comment -%} ── Hero band: full-bleed vertical gradient (session colors) behind the
        session banner image + title text, with the countdown on the side. The
-       image/title/gradient are filled in by preorder-page.js once the session
+       image/title/gradient are filled in by preorder2-page.js once the session
        resolves (data hooks below); empty shell until then. {%- endcomment -%}
-  <section class="aico-preorder-hero" data-aico-preorder-hero aria-labelledby="aico-preorder-hero-title">
-    <div class="aico-page-container aico-preorder-hero-inner">
-      <div class="aico-preorder-hero-left">
-        <h1 id="aico-preorder-hero-title" class="aico-preorder-hero-title" data-aico-preorder-hero-title></h1>
-        <p class="aico-preorder-no-session" data-aico-preorder-no-session hidden>{{ 'aico_preorder.session.no_active' | t }}</p>
+  <section class="aico-preorder2-hero" data-aico-preorder2-hero aria-labelledby="aico-preorder2-hero-title">
+    <div class="aico-page-container aico-preorder2-hero-inner">
+      <div class="aico-preorder2-hero-left">
+        <h1 id="aico-preorder2-hero-title" class="aico-preorder2-hero-title" data-aico-preorder2-hero-title></h1>
+        <p class="aico-preorder2-no-session" data-aico-preorder2-no-session hidden>{{ 'aico_preorder.session.no_active' | t }}</p>
         {%- comment -%} Collection book: explicit labelled download (replaces the old
            b2b-shop affordance of clicking the hero banner image). Hidden until
-           preorder-page.js resolves the session and finds a collectionBookUrl. {%- endcomment -%}
-        <a class="aico-preorder-hero-book" data-aico-preorder-hero-book href="#" target="_blank" rel="noopener" hidden>
-          <svg class="aico-preorder-hero-book-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+           preorder2-page.js resolves the session and finds a collectionBookUrl. {%- endcomment -%}
+        <a class="aico-preorder2-hero-book" data-aico-preorder2-hero-book href="#" target="_blank" rel="noopener" hidden>
+          <svg class="aico-preorder2-hero-book-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span class="aico-preorder-hero-book-label">{{ 'aico_preorder.session.collection_book' | t }}</span>
+          <span class="aico-preorder2-hero-book-label">{{ 'aico_preorder.session.collection_book' | t }}</span>
         </a>
       </div>
 
-      <div class="aico-preorder-hero-side">
+      <div class="aico-preorder2-hero-side">
 
         <img
-          class="aico-preorder-banner-img"
-          data-aico-preorder-hero-img
+          class="aico-preorder2-banner-img"
+          data-aico-preorder2-hero-img
           src=""
           alt=""
           loading="eager"
           decoding="async"
           hidden>
 
-        <div class="aico-preorder-countdown" data-aico-preorder-countdown role="group"
+        <div class="aico-preorder2-countdown" data-aico-preorder2-countdown role="group"
              aria-label="{{ 'aico_preorder.session.deadline_label' | t }}">
-          <p class="aico-preorder-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</p>
-          <div class="aico-preorder-countdown-bar" role="presentation">
-            <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-days>--</span>
-              <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.days' | t }}</span>
+          <p class="aico-preorder2-countdown-eyebrow">{{ 'aico_preorder.session.deadline_label' | t }}</p>
+          <div class="aico-preorder2-countdown-bar" role="presentation">
+            <div class="aico-preorder2-countdown-segment">
+              <span class="aico-preorder2-countdown-value" data-aico-countdown-days>--</span>
+              <span class="aico-preorder2-countdown-label">{{ 'aico_preorder.session.deadline_units.days' | t }}</span>
             </div>
-            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
-            <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-hours>--</span>
-              <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.hours' | t }}</span>
+            <span class="aico-preorder2-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder2-countdown-segment">
+              <span class="aico-preorder2-countdown-value" data-aico-countdown-hours>--</span>
+              <span class="aico-preorder2-countdown-label">{{ 'aico_preorder.session.deadline_units.hours' | t }}</span>
             </div>
-            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
-            <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-minutes>--</span>
-              <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.minutes' | t }}</span>
+            <span class="aico-preorder2-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder2-countdown-segment">
+              <span class="aico-preorder2-countdown-value" data-aico-countdown-minutes>--</span>
+              <span class="aico-preorder2-countdown-label">{{ 'aico_preorder.session.deadline_units.minutes' | t }}</span>
             </div>
-            <span class="aico-preorder-countdown-sep" aria-hidden="true">:</span>
-            <div class="aico-preorder-countdown-segment">
-              <span class="aico-preorder-countdown-value" data-aico-countdown-seconds>--</span>
-              <span class="aico-preorder-countdown-label">{{ 'aico_preorder.session.deadline_units.seconds' | t }}</span>
+            <span class="aico-preorder2-countdown-sep" aria-hidden="true">:</span>
+            <div class="aico-preorder2-countdown-segment">
+              <span class="aico-preorder2-countdown-value" data-aico-countdown-seconds>--</span>
+              <span class="aico-preorder2-countdown-label">{{ 'aico_preorder.session.deadline_units.seconds' | t }}</span>
             </div>
           </div>
         </div>
@@ -207,51 +240,51 @@
   </section>
 
   {%- comment -%} ── Compact filter row ── {%- endcomment -%}
-  <section class="aico-preorder-filters-wrap" aria-labelledby="aico-preorder-filters-title" data-aico-preorder-filters-wrap>
+  <section class="aico-preorder2-filters-wrap" aria-labelledby="aico-preorder2-filters-title" data-aico-preorder2-filters-wrap>
     <div class="aico-page-container">
-      <h2 id="aico-preorder-filters-title" class="aico-sr-only">{{ 'aico_preorder.filters.section_aria' | t }}</h2>
+      <h2 id="aico-preorder2-filters-title" class="aico-sr-only">{{ 'aico_preorder.filters.section_aria' | t }}</h2>
 
-      <form class="aico-preorder-filters"
-            data-aico-preorder-filters
+      <form class="aico-preorder2-filters"
+            data-aico-preorder2-filters
             method="post"
             action="{{ routes.aico_account_preorder_context_url }}"
             autocomplete="off">
         <input type="hidden" name="_token" value="{{ aico_csrf_token }}">
 
         {%- comment -%} Setup row: billing + delivery (b2b-shop SortFilterControl, no B2B picker). {%- endcomment -%}
-        <div class="aico-preorder-setup-filters" data-aico-preorder-setup-filters>
+        <div class="aico-preorder2-setup-filters" data-aico-preorder2-setup-filters>
         {%- if aico_preorder.is_manager -%}
-        <div class="aico-preorder-field aico-preorder-field-b2b" data-aico-field="b2b" data-aico-preorder-b2b-field>
-          <span id="aico-preorder-b2b-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-field aico-preorder2-field-b2b" data-aico-field="b2b" data-aico-preorder2-b2b-field>
+          <span id="aico-preorder2-b2b-label" class="aico-preorder2-field-label">{{ 'aico_preorder.filters.b2b_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 12v.01"></path><path d="M9 15v.01"></path>
             </svg>
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
-              <select name="b2b_id" class="aico-preorder-select-native" tabindex="-1"
-                      aria-labelledby="aico-preorder-b2b-label" aria-hidden="true"
-                      data-aico-preorder-select="b2b_id" data-aico-preorder-b2b
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select>
+              <select name="b2b_id" class="aico-preorder2-select-native" tabindex="-1"
+                      aria-labelledby="aico-preorder2-b2b-label" aria-hidden="true"
+                      data-aico-preorder2-select="b2b_id" data-aico-preorder2-b2b
                       data-placeholder="{{ 'aico_preorder.filters.b2b_placeholder' | t }}" disabled>
                 <option value="">{{ 'aico_preorder.filters.b2b_placeholder' | t }}</option>
               </select>
-              <button type="button" id="aico-preorder-b2b-trigger" class="aico-preorder-custom-select-trigger"
+              <button type="button" id="aico-preorder2-b2b-trigger" class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
-                      aria-labelledby="aico-preorder-b2b-label" disabled>
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      aria-labelledby="aico-preorder2-b2b-label" disabled>
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div class="aico-preorder-b2b-search-wrap">
-                  <input type="text" class="aico-preorder-b2b-search-input" data-aico-preorder-b2b-search
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div class="aico-preorder2-b2b-search-wrap">
+                  <input type="text" class="aico-preorder2-b2b-search-input" data-aico-preorder2-b2b-search
                          placeholder="{{ 'aico_preorder.filters.b2b_search_placeholder' | t }}" autocomplete="off">
                 </div>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
                 {%- comment -%} Footer row shown while the next page of B2Bs is being
-                   fetched: the list is paginated and loads on scroll (preorder-page.js). {%- endcomment -%}
-                <div class="aico-preorder-b2b-more" data-aico-preorder-b2b-more hidden>
-                  <span class="aico-preorder-b2b-more-spinner" aria-hidden="true"></span>
+                   fetched: the list is paginated and loads on scroll (preorder2-page.js). {%- endcomment -%}
+                <div class="aico-preorder2-b2b-more" data-aico-preorder2-b2b-more hidden>
+                  <span class="aico-preorder2-b2b-more-spinner" aria-hidden="true"></span>
                   <span>{{ 'aico_preorder.filters.b2b_loading_more' | t }}</span>
                 </div>
               </div>
@@ -259,49 +292,55 @@
           </div>
         </div>
 
-        <div class="aico-preorder-field aico-preorder-field-debtor" data-aico-field="debtor" data-aico-preorder-debtor-field hidden>
-          <span id="aico-preorder-debtor-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.debtor_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-field aico-preorder2-field-debtor" data-aico-field="debtor" data-aico-preorder2-debtor-field hidden>
+          <span id="aico-preorder2-debtor-label" class="aico-preorder2-field-label">{{ 'aico_preorder.filters.debtor_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
-              <select name="debtor_id" class="aico-preorder-select-native" tabindex="-1"
-                      aria-labelledby="aico-preorder-debtor-label" aria-hidden="true"
-                      data-aico-preorder-select="debtor_id" data-aico-preorder-debtor
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select>
+              <select name="debtor_id" class="aico-preorder2-select-native" tabindex="-1"
+                      aria-labelledby="aico-preorder2-debtor-label" aria-hidden="true"
+                      data-aico-preorder2-select="debtor_id" data-aico-preorder2-debtor
                       data-placeholder="{{ 'aico_preorder.filters.debtor_placeholder' | t }}" disabled>
                 <option value="">{{ 'aico_preorder.filters.debtor_placeholder' | t }}</option>
               </select>
-              <button type="button" id="aico-preorder-debtor-trigger" class="aico-preorder-custom-select-trigger"
+              <button type="button" id="aico-preorder2-debtor-trigger" class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
-                      aria-labelledby="aico-preorder-debtor-label" disabled>
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      aria-labelledby="aico-preorder2-debtor-label" disabled>
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
+                {%- comment -%} Footer row shown while the next page of B2Bs is being
+                   fetched: the list is paginated and loads on scroll (preorder2-page.js). {%- endcomment -%}
+                <div class="aico-preorder2-b2b-more" data-aico-preorder2-b2b-more hidden>
+                  <span class="aico-preorder2-b2b-more-spinner" aria-hidden="true"></span>
+                  <span>{{ 'aico_preorder.filters.b2b_loading_more' | t }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
         {%- endif -%}
-        <div class="aico-preorder-field" data-aico-field="billing_address">
-          <span id="aico-preorder-billing-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.billing_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-field" data-aico-field="billing_address">
+          <span id="aico-preorder2-billing-label" class="aico-preorder2-field-label">{{ 'aico_preorder.filters.billing_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M19 14V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v8"></path>
               <path d="M3 14h18"></path>
               <path d="M5 14v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path>
             </svg>
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select>
               <select name="billing_address_id"
-                      class="aico-preorder-select-native"
+                      class="aico-preorder2-select-native"
                       tabindex="-1"
-                      aria-labelledby="aico-preorder-billing-label"
+                      aria-labelledby="aico-preorder2-billing-label"
                       aria-hidden="true"
-                      data-aico-preorder-select="billing_address_id"
+                      data-aico-preorder2-select="billing_address_id"
                       data-placeholder="{{ 'aico_preorder.filters.billing_placeholder' | t }}"
                       {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
                 <option value="">{{ 'aico_preorder.filters.billing_placeholder' | t }}</option>
@@ -310,39 +349,39 @@
                 {% endfor %}
               </select>
               <button type="button"
-                      id="aico-preorder-billing-trigger"
-                      class="aico-preorder-custom-select-trigger"
+                      id="aico-preorder2-billing-trigger"
+                      class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger
                       aria-haspopup="listbox"
                       aria-expanded="false"
-                      aria-labelledby="aico-preorder-billing-label"
+                      aria-labelledby="aico-preorder2-billing-label"
                       {% if aico_preorder.billing_addresses == empty %}disabled{% endif %}>
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="aico-preorder-field" data-aico-field="delivery_address">
-          <span id="aico-preorder-delivery-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.delivery_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-field" data-aico-field="delivery_address">
+          <span id="aico-preorder2-delivery-label" class="aico-preorder2-field-label">{{ 'aico_preorder.filters.delivery_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select>
               <select name="delivery_address_id"
-                      class="aico-preorder-select-native"
+                      class="aico-preorder2-select-native"
                       tabindex="-1"
-                      aria-labelledby="aico-preorder-delivery-label"
+                      aria-labelledby="aico-preorder2-delivery-label"
                       aria-hidden="true"
-                      data-aico-preorder-select="delivery_address_id"
+                      data-aico-preorder2-select="delivery_address_id"
                       data-placeholder="{{ 'aico_preorder.filters.delivery_placeholder' | t }}"
                       {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
                 <option value="">{{ 'aico_preorder.filters.delivery_placeholder' | t }}</option>
@@ -351,88 +390,88 @@
                 {% endfor %}
               </select>
               <button type="button"
-                      id="aico-preorder-delivery-trigger"
-                      class="aico-preorder-custom-select-trigger"
+                      id="aico-preorder2-delivery-trigger"
+                      class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger
                       aria-haspopup="listbox"
                       aria-expanded="false"
-                      aria-labelledby="aico-preorder-delivery-label"
+                      aria-labelledby="aico-preorder2-delivery-label"
                       {% if aico_preorder.delivery_addresses == empty %}disabled{% endif %}>
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
               </div>
             </div>
           </div>
         </div>
         </div>
 
-        <div class="aico-preorder-catalog-tools" data-aico-preorder-catalog-tools>
-        <label class="aico-preorder-field aico-preorder-field-search" data-aico-field="search">
-          <span class="aico-preorder-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
-          <span class="aico-preorder-field-control">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-catalog-tools" data-aico-preorder2-catalog-tools>
+        <label class="aico-preorder2-field aico-preorder2-field-search" data-aico-field="search">
+          <span class="aico-preorder2-field-label">{{ 'aico_preorder.filters.search_label' | t }}</span>
+          <span class="aico-preorder2-field-control">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
-            <input type="search" class="aico-preorder-search-input" name="q"
+            <input type="search" class="aico-preorder2-search-input" name="q"
                    placeholder="{{ 'aico_preorder.filters.search_placeholder' | t }}"
-                   data-aico-preorder-search>
+                   data-aico-preorder2-search>
           </span>
         </label>
 
-        <div class="aico-preorder-field aico-preorder-field-dates" data-aico-field="dates">
-          <span id="aico-preorder-dates-label" class="aico-preorder-field-label">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <svg class="aico-preorder-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="aico-preorder2-field aico-preorder2-field-dates" data-aico-field="dates">
+          <span id="aico-preorder2-dates-label" class="aico-preorder2-field-label">{{ 'aico_preorder.catalog.dates_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <svg class="aico-preorder2-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path>
             </svg>
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select data-aico-custom-select-managed>
-              <select name="date_filter" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
-                      aria-labelledby="aico-preorder-dates-label" data-aico-preorder-date-select>
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select data-aico-custom-select-managed>
+              <select name="date_filter" class="aico-preorder2-select-native" tabindex="-1" aria-hidden="true"
+                      aria-labelledby="aico-preorder2-dates-label" data-aico-preorder2-date-select>
                 <option value="__all__">{{ 'aico_preorder.catalog.dates_all' | t }}</option>
               </select>
-              <button type="button" id="aico-preorder-dates-trigger" class="aico-preorder-custom-select-trigger"
+              <button type="button" id="aico-preorder2-dates-trigger" class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
-                      aria-labelledby="aico-preorder-dates-label">
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      aria-labelledby="aico-preorder2-dates-label">
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
               </div>
             </div>
           </div>
         </div>
 
         {%- assign size_selected = aico_preorder.size_region | default: 'EU' | upcase -%}
-        <div class="aico-preorder-field aico-preorder-field-size" data-aico-field="size_region">
-          <span id="aico-preorder-size-label" class="aico-preorder-field-label">{{ 'aico_preorder.filters.size_region_label' | t }}</span>
-          <div class="aico-preorder-field-control aico-preorder-field-control-select">
-            <div class="aico-preorder-custom-select aico-preorder-custom-select-grow" data-aico-custom-select>
-              <select name="size_region" class="aico-preorder-select-native" tabindex="-1" aria-hidden="true"
-                      data-aico-preorder-select="size_region">
+        <div class="aico-preorder2-field aico-preorder2-field-size" data-aico-field="size_region">
+          <span id="aico-preorder2-size-label" class="aico-preorder2-field-label">{{ 'aico_preorder.filters.size_region_label' | t }}</span>
+          <div class="aico-preorder2-field-control aico-preorder2-field-control-select">
+            <div class="aico-preorder2-custom-select aico-preorder2-custom-select-grow" data-aico-custom-select>
+              <select name="size_region" class="aico-preorder2-select-native" tabindex="-1" aria-hidden="true"
+                      data-aico-preorder2-select="size_region">
                 <option value="EU" {% if size_selected == 'EU' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_eu' | t }}</option>
                 <option value="UK" {% if size_selected == 'UK' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_uk' | t }}</option>
                 <option value="US" {% if size_selected == 'US' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_us' | t }}</option>
                 <option value="KR" {% if size_selected == 'KR' %}selected{% endif %}>{{ 'aico_preorder.filters.size_region_option_mm' | t }}</option>
               </select>
-              <button type="button" id="aico-preorder-size-trigger" class="aico-preorder-custom-select-trigger"
+              <button type="button" id="aico-preorder2-size-trigger" class="aico-preorder2-custom-select-trigger"
                       data-aico-custom-select-trigger aria-haspopup="listbox" aria-expanded="false"
-                      aria-labelledby="aico-preorder-size-label">
-                <span class="aico-preorder-custom-select-label" data-aico-custom-select-label></span>
-                <svg class="aico-preorder-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      aria-labelledby="aico-preorder2-size-label">
+                <span class="aico-preorder2-custom-select-label" data-aico-custom-select-label></span>
+                <svg class="aico-preorder2-custom-select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <div class="aico-preorder-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
-                <div role="listbox" class="aico-preorder-custom-select-list" data-aico-custom-select-list></div>
+              <div class="aico-preorder2-custom-select-dropdown" data-aico-custom-select-dropdown hidden>
+                <div role="listbox" class="aico-preorder2-custom-select-list" data-aico-custom-select-list></div>
               </div>
             </div>
           </div>
@@ -440,10 +479,10 @@
 
         {%- comment -%} Display options: a gear that opens a small popover controlling
            how compact the catalog renders. Pure client-side view state (persisted in
-           localStorage), applied as a class/attribute on the .aico-preorder root so it
+           localStorage), applied as a class/attribute on the .aico-preorder2 root so it
            survives catalog re-renders. {%- endcomment -%}
-        <div class="aico-preorder-field aico-preorder-field-display" data-aico-field="display" data-aico-preorder-display>
-          <button type="button" class="aico-preorder-display-trigger" data-aico-preorder-display-trigger
+        <div class="aico-preorder2-field aico-preorder2-field-display" data-aico-field="display" data-aico-preorder2-display>
+          <button type="button" class="aico-preorder2-display-trigger" data-aico-preorder2-display-trigger
                   aria-haspopup="true" aria-expanded="false" title="{{ 'aico_preorder.display.button_label' | t }}"
                   aria-label="{{ 'aico_preorder.display.button_label' | t }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -451,26 +490,26 @@
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
           </button>
-          <div class="aico-preorder-display-panel" data-aico-preorder-display-panel hidden role="dialog" aria-label="{{ 'aico_preorder.display.button_label' | t }}">
-            <p class="aico-preorder-display-heading">{{ 'aico_preorder.display.heading' | t }}</p>
+          <div class="aico-preorder2-display-panel" data-aico-preorder2-display-panel hidden role="dialog" aria-label="{{ 'aico_preorder.display.button_label' | t }}">
+            <p class="aico-preorder2-display-heading">{{ 'aico_preorder.display.heading' | t }}</p>
 
-            <label class="aico-preorder-display-toggle">
-              <input type="checkbox" data-aico-preorder-display-strip checked>
-              <span class="aico-preorder-display-toggle-text">{{ 'aico_preorder.display.show_strip' | t }}</span>
+            <label class="aico-preorder2-display-toggle">
+              <input type="checkbox" data-aico-preorder2-display-strip checked>
+              <span class="aico-preorder2-display-toggle-text">{{ 'aico_preorder.display.show_strip' | t }}</span>
             </label>
 
-            <div class="aico-preorder-display-group" role="radiogroup" aria-label="{{ 'aico_preorder.display.size_labels_label' | t }}">
-              <p class="aico-preorder-display-group-label">{{ 'aico_preorder.display.size_labels_label' | t }}</p>
-              <label class="aico-preorder-display-radio">
-                <input type="radio" name="aico-preorder-size-labels" value="all" data-aico-preorder-display-sizes checked>
+            <div class="aico-preorder2-display-group" role="radiogroup" aria-label="{{ 'aico_preorder.display.size_labels_label' | t }}">
+              <p class="aico-preorder2-display-group-label">{{ 'aico_preorder.display.size_labels_label' | t }}</p>
+              <label class="aico-preorder2-display-radio">
+                <input type="radio" name="aico-preorder2-size-labels" value="all" data-aico-preorder2-display-sizes checked>
                 <span>{{ 'aico_preorder.display.size_labels_all' | t }}</span>
               </label>
-              <label class="aico-preorder-display-radio">
-                <input type="radio" name="aico-preorder-size-labels" value="first" data-aico-preorder-display-sizes>
+              <label class="aico-preorder2-display-radio">
+                <input type="radio" name="aico-preorder2-size-labels" value="first" data-aico-preorder2-display-sizes>
                 <span>{{ 'aico_preorder.display.size_labels_first' | t }}</span>
               </label>
-              <label class="aico-preorder-display-radio">
-                <input type="radio" name="aico-preorder-size-labels" value="none" data-aico-preorder-display-sizes>
+              <label class="aico-preorder2-display-radio">
+                <input type="radio" name="aico-preorder2-size-labels" value="none" data-aico-preorder2-display-sizes>
                 <span>{{ 'aico_preorder.display.size_labels_none' | t }}</span>
               </label>
             </div>
@@ -481,20 +520,20 @@
     </div>
   </section>
 
-  <section class="aico-preorder-prompt aico-page-container" data-aico-preorder-prompt aria-live="polite">
-    <h2 class="aico-preorder-prompt-title">{{ 'aico_preorder.catalog.select_addresses' | t }}</h2>
+  <section class="aico-preorder2-prompt aico-page-container" data-aico-preorder2-prompt aria-live="polite">
+    <h2 class="aico-preorder2-prompt-title">{{ 'aico_preorder.catalog.select_addresses' | t }}</h2>
   </section>
 
-  <section class="aico-preorder-reopen-notice aico-page-container" data-aico-preorder-reopen-notice hidden aria-live="polite" role="status">
-    <div class="aico-preorder-reopen-notice-inner">
-      <div class="aico-preorder-reopen-skeleton" aria-hidden="true">
-        <span class="aico-preorder-reopen-skeleton-bar aico-preorder-reopen-skeleton-title"></span>
-        <span class="aico-preorder-reopen-skeleton-bar aico-preorder-reopen-skeleton-line"></span>
-        <span class="aico-preorder-reopen-skeleton-bar aico-preorder-reopen-skeleton-btn"></span>
+  <section class="aico-preorder2-reopen-notice aico-page-container" data-aico-preorder2-reopen-notice hidden aria-live="polite" role="status">
+    <div class="aico-preorder2-reopen-notice-inner">
+      <div class="aico-preorder2-reopen-skeleton" aria-hidden="true">
+        <span class="aico-preorder2-reopen-skeleton-bar aico-preorder2-reopen-skeleton-title"></span>
+        <span class="aico-preorder2-reopen-skeleton-bar aico-preorder2-reopen-skeleton-line"></span>
+        <span class="aico-preorder2-reopen-skeleton-bar aico-preorder2-reopen-skeleton-btn"></span>
       </div>
-      <h2 class="aico-preorder-reopen-notice-title">{{ 'aico_preorder.reopen_notice.title' | t }}</h2>
-      <p class="aico-preorder-reopen-notice-body">{{ 'aico_preorder.reopen_notice.body' | t }}</p>
-      <button type="button" class="aico-preorder-reopen-notice-btn" data-aico-preorder-reopen-ack>{{ 'aico_preorder.reopen_notice.acknowledge' | t }}</button>
+      <h2 class="aico-preorder2-reopen-notice-title">{{ 'aico_preorder.reopen_notice.title' | t }}</h2>
+      <p class="aico-preorder2-reopen-notice-body">{{ 'aico_preorder.reopen_notice.body' | t }}</p>
+      <button type="button" class="aico-preorder2-reopen-notice-btn" data-aico-preorder2-reopen-ack>{{ 'aico_preorder.reopen_notice.acknowledge' | t }}</button>
     </div>
   </section>
 
@@ -509,8 +548,8 @@
     address/customer), so copy lives in locales and stays Shopify-compatible.
   {%- endcomment -%}
   <section
-    class="aico-preorder-eligibility-notice aico-page-container"
-    data-aico-preorder-eligibility-notice
+    class="aico-preorder2-eligibility-notice aico-page-container"
+    data-aico-preorder2-eligibility-notice
     hidden
     aria-live="assertive"
     role="alert"
@@ -523,56 +562,58 @@
     data-aico-elig-msg-tax-not-configured="{{ 'aico_preorder.eligibility.tax_not_configured' | t }}"
     data-aico-elig-msg-fallback="{{ 'aico_preorder.eligibility.fallback' | t }}"
   >
-    <div class="aico-preorder-eligibility-notice-inner">
-      <h2 class="aico-preorder-eligibility-notice-title">{{ 'aico_preorder.eligibility.title' | t }}</h2>
-      <p class="aico-preorder-eligibility-notice-intro">{{ 'aico_preorder.eligibility.intro' | t }}</p>
-      <ul class="aico-preorder-eligibility-notice-list" data-aico-preorder-eligibility-list></ul>
-      <p class="aico-preorder-eligibility-notice-support">{{ 'aico_preorder.eligibility.contact_support' | t }}</p>
+    <div class="aico-preorder2-eligibility-notice-inner">
+      <h2 class="aico-preorder2-eligibility-notice-title">{{ 'aico_preorder.eligibility.title' | t }}</h2>
+      <p class="aico-preorder2-eligibility-notice-intro">{{ 'aico_preorder.eligibility.intro' | t }}</p>
+      <ul class="aico-preorder2-eligibility-notice-list" data-aico-preorder2-eligibility-list></ul>
+      <p class="aico-preorder2-eligibility-notice-support">{{ 'aico_preorder.eligibility.contact_support' | t }}</p>
     </div>
   </section>
 
-  <section class="aico-preorder-main-wrap aico-page-container" aria-labelledby="aico-preorder-main-title" hidden data-aico-preorder-main>
-    <h2 id="aico-preorder-main-title" class="aico-sr-only">{{ 'aico_preorder.catalog.section_aria' | t }}</h2>
-    <p class="aico-preorder-catalog-error" data-aico-preorder-error hidden role="alert">{{ 'aico_preorder.catalog.error' | t }}</p>
+  <section class="aico-preorder2-main-wrap aico-page-container" aria-labelledby="aico-preorder2-main-title" hidden data-aico-preorder2-main>
+    <h2 id="aico-preorder2-main-title" class="aico-sr-only">{{ 'aico_preorder.catalog.section_aria' | t }}</h2>
+    <p class="aico-preorder2-catalog-error" data-aico-preorder2-error hidden role="alert">{{ 'aico_preorder.catalog.error' | t }}</p>
 
-    <div class="aico-preorder-catalog" data-aico-preorder-catalog></div>
+    <div class="aico-preorder2-catalog" data-aico-preorder2-catalog></div>
 
-    <section class="aico-preorder-flyers" data-aico-preorder-flyers hidden aria-label="{{ 'aico_preorder.flyers.section_aria' | t }}">
-      <h3 class="aico-preorder-flyers-title">{{ 'aico_preorder.flyers.title' | t }}</h3>
-      <div class="aico-preorder-flyers-grid" data-aico-preorder-flyers-grid></div>
+    <section class="aico-preorder2-flyers" data-aico-preorder2-flyers hidden aria-label="{{ 'aico_preorder.flyers.section_aria' | t }}">
+      <h3 class="aico-preorder2-flyers-title">{{ 'aico_preorder.flyers.title' | t }}</h3>
+      <div class="aico-preorder2-flyers-grid" data-aico-preorder2-flyers-grid></div>
     </section>
   </section>
 
-  <section class="aico-preorder-checkout-wrap aico-page-container" hidden data-aico-preorder-checkout>
-    <div class="aico-preorder-checkout-panel" data-aico-preorder-summary aria-label="{{ 'aico_preorder.summary.section_aria' | t }}">
-      <div class="aico-preorder-checkout-addresses">
-        <div class="aico-preorder-checkout-address">
-          <p class="aico-preorder-checkout-address-label">{{ 'aico_preorder.summary.billing_address' | t }}</p>
-          <p class="aico-preorder-checkout-address-value" data-aico-preorder-summary-billing>—</p>
+  <section class="aico-preorder2-checkout-wrap aico-page-container" hidden data-aico-preorder2-checkout>
+    <div class="aico-preorder2-checkout-panel" data-aico-preorder2-summary aria-label="{{ 'aico_preorder.summary.section_aria' | t }}">
+      <div class="aico-preorder2-checkout-addresses">
+        <div class="aico-preorder2-checkout-address">
+          <p class="aico-preorder2-checkout-address-label">{{ 'aico_preorder.summary.billing_address' | t }}</p>
+          <p class="aico-preorder2-checkout-address-value" data-aico-preorder2-summary-billing>—</p>
         </div>
-        <div class="aico-preorder-checkout-address">
-          <p class="aico-preorder-checkout-address-label">{{ 'aico_preorder.summary.delivery_address' | t }}</p>
-          <p class="aico-preorder-checkout-address-value" data-aico-preorder-summary-delivery>—</p>
-        </div>
-      </div>
-      <hr class="aico-preorder-checkout-divider">
-      <div class="aico-preorder-checkout-grid">
-        <div class="aico-preorder-checkout-dates" data-aico-preorder-summary-lines></div>
-        <div class="aico-preorder-checkout-totals-box">
-          <div class="aico-preorder-checkout-total-row" data-aico-preorder-summary-subtotal-row></div>
-          <div class="aico-preorder-checkout-total-row" data-aico-preorder-summary-discount-row hidden></div>
-          <hr class="aico-preorder-checkout-divider">
-          <div class="aico-preorder-checkout-grand-total" data-aico-preorder-summary-total></div>
+        <div class="aico-preorder2-checkout-address">
+          <p class="aico-preorder2-checkout-address-label">{{ 'aico_preorder.summary.delivery_address' | t }}</p>
+          <p class="aico-preorder2-checkout-address-value" data-aico-preorder2-summary-delivery>—</p>
         </div>
       </div>
-      <p class="aico-preorder-checkout-alert" data-aico-preorder-stock-warning>
-        <svg class="aico-preorder-checkout-alert__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.3a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4ZM8 4.1a.95.95 0 1 0 0 1.9.95.95 0 0 0 0-1.9Zm-.8 3.05V11.9h1.6V7.15H7.2Z"/></svg>
-        <span class="aico-preorder-checkout-alert__text">{{ 'aico_preorder.summary.stock_warning' | t }}</span>
+      <hr class="aico-preorder2-checkout-divider">
+      <div class="aico-preorder2-checkout-grid">
+        <div class="aico-preorder2-checkout-dates" data-aico-preorder2-summary-lines></div>
+        <div class="aico-preorder2-checkout-totals-box">
+          <div class="aico-preorder2-checkout-total-row" data-aico-preorder2-summary-subtotal-row></div>
+          <div class="aico-preorder2-checkout-total-row" data-aico-preorder2-summary-discount-row hidden></div>
+          <hr class="aico-preorder2-checkout-divider">
+          <div class="aico-preorder2-checkout-grand-total" data-aico-preorder2-summary-total></div>
+        </div>
+      </div>
+      <p class="aico-preorder2-checkout-alert" data-aico-preorder2-stock-warning>
+        <svg class="aico-preorder2-checkout-alert__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.3a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4ZM8 4.1a.95.95 0 1 0 0 1.9.95.95 0 0 0 0-1.9Zm-.8 3.05V11.9h1.6V7.15H7.2Z"/></svg>
+        <span class="aico-preorder2-checkout-alert__text">{{ 'aico_preorder.summary.stock_warning' | t }}</span>
       </p>
-      <label class="aico-preorder-notes">
-        <span class="aico-preorder-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
-        <textarea name="notes" rows="3" data-aico-preorder-notes></textarea>
+      {%- comment -%}
+      <label class="aico-preorder2-notes">
+        <span class="aico-preorder2-field-label">{{ 'aico_preorder.summary.notes_label' | t }}</span>
+        <textarea name="notes" rows="3" data-aico-preorder2-notes></textarea>
       </label>
+      {%- endcomment -%}
       {%- comment -%}
         The AGB link must point at the same document as the footer's Terms &
         Conditions entry, including its locale override (layout/theme.liquid).
@@ -588,21 +629,21 @@
         {%- endif -%}
       {%- endfor -%}
       {% if terms_url != blank %}
-        <label class="aico-preorder-terms">
-          <input type="checkbox" data-aico-preorder-terms>
+        <label class="aico-preorder2-terms">
+          <input type="checkbox" data-aico-preorder2-terms>
           <span>{{ 'aico_preorder.summary.terms_prefix' | t }}
             <a href="{{ terms_url }}" target="_blank" rel="noopener">{{ 'aico_preorder.summary.terms_link' | t }}</a>
           </span>
         </label>
       {% else %}
-        <label class="aico-preorder-terms">
-          <input type="checkbox" data-aico-preorder-terms>
+        <label class="aico-preorder2-terms">
+          <input type="checkbox" data-aico-preorder2-terms>
           <span>{{ 'aico_preorder.summary.terms_checkbox' | t }}</span>
         </label>
       {% endif %}
-      <p class="aico-preorder-summary-status" data-aico-preorder-summary-status hidden></p>
-      <div class="aico-preorder-checkout-actions">
-        <button type="button" class="aico-preorder-btn aico-preorder-btn-place" data-aico-preorder-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
+      <p class="aico-preorder2-summary-status" data-aico-preorder2-summary-status hidden></p>
+      <div class="aico-preorder2-checkout-actions">
+        <button type="button" class="aico-preorder2-btn aico-preorder2-btn-place" data-aico-preorder2-submit disabled>{{ 'aico_preorder.summary.place_order' | t }}</button>
       </div>
     </div>
   </section>
@@ -613,29 +654,29 @@
        collapses to an edge tab on narrower screens. Ordering stays in the
        checkout section above; this panel has no action button. Visibility
        tracks the checkout section (shown once a session + addresses are set). {%- endcomment -%}
-  <aside class="aico-preorder-cart-panel" data-aico-preorder-cart-panel data-side="right" hidden
+  <aside class="aico-preorder2-cart-panel" data-aico-preorder2-cart-panel data-side="right" hidden
          aria-label="{{ 'aico_preorder.cart_panel.title' | t }}">
-    <button type="button" class="aico-preorder-cart-panel-tab" data-aico-preorder-cart-panel-tab
+    <button type="button" class="aico-preorder2-cart-panel-tab" data-aico-preorder2-cart-panel-tab
             aria-expanded="false" aria-label="{{ 'aico_preorder.cart_panel.show' | t }}">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
       </svg>
-      <span class="aico-preorder-cart-panel-tab-qty" data-aico-preorder-cart-panel-tab-qty>0</span>
+      <span class="aico-preorder2-cart-panel-tab-qty" data-aico-preorder2-cart-panel-tab-qty>0</span>
     </button>
 
-    <div class="aico-preorder-cart-panel-body">
-      <div class="aico-preorder-cart-panel-head">
-        <h3 class="aico-preorder-cart-panel-title">{{ 'aico_preorder.cart_panel.title' | t }}</h3>
-        <div class="aico-preorder-cart-panel-head-actions">
-          <button type="button" class="aico-preorder-cart-panel-side" data-aico-preorder-cart-panel-side
+    <div class="aico-preorder2-cart-panel-body">
+      <div class="aico-preorder2-cart-panel-head">
+        <h3 class="aico-preorder2-cart-panel-title">{{ 'aico_preorder.cart_panel.title' | t }}</h3>
+        <div class="aico-preorder2-cart-panel-head-actions">
+          <button type="button" class="aico-preorder2-cart-panel-side" data-aico-preorder2-cart-panel-side
                   title="{{ 'aico_preorder.cart_panel.toggle_side' | t }}" aria-label="{{ 'aico_preorder.cart_panel.toggle_side' | t }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
               <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
             </svg>
           </button>
-          <button type="button" class="aico-preorder-cart-panel-close" data-aico-preorder-cart-panel-close
+          <button type="button" class="aico-preorder2-cart-panel-close" data-aico-preorder2-cart-panel-close
                   aria-label="{{ 'aico_preorder.cart_panel.hide' | t }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
@@ -644,68 +685,68 @@
         </div>
       </div>
 
-      <dl class="aico-preorder-cart-panel-rows">
-        <div class="aico-preorder-cart-panel-row">
-          <dt class="aico-preorder-cart-panel-info" data-aico-cart-panel-info>
+      <dl class="aico-preorder2-cart-panel-rows">
+        <div class="aico-preorder2-cart-panel-row">
+          <dt class="aico-preorder2-cart-panel-info" data-aico-cart-panel-info>
             <span>{{ 'aico_preorder.cart_panel.placed_orders' | t }}</span>
-            <button type="button" class="aico-preorder-cart-panel-info-trigger" data-aico-cart-panel-info-trigger
-                    aria-haspopup="dialog" aria-expanded="false" aria-controls="aico-preorder-cart-panel-placed-info"
+            <button type="button" class="aico-preorder2-cart-panel-info-trigger" data-aico-cart-panel-info-trigger
+                    aria-haspopup="dialog" aria-expanded="false" aria-controls="aico-preorder2-cart-panel-placed-info"
                     aria-label="{{ 'aico_preorder.cart_panel.placed_orders' | t | escape }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
               </svg>
             </button>
-            <span class="aico-preorder-cart-panel-info-pop" id="aico-preorder-cart-panel-placed-info" role="dialog" aria-label="{{ 'aico_preorder.cart_panel.placed_orders' | t | escape }}">{{ 'aico_preorder.cart_panel.placed_orders_info' | t }}</span>
+            <span class="aico-preorder2-cart-panel-info-pop" id="aico-preorder2-cart-panel-placed-info" role="dialog" aria-label="{{ 'aico_preorder.cart_panel.placed_orders' | t | escape }}">{{ 'aico_preorder.cart_panel.placed_orders_info' | t }}</span>
           </dt>
-          <dd data-aico-preorder-cart-panel-placed>—</dd>
+          <dd data-aico-preorder2-cart-panel-placed>—</dd>
         </div>
-        <div class="aico-preorder-cart-panel-row">
+        <div class="aico-preorder2-cart-panel-row">
           <dt>{{ 'aico_preorder.cart_panel.total_qty' | t }}</dt>
-          <dd data-aico-preorder-cart-panel-total-qty>—</dd>
+          <dd data-aico-preorder2-cart-panel-total-qty>—</dd>
         </div>
-        <div class="aico-preorder-cart-panel-row">
+        <div class="aico-preorder2-cart-panel-row">
           <dt>{{ 'aico_preorder.cart_panel.discount' | t }}</dt>
-          <dd data-aico-preorder-cart-panel-discount>—</dd>
+          <dd data-aico-preorder2-cart-panel-discount>—</dd>
         </div>
-        <div class="aico-preorder-cart-panel-row">
+        <div class="aico-preorder2-cart-panel-row">
           <dt>{{ 'aico_preorder.cart_panel.next_tier' | t }}</dt>
-          <dd data-aico-preorder-cart-panel-next-tier>—</dd>
+          <dd data-aico-preorder2-cart-panel-next-tier>—</dd>
         </div>
-        <div class="aico-preorder-cart-panel-row aico-preorder-cart-panel-row--subtotal">
+        <div class="aico-preorder2-cart-panel-row aico-preorder2-cart-panel-row--subtotal">
           <dt>{{ 'aico_preorder.cart_panel.total' | t }}</dt>
-          <dd data-aico-preorder-cart-panel-subtotal>—</dd>
+          <dd data-aico-preorder2-cart-panel-subtotal>—</dd>
         </div>
       </dl>
 
-      <div class="aico-preorder-cart-panel-legend" data-aico-preorder-cart-panel-legend>
-        <button type="button" class="aico-preorder-cart-panel-legend-trigger" data-aico-preorder-cart-panel-legend-trigger
-                aria-haspopup="dialog" aria-expanded="false" aria-controls="aico-preorder-cart-panel-legend-pop">
+      <div class="aico-preorder2-cart-panel-legend" data-aico-preorder2-cart-panel-legend>
+        <button type="button" class="aico-preorder2-cart-panel-legend-trigger" data-aico-preorder2-cart-panel-legend-trigger
+                aria-haspopup="dialog" aria-expanded="false" aria-controls="aico-preorder2-cart-panel-legend-pop">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
           <span>{{ 'aico_preorder.cart_panel.legend_title' | t }}</span>
         </button>
-        <div class="aico-preorder-cart-panel-legend-pop" id="aico-preorder-cart-panel-legend-pop" role="dialog" aria-label="{{ 'aico_preorder.cart_panel.legend_title' | t }}">
-          <p class="aico-preorder-cart-panel-legend-pop-title">{{ 'aico_preorder.cart_panel.legend_title' | t }}</p>
-          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--available"></span>{{ 'aico_preorder.cart_panel.legend_available' | t }}</div>
-          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--editing"></span>{{ 'aico_preorder.cart_panel.legend_editing' | t }}</div>
-          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--selected"></span>{{ 'aico_preorder.cart_panel.legend_selected' | t }}</div>
-          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--committed"></span>{{ 'aico_preorder.cart_panel.legend_committed' | t }}</div>
-          <div class="aico-preorder-cart-panel-legend-row"><span class="aico-preorder-cart-panel-swatch aico-preorder-cart-panel-swatch--unavailable"></span>{{ 'aico_preorder.cart_panel.legend_unavailable' | t }}</div>
+        <div class="aico-preorder2-cart-panel-legend-pop" id="aico-preorder2-cart-panel-legend-pop" role="dialog" aria-label="{{ 'aico_preorder.cart_panel.legend_title' | t }}">
+          <p class="aico-preorder2-cart-panel-legend-pop-title">{{ 'aico_preorder.cart_panel.legend_title' | t }}</p>
+          <div class="aico-preorder2-cart-panel-legend-row"><span class="aico-preorder2-cart-panel-swatch aico-preorder2-cart-panel-swatch--available"></span>{{ 'aico_preorder.cart_panel.legend_available' | t }}</div>
+          <div class="aico-preorder2-cart-panel-legend-row"><span class="aico-preorder2-cart-panel-swatch aico-preorder2-cart-panel-swatch--editing"></span>{{ 'aico_preorder.cart_panel.legend_editing' | t }}</div>
+          <div class="aico-preorder2-cart-panel-legend-row"><span class="aico-preorder2-cart-panel-swatch aico-preorder2-cart-panel-swatch--selected"></span>{{ 'aico_preorder.cart_panel.legend_selected' | t }}</div>
+          <div class="aico-preorder2-cart-panel-legend-row"><span class="aico-preorder2-cart-panel-swatch aico-preorder2-cart-panel-swatch--committed"></span>{{ 'aico_preorder.cart_panel.legend_committed' | t }}</div>
+          <div class="aico-preorder2-cart-panel-legend-row"><span class="aico-preorder2-cart-panel-swatch aico-preorder2-cart-panel-swatch--unavailable"></span>{{ 'aico_preorder.cart_panel.legend_unavailable' | t }}</div>
         </div>
       </div>
     </div>
   </aside>
 
   {%- comment -%} Inline preorder confirmation (no thank-you-url path): hidden until
-       preorder-page.js reveals it on a successful submit and calls
+       preorder2-page.js reveals it on a successful submit and calls
        AicoPreorderConfirmation.start(). When a thank-you-url IS set, the submit
-       flow redirects to templates/aico-preorder-thank-you.liquid instead and this
+       flow redirects to templates/aico-preorder2-thank-you.liquid instead and this
        panel stays hidden. Markup mirrors that template (no shared snippet because
        {% render %} does not resolve to files here). {%- endcomment -%}
   <section
-    class="aico-preorder-confirmation aico-page-container"
-    data-aico-preorder-confirmation
+    class="aico-preorder2-confirmation aico-page-container"
+    data-aico-preorder2-confirmation
     hidden
     data-aico-confirmation-url="{{ routes.aico_preorder_cart_confirmation_url }}"
     data-aico-confirmation-title="{{ 'aico_preorder.confirmation.title' | t | escape }}"
@@ -718,8 +759,15 @@
     data-aico-confirmation-stage-updating="{{ 'aico_preorder.confirmation.stage_updating' | t | escape }}"
     data-aico-confirmation-stage-finalizing="{{ 'aico_preorder.confirmation.stage_finalizing' | t | escape }}"
     data-aico-confirmation-delayed="{{ 'aico_preorder.confirmation.delayed' | t | escape }}"
+    data-aico-confirmation-stage-checking="{{ 'aico_preorder.confirmation.stage_checking' | t | escape }}"
+    data-aico-confirmation-stage-saving="{{ 'aico_preorder.confirmation.stage_saving' | t | escape }}"
+    data-aico-confirmation-stage-updating="{{ 'aico_preorder.confirmation.stage_updating' | t | escape }}"
+    data-aico-confirmation-stage-finalizing="{{ 'aico_preorder.confirmation.stage_finalizing' | t | escape }}"
+    data-aico-confirmation-delayed="{{ 'aico_preorder.confirmation.delayed' | t | escape }}"
     data-aico-confirmation-error-title="{{ 'aico_preorder.confirmation.error_title' | t | escape }}"
     data-aico-confirmation-error-message="{{ 'aico_preorder.confirmation.error_message' | t | escape }}"
+    data-aico-confirmation-update-error-title="{{ 'aico_preorder.confirmation.update_error_title' | t | escape }}"
+    data-aico-confirmation-update-error-message="{{ 'aico_preorder.confirmation.update_error_message' | t | escape }}"
     data-aico-confirmation-update-error-title="{{ 'aico_preorder.confirmation.update_error_title' | t | escape }}"
     data-aico-confirmation-update-error-message="{{ 'aico_preorder.confirmation.update_error_message' | t | escape }}"
     data-aico-confirmation-missing-title="{{ 'aico_preorder.confirmation.missing_title' | t | escape }}"
@@ -733,7 +781,7 @@
     data-aico-confirmation-pdf-unavailable="{{ 'aico_preorder.confirmation.pdf_unavailable' | t | escape }}">
 
     {%- comment -%} Status medallion — see the note on the same block in
-      templates/aico-preorder-thank-you.liquid: shared with the checkout
+      templates/aico-preorder2-thank-you.liquid: shared with the checkout
       thank-you, doubles as the submit progress ring, and lives outside the
       header so the processing → confirmed panel swap cannot fade its
       spinner → checkmark hand-off away. {%- endcomment -%}
@@ -757,45 +805,45 @@
     {%- comment -%} Submit progress count — same block as the thank-you
       template: directly under the medallion so it reads as the spinner's
       caption, hidden until a counter exists. {%- endcomment -%}
-    <div class="aico-preorder-confirmation-progress" data-aico-confirmation-progress hidden
+    <div class="aico-preorder2-confirmation-progress" data-aico-confirmation-progress hidden
       role="progressbar"
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow="0"
       aria-label="{{ 'aico_preorder.confirmation.processing_title' | t | escape }}"
       data-aico-confirmation-progress-template="{{ 'aico_preorder.confirmation.progress_count' | t | escape }}">
-      <span class="aico-preorder-confirmation-progress-count" data-aico-confirmation-progress-count></span>
+      <span class="aico-preorder2-confirmation-progress-count" data-aico-confirmation-progress-count></span>
     </div>
 
-    <header class="aico-preorder-confirmation-head">
-      <h2 class="aico-preorder-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h2>
-      <p class="aico-preorder-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
+    <header class="aico-preorder2-confirmation-head">
+      <h2 class="aico-preorder2-confirmation-title" data-aico-confirmation-header>{{ 'aico_preorder.confirmation.title' | t }}</h2>
+      <p class="aico-preorder2-confirmation-message" data-aico-confirmation-message>{{ 'aico_preorder.confirmation.message' | t }}</p>
     </header>
 
-    <div class="aico-preorder-confirmation-number-box">
-      <span class="aico-preorder-confirmation-number-label">{{ 'aico_preorder.confirmation.number_label' | t }}</span>
-      <span class="aico-preorder-confirmation-number" data-aico-confirmation-number>…</span>
-      <span class="aico-preorder-confirmation-reference">
+    <div class="aico-preorder2-confirmation-number-box">
+      <span class="aico-preorder2-confirmation-number-label">{{ 'aico_preorder.confirmation.number_label' | t }}</span>
+      <span class="aico-preorder2-confirmation-number" data-aico-confirmation-number>…</span>
+      <span class="aico-preorder2-confirmation-reference">
         {{ 'aico_preorder.confirmation.reference_label' | t }}
         <span data-aico-confirmation-reference></span>
       </span>
     </div>
 
-    <div class="aico-preorder-confirmation-summary">
-      <div class="aico-preorder-confirmation-address">
-        <span class="aico-preorder-confirmation-summary-label">{{ 'aico_preorder.confirmation.delivery_address' | t }}</span>
-        <div class="aico-preorder-confirmation-address-value" data-aico-confirmation-address>—</div>
+    <div class="aico-preorder2-confirmation-summary">
+      <div class="aico-preorder2-confirmation-address">
+        <span class="aico-preorder2-confirmation-summary-label">{{ 'aico_preorder.confirmation.delivery_address' | t }}</span>
+        <div class="aico-preorder2-confirmation-address-value" data-aico-confirmation-address>—</div>
       </div>
-      <dl class="aico-preorder-confirmation-totals">
-        <div class="aico-preorder-confirmation-total-row">
+      <dl class="aico-preorder2-confirmation-totals">
+        <div class="aico-preorder2-confirmation-total-row">
           <dt>{{ 'aico_preorder.confirmation.item_count' | t }}</dt>
           <dd data-aico-confirmation-item-count>0</dd>
         </div>
-        <div class="aico-preorder-confirmation-total-row" data-aico-confirmation-discount-row>
+        <div class="aico-preorder2-confirmation-total-row" data-aico-confirmation-discount-row>
           <dt>{{ 'aico_preorder.confirmation.discount' | t }}</dt>
           <dd data-aico-confirmation-discount>&ndash;</dd>
         </div>
-        <div class="aico-preorder-confirmation-total-row aico-preorder-confirmation-total-row--grand">
+        <div class="aico-preorder2-confirmation-total-row aico-preorder2-confirmation-total-row--grand">
           <dt>{{ 'aico_preorder.confirmation.total' | t }}</dt>
           <dd data-aico-confirmation-total>&mdash;</dd>
         </div>
@@ -803,49 +851,49 @@
           the tier discount and the price list produce; this is what the invoice will
           say. Both come from the confirmation endpoint; the theme never does money
           arithmetic of its own. {%- endcomment -%}
-        <div class="aico-preorder-confirmation-total-row aico-preorder-confirmation-total-row--vat">
+        <div class="aico-preorder2-confirmation-total-row aico-preorder2-confirmation-total-row--vat">
           <dt>{{ 'aico_preorder.confirmation.total_with_vat' | t }}</dt>
           <dd data-aico-confirmation-total-with-vat>&mdash;</dd>
         </div>
       </dl>
     </div>
 
-    <div class="aico-preorder-confirmation-dates-wrap">
-      <h3 class="aico-preorder-confirmation-dates-title">{{ 'aico_preorder.confirmation.delivery_dates' | t }}</h3>
-      <div class="aico-preorder-confirmation-dates" data-aico-confirmation-dates></div>
+    <div class="aico-preorder2-confirmation-dates-wrap">
+      <h3 class="aico-preorder2-confirmation-dates-title">{{ 'aico_preorder.confirmation.delivery_dates' | t }}</h3>
+      <div class="aico-preorder2-confirmation-dates" data-aico-confirmation-dates></div>
     </div>
 
-    <div class="aico-preorder-confirmation-pdf-area" data-aico-confirmation-pdf aria-live="polite" aria-busy="true">
-      <span class="aico-preorder-confirmation-pdf-spinner" aria-hidden="true"></span>
+    <div class="aico-preorder2-confirmation-pdf-area" data-aico-confirmation-pdf aria-live="polite" aria-busy="true">
+      <span class="aico-preorder2-confirmation-pdf-spinner" aria-hidden="true"></span>
       <span>{{ 'aico_preorder.confirmation.pdf_generating' | t }}</span>
     </div>
 
-    <p class="aico-preorder-confirmation-links">
+    <p class="aico-preorder2-confirmation-links">
       <a class="aico-btn aico-btn-secondary" href="{{ routes.root_url }}">{{ 'aico_preorder.thank_you.continue_shopping' | t }}</a>
     </p>
   </section>
 
-  <div class="aico-preorder-gallery" data-aico-preorder-gallery hidden role="dialog" aria-modal="true" aria-labelledby="aico-preorder-gallery-title">
-    <div class="aico-preorder-gallery-backdrop" data-aico-preorder-gallery-close></div>
-    <div class="aico-preorder-gallery-dialog" role="document">
-      <button type="button" class="aico-preorder-gallery-close" data-aico-preorder-gallery-close aria-label="{{ 'general.close' | t | default: 'Schliessen' }}">&times;</button>
-      <h3 class="aico-preorder-gallery-title" id="aico-preorder-gallery-title" data-aico-preorder-gallery-title></h3>
-      <div class="aico-preorder-gallery-stage">
-        <button type="button" class="aico-preorder-gallery-nav aico-preorder-gallery-prev" data-aico-preorder-gallery-prev aria-label="Zurück" hidden>&lsaquo;</button>
-        <div class="aico-preorder-gallery-main">
-          <img class="aico-preorder-gallery-main-img" data-aico-preorder-gallery-main alt="" decoding="async">
-          <p class="aico-preorder-gallery-empty" data-aico-preorder-gallery-empty hidden>{{ 'aico_preorder.catalog.error' | t }}</p>
+  <div class="aico-preorder2-gallery" data-aico-preorder2-gallery hidden role="dialog" aria-modal="true" aria-labelledby="aico-preorder2-gallery-title">
+    <div class="aico-preorder2-gallery-backdrop" data-aico-preorder2-gallery-close></div>
+    <div class="aico-preorder2-gallery-dialog" role="document">
+      <button type="button" class="aico-preorder2-gallery-close" data-aico-preorder2-gallery-close aria-label="{{ 'general.close' | t | default: 'Schliessen' }}">&times;</button>
+      <h3 class="aico-preorder2-gallery-title" id="aico-preorder2-gallery-title" data-aico-preorder2-gallery-title></h3>
+      <div class="aico-preorder2-gallery-stage">
+        <button type="button" class="aico-preorder2-gallery-nav aico-preorder2-gallery-prev" data-aico-preorder2-gallery-prev aria-label="Zurück" hidden>&lsaquo;</button>
+        <div class="aico-preorder2-gallery-main">
+          <img class="aico-preorder2-gallery-main-img" data-aico-preorder2-gallery-main alt="" decoding="async">
+          <p class="aico-preorder2-gallery-empty" data-aico-preorder2-gallery-empty hidden>{{ 'aico_preorder.catalog.error' | t }}</p>
         </div>
-        <button type="button" class="aico-preorder-gallery-nav aico-preorder-gallery-next" data-aico-preorder-gallery-next aria-label="Weiter" hidden>&rsaquo;</button>
+        <button type="button" class="aico-preorder2-gallery-nav aico-preorder2-gallery-next" data-aico-preorder2-gallery-next aria-label="Weiter" hidden>&rsaquo;</button>
       </div>
-      <div class="aico-preorder-gallery-thumbs" data-aico-preorder-gallery-thumbs></div>
+      <div class="aico-preorder2-gallery-thumbs" data-aico-preorder2-gallery-thumbs></div>
     </div>
   </div>
 
-  <script src="{{ 'preorder-catalog.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-stock.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-cart.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-confirmation.js' | asset_url }}" defer></script>
-  <script src="{{ 'preorder-page.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-catalog.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-stock.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-cart.js' | asset_url }}" defer></script>
   <script src="{{ 'preorder2-header.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-confirmation.js' | asset_url }}" defer></script>
+  <script src="{{ 'preorder2-page.js' | asset_url }}" defer></script>
 </main>

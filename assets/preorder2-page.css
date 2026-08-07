@@ -1,0 +1,3005 @@
+/* /preorder2 — FORKED copy of the /preorder tool styles (kj-live).
+   Generated from THIS repo's theme.css preorder rules with aico-preorder ->
+   aico-preorder2 renames, plus the header-dock styles. Loaded ONLY by
+   templates/aico-preorder2.liquid; edit freely without touching /preorder. */
+
+/* ───── Preorder (step 1: addresses + filters) ───── */
+.aico-preorder2 {
+  position: relative;
+  padding-bottom: 6rem;
+  background-color: #f5f5f5;
+}
+.aico-preorder2-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--aico-border);
+  /* Full-bleed vertical gradient spanning the whole viewport width (only the
+     inner .aico-page-container is constrained). Defaults to a subtle gray when
+     the session has no colors set; the session's colors are applied by
+     preorder2-page.js as --aico-preorder2-grad-from/to and override the gray. */
+  background-color: var(--aico-preorder2-grad-from, #e9ebee);
+  background-image: linear-gradient(
+    180deg,
+    var(--aico-preorder2-grad-from, #eceef1) 0%,
+    var(--aico-preorder2-grad-to, #d4d8dc) 100%
+  );
+}
+.aico-preorder2-hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  padding-top: 2.25rem;
+  padding-bottom: 2.25rem;
+  align-items: center;
+}
+@media (min-width: 768px) {.aico-preorder2-hero-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem;
+  }
+}
+/* Title sits alone on the far left, vertically centred in the band. */
+.aico-preorder2-hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+/* Collection-book download: explicit pill button under the hero title (replaces
+   b2b-shop's invisible "click the banner image" affordance). Hidden until
+   preorder2-page.js finds a collectionBookUrl on the resolved session. */
+.aico-preorder2-hero-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.125rem;
+  background: #ffffff;
+  border: 1px solid #d4dde0;
+  color: #0e6e7a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.aico-preorder2-hero-book[hidden] {
+  display: none;
+}
+.aico-preorder2-hero-book:hover,
+.aico-preorder2-hero-book:focus-visible {
+  background: #0e6e7a;
+  border-color: #0e6e7a;
+  color: #ffffff;
+}
+.aico-preorder2-hero-book-icon {
+  flex-shrink: 0;
+}
+/* Banner image lives on the right, just left of the countdown (see hero-side). */
+.aico-preorder2-banner-img {
+  display: block;
+  max-height: 6rem;
+  width: auto;
+  max-width: min(38vw, 16rem);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.aico-preorder2-hero-title {
+  margin: 0;
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: #1f2937;
+}
+.aico-preorder2-no-session {
+  margin: 0;
+  font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.3;
+  color: #475569;
+}
+/* Image + countdown sit side by side on the right (image just left of the
+   countdown), no wrap on desktop. */
+.aico-preorder2-hero-side {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  min-width: 0;
+}
+@media (max-width: 767px) {.aico-preorder2-hero-side {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+  }.aico-preorder2-countdown {
+    width: 100%;
+    align-items: stretch;
+  }.aico-preorder2-countdown-bar {
+    width: 100%;
+    justify-content: center;
+  }
+}
+.aico-preorder2-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.aico-preorder2-countdown-eyebrow {
+  margin: 0;
+  align-self: flex-end;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ea580c;
+  letter-spacing: 0.03em;
+}
+.aico-preorder2-countdown-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.125rem;
+  background: linear-gradient(180deg, #ff7900 0%, #f97316 100%);
+  box-shadow: 0 8px 22px rgba(249, 115, 22, 0.35);
+}
+.aico-preorder2-countdown-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  padding: 0.5rem 0.5rem 0.45rem;
+  border-radius: 0.125rem;
+  background: rgba(255, 255, 255, 0.28);
+}
+.aico-preorder2-countdown-sep {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  padding: 0 0.05rem;
+  user-select: none;
+}
+.aico-preorder2-countdown-value {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+.aico-preorder2-countdown-label {
+  margin-top: 0.3125rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+.aico-preorder2-filters-wrap {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.aico-preorder2-empty-state {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 0.125rem;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+.aico-preorder2-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  padding: 0.875rem;
+}
+.aico-preorder2-filters-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.aico-preorder2-field {
+  /* All input cells share remaining row space equally. The view toggle
+     overrides this with `flex: 0 0 auto` so it stays content-sized. */
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 10.5rem;
+}
+.aico-preorder2-field-search {
+  /* The search input is the row's lead element; gets a wider min width
+     so the placeholder text stays legible at every viewport. */
+  flex: 2 1 0;
+  min-width: 12rem;
+}
+.aico-preorder2-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.2;
+}
+.aico-preorder2-field-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.125rem;
+  background: var(--aico-bg);
+  padding: 0 0.6rem 0 2rem;
+  min-height: 2.5rem;
+}
+.aico-preorder2-field-control-select {
+  padding-right: 0.25rem;
+  padding-left: 2rem;
+}
+.aico-preorder2-field-control:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.aico-preorder2-field-icon {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--aico-muted-fg);
+  pointer-events: none;
+}
+.aico-preorder2-select-native {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.aico-preorder2-custom-select {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.aico-preorder2-custom-select-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.aico-preorder2-custom-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.15rem;
+  border: 0;
+  border-radius: 0.125rem;
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--aico-fg);
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+.aico-preorder2-custom-select-trigger:hover:not([disabled]) {
+  color: var(--aico-fg);
+}
+.aico-preorder2-custom-select-trigger:focus-visible {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.aico-preorder2-custom-select-trigger[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* While the B2B list is loading, show a spinner in place of the chevron and a
+   "progress" cursor instead of the disabled "deny" look. */
+.aico-preorder2-field--loading .aico-preorder2-custom-select-trigger[disabled] {
+  cursor: progress;
+  opacity: 1;
+}
+.aico-preorder2-field--loading .aico-preorder2-custom-select-chevron {
+  display: none;
+}
+.aico-preorder2-field--loading .aico-preorder2-custom-select-trigger::after {
+  content: "";
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--color-accent, #2563eb);
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+}
+.aico-preorder2-custom-select-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aico-preorder2-custom-select-chevron {
+  flex-shrink: 0;
+  color: var(--aico-muted-fg);
+  transition: transform 0.15s ease;
+}
+.aico-preorder2-custom-select-open .aico-preorder2-custom-select-chevron {
+  transform: rotate(180deg);
+}
+.aico-preorder2-custom-select-dropdown {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 14rem;
+  overflow: auto;
+  border-radius: 0.125rem;
+  border: 1px solid var(--aico-border);
+  background: var(--aico-bg);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+/* The custom-select sits inside the field control's left padding (the icon gutter,
+   2rem) so a dropdown anchored at left:0 starts offset to the right of the control
+   box. Pull it back by that gutter + the control border so the dropdown's top-left
+   corner lines up with the bottom-left corner of the control box. */
+.aico-preorder2-field-control-select .aico-preorder2-custom-select-dropdown {
+  left: calc(-2rem - 1px);
+}
+.aico-preorder2-custom-select-list {
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.aico-preorder2-custom-select-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: 0.125rem;
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+.aico-preorder2-custom-select-option:hover:not([disabled]),
+.aico-preorder2-custom-select-option:focus-visible {
+  background: var(--aico-muted);
+  outline: none;
+}
+.aico-preorder2-date-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.aico-preorder2-date-check {
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  border-radius: 0.125rem;
+  position: relative;
+}
+.aico-preorder2-date-option.is-checked .aico-preorder2-date-check {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.aico-preorder2-date-option.is-checked .aico-preorder2-date-check::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.aico-preorder2-custom-select-option[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.aico-preorder2-custom-select-option[aria-selected="true"] {
+  background: rgba(37, 99, 235, 0.1);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.aico-preorder2-field-size {
+  flex: 0 0 7.5rem;
+  min-width: 6.5rem;
+}
+/* The gear is content-sized and bottom-aligned so it lines up with the other
+   field controls (which carry a label row above them). */
+.aico-preorder2-field-display {
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  align-self: flex-end;
+}
+.aico-preorder2-display-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--aico-border);
+  border-radius: 0.125rem;
+  background: var(--aico-card);
+  color: var(--aico-muted-fg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+.aico-preorder2-display-trigger:hover,
+.aico-preorder2-display-trigger[aria-expanded="true"] {
+  border-color: #0e6e7a;
+  color: #0e6e7a;
+}
+.aico-preorder2-display-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.aico-preorder2-display-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 30;
+  width: 17rem;
+  max-width: 80vw;
+  padding: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.12);
+}
+.aico-preorder2-display-panel[hidden] {
+  display: none;
+}
+.aico-preorder2-display-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--aico-fg);
+}
+.aico-preorder2-display-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+.aico-preorder2-display-toggle input,
+.aico-preorder2-display-radio input {
+  margin: 0.1rem 0 0;
+  flex-shrink: 0;
+  accent-color: #0e6e7a;
+  cursor: pointer;
+}
+.aico-preorder2-display-group {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--aico-border);
+}
+.aico-preorder2-display-group-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aico-muted-fg);
+}
+.aico-preorder2-display-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  cursor: pointer;
+}
+/* Hide the orange per-product total strip. */
+.aico-preorder2.aico-preorder2--no-strip .aico-preorder2-product-footer {
+  display: none;
+}
+/* Size labels above the qty boxes: "none" hides every per-box label (the teal
+   header sizes still show); "first" keeps them only on each product's first
+   date row. The header-row size labels (.aico-preorder2-size-head) are never
+   touched here. */
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-qty-box__size {
+  display: none;
+}
+.aico-preorder2[data-aico-size-labels="first"]
+  .aico-preorder2-matrix-row:not(:first-child)
+  .aico-preorder2-qty-box__size {
+  display: none;
+}
+/* In the compact size-label modes the qty rows get shorter, so the product
+   aside leaves white space beside them. Keep the aside VERTICAL (so the full
+   product name stays visible and nothing overflows into the qty grid) but
+   shrink the thumbnail and tighten the text/price to reduce that gap. */
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-grid,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-grid {
+  padding: 0.5rem 0.75rem;
+}
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-media,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-media {
+  margin-bottom: 0.3rem;
+}
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-media img,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-media img {
+  width: 56px;
+}
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-title,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-title {
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-sku,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-sku,
+.aico-preorder2[data-aico-size-labels="first"] .aico-preorder2-product-price,
+.aico-preorder2[data-aico-size-labels="none"] .aico-preorder2-product-price {
+  font-size: 0.6875rem;
+}
+.aico-preorder2-field-b2b,
+.aico-preorder2-field-debtor {
+  flex: 1 1 0;
+  min-width: 10rem;
+}
+/* Address + B2B/debtor selectors hold long labels (full addresses, company
+   names) — give the triggers more room and let their opened dropdown panels
+   grow past the trigger to fit the longest option instead of truncating. */
+.aico-preorder2-field[data-aico-field="billing_address"],
+.aico-preorder2-field[data-aico-field="delivery_address"],
+.aico-preorder2-field-b2b,
+.aico-preorder2-field-debtor {
+  flex: 1.75 1 0;
+  min-width: 12rem;
+}
+.aico-preorder2-field[data-aico-field="billing_address"] .aico-preorder2-custom-select-dropdown,
+.aico-preorder2-field[data-aico-field="delivery_address"] .aico-preorder2-custom-select-dropdown,
+.aico-preorder2-field-b2b .aico-preorder2-custom-select-dropdown,
+.aico-preorder2-field-debtor .aico-preorder2-custom-select-dropdown {
+  right: auto;
+  width: max-content;
+  min-width: 100%;
+  max-width: 28rem;
+}
+.aico-preorder2-field[hidden] {
+  display: none;
+}
+.aico-preorder2-view-toggle {
+  /* Last element on the filter row — sized to its content, never grows.
+     Drives grid/list rendering once the items grid lands back. */
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--aico-radius);
+  padding: 0.125rem;
+  background: var(--color-accent);
+  align-self: center;
+}
+.aico-preorder2-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 0.4rem 0.25rem;
+  outline: none;
+}
+.aico-preorder2-search-input::placeholder { color: var(--aico-muted-fg); }
+.aico-preorder2-view-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: 0;
+  border-radius: var(--aico-radius);
+  color: #ffffff;
+  cursor: pointer;
+}
+.aico-preorder2-view-button-active {
+  background: #ffffff;
+  color: var(--color-accent);
+}
+.aico-preorder2-items-wrap {
+  padding-top: 1.25rem;
+}
+.aico-preorder2-category-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #1e3a8a;
+  color: #ffffff;
+  border-radius: 0.125rem 0.125rem 0 0;
+  font-weight: 600;
+  min-height: 2.75rem;
+}
+.aico-preorder2-category-title {
+  font-size: 0.9375rem;
+}
+.aico-preorder2-category-sizes {
+  display: flex;
+  gap: 0.25rem;
+}
+.aico-preorder2-step2-placeholder {
+  padding: 2rem 1rem;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-top: 0;
+  border-radius: 0 0 0.125rem 0.125rem;
+  text-align: center;
+}
+.aico-preorder2-step2-placeholder-text {
+  margin: 0;
+  color: var(--aico-muted-fg);
+  font-size: 0.875rem;
+}
+.aico-preorder2-checkout-wrap {
+  margin-top: 1.5rem;
+}
+.aico-preorder2-floating-cart {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background: #f59e0b;
+  color: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  text-decoration: none;
+}
+.aico-preorder2-floating-cart:hover { filter: brightness(0.95); }
+.aico-preorder2-floating-cart-badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Confirmed: hand the circle over from the spinner to the success ring. */
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-track,
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-track,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-spin {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-ring {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.02s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-disc {
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-check {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition:
+    stroke-dashoffset 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.44s,
+    opacity 0s linear 0.44s;
+}
+.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
+.aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-svg {
+  animation: aico-ty-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.34s;
+}
+/* Motion-sensitive shoppers get the same information, none of the movement:
+   the medallion renders as the finished green check and the copy just appears. */
+@media (prefers-reduced-motion: reduce) {.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-track,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-spin,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-ring,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-disc,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-status-check,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-track,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-spin,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-ring,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-disc,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-check,
+  .aico-ty-status--progress .aico-ty-status-spin { transition: none; }.aico-checkout-thank-you-card.is-confirmed .aico-ty-status-svg,
+  .aico-checkout-thank-you-card.is-confirmed .aico-ty-reveal,
+  .aico-ty-status.aico-ty-status--warn .aico-ty-status-svg,
+  .aico-preorder2-confirmation:not(.aico-preorder2-confirmation--processing) .aico-ty-status-svg { animation: none; }
+}
+/* ───── Preorder catalog + checkout (b2b-shop parity) ───── */
+.aico-preorder2-main-wrap {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.aico-preorder2-main-wrap[hidden],
+.aico-preorder2-prompt[hidden],
+.aico-preorder2-checkout-wrap[hidden],
+.aico-preorder2-catalog-tools[hidden] {
+  display: none !important;
+}
+.aico-preorder2-catalog-tools {
+  display: contents;
+}
+.aico-preorder2-setup-filters {
+  display: contents;
+}
+/* The dropdown panel itself scrolls (the B2B list is paginated and grows as the
+   manager scrolls), so pin the search box to the top instead of letting it
+   scroll out of reach. */
+.aico-preorder2-b2b-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: var(--aico-bg);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+/* "Loading more…" footer while the next page of B2Bs is in flight. */
+.aico-preorder2-b2b-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg);
+}
+.aico-preorder2-b2b-more[hidden] {
+  display: none;
+}
+.aico-preorder2-b2b-more-spinner {
+  flex: 0 0 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+}
+.aico-preorder2-b2b-search-input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.125rem;
+  background: var(--aico-bg);
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  outline: none;
+}
+.aico-preorder2-b2b-search-input:focus {
+  border-color: var(--color-accent);
+}
+.aico-preorder2-b2b-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 20;
+  margin-top: 0.25rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.aico-preorder2-b2b-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.aico-preorder2-b2b-result:hover {
+  background: #ffefe6;
+}
+.aico-preorder2-checkout-wrap {
+  margin-top: 1.5rem;
+}
+.aico-preorder2-prompt {
+  margin: 2rem auto 1rem;
+  text-align: center;
+}
+/* Cart-resolving spinner: the only thing shown below the hero while we fetch the
+   cart to find out whether a preorder was already placed (avoids the address-row
+   flash). */
+.aico-preorder2-prompt-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #272727;
+}
+/* Already-placed preorder notice (shown before the catalog on reopen) */
+.aico-preorder2-reopen-notice[hidden] {
+  display: none;
+}
+.aico-preorder2-reopen-notice {
+  margin: 2rem auto;
+}
+.aico-preorder2-reopen-notice-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 2.25rem;
+  background: #fff;
+  border: 1px solid var(--aico-border);
+  border-left: 4px solid #e8702d;
+  border-radius: var(--aico-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  text-align: center;
+  /* Entrance: drop in from above like an incoming notification. Replays on
+     every reveal (the section toggles [hidden], so display none -> block
+     restarts the animation). */
+  animation: aico-preorder2-notice-drop 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes aico-preorder2-notice-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {.aico-preorder2-reopen-notice-inner {
+    animation: none;
+  }
+}
+/* ── Cart-loading skeleton inside the notice card ─────────────────────────
+   While the cart resolves, the same card shows shimmer bars with a neutral
+   accent. When a preorder exists, the loading class is dropped and the card
+   morphs in place: accent turns orange, content fades in. */
+.aico-preorder2-reopen-skeleton {
+  display: none;
+}
+.aico-preorder2-reopen-notice-loading .aico-preorder2-reopen-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+.aico-preorder2-reopen-notice-loading .aico-preorder2-reopen-notice-title,
+.aico-preorder2-reopen-notice-loading .aico-preorder2-reopen-notice-body,
+.aico-preorder2-reopen-notice-loading .aico-preorder2-reopen-notice-btn {
+  display: none;
+}
+.aico-preorder2-reopen-notice-loading .aico-preorder2-reopen-notice-inner {
+  border-left-color: #cbd2dc;
+}
+.aico-preorder2-reopen-notice-inner {
+  transition: border-left-color 0.3s ease;
+}
+.aico-preorder2-reopen-skeleton-bar {
+  display: block;
+  height: 0.9rem;
+  width: 70%;
+  border-radius: var(--aico-radius);
+  background: linear-gradient(90deg, #eef0f4 25%, #e2e6ec 37%, #eef0f4 63%);
+  background-size: 400% 100%;
+  animation: aico-preorder2-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+.aico-preorder2-reopen-skeleton-title {
+  height: 1.25rem;
+  width: 45%;
+}
+.aico-preorder2-reopen-skeleton-line {
+  width: 80%;
+}
+.aico-preorder2-reopen-skeleton-btn {
+  height: 2.4rem;
+  width: 11rem;
+  border-radius: var(--aico-radius);
+  margin-top: 0.35rem;
+}
+@keyframes aico-preorder2-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+/* Exit: acknowledged notice lifts back up and fades (reverse of entrance).
+   The JS adds the leaving class, waits for animationend (400ms fallback),
+   then hides the section and reveals the catalog. */
+.aico-preorder2-reopen-notice-leaving .aico-preorder2-reopen-notice-inner {
+  animation: aico-preorder2-notice-leave 0.3s cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+@keyframes aico-preorder2-notice-leave {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {.aico-preorder2-reopen-notice-leaving .aico-preorder2-reopen-notice-inner {
+    animation: none;
+  }
+}
+/* Content crossfade when the skeleton morphs into the real warning. */
+.aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-title,
+.aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-body,
+.aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-btn {
+  animation: aico-preorder2-notice-content-fade 0.25s ease-out both;
+}
+@keyframes aico-preorder2-notice-content-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {.aico-preorder2-reopen-skeleton-bar,
+  .aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-title,
+  .aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-body,
+  .aico-preorder2-reopen-notice:not(.aico-preorder2-reopen-notice-loading) .aico-preorder2-reopen-notice-btn {
+    animation: none;
+  }
+}
+.aico-preorder2-reopen-notice-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #272727;
+}
+.aico-preorder2-reopen-notice-body {
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--aico-muted-fg);
+}
+.aico-preorder2-reopen-notice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: 2px;
+  background: #e8702d;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aico-preorder2-reopen-notice-btn:hover {
+  background: #d5631f;
+}
+/* Eligibility hard-block: red, non-dismissable. Shown when the selected context
+   (debtor seller/currency, price list, addresses, tax) can't place a preorder. */
+.aico-preorder2-eligibility-notice[hidden] {
+  display: none;
+}
+.aico-preorder2-eligibility-notice {
+  margin: 2rem auto;
+}
+.aico-preorder2-eligibility-notice-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.75rem 2rem;
+  background: #fdecea;
+  border: 1px solid #f1b0a8;
+  border-left: 4px solid #c0392b;
+  border-radius: var(--aico-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  text-align: left;
+}
+.aico-preorder2-eligibility-notice-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #8a1c12;
+}
+.aico-preorder2-eligibility-notice-intro {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #6b2018;
+}
+.aico-preorder2-eligibility-notice-list {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.aico-preorder2-eligibility-notice-item {
+  margin: 0 0 0.4rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: #6b2018;
+}
+.aico-preorder2-eligibility-notice-support {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #8a1c12;
+}
+/* Product image preview modal (opened by clicking a product image) */
+.aico-preorder2-product-media {
+  cursor: zoom-in;
+}
+.aico-preorder2-gallery[hidden] {
+  display: none;
+}
+.aico-preorder2-gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.aico-preorder2-gallery-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.aico-preorder2-gallery-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: var(--aico-radius);
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+.aico-preorder2-gallery-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #555;
+  cursor: pointer;
+}
+.aico-preorder2-gallery-title {
+  margin: 0 2rem 0.75rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #272727;
+}
+.aico-preorder2-gallery-stage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.aico-preorder2-gallery-main {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  background: #f5f5f5;
+  border-radius: var(--aico-radius);
+  overflow: hidden;
+}
+.aico-preorder2-gallery-main-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.aico-preorder2-gallery-empty {
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.aico-preorder2-gallery-nav {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #333;
+  cursor: pointer;
+}
+.aico-preorder2-gallery-nav[hidden] {
+  display: none;
+}
+.aico-preorder2-gallery-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+.aico-preorder2-gallery-thumbs[hidden] {
+  display: none;
+}
+.aico-preorder2-gallery-thumb {
+  flex: none;
+  width: 3.5rem;
+  /* Match the PDP gallery thumbs (board #115): no box outline — the active
+     state is a kybun-orange underline (::after) + full opacity; non-active
+     thumbs stay dimmed. 3.5rem image square + 4px underline gutter. */
+  height: calc(3.5rem + 4px);
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: var(--aico-radius, 2px);
+  background: #f5f5f5;
+  cursor: pointer;
+  overflow: hidden;
+  opacity: 0.7;
+  position: relative;
+  transition: opacity 0.15s ease;
+}
+.aico-preorder2-gallery-thumb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #e8702d; /* kybun orange (same as .aico-button-primary) */
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.aico-preorder2-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.aico-preorder2-gallery-thumb:hover {
+  opacity: 1;
+}
+.aico-preorder2-gallery-thumb.is-active {
+  opacity: 1;
+}
+.aico-preorder2-gallery-thumb.is-active::after {
+  opacity: 1;
+}
+.aico-preorder2-gallery-thumb--skeleton {
+  border-color: transparent;
+  background: #e4e4e7;
+  cursor: default;
+  animation: aicoSkelPulse 1.2s ease-in-out infinite;
+}
+html.aico-preorder2-gallery-open {
+  overflow: hidden;
+}
+.aico-preorder2-catalog-loading,
+.aico-preorder2-catalog-error {
+  margin: 1rem 0;
+  font-size: 0.9375rem;
+}
+.aico-preorder2-catalog-error { color: #b91c1c; }
+.aico-preorder2-date-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 2 1 0;
+  min-width: 12rem;
+}
+.aico-preorder2-date-filter[hidden] {
+  display: none;
+}
+.aico-preorder2-date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.aico-preorder2-date-chip {
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--aico-radius);
+  border: 1px solid #e4e4e4;
+  background: #fff;
+  font-size: 0.78125rem;
+  cursor: pointer;
+}
+.aico-preorder2-date-chip-active {
+  border-color: #e8702d;
+  background: #ffefe6;
+  color: #be5921;
+}
+.aico-preorder2-products-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #272727;
+}
+.aico-preorder2 .aico-preorder2-group {
+  margin-bottom: 1.25rem;
+  overflow: visible;
+}
+.aico-preorder2 .aico-preorder2-group-head {
+  position: sticky;
+  top: var(--aico-chrome-height, 5.75rem);
+  z-index: 6;
+  margin: 0;
+  background: #66b0bb;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.aico-preorder2 .aico-preorder2-group-header-row {
+  display: grid;
+  /* Last track holds the "Gesamt <count> STK" summary. It grows to fit that
+     label (which is wider than a bare per-product total number) but never
+     shrinks below the per-number total width, so it still right-aligns over the
+     product totals; the size-label track (1fr) absorbs the difference. */
+  grid-template-columns:
+    calc(
+      var(--aico-preorder2-aside-w, 8.25rem) + var(--aico-preorder2-grid-gap, 0.35rem) +
+        var(--aico-preorder2-date-w, 4.5rem)
+    )
+    minmax(0, 1fr)
+    minmax(var(--aico-preorder2-total-w, 3.5rem), max-content);
+  column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+}
+.aico-preorder2 .aico-preorder2-group-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+/* Category title is a collapse toggle. */
+.aico-preorder2-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.25rem;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: var(--aico-radius);
+}
+.aico-preorder2-group-toggle:hover { background: rgba(255, 255, 255, 0.15); }
+.aico-preorder2-group-toggle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.aico-preorder2-group-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+}
+.aico-preorder2-group-collapsed .aico-preorder2-group-chevron {
+  transform: rotate(-90deg);
+}
+/* Collapse/expand the cards with a short slide (grid-rows 1fr<->0fr animates
+   height; the inner wrapper clips so the rows actually shrink). */
+.aico-preorder2-group-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.24s ease;
+}
+.aico-preorder2-group-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.aico-preorder2-group-collapsed .aico-preorder2-group-body {
+  grid-template-rows: 0fr;
+}
+/* The size-label row lives in the sticky header (outside the body wrapper), so
+   fade it out in step with the slide. The "Gesamt" total head stays visible —
+   it carries the per-section ordered-quantity count, which must remain readable
+   when the category is collapsed. */
+.aico-preorder2-group-collapsed .aico-preorder2-matrix-scroll--header {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.aico-preorder2-group-ordered-total {
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Overall result count next to the "Products" heading while searching. */
+.aico-preorder2-products-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #ffd54a;
+  color: #4a3500;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.aico-preorder2-no-matches { font-style: italic; }
+/* Instant-search "searching" spinner inside the search field. */
+.aico-preorder2-field-control--searchable { position: relative; }
+.aico-preorder2-search-spinner {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.5rem;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-top-color: #66b0bb;
+  border-radius: 50%;
+  animation: aico-preorder2-spin 0.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes aico-preorder2-spin {
+  to { transform: rotate(360deg); }
+}
+.aico-preorder2 .aico-preorder2-matrix-total-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: 1.25;
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--header {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--header::-webkit-scrollbar {
+  display: none;
+  height: 0;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll::-webkit-scrollbar {
+  display: none;
+  height: 0;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--bar {
+  scrollbar-width: thin;
+  scrollbar-color: #9d9d9d #e7e7e7;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--bar::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--bar::-webkit-scrollbar-thumb {
+  background: #9d9d9d;
+  border-radius: 2px;
+}
+.aico-preorder2 .aico-preorder2-matrix-scroll--bar::-webkit-scrollbar-track {
+  background: #e7e7e7;
+  border-radius: 2px;
+}
+.aico-preorder2 .aico-preorder2-matrix-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0;
+  width: max-content;
+  box-sizing: border-box;
+}
+.aico-preorder2 .aico-preorder2-size-head {
+  flex: 0 0 var(--aico-preorder2-cell-w, 2.75rem);
+  width: var(--aico-preorder2-cell-w, 2.75rem);
+  max-width: var(--aico-preorder2-cell-w, 2.75rem);
+  min-height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.1rem;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #fff;
+  box-sizing: border-box;
+  border-radius: 0.125rem;
+  background: rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+.aico-preorder2 .aico-preorder2-size-head .aico-preorder2-size-frac {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: middle;
+}
+.aico-preorder2 .aico-preorder2-product-card {
+  margin: 0 0 0.5rem;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+.aico-preorder2 .aico-preorder2-product-grid {
+  display: grid;
+  grid-template-columns: var(--aico-preorder2-aside-w, 8.25rem) minmax(0, 1fr);
+  column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
+  align-items: start;
+  padding: 0.75rem;
+}
+.aico-preorder2 .aico-preorder2-product-aside {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  min-width: 0;
+}
+.aico-preorder2 .aico-preorder2-product-rows {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.aico-preorder2 .aico-preorder2-product-media {
+  margin-bottom: 0.5rem;
+  /* Fixed media box: the card's height must not depend on when (or whether)
+     the image loads, and product photos come in many aspect ratios — the
+     image is contained inside a constant 96x48 box instead. */
+  width: 96px;
+  height: 48px;
+}
+.aico-preorder2 .aico-preorder2-product-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  border-radius: 2px;
+}
+.aico-preorder2 .aico-preorder2-product-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #272727;
+}
+.aico-preorder2 .aico-preorder2-product-sku {
+  margin: 0 0 0.15rem;
+  font-size: 0.75rem;
+  color: #6b6b6b;
+}
+.aico-preorder2 .aico-preorder2-product-price {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #272727;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+/* Sale treatment on the preorder card: the struck regular price beside the
+   current one. No percent badge here — the preorder grid is dense enough
+   without it (the catalogue card keeps its badge). */
+.aico-preorder2 .aico-preorder2-product-price-was {
+  color: #6b6b6b;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.aico-preorder2 .aico-preorder2-matrix-row {
+  display: grid;
+  grid-template-columns:
+    var(--aico-preorder2-date-w, 4.5rem)
+    minmax(0, 1fr)
+    var(--aico-preorder2-total-w, 3.5rem);
+  column-gap: var(--aico-preorder2-grid-gap, 0.35rem);
+  align-items: center;
+}
+.aico-preorder2 .aico-preorder2-matrix-date {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: #454545;
+  white-space: nowrap;
+}
+.aico-preorder2 .aico-preorder2-matrix-row-total {
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: #454545;
+  text-align: right;
+  white-space: nowrap;
+}
+.aico-preorder2 .aico-preorder2-qty-box {
+  flex: 0 0 var(--aico-preorder2-cell-w, 2.75rem);
+  width: var(--aico-preorder2-cell-w, 2.75rem);
+  max-width: var(--aico-preorder2-cell-w, 2.75rem);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.aico-preorder2 .aico-preorder2-qty-box__size {
+  display: block;
+  padding-left: 0.15rem;
+  margin-bottom: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #6b6b6b;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.aico-preorder2 .aico-preorder2-qty-box__size .aico-preorder2-size-frac {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: middle;
+}
+.aico-preorder2 .aico-preorder2-qty-box--missing {
+  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+}
+.aico-preorder2 .aico-preorder2-qty-box__dash {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #b8b8b8;
+}
+.aico-preorder2 .aico-preorder2-qty-box__inner {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 1.4rem;
+  border-radius: 0.125rem;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.aico-preorder2 .aico-preorder2-qty-box--filled .aico-preorder2-qty-box__inner {
+  /* Inset ring (not an outward shadow) so the selected outline is never clipped
+     by the matrix scroll container on the leftmost/edge cells. */
+  border-color: #66b0bb;
+  box-shadow: inset 0 0 0 1px #66b0bb;
+}
+.aico-preorder2 .aico-preorder2-qty-box--disabled .aico-preorder2-qty-box__inner {
+  background: #e0e0e0;
+  border-color: #c8c8c8;
+}
+/* Already-confirmed (committed) quantity (the locked minimum) on a reopened
+   preorder: gray, placeholder-style text but WITH a visible border so the min
+   value reads as a real, bordered cell. Raising it flips to the blue --filled
+   look (2.2). --committed and --filled are mutually exclusive. */
+.aico-preorder2 .aico-preorder2-qty-box--committed .aico-preorder2-qty-box__inner {
+  border-color: #b0b0b0;
+  box-shadow: inset 0 0 0 1px #b0b0b0;
+  background: #fff;
+}
+.aico-preorder2 .aico-preorder2-qty-box--committed .aico-preorder2-qty-input {
+  color: var(--aico-muted-fg, #9d9d9d);
+}
+/* Editing state: while the cell is focused, an orange border marks the
+   in-progress edit (no floor clamp yet). Declared after --filled/--committed so
+   it wins over their resting borders until blur restores the proper colour. */
+.aico-preorder2 .aico-preorder2-qty-box--editing .aico-preorder2-qty-box__inner {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px #f59e0b;
+}
+.aico-preorder2 .aico-preorder2-qty-box--editing .aico-preorder2-qty-input {
+  color: inherit;
+}
+.aico-preorder2 .aico-preorder2-qty-box__spinners {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 13px;
+  width: 13px;
+  align-self: stretch;
+  /* No background block — just the chevron glyphs. A filled button background
+     reached the cell's top/right/bottom borders and looked like it cut them. */
+  background: transparent;
+}
+/* Two equal-height halves: the whole top half increments, the whole bottom
+   half decrements — no need to hit the chevron icon exactly. */
+.aico-preorder2 .aico-preorder2-qty-box__step {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1f1f1f;
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-preorder2 .aico-preorder2-qty-box__step svg {
+  width: 7px;
+  height: 4px;
+}
+.aico-preorder2 .aico-preorder2-qty-box__step:hover:not(:disabled) {
+  color: #000;
+}
+.aico-preorder2 .aico-preorder2-qty-box__step:active:not(:disabled) {
+  color: #000;
+  transform: scale(0.85);
+}
+.aico-preorder2 .aico-preorder2-qty-box__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.aico-preorder2 .aico-preorder2-qty-box__inner .aico-preorder2-qty-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 1.4rem;
+  margin: 0;
+  padding: 0 0.15rem;
+  line-height: 1.4rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+  border: 0;
+  background: transparent;
+  box-sizing: border-box;
+  /* Kill the browser-native number spinner in every engine (the custom stepper
+     replaces it) — otherwise headed Chrome can paint its own buttons over the
+     cell's right border. */
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.aico-preorder2 .aico-preorder2-qty-input::-webkit-outer-spin-button,
+.aico-preorder2 .aico-preorder2-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.aico-preorder2 .aico-preorder2-qty-input:focus {
+  outline: none;
+}
+.aico-preorder2 .aico-preorder2-qty-input:disabled {
+  color: #9d9d9d;
+}
+.aico-preorder2 .aico-preorder2-product-footer {
+  padding: 0.4rem 1rem;
+  text-align: right;
+  background: #ffefe6;
+  border-top: 1px solid #f5e0d6;
+}
+.aico-preorder2 .aico-preorder2-product-total {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #454545;
+}
+.aico-preorder2-flyers {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1rem 1rem;
+  background: #e8f0f2;
+  border-radius: 2px;
+}
+.aico-preorder2-flyers-title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #272727;
+}
+.aico-preorder2-flyers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 640px) {.aico-preorder2-flyers-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder2-flyer-card {
+  background: #fff;
+  border: none;
+  border-radius: 2px;
+  padding: 0.75rem 1rem 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.aico-preorder2-flyer-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+.aico-preorder2-flyer-card__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #272727;
+  line-height: 1.3;
+}
+.aico-preorder2-flyer-card__total {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #272727;
+  white-space: nowrap;
+}
+.aico-preorder2-flyer-card__sku {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  color: #9d9d9d;
+}
+.aico-preorder2-flyer-slider {
+  padding: 0 0.25rem;
+}
+.aico-preorder2-flyer-range {
+  --flyer-value: 0;
+  --flyer-max: 3;
+  display: block;
+  width: 100%;
+  height: 1.25rem;
+  margin: 0.35rem 0 0.15rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.aico-preorder2-flyer-range:focus-visible {
+  outline: none;
+}
+.aico-preorder2-flyer-range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    #000 0%,
+    #000 calc((var(--flyer-value) / var(--flyer-max)) * 100%),
+    #d0d0d0 calc((var(--flyer-value) / var(--flyer-max)) * 100%),
+    #d0d0d0 100%
+  );
+}
+.aico-preorder2-flyer-range::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: #d0d0d0;
+}
+.aico-preorder2-flyer-range::-moz-range-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: #000;
+}
+.aico-preorder2-flyer-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  border: 1px solid #272727;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.aico-preorder2-flyer-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #272727;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.aico-preorder2-flyer-marks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.1rem;
+  font-size: 0.75rem;
+  color: #9d9d9d;
+}
+.aico-preorder2-flyer-marks span {
+  flex: 0 0 1.25rem;
+  text-align: center;
+}
+.aico-preorder2-checkout-panel {
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+.aico-preorder2-checkout-addresses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2rem;
+}
+@media (max-width: 640px) {.aico-preorder2-checkout-addresses {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder2-checkout-address-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #007b8e;
+}
+.aico-preorder2-checkout-address-value {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #272727;
+  line-height: 1.45;
+}
+.aico-preorder2-checkout-divider {
+  border: none;
+  border-top: 1px dotted #e4e4e4;
+  margin: 1.25rem 0;
+}
+.aico-preorder2-checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem 2rem;
+  align-items: start;
+}
+@media (max-width: 900px) {.aico-preorder2-checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder2-summary-date-row {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+.aico-preorder2-summary-date-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.aico-preorder2-summary-date-row.is-disabled {
+  opacity: 0.45;
+}
+.aico-preorder2-summary-date-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  color: #9d9d9d;
+}
+.aico-preorder2-summary-date-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #272727;
+}
+.aico-preorder2-checkout-totals-box {
+  background: #ffefe6;
+  border-radius: 2px;
+  padding: 0.75rem 1rem;
+}
+.aico-preorder2-checkout-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #272727;
+}
+.aico-preorder2-checkout-total-row .aico-preorder2-summary-label {
+  font-size: 0.6875rem;
+  color: #9d9d9d;
+  margin: 0;
+}
+.aico-preorder2-checkout-grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #272727;
+}
+.aico-preorder2-checkout-grand-total .aico-preorder2-grand-amount {
+  color: #e8702d;
+  font-size: 1.25rem;
+}
+.aico-preorder2-checkout-grand-total .aico-preorder2-grand-vat {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: #9d9d9d;
+}
+.aico-preorder2-badge {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--aico-radius);
+  background: #66b0bb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.aico-preorder2-checkout-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8125rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 2px;
+  color: #1e40af;
+}
+.aico-preorder2-checkout-alert__icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.05rem;
+  color: #2563eb;
+}
+.aico-preorder2-notes textarea {
+  width: 100%;
+  margin-top: 0.35rem;
+  border-radius: 2px;
+  border: 1px solid #e4e4e4;
+  padding: 0.65rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+.aico-preorder2-terms {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  margin: 1rem 0 0.75rem;
+  align-items: flex-start;
+}
+.aico-preorder2-terms a {
+  color: #007b8e;
+}
+/* Unaccepted-terms attention state (flagged when submit is clicked unchecked) */
+.aico-preorder2-terms--required {
+  padding: 0.6rem 0.75rem;
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  border: 1px solid #e8702d;
+  border-radius: var(--aico-radius);
+  background: #fff5ef;
+  color: #b5481b;
+}
+.aico-preorder2-terms--required a {
+  color: #b5481b;
+  text-decoration: underline;
+}
+.aico-preorder2-terms--required input[type='checkbox'] {
+  outline: 2px solid #e8702d;
+  outline-offset: 2px;
+  accent-color: #e8702d;
+}
+.aico-preorder2-terms--shake {
+  animation: aico-preorder2-shake 0.4s ease;
+}
+@keyframes aico-preorder2-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.aico-preorder2-checkout-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 640px) {.aico-preorder2-checkout-actions {
+    grid-template-columns: 1fr;
+  }
+}
+.aico-preorder2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 2px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.aico-preorder2-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Submit button "saving" state: spinner + label, not faded like :disabled */
+.aico-preorder2-btn--saving:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+.aico-preorder2-btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  flex: none;
+}
+.aico-preorder2-btn-save {
+  background: #e4e4e4;
+  color: #272727;
+}
+.aico-preorder2-btn-place {
+  background: #e8702d;
+  color: #fff;
+  grid-column: 1 / -1;
+}
+@media (min-width: 641px) {.aico-preorder2-btn-place {
+    grid-column: 2;
+  }.aico-preorder2-btn-save {
+    grid-column: 1;
+  }
+}
+.aico-preorder2-summary-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #007b8e;
+}
+.aico-preorder2-thank-you {
+  /* The brand confirmation colour is the full-bleed background, so it shows in the
+     true side gutters (beyond var(--max-width)). --aico-confirmation-bg is set
+     inline on the <main> from color_schema.preorderConfirmation.bg. */
+  background: var(--aico-confirmation-bg, var(--color-bg));
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.aico-preorder2-thank-you > .aico-page-container {
+  /* The centred page-width (var(--max-width)) sheet is the neutral page bg; the
+     white .aico-preorder2-confirmation card sits on it. Only the side gutters show
+     the brand colour. */
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+  background: var(--color-bg);
+}
+.aico-preorder2-thank-you-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+}
+.aico-preorder2-thank-you-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.aico-preorder2--searching .aico-preorder2-field-search .aico-preorder2-field-icon {
+  color: #e8702d;
+  transition: color 0.15s ease;
+}
+.aico-preorder2-resolving[hidden] {
+  display: none;
+}
+.aico-preorder2-resolving {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 3.5rem auto;
+  color: var(--aico-muted-fg, #6b7280);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.aico-preorder2-resolving-spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: var(--color-accent, #2563eb);
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  flex: none;
+}
+.aico-preorder2-group-count {
+  flex: 0 0 auto;
+  min-width: 1.25rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+.aico-preorder2-group-count--searching {
+  background: #ffd54a;
+  color: #4a3500;
+}
+.aico-preorder2 .aico-preorder2-product-card--skeleton {
+  padding: 0.75rem;
+  box-shadow: none;
+  background: transparent;
+}
+.aico-preorder2-load-more {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #9d9d9d;
+  padding: 0.5rem;
+}
+/* ===== G3 preorder-ui-tweaks: overrides of existing preorder rules =====
+   (search-active color match + committed-qty firm value; appended so they win
+   by cascade without disturbing the kj-divergent base rules above) */
+.aico-preorder2-products-count {
+  background: #e8702d;
+  color: #fff;
+}
+.aico-preorder2 .aico-preorder2-qty-box--committed .aico-preorder2-qty-box__inner {
+  border-color: #111;
+  box-shadow: inset 0 0 0 1px #111;
+  background: #fff;
+}
+.aico-preorder2 .aico-preorder2-qty-box--committed .aico-preorder2-qty-input {
+  color: #111;
+}
+/* ===== Preorder per-section loading skeleton + always-visible category heads ===== */
+.aico-preorder2 .aico-preorder2-product-card--skeleton {
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 0;
+  pointer-events: none;
+}
+.aico-preorder2-skel-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+}
+.aico-preorder2-skel-line {
+  display: block;
+  height: 0.7rem;
+  margin: 0 0 0.4rem;
+  border-radius: 2px;
+}
+.aico-preorder2-skel-line--title { width: 80%; height: 0.85rem; }
+.aico-preorder2-skel-line--sku { width: 55%; }
+.aico-preorder2-skel-line--price { width: 38%; margin-bottom: 0; }
+.aico-preorder2-skel-row {
+  display: block;
+  height: 1.9rem;
+  margin-bottom: 0.4rem;
+  border-radius: 2px;
+}
+.aico-preorder2-skel-row:last-child { margin-bottom: 0; }
+/* Empty category: header stays, body shows a quiet note instead of cards. */
+.aico-preorder2-group-empty-note {
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--aico-muted-fg, #9d9d9d);
+}
+/* Richer preorder confirmation (G4b) — used both on the thank-you template and
+   as the inline post-submit reveal on the preorder page. */
+.aico-preorder2-confirmation {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 2.75rem;
+  background: var(--aico-card, #ffffff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: var(--aico-radius, 2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+/* On the thank-you page the same white card is centred (both axes) on the brand
+   coloured page; the centering comes from `.aico-preorder2-thank-you >
+   .aico-page-container`. Drop the border/shadow here so the card blends into the
+   neutral centre sheet (the inline post-submit reveal keeps its bordered card). */
+.aico-preorder2-thank-you .aico-preorder2-confirmation {
+  border: 0;
+  box-shadow: none;
+}
+@media (max-width: 480px) {.aico-preorder2-confirmation { padding: 2rem 1.125rem 2.25rem; }
+}
+.aico-preorder2-confirmation-head {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+/* The shared spinner → checkmark medallion (see .aico-ty-status above) is a
+   direct child of the panel, not of the centred header, so it needs its own
+   centring. */
+.aico-preorder2-confirmation .aico-ty-status {
+  margin: 0 auto 0.75rem;
+}
+.aico-preorder2-confirmation-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+.aico-preorder2-confirmation-message {
+  margin: 0;
+  color: #555;
+}
+.aico-preorder2-confirmation-number-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+.aico-preorder2-confirmation-number-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+.aico-preorder2-confirmation-number {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #272727;
+}
+.aico-preorder2-confirmation-reference {
+  font-size: 0.75rem;
+  color: #999;
+}
+/* Summary: delivery address (left) + totals (right). Single column on narrow
+   screens, two columns once there's room — mirrors the confirmation mockup. */
+.aico-preorder2-confirmation-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin: 0 0 1.75rem;
+}
+.aico-preorder2-confirmation-summary-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+.aico-preorder2-confirmation-address-value {
+  font-weight: 600;
+  line-height: 1.45;
+  /* Honour newlines if the backend sends a multi-line address; otherwise the
+     comma-separated single line still renders fine. */
+  white-space: pre-line;
+}
+.aico-preorder2-confirmation-totals {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.aico-preorder2-confirmation-total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.aico-preorder2-confirmation-total-row dt {
+  margin: 0;
+  color: #888;
+  font-size: 0.875rem;
+}
+.aico-preorder2-confirmation-total-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.aico-preorder2-confirmation-total-row--grand {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+/* The incl.-VAT figure sits directly under the net total and reads as its
+   equal — same weight and colour (set with the --grand rule below), just
+   without the separating rule, since it is the last line of the block. */
+.aico-preorder2-confirmation-total-row--vat {
+  border-bottom: 0;
+  padding-top: 0.25rem;
+  padding-bottom: 0;
+}
+.aico-preorder2-confirmation-total-row--grand dt,
+.aico-preorder2-confirmation-total-row--grand dd,
+.aico-preorder2-confirmation-total-row--vat dt,
+.aico-preorder2-confirmation-total-row--vat dd {
+  font-weight: 800;
+  color: #272727;
+}
+.aico-preorder2-confirmation-dates-wrap {
+  margin-bottom: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f0f0f0;
+}
+.aico-preorder2-confirmation-dates-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+.aico-preorder2-confirmation-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f4f4f4;
+  font-size: 0.875rem;
+}
+.aico-preorder2-confirmation-date {
+  font-weight: 600;
+}
+.aico-preorder2-confirmation-date-number {
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+.aico-preorder2-confirmation-date-qty,
+.aico-preorder2-confirmation-date-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.aico-preorder2-confirmation-pdf-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px dashed #d4d4d4;
+  border-radius: var(--aico-radius);
+  text-align: center;
+  color: #555;
+}
+.aico-preorder2-confirmation-pdf-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: #e8702d;
+  border-radius: 50%;
+  animation: aico-spin 0.7s linear infinite;
+  flex: none;
+}
+.aico-preorder2-confirmation-pdf-link {
+  text-decoration: none;
+}
+/* Processing state — a dispatched submit/edit is still running on the queue.
+   preorder2-confirmation.js toggles the --processing class; the details stay
+   hidden so a re-submit never shows the previous submission's numbers. The
+   medallion is NOT in this list: it is the one element that spans both states
+   and animates across the swap. */
+.aico-preorder2-confirmation--processing .aico-preorder2-confirmation-number-box,
+.aico-preorder2-confirmation--processing .aico-preorder2-confirmation-summary,
+.aico-preorder2-confirmation--processing .aico-preorder2-confirmation-dates-wrap,
+.aico-preorder2-confirmation--processing .aico-preorder2-confirmation-pdf-area {
+  display: none;
+}
+/* Live submit progress — the count under the medallion,
+   whose ring carries the actual fraction. Hidden until a counter exists
+   (preorder2-confirmation.js removes the [hidden] attribute on the first
+   processed/total it sees, from the confirmation payload or a broadcast), and
+   only rendered inside the processing state, so the processing → confirmed
+   swap hides it automatically. Both submit flows seed a counter; a flow that
+   somehow has none keeps the plain sweeping spinner. */
+.aico-preorder2-confirmation-progress {
+  display: none;
+}
+.aico-preorder2-confirmation--processing .aico-preorder2-confirmation-progress:not([hidden]) {
+  display: block;
+  /* Sits between the medallion and the header, so it carries its own centring
+     (the header's text-align no longer applies) and a tightened top gap — the
+     count is the spinner's caption, not a line of the header copy. */
+  text-align: center;
+  margin: -0.25rem 0 0.9rem;
+}
+.aico-preorder2-confirmation-progress-count {
+  font-size: 0.8125rem;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+/* Animated processing → confirmed/error swap (preorder2-confirmation.js):
+   --swap-out fades/slides the processing panel away, the DOM swaps, then
+   --swap-in fades/slides the final state in. Timings match the theme's
+   0.15–0.25s ease conventions; inert under prefers-reduced-motion.
+
+   Both target the panel's CHILDREN rather than the panel itself so the status
+   medallion can be excluded: it is mid spinner → checkmark hand-off exactly
+   when this runs, and fading it out with the rest of the body would hide the
+   very transition the swap is announcing. */
+.aico-preorder2-confirmation--swap-out > *:not(.aico-ty-status) {
+  opacity: 0;
+  transform: translateY(0.375rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.aico-preorder2-confirmation--swap-in > *:not(.aico-ty-status) {
+  animation: aico-confirmation-swap-in 0.25s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {.aico-preorder2-confirmation--swap-out > *:not(.aico-ty-status) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }.aico-preorder2-confirmation--swap-in > *:not(.aico-ty-status) {
+    animation: none;
+  }
+}
+/* Error state — the queued submit failed and no details will arrive
+   (preorder2-confirmation.js toggles the --error class). Hide the status
+   medallion + detail placeholders and the PDF area; only the error copy
+   shows — there is no success to hand off to. */
+.aico-preorder2-confirmation--error .aico-ty-status,
+.aico-preorder2-confirmation--error .aico-preorder2-confirmation-number-box,
+.aico-preorder2-confirmation--error .aico-preorder2-confirmation-summary,
+.aico-preorder2-confirmation--error .aico-preorder2-confirmation-dates-wrap,
+.aico-preorder2-confirmation--error .aico-preorder2-confirmation-pdf-area {
+  display: none;
+}
+/* Missing-reference state — the panel was opened with no `?cart=` to confirm
+   against, so every placeholder below the heading would be a lie: an order
+   number of "…", em dashes for totals, an empty delivery-date list and a PDF
+   spinner with no PDF coming. Hide all of it, exactly as --error does, but
+   KEEP the medallion — unlike a failure, this state has something to say
+   (the warning disc, see .aico-ty-status--warn), and a card with no icon at
+   all reads as a half-loaded page rather than a deliberate answer. */
+.aico-preorder2-confirmation--missing .aico-preorder2-confirmation-number-box,
+.aico-preorder2-confirmation--missing .aico-preorder2-confirmation-summary,
+.aico-preorder2-confirmation--missing .aico-preorder2-confirmation-dates-wrap,
+.aico-preorder2-confirmation--missing .aico-preorder2-confirmation-pdf-area,
+.aico-preorder2-confirmation--missing .aico-preorder2-confirmation-progress {
+  display: none;
+}
+.aico-preorder2-confirmation-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+@media (min-width: 560px) {.aico-preorder2-confirmation-summary {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+/* ====================== cart-summary panel (appended) ====================== */
+Preorder sticky cart-summary panel
+   Docks in the page gutter on wide (1080p+) screens; collapses to an edge tab
+   on narrower screens. Read-only live totals + a colour legend for the qty
+   cells. Side (left/right) is user-switchable + persisted.
+   ============================================================================ */
+.aico-preorder2-cart-panel { box-sizing: border-box; }
+.aico-preorder2-cart-panel[hidden] { display: none; }
+.aico-preorder2-cart-panel-body {
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: var(--aico-radius, 2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 1rem 1.05rem;
+}
+.aico-preorder2-cart-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.aico-preorder2-cart-panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--aico-fg, #1a1a1a);
+}
+.aico-preorder2-cart-panel-head-actions { display: inline-flex; gap: 0.25rem; }
+.aico-preorder2-cart-panel-side,
+.aico-preorder2-cart-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0.125rem;
+  background: none;
+  color: var(--aico-muted-fg, #6b7280);
+  cursor: pointer;
+}
+.aico-preorder2-cart-panel-side:hover,
+.aico-preorder2-cart-panel-close:hover {
+  color: #0e6e7a;
+  border-color: var(--aico-border, #e5e7eb);
+}
+.aico-preorder2-cart-panel-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.aico-preorder2-cart-panel-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.aico-preorder2-cart-panel-row dt {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-preorder2-cart-panel-row dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--aico-fg, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.aico-preorder2-cart-panel-row--subtotal {
+  margin-top: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--aico-border, #e5e7eb);
+}
+.aico-preorder2-cart-panel-row--subtotal dd { font-size: 1rem; }
+/* Info bubble next to a row label (e.g. placed-orders) — an (i) button that opens
+   a small explanatory popover on click (wired in preorder2-page.js, .is-open). */
+.aico-preorder2-cart-panel-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.aico-preorder2-cart-panel-info-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--aico-muted-fg, #6b7280);
+  cursor: pointer;
+  line-height: 0;
+}
+.aico-preorder2-cart-panel-info-trigger:hover,
+.aico-preorder2-cart-panel-info.is-open .aico-preorder2-cart-panel-info-trigger {
+  color: #0e6e7a;
+}
+.aico-preorder2-cart-panel-info-pop {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 6;
+  width: 15rem;
+  max-width: 70vw;
+  padding: 0.6rem 0.7rem;
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: var(--aico-radius, 2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--aico-fg, #1a1a1a);
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.aico-preorder2-cart-panel-info.is-open .aico-preorder2-cart-panel-info-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.aico-preorder2-cart-panel-legend {
+  position: relative;
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--aico-border, #e5e7eb);
+}
+/* Click trigger — the legend rows live in a popover toggled open via the
+   trigger button (initPreorderCartPanelLegend in preorder2-page.js), not on hover. */
+.aico-preorder2-cart-panel-legend-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aico-muted-fg, #6b7280);
+  cursor: pointer;
+}
+.aico-preorder2-cart-panel-legend.is-open .aico-preorder2-cart-panel-legend-trigger,
+.aico-preorder2-cart-panel-legend-trigger:hover {
+  color: #0e6e7a;
+}
+.aico-preorder2-cart-panel-legend-pop {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: 0.75rem 0.85rem;
+  background: var(--aico-card, #fff);
+  border: 1px solid var(--aico-border, #e5e7eb);
+  border-radius: var(--aico-radius, 2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.aico-preorder2-cart-panel-legend.is-open .aico-preorder2-cart-panel-legend-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.aico-preorder2-cart-panel-legend-pop-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--aico-muted-fg, #6b7280);
+}
+.aico-preorder2-cart-panel-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  color: var(--aico-fg, #1a1a1a);
+  margin-bottom: 0.4rem;
+}
+.aico-preorder2-cart-panel-legend-row:last-child { margin-bottom: 0; }
+.aico-preorder2-cart-panel-swatch {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.1rem;
+  border-radius: 0.125rem;
+  background: #fff;
+  border: 1px solid #cfcfcf;
+}
+.aico-preorder2-cart-panel-swatch--selected {
+  border-color: #66b0bb;
+  box-shadow: inset 0 0 0 1px #66b0bb;
+}
+.aico-preorder2-cart-panel-swatch--editing {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px #f59e0b;
+}
+.aico-preorder2-cart-panel-swatch--committed { border-color: #111; }
+.aico-preorder2-cart-panel-swatch--unavailable {
+  background: #e0e0e0;
+  border-color: #c8c8c8;
+}
+/* Edge tab — only rendered in off-canvas mode (narrow screens). */
+.aico-preorder2-cart-panel-tab {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 2.75rem;
+  padding: 0.6rem 0;
+  border: 0;
+  cursor: pointer;
+  background: #e8702d;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+.aico-preorder2-cart-panel-tab-qty {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.1rem;
+  padding: 0.05rem 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.aico-preorder2-cart-panel-close { display: none; }
+/* ---- Docked in the gutter (wide / 1080p+ screens) ---- */
+@media (min-width: 1900px) {.aico-preorder2-cart-panel {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 45;
+    /* Sit in the gutter beside the centred content WITHOUT overlapping it. The
+       content is `var(--max-width)` wide (1400px on the kj theme, 1280px on the
+       default), so its edge is at `50% + max-width/2`; anchor 0.9rem past that.
+       Fill the remaining gutter and cap at a readable max width; margin-auto
+       keeps the capped box hugging the content side. Using the variable means
+       this tracks the real container width instead of a hardcoded guess. */
+    width: auto;
+    max-width: 24rem;
+    min-width: 12rem;
+  }.aico-preorder2-cart-panel[data-side="right"] {
+    left: calc(50% + (var(--max-width) / 2) + 0.9rem);
+    right: 1rem;
+    margin-right: auto;
+  }.aico-preorder2-cart-panel[data-side="left"] {
+    right: calc(50% + (var(--max-width) / 2) + 0.9rem);
+    left: 1rem;
+    margin-left: auto;
+  }
+}
+/* ---- Off-canvas with an edge tab (narrower screens) ---- */
+@media (max-width: 1899.98px) {.aico-preorder2-cart-panel {
+    position: fixed;
+    top: 50%;
+    z-index: 45;
+    width: 17rem;
+    transition: transform 0.25s ease;
+  }.aico-preorder2-cart-panel-tab { display: inline-flex; }.aico-preorder2-cart-panel-close { display: inline-flex; }/* The side-swap lives only in the docked mode; in the drawer the tab side is
+     still driven by the same persisted data-side. */.aico-preorder2-cart-panel-side { display: none; }.aico-preorder2-cart-panel[data-side="right"] {
+    right: 0;
+    left: auto;
+    transform: translate(100%, -50%);
+  }.aico-preorder2-cart-panel[data-side="right"].is-open { transform: translate(0, -50%); }.aico-preorder2-cart-panel[data-side="right"] .aico-preorder2-cart-panel-tab {
+    right: 100%;
+    border-radius: var(--aico-radius) 0 0 var(--aico-radius);
+  }.aico-preorder2-cart-panel[data-side="right"] .aico-preorder2-cart-panel-body {
+    border-radius: var(--aico-radius) 0 0 var(--aico-radius);
+  }.aico-preorder2-cart-panel[data-side="left"] {
+    left: 0;
+    right: auto;
+    transform: translate(-100%, -50%);
+  }.aico-preorder2-cart-panel[data-side="left"].is-open { transform: translate(0, -50%); }.aico-preorder2-cart-panel[data-side="left"] .aico-preorder2-cart-panel-tab {
+    left: 100%;
+    border-radius: 0 0.5rem 0.5rem 0;
+  }.aico-preorder2-cart-panel[data-side="left"] .aico-preorder2-cart-panel-body {
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+}
+/* The off-canvas cart panel parks just past the viewport edge when closed; clip
+   horizontal overflow at the document level so it never adds a scrollbar. Use
+   `clip` (not `hidden`) so the sticky header keeps working. Scoped via :has to
+   the preorder page only. */
+html:has(.aico-preorder2-cart-panel) { overflow-x: clip; }
+
+/* /preorder2 only (see templates/aico-preorder2.liquid). Mirrors of the
+ * preorder title and catalog tools that fade in over the sticky header row
+ * once the originals scroll past it. The originals never move — these are
+ * proxies driven by assets/preorder2-header.js — so nothing here may assume
+ * it owns state. `top`/`height` and the spacer width are set from JS
+ * (measured off the real header row + brand logo). */
+.aico-preorder2-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Above .aico-chrome-sticky (z-index 40) so it overlays the header row. */
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  /* The dock spans the whole header row but must not swallow clicks on the
+     brand logo underneath — only the visible controls opt back in. */
+  pointer-events: none;
+}
+.aico-preorder2-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+}
+/* Width set from JS = the header brand logo's width, so the title lands beside
+   the logo instead of on top of it. */
+.aico-preorder2-dock-spacer {
+  flex: 0 0 auto;
+  width: 0;
+}
+/* Docked title/tools appear and disappear instantly (no fade/slide) at the
+   scroll thresholds preorder2-header.js computes. */
+.aico-preorder2-dock-title,
+.aico-preorder2-dock-tools {
+  visibility: hidden;
+}
+.aico-preorder2-dock.is-title-visible .aico-preorder2-dock-title,
+.aico-preorder2-dock.is-tools-visible .aico-preorder2-dock-tools {
+  visibility: visible;
+}
+.aico-preorder2-dock-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--aico-fg);
+}
+.aico-preorder2-dock-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.aico-preorder2-dock.is-tools-visible .aico-preorder2-dock-tools { pointer-events: auto; }
+/* Mini-title above each docked control — in the header these mirrors sit where
+   site-wide chrome lives, so each says what it filters. Sized so label + 2rem
+   control still fit inside the measured header-row height. */
+.aico-preorder2-dock-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+.aico-preorder2-dock-field-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--aico-muted-fg);
+  white-space: nowrap;
+}
+.aico-preorder2-dock-icon,
+.aico-preorder2-dock-chevron {
+  flex: 0 0 auto;
+  color: var(--aico-muted-fg);
+}
+/* Shared shell for the search field and the two dropdown triggers. */
+.aico-preorder2-dock-search,
+.aico-preorder2-dock-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.55rem;
+  background: var(--aico-bg);
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+}
+.aico-preorder2-dock-search:focus-within,
+.aico-preorder2-dock-select-trigger:hover,
+.aico-preorder2-dock-select.is-open .aico-preorder2-dock-select-trigger {
+  border-color: var(--aico-muted-strong);
+}
+.aico-preorder2-dock-search-input {
+  width: 11rem;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.aico-preorder2-dock-search-input::-webkit-search-cancel-button { cursor: pointer; }
+.aico-preorder2-dock-select { position: relative; }
+.aico-preorder2-dock-select-trigger {
+  cursor: pointer;
+  max-width: 12rem;
+}
+.aico-preorder2-dock-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aico-preorder2-dock-select-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 100%;
+  max-width: 18rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: var(--aico-card);
+  border: 1px solid var(--aico-border);
+  border-radius: var(--aico-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.aico-preorder2-dock-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: var(--aico-radius);
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--aico-fg);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.aico-preorder2-dock-option:hover { background: var(--aico-muted); }
+/* Checkbox affordance — the delivery-dates list is multi-select, mirroring the
+   real control's row markup. */
+.aico-preorder2-dock-check {
+  flex: 0 0 auto;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 1px solid var(--aico-muted-strong);
+  border-radius: var(--aico-radius);
+  background: var(--aico-bg);
+}
+.aico-preorder2-dock-option.is-checked .aico-preorder2-dock-check {
+  border-color: var(--aico-fg);
+  background: var(--aico-fg);
+  box-shadow: inset 0 0 0 2px var(--aico-bg);
+}
+/* Gear mirror — icon-only trigger; bottom-aligned so it lines up with the
+   labelled fields' controls (the real bar's gear has no title either). */
+.aico-preorder2-dock-display { align-self: flex-end; }
+.aico-preorder2-dock-display-trigger { padding: 0 0.5rem; }
+.aico-preorder2-dock-display-panel {
+  min-width: 15rem;
+  padding: 0.5rem 0.6rem;
+}
+.aico-preorder2-dock-display-heading {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aico-fg);
+}
+.aico-preorder2-dock-display-group-label {
+  margin: 0.5rem 0 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--aico-muted-fg);
+}
+/* The header row has no room for the tools on narrow screens; the title still
+   docks, and the real filter row is always reachable by scrolling up. */
+@media (max-width: 1023px) {.aico-preorder2-dock-tools { display: none; }
+}
