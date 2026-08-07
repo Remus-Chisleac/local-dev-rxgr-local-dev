@@ -31,6 +31,7 @@
 
     var headerRow = document.querySelector('.aico-header-row');
     var brandEl = document.querySelector('.aico-header-brand');
+    var headerActionsEl = document.querySelector('.aico-header-actions');
     var heroEl = root.querySelector('[data-aico-preorder2-hero]');
     var heroTitleEl = root.querySelector('[data-aico-preorder2-hero-title]');
     // NOT [data-aico-preorder2-catalog-tools] — that wrapper is `display: contents`,
@@ -41,6 +42,7 @@
 
     var titleEl = dock.querySelector('[data-aico-preorder2-dock-title]');
     var spacerEl = dock.querySelector('[data-aico-preorder2-dock-spacer]');
+    var toolsWrapEl = dock.querySelector('.aico-preorder2-dock-tools');
 
     dock.hidden = false;
 
@@ -57,6 +59,14 @@
       dock.style.height = rect.height + 'px';
       if (spacerEl && brandEl) {
         spacerEl.style.width = Math.round(brandEl.getBoundingClientRect().width) + 'px';
+      }
+      // The header's own right-side chrome (Menü button etc.) stays visible while
+      // docked — reserve its footprint on the right exactly like the brand's on
+      // the left, so the docked tools never overlap it.
+      if (toolsWrapEl && headerActionsEl) {
+        var actionsRect = headerActionsEl.getBoundingClientRect();
+        var reserve = actionsRect.width > 0 ? Math.round(rect.right - actionsRect.left) : 0;
+        toolsWrapEl.style.marginRight = Math.max(0, reserve) + 'px';
       }
     }
 
@@ -249,9 +259,9 @@
         var checked = option.value === realSize.value;
         if (checked) row.classList.add('is-checked');
         row.setAttribute('aria-selected', checked ? 'true' : 'false');
-        row.innerHTML =
-          '<span class="aico-preorder2-dock-check" aria-hidden="true"></span><span></span>';
-        row.lastChild.textContent = (option.textContent || '').trim();
+        // Plain text row — the real size custom-select renders no checkbox
+        // (single-select); only the multi-select dates list carries checks.
+        row.textContent = (option.textContent || '').trim();
         row.addEventListener('click', function (event) {
           event.preventDefault();
           event.stopPropagation();
