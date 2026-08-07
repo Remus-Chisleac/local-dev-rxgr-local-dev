@@ -883,10 +883,14 @@
     var pct = discountPercentOf(pricing);
     // RRP (recommended retail) — informational "(RRP X)" beside the price: the
     // sale RRP beside the current price, the regular RRP beside the struck one.
-    // Only when strictly above that line's price.
+    // Only when strictly above that line's price — unless the debtor's
+    // UVP-Währung puts the RRP in a foreign currency (rrpCurrencyCode set and
+    // different): magnitudes aren't comparable then, show the RRP as-is.
+    var rrpCc = pricing.rrpCurrencyCode || cc;
+    var rrpForeign = !!(pricing.rrpCurrencyCode && cc && pricing.rrpCurrencyCode !== cc);
     var rrpRaw = pricing.isOnSale ? (pricing.rrpDiscount != null ? pricing.rrpDiscount : pricing.rrp) : pricing.rrp;
-    var rrpLabel = (rrpRaw != null && rrpRaw > displayedAmount) ? formatMoney(rrpRaw, cc, loc) : null;
-    var compareRrpLabel = (pricing.isOnSale && pricing.rrp != null && pricing.rrp > pricing.sellingPrice) ? formatMoney(pricing.rrp, cc, loc) : null;
+    var rrpLabel = (rrpRaw != null && (rrpForeign || rrpRaw > displayedAmount)) ? formatMoney(rrpRaw, rrpCc, loc) : null;
+    var compareRrpLabel = (pricing.isOnSale && pricing.rrp != null && (rrpForeign || pricing.rrp > pricing.sellingPrice)) ? formatMoney(pricing.rrp, rrpCc, loc) : null;
     var isDiscontinued = !!hit.isDiscontinued;
 
     var article = document.createElement('article');
